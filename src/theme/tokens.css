@@ -1,0 +1,72 @@
+/* Design tokens per theme. Activated via `data-theme="..."` on <html>. */
+
+:root,
+[data-theme='light'] {
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef0f6;
+  --color-border: #e0e3eb;
+  --color-fg: #1b1c22;
+  --color-fg-muted: #666b78;
+  --color-primary: #4f46e5;
+  --color-primary-fg: #ffffff;
+  --color-accent: #0d9488;
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+}
+
+[data-theme='dark'] {
+  --color-bg: #0f1115;
+  --color-surface: #171a21;
+  --color-surface-2: #1f232c;
+  --color-border: #2a2f3a;
+  --color-fg: #e7e9ee;
+  --color-fg-muted: #9aa0ad;
+  --color-primary: #818cf8;
+  --color-primary-fg: #10121a;
+  --color-accent: #2dd4bf;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+}
+
+[data-theme='fluent'] {
+  --color-bg: #eaf1fb;
+  --color-surface: #f7fafe;
+  --color-surface-2: #e1ebfa;
+  --color-border: #c4d6ef;
+  --color-fg: #0f2440;
+  --color-fg-muted: #4c6079;
+  --color-primary: #2564cf;
+  --color-primary-fg: #ffffff;
+  --color-accent: #3a8fd6;
+  --color-danger: #d13438;
+  --color-success: #107c10;
+}
+
+[data-theme='purple'] {
+  --color-bg: #140f22;
+  --color-surface: #1e1833;
+  --color-surface-2: #281f42;
+  --color-border: #3c2f5c;
+  --color-fg: #ede9f7;
+  --color-fg-muted: #ab9fc7;
+  --color-primary: #a855f7;
+  --color-primary-fg: #140f22;
+  --color-accent: #e879f9;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+}
+
+[data-theme='orange'] {
+  --color-bg: #1c1410;
+  --color-surface: #241a14;
+  --color-surface-2: #2e2118;
+  --color-border: #4a3324;
+  --color-fg: #fbe9dd;
+  --color-fg-muted: #c9a084;
+  --color-primary: #f97316;
+  --color-primary-fg: #1c1410;
+  --color-accent: #fb923c;
+  --color-danger: #ef4444;
+  --color-success: #84cc16;
+}
