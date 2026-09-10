@@ -105,6 +105,8 @@ export interface CharacterFrontmatter {
   spellcasting?: SpellcastingInfo
   spells_known?: string[]
   features?: CharacterFeature[]
+  /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
+  portrait_url?: string
 }
 
 export interface CharacterFeature {

@@ -22,12 +22,21 @@ export function CharacterListPage() {
           <Link
             key={c.path}
             to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
-            className="rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <div className="text-lg font-semibold text-fg">{c.frontmatter.name}</div>
-            <div className="mt-1 text-sm text-fg-muted">{classSummary(c.frontmatter)}</div>
-            <div className="mt-1 text-sm text-fg-muted">
-              {c.frontmatter.species} · {c.frontmatter.background}
+            {c.frontmatter.portrait_url && (
+              <img
+                src={c.frontmatter.portrait_url}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
+              />
+            )}
+            <div className="min-w-0">
+              <div className="text-lg font-semibold text-fg">{c.frontmatter.name}</div>
+              <div className="mt-1 text-sm text-fg-muted">{classSummary(c.frontmatter)}</div>
+              <div className="mt-1 text-sm text-fg-muted">
+                {c.frontmatter.species} · {c.frontmatter.background}
+              </div>
             </div>
           </Link>
         ))}

@@ -1,7 +1,17 @@
 import { wikilinkTarget } from '../wikilinks'
 import { findRawFileByName, type RawFile } from '../rawFile'
-import type { AbilityKey, CharacterFeature, CharacterFrontmatter, Currency, SkillKey } from '../types'
+import type {
+  AbilityKey,
+  CharacterFeature,
+  CharacterFrontmatter,
+  Currency,
+  SkillKey,
+  SpellcastingInfo,
+  SpellSlotInfo,
+} from '../types'
 import { extractItemTable } from './markdownTable'
+import { resolveWikilinksInText } from '../textClean'
+import type { ImageAssets } from '../vaultLoader'
 
 /**
  * Adapter for the "Character Sheet Vorlage" format used by an existing campaign vault
@@ -9,12 +19,12 @@ import { extractItemTable } from './markdownTable'
  * Detected structurally (see `looksLikeLegacyCharacter`) rather than by a marker field, since the
  * source vault predates this app and its authors are mid-redesign of their own rules/format.
  *
- * This is deliberately best-effort: fields with no equivalent here (spellcasting, homebrew AC
- * formulas that factor in equipped-armor stats) are approximated or left out rather than chasing
- * full fidelity with a format that's about to change again.
+ * This is deliberately best-effort: fields with no equivalent here (homebrew AC formulas that
+ * factor in equipped-armor stats, warlock invocations) are approximated or left out rather than
+ * chasing full fidelity with a format that's about to change again.
  */
 
-const ABILITY_MAP: Record<string, AbilityKey> = {
+export const ABILITY_MAP: Record<string, AbilityKey> = {
   Stärke: 'str',
   Geschicklichkeit: 'dex',
   Konstitution: 'con',
@@ -46,14 +56,14 @@ const SKILL_MAP: Record<string, SkillKey> = {
 
 const CURRENCY_MAP: Record<string, keyof Currency> = { PM: 'pp', GM: 'gp', EM: 'ep', SM: 'sp', KM: 'cp' }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
 const WIKILINK_DISPLAY_RE = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/
 
 /** Alias-aware display text for a wikilink field, e.g. `"[[Zwerge|Zwerg]]"` -> `"Zwerg"`. */
-function linkDisplay(raw: unknown): string {
+export function linkDisplay(raw: unknown): string {
   if (typeof raw !== 'string') return ''
   const match = WIKILINK_DISPLAY_RE.exec(raw.trim())
   if (!match) return raw.trim()
@@ -61,7 +71,7 @@ function linkDisplay(raw: unknown): string {
 }
 
 /** The target (filename) a wikilink field points at, ignoring any display alias. */
-function linkFile(raw: unknown): string {
+export function linkFile(raw: unknown): string {
   return typeof raw === 'string' ? wikilinkTarget(raw) : ''
 }
 
@@ -69,16 +79,19 @@ function firstSummaryLine(body: string): string | undefined {
   const line = body
     .split(/\r?\n/)
     .map((l) => l.trim())
-    .find((l) => l.length > 0 && !l.startsWith('#') && !l.startsWith('>'))
+    .find((l) => l.length > 0 && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('```'))
   if (!line) return undefined
-  return line
-    .replace(/\*\*?/g, '')
-    .replace(WIKILINK_DISPLAY_RE, (_match, target: string, alias: string | undefined) => alias ?? target)
-    .trim()
+  return resolveWikilinksInText(line.replace(/\*\*?/g, '')).trim()
 }
 
+/**
+ * The vault's monster/creature stat blocks (Bestiarium) reuse the exact same
+ * Attribute/Rettungswürfe/Fertigkeiten shape as player characters, so those alone aren't enough to
+ * tell them apart. Only PC sheets carry a `Hintergrund` block (name/species/class/background) —
+ * creatures use `Typ`/`Herausforderungsgrad`/`Angriff` instead.
+ */
 export function looksLikeLegacyCharacter(data: Record<string, unknown>): boolean {
-  return isRecord(data.Attribute) && isRecord(data.Rettungswürfe) && isRecord(data.Fertigkeiten)
+  return isRecord(data.Attribute) && isRecord(data.Rettungswürfe) && isRecord(data.Fertigkeiten) && isRecord(data.Hintergrund)
 }
 
 function resolveHitDie(className: string, files: RawFile[]): string {
@@ -125,9 +138,96 @@ function collectFeatures(data: Record<string, unknown>, files: RawFile[]): Chara
   })
 }
 
-function findInventoryFile(characterFileName: string, files: RawFile[]): RawFile | undefined {
+/**
+ * Finds the character's linked "<Prefix> <Name>.md" sheet (inventory, ...): a separate file
+ * back-linked via a `Charakter: "[[Name]]"` field. Filtering by filename prefix (not just the
+ * backlink) matters because a character can have several such linked sheets.
+ */
+function findLinkedSheet(characterFileName: string, files: RawFile[], namePrefix: string): RawFile | undefined {
   const target = characterFileName.trim().toLowerCase()
-  return files.find((f) => linkFile(f.data.Charakter).toLowerCase() === target)
+  const prefix = namePrefix.toLowerCase()
+  return files.find((f) => f.name.toLowerCase().startsWith(prefix) && linkFile(f.data.Charakter).toLowerCase() === target)
+}
+
+/**
+ * Unlike the inventory file (always a separate "Inventar <Name>.md"), known spells and slot usage
+ * have been stored differently across this vault's history: some characters have a separate spell
+ * sheet file (any name, back-linked via `Charakter`) carrying `Zauber`/`Zauberplätze`; others have
+ * those same fields directly on the character file itself. Detected by content, not filename.
+ */
+function findSpellSource(characterFileName: string, files: RawFile[]): RawFile | undefined {
+  const target = characterFileName.trim().toLowerCase()
+  return files.find(
+    (f) =>
+      linkFile(f.data.Charakter).toLowerCase() === target &&
+      (Array.isArray(f.data.Zauber) || isRecord(f.data.Zauberplätze)),
+  )
+}
+
+function firstRecord(...candidates: unknown[]): Record<string, unknown> {
+  for (const candidate of candidates) if (isRecord(candidate)) return candidate
+  return {}
+}
+
+/**
+ * Known spells: `Zauber` holds the freely-known spell list, `Pakt_des_Buches` is a warlock-specific
+ * always-prepared list also worth surfacing. Both may live on the character file itself or on a
+ * linked spell sheet (see `findSpellSource`) — collected from wherever they're actually set. Both
+ * are arrays of `"[[Spell Name]]"` wikilinks, kept as-is for `resolveSpellLink` to resolve.
+ */
+function resolveSpellsKnown(characterData: Record<string, unknown>, spellSheet: RawFile | undefined): string[] | undefined {
+  const known: string[] = []
+  for (const source of [characterData, spellSheet?.data]) {
+    if (!source) continue
+    for (const key of ['Zauber', 'Pakt_des_Buches']) {
+      const list = source[key]
+      if (Array.isArray(list)) known.push(...list.filter((v): v is string => typeof v === 'string'))
+    }
+  }
+  return known.length > 0 ? known : undefined
+}
+
+/**
+ * Spell slots aren't stored on the character: the class file's `Zauberplätze.Stufe{level}` table
+ * holds the max per grade for that level. The *current remaining* count per grade (an Obsidian
+ * INPUT bound to a manual counter, not `used`) has moved around over the vault's history — as
+ * `Zauberplätze.Grad_{n}` directly, sometimes nested under `InputData`, and on either the character
+ * file itself or a linked spell sheet — so every location is checked, in that order.
+ */
+function resolveSpellcasting(
+  className: string,
+  level: number,
+  characterData: Record<string, unknown>,
+  spellSheet: RawFile | undefined,
+  files: RawFile[],
+): SpellcastingInfo | undefined {
+  const classFile = findRawFileByName(files, className)
+  const ability = ABILITY_MAP[linkFile(classFile?.data.Zauberattribut)]
+  if (!ability) return undefined
+
+  const classSlots = isRecord(classFile?.data.Zauberplätze) ? classFile.data.Zauberplätze[`Stufe${level}`] : undefined
+
+  const characterInputData = isRecord(characterData.InputData) ? characterData.InputData : undefined
+  const spellSheetInputData = isRecord(spellSheet?.data.InputData) ? spellSheet.data.InputData : undefined
+  const current = firstRecord(
+    characterInputData?.Zauberplätze,
+    characterData.Zauberplätze,
+    spellSheet?.data.Zauberplätze,
+    spellSheetInputData?.Zauberplätze,
+  )
+
+  const slots: Record<string, SpellSlotInfo> = {}
+  if (isRecord(classSlots)) {
+    for (let grade = 1; grade <= 9; grade++) {
+      const max = classSlots[`Grad${grade}`]
+      if (typeof max !== 'number' || max <= 0) continue
+      const remaining = current[`Grad_${grade}`]
+      const used = typeof remaining === 'number' ? Math.max(0, max - remaining) : 0
+      slots[String(grade)] = { max, used }
+    }
+  }
+
+  return { ability, slots: Object.keys(slots).length > 0 ? slots : undefined }
 }
 
 function resolveCurrency(geld: unknown): Currency | undefined {
@@ -140,7 +240,19 @@ function resolveCurrency(geld: unknown): Currency | undefined {
   return currency
 }
 
-export function normalizeLegacyCharacter(file: RawFile, allFiles: RawFile[]): CharacterFrontmatter {
+/** Resolves a `Bild: "[[Name.jpg]]"` attachment reference against the loaded image assets. */
+function resolvePortrait(hintergrund: Record<string, unknown>, imageAssets: ImageAssets | undefined): string | undefined {
+  if (!imageAssets) return undefined
+  const target = linkFile(hintergrund.Bild)
+  if (!target) return undefined
+  return imageAssets.get(target.toLowerCase())
+}
+
+export function normalizeLegacyCharacter(
+  file: RawFile,
+  allFiles: RawFile[],
+  imageAssets?: ImageAssets,
+): CharacterFrontmatter {
   const { data } = file
 
   const abilitiesRaw = isRecord(data.Attribute) ? data.Attribute : {}
@@ -181,10 +293,19 @@ export function normalizeLegacyCharacter(file: RawFile, allFiles: RawFile[]): Ch
   const languages = Array.isArray(uebung.Sprachen) ? uebung.Sprachen.map(linkDisplay).filter(Boolean) : undefined
   const toolProficiencies = Array.isArray(uebung.Werkzeuge) ? uebung.Werkzeuge.map(linkDisplay).filter(Boolean) : undefined
 
-  const inventoryFile = findInventoryFile(file.name, allFiles)
-  const equipped = inventoryFile ? extractItemTable(inventoryFile.body, 'Am Körper') : undefined
-  const carried = inventoryFile ? extractItemTable(inventoryFile.body, 'Rucksack') : undefined
+  const inventoryFile = findLinkedSheet(file.name, allFiles, 'inventar')
+  const inventarSections = isRecord(inventoryFile?.data.Inventar) ? inventoryFile.data.Inventar : undefined
+  const equipped = inventoryFile
+    ? extractItemTable(inventoryFile.body, 'Am Körper', isRecord(inventarSections?.Körper) ? inventarSections.Körper : undefined)
+    : undefined
+  const carried = inventoryFile
+    ? extractItemTable(inventoryFile.body, 'Rucksack', isRecord(inventarSections?.Rucksack) ? inventarSections.Rucksack : undefined)
+    : undefined
   const currency = inventoryFile ? resolveCurrency(inventoryFile.data.Geld) : undefined
+
+  const spellSheetFile = findSpellSource(file.name, allFiles)
+  const spellcasting = resolveSpellcasting(className, level, data, spellSheetFile, allFiles)
+  const spellsKnown = resolveSpellsKnown(data, spellSheetFile)
 
   return {
     type: 'character',
@@ -207,6 +328,9 @@ export function normalizeLegacyCharacter(file: RawFile, allFiles: RawFile[]): Ch
     tool_proficiencies: toolProficiencies,
     inventory: equipped || carried ? { equipped, carried } : undefined,
     currency,
+    spellcasting,
+    spells_known: spellsKnown,
     features: collectFeatures(data, allFiles),
+    portrait_url: resolvePortrait(hintergrund, imageAssets),
   }
 }

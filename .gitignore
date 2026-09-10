@@ -154,3 +154,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Grapify
+graphify-out/

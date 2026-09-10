@@ -3,8 +3,13 @@ import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
 import { CharacterListPage } from './routes/CharacterListPage'
 import { CharacterSheetPage } from './routes/CharacterSheetPage'
+import { useVaultStore } from './store/vaultStore'
 
 function App() {
+  const isLoading = useVaultStore((s) => s.status === 'loading')
+  const loadingProgress = useVaultStore((s) => s.loadingProgress)
+  const percent = loadingProgress ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
+
   return (
     <div className="min-h-full">
       <ThemeEffect />
@@ -18,6 +23,14 @@ function App() {
             <ThemeSwitcher />
           </div>
         </div>
+        {isLoading && (
+          <div className="h-1 w-full overflow-hidden bg-surface-2">
+            <div
+              className={`h-full bg-primary ${percent === null ? 'w-1/3 animate-pulse' : 'transition-[width] duration-200'}`}
+              style={percent !== null ? { width: `${percent}%` } : undefined}
+            />
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">

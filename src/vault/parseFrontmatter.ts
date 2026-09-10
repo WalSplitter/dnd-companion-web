@@ -1,5 +1,8 @@
 import { looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
+import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { parseRawFile, type RawFile } from './rawFile'
+import { cleanObsidianBody } from './textClean'
+import type { ImageAssets } from './vaultLoader'
 import type { Vault, VaultFile, VaultFrontmatter, VaultSourceFile } from './types'
 
 export class FrontmatterValidationError extends Error {
@@ -41,13 +44,16 @@ function isTemplateFile(raw: RawFile): boolean {
 }
 
 /**
- * Parses all source files and buckets them by type. Two character formats are recognized:
- *  - the app's own `type: character` frontmatter (see `types.ts`)
- *  - an existing campaign vault's schema with no `type:` marker, detected structurally and
- *    normalized by `adapters/legacyCharacterSheet.ts`
- * Files matching neither, and non-character files with no recognized `type`, are skipped.
+ * Parses all source files and buckets them by type. Two frontmatter conventions are recognized:
+ *  - the app's own `type: character|item|spell` marker (see `types.ts`)
+ *  - an existing campaign vault's schema with no `type:` marker — characters and spell notes are
+ *    detected structurally and normalized by `adapters/legacyCharacterSheet.ts` / `adapters/legacySpell.ts`
+ * Files matching neither are skipped (this includes that vault's item notes: their schema varies
+ * too much per category — weapon/armor/food/... — for a single structural adapter to be worthwhile
+ * yet, so items only show up as the inline `InlineItem` entries a character's inventory table
+ * already carries, not as browsable `vault.items` entries).
  */
-export function buildVault(files: VaultSourceFile[]): Vault {
+export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets): Vault {
   const vault: Vault = { characters: [], items: [], spells: [] }
   const rawFiles = files.filter((f) => f.path.toLowerCase().endsWith('.md')).map(parseRawFile)
 
@@ -65,7 +71,9 @@ export function buildVault(files: VaultSourceFile[]): Vault {
       else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)
       else vault.spells.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'spell' }>>)
     } else if (!isTemplateFile(raw) && looksLikeLegacyCharacter(raw.data)) {
-      vault.characters.push({ path: raw.path, frontmatter: normalizeLegacyCharacter(raw, rawFiles), body: raw.body })
+      vault.characters.push({ path: raw.path, frontmatter: normalizeLegacyCharacter(raw, rawFiles, imageAssets), body: raw.body })
+    } else if (looksLikeLegacySpellNote(raw.data)) {
+      vault.spells.push({ path: raw.path, frontmatter: normalizeLegacySpellNote(raw), body: cleanObsidianBody(raw.body) })
     }
   }
 

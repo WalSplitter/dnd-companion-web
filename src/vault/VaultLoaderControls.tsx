@@ -7,6 +7,7 @@ export function VaultLoaderControls() {
   const source = useVaultStore((s) => s.source)
   const vaultName = useVaultStore((s) => s.vaultName)
   const reconnectName = useVaultStore((s) => s.reconnectName)
+  const loadingProgress = useVaultStore((s) => s.loadingProgress)
   const error = useVaultStore((s) => s.error)
   const loadSampleVault = useVaultStore((s) => s.loadSampleVault)
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
@@ -29,7 +30,11 @@ export function VaultLoaderControls() {
         Vault: <span className="font-medium text-fg">{source === 'sample' ? 'Sample data' : vaultName}</span>
       </span>
 
-      {status === 'loading' && <span className="text-sm text-fg-muted">Loading…</span>}
+      {status === 'loading' && (
+        <span className="text-sm text-fg-muted">
+          Loading{loadingProgress ? ` (${loadingProgress.done}/${loadingProgress.total})` : '…'}
+        </span>
+      )}
       {error && <span className="text-sm text-danger">{error}</span>}
 
       {reconnectName && (
