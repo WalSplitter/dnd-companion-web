@@ -22,10 +22,12 @@ type Tab = 'sheet' | 'inventory' | 'spells'
 
 export function CharacterSheet({
   character,
+  characterPath,
   index,
   body,
 }: {
   character: CharacterFrontmatter
+  characterPath: string
   index: VaultIndex
   body?: string
 }) {
@@ -67,10 +69,10 @@ export function CharacterSheet({
             </div>
             <div className="space-y-4">
               <CombatStats character={character} />
-              <HitPoints character={character} />
+              <HitPoints character={character} characterPath={characterPath} />
               <DeathSaves character={character} />
-              <Conditions character={character} />
-              {hasSpells && <AttacksSpellcasting character={character} index={index} />}
+              <Conditions character={character} characterPath={characterPath} />
+              {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} index={index} />}
               <Attacks character={character} />
             </div>
             <div className="space-y-4">
@@ -82,7 +84,7 @@ export function CharacterSheet({
         )}
 
         {tab === 'inventory' && <InventoryPanel character={character} index={index} />}
-        {tab === 'spells' && hasSpells && <SpellsPanel character={character} index={index} />}
+        {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
       </div>
     </VaultIndexProvider>
   )

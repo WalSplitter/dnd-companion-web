@@ -4,8 +4,10 @@ import type {
   AbilityKey,
   CharacterFeature,
   CharacterFrontmatter,
+  CharacterWriteTargets,
   ConditionsInfo,
   Currency,
+  FieldWriteTarget,
   ResourcePool,
   SkillKey,
   SpellcastingInfo,
@@ -241,6 +243,39 @@ function resolveSpellcasting(
   return { ability, slots: Object.keys(slots).length > 0 ? slots : undefined }
 }
 
+/**
+ * Mirrors `resolveSpellcasting`'s exact same candidate lookup order, but instead of the *value* it
+ * records exactly which file + key path that value actually came from, so an edit in the app writes
+ * back to the same place it was read from rather than guessing. Returns `undefined` for a grade
+ * whose remaining-count field doesn't exist on disk at all (nothing to write back to yet).
+ */
+function resolveSpellSlotWriteTargets(
+  characterPath: string,
+  characterData: Record<string, unknown>,
+  spellSheet: RawFile | undefined,
+  slots: Record<string, SpellSlotInfo> | undefined,
+): Record<string, FieldWriteTarget> | undefined {
+  if (!slots || Object.keys(slots).length === 0) return undefined
+
+  const characterInputData = isRecord(characterData.InputData) ? characterData.InputData : undefined
+  const spellSheetInputData = isRecord(spellSheet?.data.InputData) ? spellSheet.data.InputData : undefined
+
+  const candidates: { record: unknown; path: string; prefix: string[] }[] = [
+    { record: characterInputData?.Zauberplätze, path: characterPath, prefix: ['InputData', 'Zauberplätze'] },
+    { record: characterData.Zauberplätze, path: characterPath, prefix: ['Zauberplätze'] },
+    { record: spellSheet?.data.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['Zauberplätze'] },
+    { record: spellSheetInputData?.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['InputData', 'Zauberplätze'] },
+  ]
+  const chosen = candidates.find((c) => isRecord(c.record))
+  if (!chosen) return undefined
+
+  const targets: Record<string, FieldWriteTarget> = {}
+  for (const [grade, info] of Object.entries(slots)) {
+    targets[grade] = { path: chosen.path, keyPath: [...chosen.prefix, `Grad_${grade}`], encode: 'invert-from-max', max: info.max }
+  }
+  return targets
+}
+
 function resolveCurrency(geld: unknown): Currency | undefined {
   if (!isRecord(geld)) return undefined
   const currency: Currency = {}
@@ -276,14 +311,31 @@ function resolveConditions(data: Record<string, unknown>): ConditionsInfo | unde
 
   if (!hasLuck && exhaustion === undefined && !notes) return undefined
 
+  const held = hasLuck ? LUCK_POINT_KEYS.map((key) => inputData?.[key] === true) : undefined
+
   return {
-    luck_points: hasLuck
-      ? { max: LUCK_POINT_KEYS.length, current: LUCK_POINT_KEYS.filter((key) => inputData?.[key] === true).length }
-      : undefined,
+    luck_points: held ? { max: LUCK_POINT_KEYS.length, current: held.filter(Boolean).length, held } : undefined,
     exhaustion,
     exhaustion_max: exhaustion !== undefined ? 9 : undefined,
     notes,
   }
+}
+
+/** Write targets for the pieces of `resolveConditions` that came from a fixed, unambiguous location
+ * on the character's own file — one per luck pip plus the exhaustion counter. */
+function resolveConditionWriteTargets(
+  characterPath: string,
+  conditions: ConditionsInfo | undefined,
+): Pick<CharacterWriteTargets, 'luck_points' | 'exhaustion'> | undefined {
+  if (!conditions) return undefined
+
+  const luck_points = conditions.luck_points
+    ? LUCK_POINT_KEYS.map((key): FieldWriteTarget => ({ path: characterPath, keyPath: ['InputData', key] }))
+    : undefined
+  const exhaustion: FieldWriteTarget | undefined =
+    conditions.exhaustion !== undefined ? { path: characterPath, keyPath: ['InputData', 'ErschöpfungsPunkte'] } : undefined
+
+  return luck_points || exhaustion ? { luck_points, exhaustion } : undefined
 }
 
 /**
@@ -456,6 +508,16 @@ export function normalizeLegacyCharacter(
   const resourcePools = resolveResourcePools(className, level, data, allFiles)
   const attacks = resolveWeaponAttacks(data.Waffen, allFiles, abilities, proficiencyBonus)
 
+  const conditionTargets = resolveConditionWriteTargets(file.path, conditions)
+  const spellSlotTargets = resolveSpellSlotWriteTargets(file.path, data, spellSheetFile, spellcasting?.slots)
+  const writeTargets: CharacterWriteTargets = {
+    ...(isRecord(data.Gesundheit)
+      ? { hp_current: { path: file.path, keyPath: ['Gesundheit', 'TP'] }, hp_temp: { path: file.path, keyPath: ['Gesundheit', 'TempTP'] } }
+      : {}),
+    ...conditionTargets,
+    ...(spellSlotTargets ? { spell_slots: spellSlotTargets } : {}),
+  }
+
   return {
     type: 'character',
     name: typeof hintergrund.Name === 'string' ? hintergrund.Name : file.name,
@@ -484,5 +546,6 @@ export function normalizeLegacyCharacter(
     conditions,
     resource_pools: resourcePools,
     attacks,
+    _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }
 }

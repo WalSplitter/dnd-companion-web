@@ -1,12 +1,17 @@
 import { Card } from '../../../components/Card'
+import { useVaultStore } from '../../../store/vaultStore'
 import { renderObsidianLine } from '../../../vault/components/WikiLink'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
-export function Conditions({ character }: { character: CharacterFrontmatter }) {
+export function Conditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const conditions = character.conditions
+  const editPermission = useVaultStore((s) => s.editPermission)
+  const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   if (!conditions) return null
 
   const { luck_points: luck, exhaustion, exhaustion_max = 9, notes } = conditions
+  const canEdit = editPermission === 'granted'
+  const writeTargets = character._write
 
   return (
     <Card title="Conditions">
@@ -20,12 +25,27 @@ export function Conditions({ character }: { character: CharacterFrontmatter }) {
               </span>
             </div>
             <div className="flex gap-1">
-              {Array.from({ length: luck.max }, (_, i) => (
-                <span
-                  key={i}
-                  className={`h-3 w-3 rounded-full ${i < luck.current ? 'bg-accent' : 'border border-border bg-transparent'}`}
-                />
-              ))}
+              {Array.from({ length: luck.max }, (_, i) => {
+                const held = luck.held[i]
+                const target = writeTargets?.luck_points?.[i]
+                const pipClass = `h-3 w-3 rounded-full ${held ? 'bg-accent' : 'border border-border bg-transparent'}`
+                if (!canEdit || !target) return <span key={i} className={pipClass} />
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Luck point ${i + 1}`}
+                    onClick={() =>
+                      void updateCharacterField(characterPath, target, !held, (c) => {
+                        if (!c.conditions?.luck_points) return c
+                        const nextHeld = c.conditions.luck_points.held.map((h, idx) => (idx === i ? !held : h))
+                        return { ...c, conditions: { ...c.conditions, luck_points: { ...c.conditions.luck_points, held: nextHeld, current: nextHeld.filter(Boolean).length } } }
+                      })
+                    }
+                    className={`${pipClass} cursor-pointer transition hover:opacity-70`}
+                  />
+                )
+              })}
             </div>
           </div>
         )}
@@ -38,12 +58,26 @@ export function Conditions({ character }: { character: CharacterFrontmatter }) {
               </span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {Array.from({ length: exhaustion_max }, (_, i) => (
-                <span
-                  key={i}
-                  className={`h-3 w-3 rounded-sm ${i < exhaustion ? 'bg-danger' : 'border border-border bg-transparent'}`}
-                />
-              ))}
+              {Array.from({ length: exhaustion_max }, (_, i) => {
+                const filled = i < exhaustion
+                const pipClass = `h-3 w-3 rounded-sm ${filled ? 'bg-danger' : 'border border-border bg-transparent'}`
+                const target = writeTargets?.exhaustion
+                if (!canEdit || !target) return <span key={i} className={pipClass} />
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Exhaustion level ${i + 1}`}
+                    onClick={() => {
+                      const next = exhaustion === i + 1 ? i : i + 1
+                      void updateCharacterField(characterPath, target, next, (c) =>
+                        c.conditions ? { ...c, conditions: { ...c.conditions, exhaustion: next } } : c,
+                      )
+                    }}
+                    className={`${pipClass} cursor-pointer transition hover:opacity-70`}
+                  />
+                )
+              })}
             </div>
           </div>
         )}

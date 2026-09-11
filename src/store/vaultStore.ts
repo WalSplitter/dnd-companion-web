@@ -10,12 +10,16 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import type { Vault, VaultSourceFile } from '../vault/types'
+import { writeFieldValue } from '../vault/writeback/persist'
+import type { CharacterFrontmatter, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 const SAMPLE_VAULT = buildVault(sampleVaultFiles)
 
 export type VaultSource = 'sample' | 'user'
 type VaultStatus = 'loading' | 'loaded' | 'error'
+/** 'unavailable': no file handles to write through (sample vault, or the <input webkitdirectory>
+ * fallback for browsers without the File System Access API) — fields stay read-only. */
+export type EditPermission = 'unavailable' | 'not-requested' | 'granted' | 'denied'
 
 interface VaultState {
   status: VaultStatus
@@ -28,12 +32,31 @@ interface VaultState {
   vault: Vault
   index: VaultIndex
   error: string | null
+  rootHandle: FileSystemDirectoryHandle | null
+  fileHandles: Map<string, FileSystemFileHandle> | null
+  editPermission: EditPermission
+  /** Set when a field write failed after already being applied optimistically (and then rolled back). */
+  writeError: string | null
   loadSampleVault: () => void
   loadFromDirectoryPicker: () => Promise<void>
   loadFromFileList: (fileList: FileList) => Promise<void>
   restoreLastVault: () => Promise<void>
   reconnectVault: () => Promise<void>
   forgetVault: () => Promise<void>
+  /** Requests `readwrite` permission on the vault folder — must be called from a direct user gesture. */
+  requestEditPermission: () => Promise<void>
+  /**
+   * Applies an optimistic local edit to one character's frontmatter and writes it back to the exact
+   * vault file/key `target` points at (see `writeback/`). Rolled back with `writeError` set if the
+   * disk write fails (permission revoked, file moved, unrecognized YAML shape, ...). A no-op if
+   * `target` is undefined (field has no known write location) or editing isn't currently permitted.
+   */
+  updateCharacterField: (
+    characterPath: string,
+    target: FieldWriteTarget | undefined,
+    logicalValue: number | boolean,
+    mutate: (character: CharacterFrontmatter) => CharacterFrontmatter,
+  ) => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -62,6 +85,10 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   vault: SAMPLE_VAULT,
   index: buildVaultIndex(SAMPLE_VAULT),
   error: null,
+  rootHandle: null,
+  fileHandles: null,
+  editPermission: 'unavailable',
+  writeError: null,
 
   loadSampleVault: () => {
     revokeActiveImageAssets()
@@ -74,6 +101,10 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       vault: SAMPLE_VAULT,
       index: buildVaultIndex(SAMPLE_VAULT),
       error: null,
+      rootHandle: null,
+      fileHandles: null,
+      editPermission: 'unavailable',
+      writeError: null,
     })
     void clearVaultHandle()
   },
@@ -82,7 +113,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     set({ status: 'loading', error: null, loadingProgress: null })
     try {
       const handle = await showVaultDirectoryPicker()
-      const { files, imageAssets } = await readVaultFromDirectoryHandle(handle, (done, total) =>
+      const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
         set({ loadingProgress: { done, total } }),
       )
       set({
@@ -91,6 +122,10 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         vaultName: handle.name,
         reconnectName: null,
         loadingProgress: null,
+        rootHandle: handle,
+        fileHandles,
+        editPermission: 'not-requested',
+        writeError: null,
         ...applyVault(files, imageAssets),
       })
       void saveVaultHandle(handle)
@@ -111,7 +146,17 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     try {
       const { files, imageAssets } = await readVaultFromFileList(fileList)
       const name = files[0]?.path.split('/')[0] ?? null
-      set({ status: 'loaded', source: 'user', vaultName: name, reconnectName: null, ...applyVault(files, imageAssets) })
+      set({
+        status: 'loaded',
+        source: 'user',
+        vaultName: name,
+        reconnectName: null,
+        rootHandle: null,
+        fileHandles: null,
+        editPermission: 'unavailable',
+        writeError: null,
+        ...applyVault(files, imageAssets),
+      })
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] loadFromFileList failed:', err)
@@ -129,7 +174,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     if (permission === 'granted') {
       try {
         set({ status: 'loading', error: null, loadingProgress: null })
-        const { files, imageAssets } = await readVaultFromDirectoryHandle(handle, (done, total) =>
+        const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
           set({ loadingProgress: { done, total } }),
         )
         set({
@@ -138,6 +183,10 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           vaultName: handle.name,
           reconnectName: null,
           loadingProgress: null,
+          rootHandle: handle,
+          fileHandles,
+          editPermission: 'not-requested',
+          writeError: null,
           ...applyVault(files, imageAssets),
         })
         return
@@ -165,7 +214,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         set({ status: 'loaded', error: 'Permission to read the vault folder was denied.', loadingProgress: null })
         return
       }
-      const { files, imageAssets } = await readVaultFromDirectoryHandle(handle, (done, total) =>
+      const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
         set({ loadingProgress: { done, total } }),
       )
       set({
@@ -174,6 +223,10 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         vaultName: handle.name,
         reconnectName: null,
         loadingProgress: null,
+        rootHandle: handle,
+        fileHandles,
+        editPermission: 'not-requested',
+        writeError: null,
         ...applyVault(files, imageAssets),
       })
     } catch (err) {
@@ -186,5 +239,40 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     set({ reconnectName: null })
     if (get().source !== 'user') return
     get().loadSampleVault()
+  },
+
+  requestEditPermission: async () => {
+    const { rootHandle } = get()
+    if (!rootHandle) return
+    try {
+      const result = await rootHandle.requestPermission({ mode: 'readwrite' })
+      set({ editPermission: result === 'granted' ? 'granted' : 'denied' })
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[vault] requestEditPermission failed:', err)
+      set({ editPermission: 'denied' })
+    }
+  },
+
+  updateCharacterField: async (characterPath, target, logicalValue, mutate) => {
+    if (!target) return
+    const { fileHandles, editPermission, vault } = get()
+    if (editPermission !== 'granted' || !fileHandles) return
+    const fileHandle = fileHandles.get(target.path)
+    if (!fileHandle) return
+
+    const previousVault = vault
+    set({
+      vault: { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) },
+      writeError: null,
+    })
+
+    try {
+      await writeFieldValue(fileHandle, target, logicalValue)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[vault] updateCharacterField failed, rolling back:', err)
+      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
+    }
   },
 }))

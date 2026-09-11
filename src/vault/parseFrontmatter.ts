@@ -1,8 +1,8 @@
-import { looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
+import { isRecord, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
-import type { Vault, VaultFile, VaultFrontmatter, VaultSourceFile } from './types'
+import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget, Vault, VaultFile, VaultFrontmatter, VaultSourceFile } from './types'
 
 export class FrontmatterValidationError extends Error {
   readonly path: string
@@ -33,6 +33,29 @@ export function parseVaultFile(file: VaultSourceFile): VaultFile<VaultFrontmatte
     frontmatter: data as unknown as VaultFrontmatter,
     body,
   }
+}
+
+/**
+ * Write targets for the app's own `type: character` schema — trivial compared to the legacy
+ * adapter's (`legacyCharacterSheet.ts`): everything always lives on the character's own file, at
+ * the same key names the frontmatter already uses, since `raw.data` is used as the schema as-is.
+ */
+function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): CharacterWriteTargets | undefined {
+  const targets: CharacterWriteTargets = {}
+
+  if (isRecord(data.hp)) {
+    targets.hp_current = { path, keyPath: ['hp', 'current'] }
+    targets.hp_temp = { path, keyPath: ['hp', 'temp'] }
+  }
+
+  const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined
+  if (slots) {
+    const spellSlots: Record<string, FieldWriteTarget> = {}
+    for (const grade of Object.keys(slots)) spellSlots[grade] = { path, keyPath: ['spellcasting', 'slots', grade, 'used'] }
+    targets.spell_slots = spellSlots
+  }
+
+  return Object.keys(targets).length > 0 ? targets : undefined
 }
 
 // Files under a path containing "vorlage" (German for "template") are the vault's blank
@@ -66,8 +89,13 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
         frontmatter: raw.data as unknown as VaultFrontmatter,
         body: raw.body,
       }
-      if (type === 'character') vault.characters.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)
-      else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)
+      if (type === 'character') {
+        const character = parsed.frontmatter as CharacterFrontmatter
+        vault.characters.push({
+          ...parsed,
+          frontmatter: { ...character, _write: ownSchemaWriteTargets(raw.path, raw.data) },
+        } as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)
+      } else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)
       else vault.spells.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'spell' }>>)
     } else if (!isTemplateFile(raw) && looksLikeLegacyCharacter(raw.data)) {
       vault.characters.push({ path: raw.path, frontmatter: normalizeLegacyCharacter(raw, rawFiles, imageAssets), body: raw.body })

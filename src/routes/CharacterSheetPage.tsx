@@ -20,5 +20,5 @@ export function CharacterSheetPage() {
     )
   }
 
-  return <CharacterSheet character={character.frontmatter} index={index} body={character.body} />
+  return <CharacterSheet character={character.frontmatter} characterPath={character.path} index={index} body={character.body} />
 }

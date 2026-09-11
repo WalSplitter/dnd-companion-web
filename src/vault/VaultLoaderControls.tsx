@@ -9,11 +9,14 @@ export function VaultLoaderControls() {
   const reconnectName = useVaultStore((s) => s.reconnectName)
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
   const error = useVaultStore((s) => s.error)
+  const editPermission = useVaultStore((s) => s.editPermission)
+  const writeError = useVaultStore((s) => s.writeError)
   const loadSampleVault = useVaultStore((s) => s.loadSampleVault)
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
   const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
   const restoreLastVault = useVaultStore((s) => s.restoreLastVault)
   const reconnectVault = useVaultStore((s) => s.reconnectVault)
+  const requestEditPermission = useVaultStore((s) => s.requestEditPermission)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export function VaultLoaderControls() {
         </span>
       )}
       {error && <span className="text-sm text-danger">{error}</span>}
+      {writeError && <span className="text-sm text-danger">Save failed: {writeError}</span>}
 
       {reconnectName && (
         <button
@@ -85,6 +89,28 @@ export function VaultLoaderControls() {
           className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2"
         >
           Use sample vault
+        </button>
+      )}
+
+      {source === 'user' && editPermission !== 'unavailable' && (
+        <button
+          type="button"
+          onClick={() => void requestEditPermission()}
+          disabled={editPermission === 'granted'}
+          title={
+            editPermission === 'granted'
+              ? 'Changes to HP, conditions and spell slots save straight back to the vault files'
+              : 'Grants this tab write access to the vault folder so HP/conditions/spell-slot edits save back to the .md files'
+          }
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+            editPermission === 'granted'
+              ? 'border-success/40 bg-success/10 text-success'
+              : editPermission === 'denied'
+                ? 'border-danger/40 text-danger hover:bg-surface-2'
+                : 'border-border text-fg hover:bg-surface-2'
+          }`}
+        >
+          {editPermission === 'granted' ? '🔓 Editing enabled' : editPermission === 'denied' ? '🔒 Editing denied — retry' : '🔒 Enable editing'}
         </button>
       )}
     </div>

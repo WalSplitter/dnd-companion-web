@@ -74,9 +74,33 @@ export interface Currency {
   pp?: number
 }
 
+export interface FieldWriteTarget {
+  /** Vault file path to patch — may differ from the character's own file (e.g. a legacy spell sheet). */
+  path: string
+  /** Dotted key path within that file's frontmatter, e.g. `['Gesundheit', 'TP']`. */
+  keyPath: string[]
+  /** How the UI's logical value maps to the raw value written to disk. 'direct' (default) writes it
+   * as-is; 'invert-from-max' covers the legacy vault's *remaining*-slot counters — the UI tracks
+   * "used", disk stores "remaining", so the write is `max - used`. */
+  encode?: 'direct' | 'invert-from-max'
+  max?: number
+}
+
+export interface CharacterWriteTargets {
+  hp_current?: FieldWriteTarget
+  hp_temp?: FieldWriteTarget
+  /** One target per luck pip, index-aligned with `conditions.luck_points` (length === max). */
+  luck_points?: FieldWriteTarget[]
+  exhaustion?: FieldWriteTarget
+  /** Keyed by spell grade (same keys as `spellcasting.slots`). */
+  spell_slots?: Record<string, FieldWriteTarget>
+}
+
 export interface ConditionsInfo {
-  /** Luck points currently held (not "spent") — see the vault's `Glück` rule note. */
-  luck_points?: { max: number; current: number }
+  /** Luck points currently held (not "spent") — see the vault's `Glück` rule note. `held` is the
+   * per-pip source of truth (index-aligned, length === max) so a single pip can be toggled without
+   * assuming the held points are contiguous; `current` is just their count, for display. */
+  luck_points?: { max: number; current: number; held: boolean[] }
   exhaustion?: number
   exhaustion_max?: number
   notes?: string
@@ -138,6 +162,9 @@ export interface CharacterFrontmatter {
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]
   attacks?: WeaponAttack[]
+  /** Persistence metadata (not display data) for write-back — see `writeback/`. Absent for a field
+   * means it's read-only: no known single vault location to patch. */
+  _write?: CharacterWriteTargets
 }
 
 export interface CharacterFeature {

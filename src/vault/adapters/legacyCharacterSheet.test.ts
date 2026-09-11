@@ -530,13 +530,53 @@ describe('legacy character sheet adapter - conditions (Zustände)', () => {
   const character = vault.characters[0].frontmatter
 
   it('counts held luck points and reads the exhaustion counter', () => {
-    expect(character.conditions?.luck_points).toEqual({ max: 5, current: 2 })
+    expect(character.conditions?.luck_points).toEqual({ max: 5, current: 2, held: [true, true, false, false, false] })
     expect(character.conditions?.exhaustion).toBe(2)
     expect(character.conditions?.exhaustion_max).toBe(9)
   })
 
   it('reads the free-text "other conditions" field', () => {
     expect(character.conditions?.notes).toBe('Vergiftet bis zum nächsten Kurzen Rast')
+  })
+})
+
+describe('legacy character sheet adapter - write targets (_write)', () => {
+  const vault = buildVault([conditionsCharacterFile])
+  const character = vault.characters[0].frontmatter
+
+  it('targets HP fields on the character\'s own file', () => {
+    expect(character._write?.hp_current).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Gesundheit', 'TP'] })
+    expect(character._write?.hp_temp).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Gesundheit', 'TempTP'] })
+  })
+
+  it('targets one InputData key per luck pip and the exhaustion counter', () => {
+    expect(character._write?.luck_points).toEqual([
+      { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt1'] },
+      { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt2'] },
+      { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt3'] },
+      { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt4'] },
+      { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt5'] },
+    ])
+    expect(character._write?.exhaustion).toEqual({ path: conditionsCharacterFile.path, keyPath: ['InputData', 'ErschöpfungsPunkte'] })
+  })
+})
+
+describe('legacy character sheet adapter - spell slot write targets', () => {
+  it('targets the exact InputData.Zauberplätze.Grad_N location the value was read from, inverted from max', () => {
+    const vault = buildVault([inlineSpellCharacterFile, zauberklasseFile])
+    const character = vault.characters[0].frontmatter
+    expect(character._write?.spell_slots).toEqual({
+      1: { path: inlineSpellCharacterFile.path, keyPath: ['InputData', 'Zauberplätze', 'Grad_1'], encode: 'invert-from-max', max: 4 },
+      2: { path: inlineSpellCharacterFile.path, keyPath: ['InputData', 'Zauberplätze', 'Grad_2'], encode: 'invert-from-max', max: 2 },
+    })
+  })
+
+  it('targets the separate spell-sheet file when that is where the slot counter actually lives', () => {
+    const vault = buildVault([casterCharacterFile, casterClassFile, spellSheetFile])
+    const character = vault.characters[0].frontmatter
+    expect(character._write?.spell_slots).toEqual({
+      2: { path: spellSheetFile.path, keyPath: ['Zauberplätze', 'Grad_2'], encode: 'invert-from-max', max: 2 },
+    })
   })
 })
 

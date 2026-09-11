@@ -6,7 +6,15 @@ import type { VaultIndex } from '../../vault/wikilinks'
 import { SpellList } from './components/SpellList'
 import { SpellSlotTracker } from './components/SpellSlotTracker'
 
-export function SpellsPanel({ character, index }: { character: CharacterFrontmatter; index: VaultIndex }) {
+export function SpellsPanel({
+  character,
+  characterPath,
+  index,
+}: {
+  character: CharacterFrontmatter
+  characterPath: string
+  index: VaultIndex
+}) {
   if (!character.spellcasting) {
     return <p className="text-sm text-fg-muted">This character has no spellcasting.</p>
   }
@@ -37,7 +45,9 @@ export function SpellsPanel({ character, index }: { character: CharacterFrontmat
             )}
           </div>
         </div>
-        {character.spellcasting.slots && <SpellSlotTracker spellcasting={character.spellcasting} />}
+        {character.spellcasting.slots && (
+          <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
+        )}
         {character.resource_pools && character.resource_pools.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {character.resource_pools.map((pool) => (

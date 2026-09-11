@@ -6,7 +6,15 @@ import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
 
-export function AttacksSpellcasting({ character, index }: { character: CharacterFrontmatter; index: VaultIndex }) {
+export function AttacksSpellcasting({
+  character,
+  characterPath,
+  index,
+}: {
+  character: CharacterFrontmatter
+  characterPath: string
+  index: VaultIndex
+}) {
   if (!character.spellcasting) return null
 
   const dc = spellSaveDC(character)
@@ -41,7 +49,7 @@ export function AttacksSpellcasting({ character, index }: { character: Character
       {character.spellcasting.slots && (
         <div className="mb-3">
           <div className="mb-1 text-xs uppercase text-fg-muted">Spell Slots</div>
-          <SpellSlotTracker spellcasting={character.spellcasting} />
+          <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
         </div>
       )}
 

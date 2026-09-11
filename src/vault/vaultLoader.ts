@@ -109,10 +109,13 @@ export async function showVaultDirectoryPicker(): Promise<FileSystemDirectoryHan
 export async function readVaultFromDirectoryHandle(
   root: FileSystemDirectoryHandle,
   onProgress?: (done: number, total: number) => void,
-): Promise<{ files: VaultSourceFile[]; imageAssets: ImageAssets }> {
+): Promise<{ files: VaultSourceFile[]; imageAssets: ImageAssets; fileHandles: Map<string, FileSystemFileHandle> }> {
   const { mdFiles, imageFiles } = await collectVaultFiles(root, '')
   const [files, imageAssets] = await Promise.all([readAll(mdFiles, onProgress), buildImageAssets(imageFiles)])
-  return { files, imageAssets }
+  // Kept alongside the read-only `files` content so an edit can later be written back to the exact
+  // same file via `FileSystemFileHandle.createWritable()` — see `writeback/`.
+  const fileHandles = new Map(mdFiles.map(({ path, handle }) => [path, handle]))
+  return { files, imageAssets, fileHandles }
 }
 
 /** Fallback for browsers without the File System Access API: reads a `<input webkitdirectory>` FileList. */
