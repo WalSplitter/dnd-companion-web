@@ -30,7 +30,10 @@ export function ThemeSwitcher() {
             theme === t.key ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : 'opacity-70 hover:opacity-100'
           }`}
         >
-          <span className="h-4 w-4 rounded-full" style={{ backgroundColor: t.swatch }} />
+          <span
+            className="h-4 w-4 rounded-full"
+            style={{ backgroundColor: t.swatch, border: t.swatchBorder ? `1px solid ${t.swatchBorder}` : undefined }}
+          />
         </button>
       ))}
     </div>

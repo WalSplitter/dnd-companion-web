@@ -63,9 +63,9 @@ export function CharacterSheet({
         {tab === 'sheet' && (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="space-y-4">
-              <AbilityScores character={character} />
-              <SavingThrows character={character} />
-              <Skills character={character} />
+              <AbilityScores character={character} characterPath={characterPath} />
+              <SavingThrows character={character} characterPath={characterPath} />
+              <Skills character={character} characterPath={characterPath} />
             </div>
             <div className="space-y-4">
               <CombatStats character={character} />
@@ -83,7 +83,7 @@ export function CharacterSheet({
           </div>
         )}
 
-        {tab === 'inventory' && <InventoryPanel character={character} index={index} />}
+        {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
         {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
       </div>
     </VaultIndexProvider>

@@ -1,14 +1,21 @@
 import { Card } from '../../../components/Card'
+import { EditableNumber } from '../../../components/EditableNumber'
+import { useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier, formatModifier } from '../../../vault/deriveStats'
 import { ABILITIES, type CharacterFrontmatter } from '../../../vault/types'
 
-export function AbilityScores({ character }: { character: CharacterFrontmatter }) {
+export function AbilityScores({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const editPermission = useVaultStore((s) => s.editPermission)
+  const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
+  const canEdit = editPermission === 'granted'
+
   return (
     <Card title="Ability Scores">
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {ABILITIES.map(({ key, label }) => {
           const score = character.abilities[key]
           const mod = abilityModifier(score)
+          const target = character._write?.abilities?.[key]
           return (
             <div
               key={key}
@@ -16,7 +23,18 @@ export function AbilityScores({ character }: { character: CharacterFrontmatter }
             >
               <span className="text-xs font-medium uppercase text-fg-muted">{label.slice(0, 3)}</span>
               <span className="mt-1 text-xl font-bold text-fg">{formatModifier(mod)}</span>
-              <span className="mt-0.5 text-xs text-fg-muted">{score}</span>
+              {canEdit && target ? (
+                <EditableNumber
+                  key={score}
+                  value={score}
+                  onCommit={(next) =>
+                    void updateCharacterField(characterPath, target, next, (c) => ({ ...c, abilities: { ...c.abilities, [key]: next } }))
+                  }
+                  className="mt-0.5 w-12 rounded-md border border-border bg-surface px-1 text-center text-xs text-fg-muted"
+                />
+              ) : (
+                <span className="mt-0.5 text-xs text-fg-muted">{score}</span>
+              )}
             </div>
           )
         })}

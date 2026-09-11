@@ -65,4 +65,41 @@ describe('extractItemTable', () => {
   it('returns [] when the heading is not found', () => {
     expect(extractItemTable('# Nothing here', 'Am Körper')).toEqual([])
   })
+
+  describe('write targets', () => {
+    const sectionWriteTarget = { path: 'Inventar Ar\'go.md', keyPath: ['Inventar', 'Körper'] }
+
+    it('attaches a write target when the value came from the frontmatter fallback (Meta-Bind sheet)', () => {
+      const body = `## Am Körper
+| Gegenstand | Anzahl | Gewicht | Gesamt |
+| ---------- |:------:|:-------:|:------:|
+| [[Dolch]] | \`INPUT[number:Inventar.Körper.count1]\` | \`INPUT[number:Inventar.Körper.gewicht1]\` | 0 |
+`
+      const items = extractItemTable(body, 'Am Körper', { count1: 2, gewicht1: 1 }, sectionWriteTarget)
+      expect(items[0]._write).toEqual({
+        quantity: { path: "Inventar Ar'go.md", keyPath: ['Inventar', 'Körper', 'count1'] },
+        weight_lb: { path: "Inventar Ar'go.md", keyPath: ['Inventar', 'Körper', 'gewicht1'] },
+      })
+    })
+
+    it('does not attach a write target when the value is a literal number typed into the cell', () => {
+      const body = `## Am Körper
+| Gegenstand | Anzahl | Gewicht | Gesamt |
+| ---------- |:------:|:-------:|:------:|
+| [[Streitaxt]] | 2 | 5 | 10 |
+`
+      const items = extractItemTable(body, 'Am Körper', undefined, sectionWriteTarget)
+      expect(items[0]._write).toBeUndefined()
+    })
+
+    it('does not attach a write target when no sectionWriteTarget is given at all', () => {
+      const body = `## Am Körper
+| Gegenstand | Anzahl | Gewicht | Gesamt |
+| ---------- |:------:|:-------:|:------:|
+| [[Dolch]] | \`INPUT[number:Inventar.Körper.count1]\` | \`INPUT[number:Inventar.Körper.gewicht1]\` | 0 |
+`
+      const items = extractItemTable(body, 'Am Körper', { count1: 2, gewicht1: 1 })
+      expect(items[0]._write).toBeUndefined()
+    })
+  })
 })

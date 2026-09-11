@@ -415,6 +415,26 @@ describe('legacy character sheet adapter - spells stored inline on the character
   })
 })
 
+const redundantSpellSheetFile = {
+  path: 'Kampagne/GORN/Nox/Zaubersprüche Nox.md',
+  content: `---
+Charakter: "[[Nox]]"
+Zauber:
+  - "[[Feuerpfeil]]"
+  - "[[Schild]]"
+  - "[[Nebelschritt]]"
+---
+`,
+}
+
+describe('legacy character sheet adapter - spell list appears both inline and on a leftover linked sheet', () => {
+  it('deduplicates by link target instead of concatenating both sources (regression: Ar\'go\'s real vault had this exact shape)', () => {
+    const vault = buildVault([inlineSpellCharacterFile, zauberklasseFile, redundantSpellSheetFile])
+    const character = vault.characters[0].frontmatter
+    expect(character.spells_known).toEqual(['[[Feuerpfeil]]', '[[Schild]]', '[[Nebelschritt]]'])
+  })
+})
+
 const conditionsCharacterFile = {
   path: "Kampagne/GORN/Zola/Zola.md",
   content: `---
@@ -544,9 +564,10 @@ describe('legacy character sheet adapter - write targets (_write)', () => {
   const vault = buildVault([conditionsCharacterFile])
   const character = vault.characters[0].frontmatter
 
-  it('targets HP fields on the character\'s own file', () => {
+  it('targets HP and remaining-hit-dice fields on the character\'s own file', () => {
     expect(character._write?.hp_current).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Gesundheit', 'TP'] })
     expect(character._write?.hp_temp).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Gesundheit', 'TempTP'] })
+    expect(character._write?.hit_dice_remaining).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Gesundheit', 'TW'] })
   })
 
   it('targets one InputData key per luck pip and the exhaustion counter', () => {
@@ -558,6 +579,57 @@ describe('legacy character sheet adapter - write targets (_write)', () => {
       { path: conditionsCharacterFile.path, keyPath: ['InputData', 'GlücksPunkt5'] },
     ])
     expect(character._write?.exhaustion).toEqual({ path: conditionsCharacterFile.path, keyPath: ['InputData', 'ErschöpfungsPunkte'] })
+  })
+
+  it('targets one Attribute key per ability score', () => {
+    expect(character._write?.abilities?.str).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Attribute', 'Stärke'] })
+    expect(character._write?.abilities?.cha).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Attribute', 'Charisma'] })
+  })
+
+  it('targets one Rettungswürfe key per saving throw and one Fertigkeiten key per skill', () => {
+    expect(character._write?.saving_throw_proficiencies?.dex).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Rettungswürfe', 'Geschicklichkeit'] })
+    expect(character._write?.skills?.arcana).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Fertigkeiten', 'Arkane_Kunde'] })
+  })
+})
+
+const metaBindInventoryFile = {
+  path: "Kampagne/GORN/Zola/Inventar Zola.md",
+  content: `---
+Charakter: "[[Zola]]"
+Inventar:
+  Körper:
+    count1: 1
+    gewicht1: 5
+Geld:
+  PM: 0
+  GM: 10
+  EM: 0
+  SM: 0
+  KM: 0
+---
+## Am Körper
+| Gegenstand | Anzahl | Gewicht | Gesamt |
+| ---------- |:------:|:-------:|:------:|
+| [[Streitaxt]] | \`INPUT[number:Inventar.Körper.count1]\` | \`INPUT[number:Inventar.Körper.gewicht1]\` | 5 |
+
+## Rucksack
+| Gegenstand | Anzahl | Gewicht | Gesamt |
+| ---------- |:------:|:-------:|:------:|
+`,
+}
+
+describe('legacy character sheet adapter - inventory write targets', () => {
+  it('targets the linked inventory file\'s count/gewicht fields for a Meta-Bind-style row', () => {
+    const vault = buildVault([conditionsCharacterFile, metaBindInventoryFile])
+    const character = vault.characters[0].frontmatter
+    expect(character.inventory?.equipped?.[0]).toMatchObject({
+      name: 'Streitaxt',
+      quantity: 1,
+      _write: {
+        quantity: { path: metaBindInventoryFile.path, keyPath: ['Inventar', 'Körper', 'count1'] },
+        weight_lb: { path: metaBindInventoryFile.path, keyPath: ['Inventar', 'Körper', 'gewicht1'] },
+      },
+    })
   })
 })
 

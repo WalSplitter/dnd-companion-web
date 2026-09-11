@@ -1,4 +1,5 @@
 import { Card } from '../../components/Card'
+import { ResourcePoolBar } from '../../components/ResourcePoolBar'
 import { D20RollButton } from '../../dice/RollButton'
 import { formatModifier, spellAttackBonus, spellSaveDC } from '../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../vault/types'
@@ -49,14 +50,9 @@ export function SpellsPanel({
           <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
         )}
         {character.resource_pools && character.resource_pools.length > 0 && (
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {character.resource_pools.map((pool) => (
-              <div key={pool.name} className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-center">
-                <div className="text-xs uppercase text-fg-muted">{pool.name}</div>
-                <div className="font-semibold text-fg">
-                  {pool.current}/{pool.max}
-                </div>
-              </div>
+              <ResourcePoolBar key={pool.name} pool={pool} />
             ))}
           </div>
         )}

@@ -190,11 +190,23 @@ function firstRecord(...candidates: unknown[]): Record<string, unknown> {
  */
 function resolveSpellsKnown(characterData: Record<string, unknown>, spellSheet: RawFile | undefined): string[] | undefined {
   const known: string[] = []
+  const seen = new Set<string>()
   for (const source of [characterData, spellSheet?.data]) {
     if (!source) continue
     for (const key of ['Zauber', 'Pakt_des_Buches']) {
       const list = source[key]
-      if (Array.isArray(list)) known.push(...list.filter((v): v is string => typeof v === 'string'))
+      if (!Array.isArray(list)) continue
+      for (const link of list) {
+        if (typeof link !== 'string') continue
+        // Some characters (mid-migration in this vault's history, it seems) carry the same spell
+        // list both inline on their own file *and* on a separate linked spell sheet — dedupe by
+        // normalized link target rather than trusting only one source, so neither convention
+        // silently drops spells for characters who consistently use just one of them.
+        const normalized = wikilinkTarget(link).toLowerCase()
+        if (seen.has(normalized)) continue
+        seen.add(normalized)
+        known.push(link)
+      }
     }
   }
   return known.length > 0 ? known : undefined
@@ -273,6 +285,28 @@ function resolveSpellSlotWriteTargets(
   for (const [grade, info] of Object.entries(slots)) {
     targets[grade] = { path: chosen.path, keyPath: [...chosen.prefix, `Grad_${grade}`], encode: 'invert-from-max', max: info.max }
   }
+  return targets
+}
+
+/** One write target per ability score, all on the character's own file — no ambiguity, unlike
+ * spell slots/resource pools which can live on a linked sheet. */
+function abilityWriteTargets(characterPath: string): Record<AbilityKey, FieldWriteTarget> {
+  const targets = {} as Record<AbilityKey, FieldWriteTarget>
+  for (const [de, en] of Object.entries(ABILITY_MAP)) targets[en] = { path: characterPath, keyPath: ['Attribute', de] }
+  return targets
+}
+
+/** Legacy schema only — see `CharacterWriteTargets.saving_throw_proficiencies`'s doc comment for why. */
+function savingThrowWriteTargets(characterPath: string): Record<AbilityKey, FieldWriteTarget> {
+  const targets = {} as Record<AbilityKey, FieldWriteTarget>
+  for (const [de, en] of Object.entries(ABILITY_MAP)) targets[en] = { path: characterPath, keyPath: ['Rettungswürfe', de] }
+  return targets
+}
+
+/** Legacy schema only — see `CharacterWriteTargets.skills`'s doc comment for why. */
+function skillWriteTargets(characterPath: string): Record<SkillKey, FieldWriteTarget> {
+  const targets = {} as Record<SkillKey, FieldWriteTarget>
+  for (const [de, en] of Object.entries(SKILL_MAP)) targets[en] = { path: characterPath, keyPath: ['Fertigkeiten', de] }
   return targets
 }
 
@@ -494,10 +528,20 @@ export function normalizeLegacyCharacter(
   const inventoryFile = findLinkedSheet(file.name, allFiles, 'inventar')
   const inventarSections = isRecord(inventoryFile?.data.Inventar) ? inventoryFile.data.Inventar : undefined
   const equipped = inventoryFile
-    ? extractItemTable(inventoryFile.body, 'Am Körper', isRecord(inventarSections?.Körper) ? inventarSections.Körper : undefined)
+    ? extractItemTable(
+        inventoryFile.body,
+        'Am Körper',
+        isRecord(inventarSections?.Körper) ? inventarSections.Körper : undefined,
+        { path: inventoryFile.path, keyPath: ['Inventar', 'Körper'] },
+      )
     : undefined
   const carried = inventoryFile
-    ? extractItemTable(inventoryFile.body, 'Rucksack', isRecord(inventarSections?.Rucksack) ? inventarSections.Rucksack : undefined)
+    ? extractItemTable(
+        inventoryFile.body,
+        'Rucksack',
+        isRecord(inventarSections?.Rucksack) ? inventarSections.Rucksack : undefined,
+        { path: inventoryFile.path, keyPath: ['Inventar', 'Rucksack'] },
+      )
     : undefined
   const currency = inventoryFile ? resolveCurrency(inventoryFile.data.Geld) : undefined
 
@@ -514,8 +558,12 @@ export function normalizeLegacyCharacter(
     ...(isRecord(data.Gesundheit)
       ? { hp_current: { path: file.path, keyPath: ['Gesundheit', 'TP'] }, hp_temp: { path: file.path, keyPath: ['Gesundheit', 'TempTP'] } }
       : {}),
+    ...(typeof gesundheit.TW === 'number' ? { hit_dice_remaining: { path: file.path, keyPath: ['Gesundheit', 'TW'] } } : {}),
     ...conditionTargets,
     ...(spellSlotTargets ? { spell_slots: spellSlotTargets } : {}),
+    abilities: abilityWriteTargets(file.path),
+    saving_throw_proficiencies: savingThrowWriteTargets(file.path),
+    skills: skillWriteTargets(file.path),
   }
 
   return {

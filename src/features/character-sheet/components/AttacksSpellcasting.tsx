@@ -1,5 +1,7 @@
 import { Card } from '../../../components/Card'
+import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
+import { WikiLink } from '../../../vault/components/WikiLink'
 import { formatModifier, spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
@@ -54,14 +56,9 @@ export function AttacksSpellcasting({
       )}
 
       {character.resource_pools && character.resource_pools.length > 0 && (
-        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="mb-3 space-y-2">
           {character.resource_pools.map((pool) => (
-            <div key={pool.name} className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-center">
-              <div className="text-xs uppercase text-fg-muted">{pool.name}</div>
-              <div className="font-semibold text-fg">
-                {pool.current}/{pool.max}
-              </div>
-            </div>
+            <ResourcePoolBar key={pool.name} pool={pool} />
           ))}
         </div>
       )}
@@ -70,7 +67,7 @@ export function AttacksSpellcasting({
         <ul className="space-y-1 text-sm text-fg">
           {cantrips.map((c) => (
             <li key={c!.path} className="flex justify-between">
-              <span>{c!.frontmatter.name}</span>
+              <WikiLink target={c!.frontmatter.name} display={c!.frontmatter.name} />
               <span className="text-fg-muted">{c!.frontmatter.range}</span>
             </li>
           ))}

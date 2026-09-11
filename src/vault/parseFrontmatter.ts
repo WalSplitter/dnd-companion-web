@@ -2,7 +2,17 @@ import { isRecord, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
-import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget, Vault, VaultFile, VaultFrontmatter, VaultSourceFile } from './types'
+import { ABILITIES } from './types'
+import type {
+  AbilityKey,
+  CharacterFrontmatter,
+  CharacterWriteTargets,
+  FieldWriteTarget,
+  Vault,
+  VaultFile,
+  VaultFrontmatter,
+  VaultSourceFile,
+} from './types'
 
 export class FrontmatterValidationError extends Error {
   readonly path: string
@@ -46,6 +56,17 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
   if (isRecord(data.hp)) {
     targets.hp_current = { path, keyPath: ['hp', 'current'] }
     targets.hp_temp = { path, keyPath: ['hp', 'temp'] }
+  }
+
+  if (isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
+    // Own schema stores `used`, not remaining — the UI edits remaining, so this is written inverted.
+    targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], encode: 'invert-from-max', max: data.hit_dice.total }
+  }
+
+  if (isRecord(data.abilities)) {
+    const abilities = {} as Record<AbilityKey, FieldWriteTarget>
+    for (const { key } of ABILITIES) abilities[key] = { path, keyPath: ['abilities', key] }
+    targets.abilities = abilities
   }
 
   const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined

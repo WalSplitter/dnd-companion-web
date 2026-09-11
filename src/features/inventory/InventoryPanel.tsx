@@ -15,7 +15,15 @@ function entryWeight(entry: InventoryEntry, index: VaultIndex): number {
   return entry.weight_lb * (entry.quantity ?? 1)
 }
 
-export function InventoryPanel({ character, index }: { character: CharacterFrontmatter; index: VaultIndex }) {
+export function InventoryPanel({
+  character,
+  characterPath,
+  index,
+}: {
+  character: CharacterFrontmatter
+  characterPath: string
+  index: VaultIndex
+}) {
   const equipped = character.inventory?.equipped ?? []
   const carried = character.inventory?.carried ?? []
 
@@ -24,10 +32,10 @@ export function InventoryPanel({ character, index }: { character: CharacterFront
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <Card title="Equipped">
-        <ItemList entries={equipped} index={index} emptyLabel="Nothing equipped." />
+        <ItemList entries={equipped} index={index} emptyLabel="Nothing equipped." characterPath={characterPath} section="equipped" />
       </Card>
       <Card title="Carried">
-        <ItemList entries={carried} index={index} emptyLabel="Backpack is empty." />
+        <ItemList entries={carried} index={index} emptyLabel="Backpack is empty." characterPath={characterPath} section="carried" />
       </Card>
       <Card title="Currency">
         <CurrencyDisplay currency={character.currency} />

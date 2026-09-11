@@ -89,11 +89,18 @@ export interface FieldWriteTarget {
 export interface CharacterWriteTargets {
   hp_current?: FieldWriteTarget
   hp_temp?: FieldWriteTarget
+  /** Logical value written is the *remaining* hit dice count (matches `hit_dice.total - used`). */
+  hit_dice_remaining?: FieldWriteTarget
   /** One target per luck pip, index-aligned with `conditions.luck_points` (length === max). */
   luck_points?: FieldWriteTarget[]
   exhaustion?: FieldWriteTarget
   /** Keyed by spell grade (same keys as `spellcasting.slots`). */
   spell_slots?: Record<string, FieldWriteTarget>
+  abilities?: Record<AbilityKey, FieldWriteTarget>
+  /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
+  saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
+  /** Legacy schema only, same reason. Raw value is 0 (none) | 1 (proficient) | 2 (expertise). */
+  skills?: Record<SkillKey, FieldWriteTarget>
 }
 
 export interface ConditionsInfo {
@@ -180,6 +187,9 @@ export interface InlineItem {
   name: string
   quantity?: number
   weight_lb?: number
+  /** Set only when the value actually came from a `count{n}`/`gewicht{n}` frontmatter fallback
+   * field (Meta-Bind-style sheets) rather than a literal number typed into the table cell. */
+  _write?: { quantity?: FieldWriteTarget; weight_lb?: FieldWriteTarget }
 }
 
 export interface ItemFrontmatter {
