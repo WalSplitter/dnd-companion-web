@@ -1,16 +1,20 @@
-import { wikilinkTarget } from '../wikilinks'
+import { basename, wikilinkTarget } from '../wikilinks'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type {
   AbilityKey,
   CharacterFeature,
   CharacterFrontmatter,
+  ConditionsInfo,
   Currency,
+  ResourcePool,
   SkillKey,
   SpellcastingInfo,
   SpellSlotInfo,
+  WeaponAttack,
+  WeaponKind,
 } from '../types'
+import { abilityModifier } from '../deriveStats'
 import { extractItemTable } from './markdownTable'
-import { resolveWikilinksInText } from '../textClean'
 import type { ImageAssets } from '../vaultLoader'
 
 /**
@@ -62,12 +66,14 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 const WIKILINK_DISPLAY_RE = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/
 
-/** Alias-aware display text for a wikilink field, e.g. `"[[Zwerge|Zwerg]]"` -> `"Zwerg"`. */
+/** Alias-aware display text for a wikilink field, e.g. `"[[Zwerge|Zwerg]]"` -> `"Zwerg"`. Falls
+ * back to the target's bare filename (not a full path) when there's no alias, same as
+ * `wikilinkTarget` — see its comment on why full vault-relative paths show up here at all. */
 export function linkDisplay(raw: unknown): string {
   if (typeof raw !== 'string') return ''
   const match = WIKILINK_DISPLAY_RE.exec(raw.trim())
   if (!match) return raw.trim()
-  return (match[2] ?? match[1]).trim()
+  return match[2] ? match[2].trim() : basename(match[1])
 }
 
 /** The target (filename) a wikilink field points at, ignoring any display alias. */
@@ -75,13 +81,18 @@ export function linkFile(raw: unknown): string {
   return typeof raw === 'string' ? wikilinkTarget(raw) : ''
 }
 
+/**
+ * Kept as raw markdown (wikilinks intact, only bold markers stripped) rather than resolved to
+ * plain text — the UI renders feature descriptions through `renderObsidianLine` (`WikiLink.tsx`),
+ * which turns `[[...]]` into clickable links, so flattening them here would lose that.
+ */
 function firstSummaryLine(body: string): string | undefined {
   const line = body
     .split(/\r?\n/)
     .map((l) => l.trim())
     .find((l) => l.length > 0 && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('```'))
   if (!line) return undefined
-  return resolveWikilinksInText(line.replace(/\*\*?/g, '')).trim()
+  return line.replace(/\*\*?/g, '').trim()
 }
 
 /**
@@ -248,6 +259,141 @@ function resolvePortrait(hintergrund: Record<string, unknown>, imageAssets: Imag
   return imageAssets.get(target.toLowerCase())
 }
 
+const LUCK_POINT_KEYS = ['GlücksPunkt1', 'GlücksPunkt2', 'GlücksPunkt3', 'GlücksPunkt4', 'GlücksPunkt5']
+
+/**
+ * Luck points (`InputData.GlücksPunkt1..5`) are pips the character currently *holds* (see the
+ * vault's `Glück` rule note — gained on a failed roll, spent to boost a d20), not a spent/used
+ * count. Exhaustion (`InputData.ErschöpfungsPunkte`) is a 0-9 counter kept in sync with 9 boolean
+ * `Erschöpfung1..9` flags by an in-vault script — the counter is authoritative, no need to recount
+ * the flags. `sonstigeZustaende` is a free-text field for anything not otherwise tracked.
+ */
+function resolveConditions(data: Record<string, unknown>): ConditionsInfo | undefined {
+  const inputData = isRecord(data.InputData) ? data.InputData : undefined
+  const hasLuck = inputData ? LUCK_POINT_KEYS.some((key) => key in inputData) : false
+  const exhaustion = typeof inputData?.ErschöpfungsPunkte === 'number' ? inputData.ErschöpfungsPunkte : undefined
+  const notes = typeof data.sonstigeZustaende === 'string' && data.sonstigeZustaende.trim() ? data.sonstigeZustaende.trim() : undefined
+
+  if (!hasLuck && exhaustion === undefined && !notes) return undefined
+
+  return {
+    luck_points: hasLuck
+      ? { max: LUCK_POINT_KEYS.length, current: LUCK_POINT_KEYS.filter((key) => inputData?.[key] === true).length }
+      : undefined,
+    exhaustion,
+    exhaustion_max: exhaustion !== undefined ? 9 : undefined,
+    notes,
+  }
+}
+
+/**
+ * Generalizes the spell-slot lookup pattern (`resolveSpellcasting` below) to any per-class resource
+ * pool: a current value on `InputData` and a max looked up from the class file's own
+ * `{SameKey}.Stufe{level}` table (e.g. a Sorcerer's `Zaubereipunkte`/sorcery points). Matching by
+ * "same key exists as a per-level table on the class file" — rather than a hardcoded list of class
+ * resource names — means a new resource the vault's authors add later (they're mid-redesign of
+ * their own rules) is picked up without a code change, as long as it follows this same convention.
+ * Per-feature charge counters (e.g. `BlitzOdem`, `DruckwelleLadungen`) don't have a matching class-file
+ * table and are correctly left out.
+ */
+function resolveResourcePools(className: string, level: number, data: Record<string, unknown>, files: RawFile[]): ResourcePool[] | undefined {
+  const inputData = isRecord(data.InputData) ? data.InputData : undefined
+  if (!inputData) return undefined
+  const classFile = findRawFileByName(files, className)
+  if (!classFile) return undefined
+
+  const pools: ResourcePool[] = []
+  for (const [key, current] of Object.entries(inputData)) {
+    if (typeof current !== 'number') continue
+    const table = classFile.data[key]
+    if (!isRecord(table)) continue
+    const max = table[`Stufe${level}`]
+    if (typeof max !== 'number') continue
+    pools.push({ name: key, current, max })
+  }
+  return pools.length > 0 ? pools : undefined
+}
+
+function hasWeaponTag(tags: unknown, needle: string): boolean {
+  return Array.isArray(tags) && tags.some((t) => typeof t === 'string' && t.includes(needle))
+}
+
+/** `Eigenschaften`/`EigenschaftenFern` entries are wikilinks, sometimes with trailing notes, e.g.
+ * `"[[Vielseitig]] (\`dice: 1d10|none|noform\`)"` — only the link target is checked here. */
+function hasWeaponProperty(properties: unknown, name: string): boolean {
+  if (!Array.isArray(properties)) return false
+  const target = name.toLowerCase()
+  return properties.some((p) => typeof p === 'string' && linkFile(p.match(/\[\[[^\]]+\]\]/)?.[0] ?? p).toLowerCase() === target)
+}
+
+function weaponPropertyLabels(properties: unknown): string[] | undefined {
+  if (!Array.isArray(properties)) return undefined
+  const labels = properties.filter((p): p is string => typeof p === 'string').map((p) => linkDisplay(p.match(/\[\[[^\]]+\]\]/)?.[0] ?? p))
+  return labels.length > 0 ? labels : undefined
+}
+
+/**
+ * A character's `Waffen` field lists equipped weapons as wikilinks; each weapon file carries its
+ * own combat stats (melee: `Reichweite`/`Schaden`/`Schadensart`/`Eigenschaften`, ranged/thrown:
+ * `Range1-3`/`SchadenFern`/`SchadensartFern`/`EigenschaftenFern`), tagged
+ * `Gegenstand/Waffe/Klasse/Nahkampfwaffe|Fernkampfwaffe/Schusswaffe|Wurfwaffe`. Bonus math mirrors
+ * the vault's own template exactly (`Character Sheet Vorlage.md`'s "Angriff" dataview queries):
+ * finesse picks DEX over STR for melee/thrown, ranged is always DEX, and proficiency always applies
+ * (per that template's own disclaimer: "Waffen haben immer Übungsbonus").
+ */
+function resolveWeaponAttacks(
+  weaponLinks: unknown,
+  files: RawFile[],
+  abilities: Record<AbilityKey, number>,
+  proficiencyBonus: number,
+): WeaponAttack[] | undefined {
+  if (!Array.isArray(weaponLinks)) return undefined
+  const attacks: WeaponAttack[] = []
+
+  for (const link of weaponLinks) {
+    if (typeof link !== 'string') continue
+    const file = findRawFileByName(files, linkFile(link))
+    if (!file) continue
+    const { data } = file
+
+    const melee = hasWeaponTag(data.tags, 'Waffe/Klasse/Nahkampfwaffe')
+    const thrown = hasWeaponTag(data.tags, 'Wurfwaffe')
+    const ranged = !melee && !thrown && hasWeaponTag(data.tags, 'Fernkampfwaffe')
+    if (!melee && !thrown && !ranged) continue
+    const kind: WeaponKind = melee ? 'melee' : thrown ? 'thrown' : 'ranged'
+
+    const damageDice = kind === 'melee' ? data.Schaden : data.SchadenFern
+    if (typeof damageDice !== 'string' || !damageDice.trim()) continue
+
+    const finesse = hasWeaponProperty(data.Eigenschaften, 'finesse') || hasWeaponProperty(data.EigenschaftenFern, 'finesse')
+    const ability: AbilityKey = kind === 'ranged' ? 'dex' : finesse ? 'dex' : 'str'
+    const abilityMod = abilityModifier(abilities[ability])
+
+    const range =
+      kind === 'melee'
+        ? typeof data.Reichweite === 'string'
+          ? data.Reichweite
+          : ''
+        : [data.Range1, data.Range2, data.Range3]
+            .filter((v) => v !== undefined && v !== null && v !== '')
+            .map(String)
+            .join('/')
+
+    attacks.push({
+      name: linkDisplay(link) || file.name,
+      kind,
+      attack_bonus: abilityMod + proficiencyBonus,
+      damage_dice: damageDice,
+      damage_bonus: abilityMod,
+      damage_type: linkDisplay(kind === 'melee' ? data.Schadensart : data.SchadensartFern) || undefined,
+      range,
+      properties: weaponPropertyLabels(kind === 'melee' ? data.Eigenschaften : data.EigenschaftenFern),
+    })
+  }
+
+  return attacks.length > 0 ? attacks : undefined
+}
+
 export function normalizeLegacyCharacter(
   file: RawFile,
   allFiles: RawFile[],
@@ -306,6 +452,9 @@ export function normalizeLegacyCharacter(
   const spellSheetFile = findSpellSource(file.name, allFiles)
   const spellcasting = resolveSpellcasting(className, level, data, spellSheetFile, allFiles)
   const spellsKnown = resolveSpellsKnown(data, spellSheetFile)
+  const conditions = resolveConditions(data)
+  const resourcePools = resolveResourcePools(className, level, data, allFiles)
+  const attacks = resolveWeaponAttacks(data.Waffen, allFiles, abilities, proficiencyBonus)
 
   return {
     type: 'character',
@@ -332,5 +481,8 @@ export function normalizeLegacyCharacter(
     spells_known: spellsKnown,
     features: collectFeatures(data, allFiles),
     portrait_url: resolvePortrait(hintergrund, imageAssets),
+    conditions,
+    resource_pools: resourcePools,
+    attacks,
   }
 }

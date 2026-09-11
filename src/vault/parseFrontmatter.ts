@@ -1,7 +1,6 @@
 import { looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { parseRawFile, type RawFile } from './rawFile'
-import { cleanObsidianBody } from './textClean'
 import type { ImageAssets } from './vaultLoader'
 import type { Vault, VaultFile, VaultFrontmatter, VaultSourceFile } from './types'
 
@@ -54,7 +53,7 @@ function isTemplateFile(raw: RawFile): boolean {
  * already carries, not as browsable `vault.items` entries).
  */
 export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets): Vault {
-  const vault: Vault = { characters: [], items: [], spells: [] }
+  const vault: Vault = { characters: [], items: [], spells: [], notes: [] }
   const rawFiles = files.filter((f) => f.path.toLowerCase().endsWith('.md')).map(parseRawFile)
 
   for (const raw of rawFiles) {
@@ -73,7 +72,15 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
     } else if (!isTemplateFile(raw) && looksLikeLegacyCharacter(raw.data)) {
       vault.characters.push({ path: raw.path, frontmatter: normalizeLegacyCharacter(raw, rawFiles, imageAssets), body: raw.body })
     } else if (looksLikeLegacySpellNote(raw.data)) {
-      vault.spells.push({ path: raw.path, frontmatter: normalizeLegacySpellNote(raw), body: cleanObsidianBody(raw.body) })
+      // Kept raw (not pre-flattened to plain text) — the UI renders every spell/item body through
+      // `renderObsidianBody` (`WikiLink.tsx`) uniformly, which strips Obsidian-only syntax while
+      // preserving line breaks and turning wikilinks into clickable links.
+      vault.spells.push({ path: raw.path, frontmatter: normalizeLegacySpellNote(raw), body: raw.body })
+    } else {
+      // Everything else (rule pages, class/feature lore, weapon/item stat blocks the legacy vault's
+      // varying schemas aren't worth a dedicated adapter for yet, ...) is kept as a plain note so any
+      // `[[Wikilink]]` pointing at it can still resolve to something in the UI (see wikilinks.ts).
+      vault.notes.push({ path: raw.path, name: raw.name, body: raw.body })
     }
   }
 

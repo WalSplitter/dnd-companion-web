@@ -1,4 +1,5 @@
 import { Card } from '../../../components/Card'
+import { renderObsidianLine } from '../../../vault/components/WikiLink'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function FeaturesTraits({ character }: { character: CharacterFrontmatter }) {
@@ -14,7 +15,7 @@ export function FeaturesTraits({ character }: { character: CharacterFrontmatter 
               <span className="font-semibold text-fg">{f.name}</span>
               {f.source && <span className="text-xs text-fg-muted">{f.source}</span>}
             </div>
-            {f.description && <p className="mt-0.5 text-sm text-fg-muted">{f.description}</p>}
+            {f.description && <p className="mt-0.5 text-sm text-fg-muted">{renderObsidianLine(f.description, f.name)}</p>}
           </li>
         ))}
       </ul>

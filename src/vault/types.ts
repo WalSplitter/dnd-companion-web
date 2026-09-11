@@ -74,6 +74,33 @@ export interface Currency {
   pp?: number
 }
 
+export interface ConditionsInfo {
+  /** Luck points currently held (not "spent") — see the vault's `Glück` rule note. */
+  luck_points?: { max: number; current: number }
+  exhaustion?: number
+  exhaustion_max?: number
+  notes?: string
+}
+
+export interface ResourcePool {
+  name: string
+  current: number
+  max: number
+}
+
+export type WeaponKind = 'melee' | 'ranged' | 'thrown'
+
+export interface WeaponAttack {
+  name: string
+  kind: WeaponKind
+  attack_bonus: number
+  damage_dice: string
+  damage_bonus: number
+  damage_type?: string
+  range: string
+  properties?: string[]
+}
+
 export interface CharacterFrontmatter {
   type: 'character'
   name: string
@@ -107,6 +134,10 @@ export interface CharacterFrontmatter {
   features?: CharacterFeature[]
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
+  conditions?: ConditionsInfo
+  /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
+  resource_pools?: ResourcePool[]
+  attacks?: WeaponAttack[]
 }
 
 export interface CharacterFeature {
@@ -134,6 +165,11 @@ export interface ItemFrontmatter {
   properties?: string[]
 }
 
+export interface SpellDamageScaling {
+  at_level: number
+  dice: string
+}
+
 export interface SpellFrontmatter {
   type: 'spell'
   name: string
@@ -144,6 +180,15 @@ export interface SpellFrontmatter {
   components: string[]
   duration: string
   classes?: string[]
+  damage?: string
+  damage_scaling?: SpellDamageScaling[]
+  damage_type?: string
+  target?: string
+  save_ability?: AbilityKey
+  concentration?: boolean
+  ritual?: boolean
+  scalable?: boolean
+  spell_type?: string
 }
 
 export type VaultFrontmatter = CharacterFrontmatter | ItemFrontmatter | SpellFrontmatter
@@ -159,8 +204,17 @@ export interface VaultSourceFile {
   content: string
 }
 
+/** A vault markdown file that doesn't match any structured schema (rule pages, class/feature lore,
+ * etc.) — kept only so `[[Wikilink]]`s pointing at it can still resolve to *something* in the UI. */
+export interface VaultNote {
+  path: string
+  name: string
+  body: string
+}
+
 export interface Vault {
   characters: VaultFile<CharacterFrontmatter>[]
   items: VaultFile<ItemFrontmatter>[]
   spells: VaultFile<SpellFrontmatter>[]
+  notes: VaultNote[]
 }

@@ -415,6 +415,208 @@ describe('legacy character sheet adapter - spells stored inline on the character
   })
 })
 
+const conditionsCharacterFile = {
+  path: "Kampagne/GORN/Zola/Zola.md",
+  content: `---
+Stufe: 4
+Bewegung: 6
+Verteidigung:
+  Natürliche_Rüstung: 10
+Attribute:
+  Stärke: 16
+  Geschicklichkeit: 14
+  Konstitution: 14
+  Intelligenz: 10
+  Weisheit: 10
+  Charisma: 10
+Rettungswürfe:
+  Stärke: 0
+  Geschicklichkeit: 0
+  Konstitution: 0
+  Intelligenz: 0
+  Weisheit: 0
+  Charisma: 0
+Fertigkeiten:
+  Akrobatik: 0
+  Arkane_Kunde: 0
+  Athletik: 0
+  Auftreten: 0
+  Einschüchtern: 0
+  Fingerfertigkeit: 0
+  Geschichte: 0
+  Heilkunde: 0
+  Heimlichkeit: 0
+  Mit_Tieren_umgehen: 0
+  Motiv_erkennen: 0
+  Nachforschungen: 0
+  Naturkunde: 0
+  Religion: 0
+  Täuschen: 0
+  Überlebenskunst: 0
+  Überzeugen: 0
+  Wahrnehmung: 0
+Gesundheit:
+  MaxTP: 40
+  TP: 40
+  TW: 4
+  TempTP: 0
+Hintergrund:
+  Name: Zola
+  Volk: "[[Menschen|Mensch]]"
+  Klasse: "[[Barbar]]"
+  Gesinnung: "[[Chaotisch Neutral]]"
+  Herkunft: "[[Soldat]]"
+Waffen:
+  - "[[Streitaxt]]"
+  - "[[Dolch]]"
+InputData:
+  GlücksPunkt1: true
+  GlücksPunkt2: true
+  GlücksPunkt3: false
+  GlücksPunkt4: false
+  GlücksPunkt5: false
+  ErschöpfungsPunkte: 2
+sonstigeZustaende: "Vergiftet bis zum nächsten Kurzen Rast"
+---
+# Zola
+`,
+}
+
+const streitaxtFile = {
+  path: 'Gegenstände/Waffen/Waffen/Streitaxt.md',
+  content: `---
+tags:
+  - Gegenstand/Waffe/Klasse/Nahkampfwaffe
+Reichweite: 1,5(1)
+Schaden: 1d8
+Schadensart: "[[Hiebschaden]]"
+Eigenschaften:
+  - "[[Vielseitig]] (\`dice: 1d10|none|noform\`)"
+SchadenFern:
+SchadensartFern:
+Range1:
+Range2:
+Range3:
+EigenschaftenFern:
+---
+Waffennotiz.`,
+}
+
+const dolchFile = {
+  path: 'Gegenstände/Waffen/Waffen/Dolch.md',
+  content: `---
+tags:
+  - Gegenstand/Waffe/Klasse/Nahkampfwaffe
+  - Gegenstand/Waffe/Klasse/Fernkampfwaffe/Wurfwaffe
+Reichweite: 1,5(1)
+Schaden: 1d4
+Schadensart: "[[Stichschaden]]"
+Eigenschaften:
+  - "[[Finesse]]"
+  - "[[Leicht]]"
+SchadenFern: 1d4
+SchadensartFern: "[[Stichschaden]]"
+Range1: 6
+Range2:
+Range3: 18
+EigenschaftenFern:
+  - "[[Finesse]]"
+---
+Waffennotiz.`,
+}
+
+describe('legacy character sheet adapter - conditions (Zustände)', () => {
+  const vault = buildVault([conditionsCharacterFile])
+  const character = vault.characters[0].frontmatter
+
+  it('counts held luck points and reads the exhaustion counter', () => {
+    expect(character.conditions?.luck_points).toEqual({ max: 5, current: 2 })
+    expect(character.conditions?.exhaustion).toBe(2)
+    expect(character.conditions?.exhaustion_max).toBe(9)
+  })
+
+  it('reads the free-text "other conditions" field', () => {
+    expect(character.conditions?.notes).toBe('Vergiftet bis zum nächsten Kurzen Rast')
+  })
+})
+
+describe('legacy character sheet adapter - weapon attacks', () => {
+  const vault = buildVault([conditionsCharacterFile, streitaxtFile, dolchFile])
+  const character = vault.characters[0].frontmatter
+
+  it('computes a non-finesse melee weapon off Strength', () => {
+    const axe = character.attacks?.find((a) => a.name === 'Streitaxt')
+    expect(axe).toEqual({
+      name: 'Streitaxt',
+      kind: 'melee',
+      attack_bonus: 5, // STR mod (+3) + proficiency (ceil(4/4)+1 = 2)
+      damage_dice: '1d8',
+      damage_bonus: 3,
+      damage_type: 'Hiebschaden',
+      range: '1,5(1)',
+      properties: ['Vielseitig'],
+    })
+  })
+
+  it('picks Dexterity over Strength for a finesse weapon', () => {
+    const dagger = character.attacks?.find((a) => a.name === 'Dolch')
+    expect(dagger?.attack_bonus).toBe(4) // DEX mod (+2) + proficiency (2)
+    expect(dagger?.damage_bonus).toBe(2)
+    expect(dagger?.damage_dice).toBe('1d4')
+    expect(dagger?.kind).toBe('melee')
+  })
+})
+
+describe('legacy character sheet adapter - resource pools', () => {
+  const vault = buildVault([casterCharacterFile, casterClassFile])
+
+  it('has no resource pools when the class file defines none', () => {
+    expect(vault.characters[0].frontmatter.resource_pools).toBeUndefined()
+  })
+})
+
+const sorcererCharacterFile = {
+  ...casterCharacterFile,
+  path: 'Kampagne/GORN/Ember/Ember.md',
+  content: casterCharacterFile.content
+    .replace('Klasse: "[[Hexenmeister]]"', 'Klasse: "[[Zauberer]]"')
+    .replace('Name: Lucia', 'Name: Ember')
+    .replace('Herkunft: "[[Weiser]]"\n---', 'Herkunft: "[[Weiser]]"\nInputData:\n  Zaubereipunkte: 3\n---'),
+}
+
+const sorcererClassFile = {
+  path: 'Charaktere/Klassen/Zauberer/Zauberer.md',
+  content: `---
+tags: [Klasse]
+Trefferwürfel: W6
+Zauberattribut: "[[Charisma]]"
+Zaubereipunkte:
+  Stufe5: 5
+Zauberplätze:
+  Stufe5:
+    Grad0: 4
+    Grad1: 4
+    Grad2: 3
+    Grad3: 0
+    Grad4: 0
+    Grad5: 0
+    Grad6: 0
+    Grad7: 0
+    Grad8: 0
+    Grad9: 0
+---
+Zaubererregeln.`,
+}
+
+describe('legacy character sheet adapter - class resource pools (e.g. sorcery points)', () => {
+  const vault = buildVault([sorcererCharacterFile, sorcererClassFile])
+  const character = vault.characters[0].frontmatter
+
+  it('reads current/max off InputData and the class file\'s per-level table', () => {
+    expect(character.resource_pools).toEqual([{ name: 'Zaubereipunkte', current: 3, max: 5 }])
+  })
+})
+
 describe('legacy character sheet adapter - portrait', () => {
   it('resolves a Bild attachment reference against the loaded image assets', () => {
     const imageAssets = new Map([['portrait.jpg', 'blob:mock-url']])

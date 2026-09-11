@@ -24,6 +24,7 @@ const vault: Vault = {
   spells: [
     { path: 'Spells/Fire Bolt.md', frontmatter: { type: 'spell', name: 'Fire Bolt', level: 0, school: 'Evocation', casting_time: '1 action', range: '120 feet', components: ['V', 'S'], duration: 'Instantaneous' }, body: '' },
   ],
+  notes: [],
 }
 
 describe('resolveItemLink / resolveSpellLink', () => {

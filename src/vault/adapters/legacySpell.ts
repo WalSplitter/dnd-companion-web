@@ -1,6 +1,6 @@
-import type { SpellFrontmatter } from '../types'
+import type { SpellDamageScaling, SpellFrontmatter } from '../types'
 import type { RawFile } from '../rawFile'
-import { isRecord, linkDisplay } from './legacyCharacterSheet'
+import { ABILITY_MAP, isRecord, linkDisplay, linkFile } from './legacyCharacterSheet'
 
 /**
  * Adapter for individual spell notes in the same campaign vault as `legacyCharacterSheet.ts`
@@ -21,10 +21,27 @@ function components(data: Record<string, unknown>): string[] {
   return list
 }
 
+// Cantrip damage scaling, e.g. `SchadenLv5: 2d6` — the vault stores one flat field per breakpoint
+// rather than a table, so the mapping from field name to character level is fixed (2024 rules use
+// levels 5/11/17 for every scaling cantrip).
+const DAMAGE_SCALING_FIELDS: { field: string; atLevel: number }[] = [
+  { field: 'SchadenLv5', atLevel: 5 },
+  { field: 'SchadenLv11', atLevel: 11 },
+  { field: 'SchadenLv17', atLevel: 17 },
+]
+
+function damageScaling(data: Record<string, unknown>): SpellDamageScaling[] | undefined {
+  const scaling = DAMAGE_SCALING_FIELDS.filter(({ field }) => typeof data[field] === 'string' && (data[field] as string).trim()).map(
+    ({ field, atLevel }) => ({ at_level: atLevel, dice: (data[field] as string).trim() }),
+  )
+  return scaling.length > 0 ? scaling : undefined
+}
+
 export function normalizeLegacySpellNote(raw: RawFile): SpellFrontmatter {
   const { data } = raw
 
   const classes = Array.isArray(data.Klassen) ? data.Klassen.map(linkDisplay).filter(Boolean) : undefined
+  const saveAbility = ABILITY_MAP[linkFile(data.Rettungswurf)]
 
   return {
     type: 'spell',
@@ -36,5 +53,14 @@ export function normalizeLegacySpellNote(raw: RawFile): SpellFrontmatter {
     components: components(data),
     duration: typeof data.Dauer === 'string' ? data.Dauer : '',
     classes: classes && classes.length > 0 ? classes : undefined,
+    damage: typeof data.Schaden === 'string' && data.Schaden.trim() ? data.Schaden.trim() : undefined,
+    damage_scaling: damageScaling(data),
+    damage_type: linkDisplay(data.Schadensart) || undefined,
+    target: typeof data.Ziel === 'string' && data.Ziel.trim() ? data.Ziel.trim() : undefined,
+    save_ability: saveAbility,
+    concentration: data.Konzentration === true,
+    ritual: data.Ritual === true,
+    scalable: data.Skalierbar === true,
+    spell_type: linkDisplay(data.Typ) || undefined,
   }
 }

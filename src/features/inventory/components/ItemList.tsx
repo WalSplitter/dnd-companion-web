@@ -1,3 +1,4 @@
+import { renderObsidianBody } from '../../../vault/components/WikiLink'
 import type { InlineItem, InventoryEntry, ItemFrontmatter, VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveItemLink } from '../../../vault/wikilinks'
@@ -57,7 +58,7 @@ function ItemRow({ item }: { item: VaultFile<ItemFrontmatter> }) {
           {name}
           {quantity > 1 && <span className="ml-1 text-fg-muted">×{quantity}</span>}
         </div>
-        {item.body && <p className="mt-0.5 text-sm text-fg-muted">{item.body}</p>}
+        {item.body && <div className="mt-0.5 text-sm text-fg-muted">{renderObsidianBody(item.body)}</div>}
       </div>
       <div className="shrink-0 text-right text-xs text-fg-muted">
         {category && <div className="capitalize">{category}</div>}
