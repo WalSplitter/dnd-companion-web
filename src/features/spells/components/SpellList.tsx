@@ -4,10 +4,10 @@ import type { CharacterFrontmatter, SpellFrontmatter, VaultFile } from '../../..
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
-
-const LEVEL_LABEL: Record<number, string> = { 0: 'Cantrips' }
+import { useT } from '../../../i18n/I18nContext'
 
 export function SpellList({ links, index, character }: { links: string[]; index: VaultIndex; character: CharacterFrontmatter }) {
+  const t = useT()
   const resolved = links
     .map((link) => resolveSpellLink(index, link))
     .filter((s): s is VaultFile<SpellFrontmatter> => Boolean(s))
@@ -22,7 +22,7 @@ export function SpellList({ links, index, character }: { links: string[]; index:
   const levels = [...byLevel.keys()].sort((a, b) => a - b)
 
   if (levels.length === 0) {
-    return <p className="text-sm text-fg-muted">No spells known.</p>
+    return <p className="text-sm text-fg-muted">{t('spells.noSpellsKnown')}</p>
   }
 
   const dc = spellSaveDC(character)
@@ -36,10 +36,10 @@ export function SpellList({ links, index, character }: { links: string[]; index:
         return (
           <div key={level}>
             <h3 className="mb-1.5 flex items-baseline gap-2 text-sm font-semibold uppercase tracking-wide text-fg-muted">
-              {LEVEL_LABEL[level] ?? `Level ${level}`}
+              {level === 0 ? t('spells.cantrips') : t('spells.level', { level })}
               {slot && (
                 <span className={`text-xs normal-case ${slot.used >= slot.max ? 'text-danger' : 'text-fg-muted/70'}`}>
-                  {slot.max - slot.used}/{slot.max} slots
+                  {t('spells.slotsRemaining', { remaining: slot.max - slot.used, max: slot.max })}
                 </span>
               )}
             </h3>
@@ -75,6 +75,7 @@ function SpellRow({
   saveDC: number | undefined
   attackBonus: number | undefined
 }) {
+  const t = useT()
   const fm = spell.frontmatter
   const damage = scaledDamage(fm, characterLevel)
   const isAttackSpell = damage !== undefined && !fm.save_ability
@@ -84,17 +85,17 @@ function SpellRow({
       <details>
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 p-2.5 text-sm marker:content-none">
           <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
-            {fm.level === 0 ? 'Cantrip' : `Lvl ${fm.level}`}
+            {fm.level === 0 ? t('spells.cantripBadge') : t('spells.levelBadge', { level: fm.level })}
           </span>
           <span className="font-semibold text-fg">{fm.name}</span>
           <span className="text-xs italic text-fg-muted">{fm.school}</span>
           {fm.concentration && (
-            <span className="rounded border border-border px-1 text-[10px] uppercase text-fg-muted" title="Concentration">
+            <span className="rounded border border-border px-1 text-[10px] uppercase text-fg-muted" title={t('spells.concentration')}>
               C
             </span>
           )}
           {fm.ritual && (
-            <span className="rounded border border-border px-1 text-[10px] uppercase text-fg-muted" title="Ritual">
+            <span className="rounded border border-border px-1 text-[10px] uppercase text-fg-muted" title={t('spells.ritual')}>
               R
             </span>
           )}
@@ -107,34 +108,36 @@ function SpellRow({
           <span className="ml-auto flex items-center gap-1.5">
             {fm.save_ability && saveDC !== undefined && (
               <span className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-xs text-fg-muted">
-                DC {saveDC} {fm.save_ability.toUpperCase()}
+                {t('spells.saveBadge', { dc: saveDC, ability: fm.save_ability.toUpperCase() })}
               </span>
             )}
-            {isAttackSpell && attackBonus !== undefined && <D20RollButton label={`${fm.name} attack`} modifier={attackBonus} />}
-            {damage && <DamageRollButton label={`${fm.name} damage`} dice={damage} damageType={fm.damage_type} />}
+            {isAttackSpell && attackBonus !== undefined && (
+              <D20RollButton label={t('roll.attackSuffix', { name: fm.name })} modifier={attackBonus} />
+            )}
+            {damage && <DamageRollButton label={t('roll.damageSuffix', { name: fm.name })} dice={damage} damageType={fm.damage_type} />}
           </span>
         </summary>
         <div className="border-t border-border p-2.5 pt-2">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-fg-muted sm:grid-cols-4">
             <div>
-              <dt className="uppercase">Casting Time</dt>
+              <dt className="uppercase">{t('spells.castingTime')}</dt>
               <dd className="text-fg">{fm.casting_time}</dd>
             </div>
             <div>
-              <dt className="uppercase">Range</dt>
+              <dt className="uppercase">{t('spells.range')}</dt>
               <dd className="text-fg">{fm.range}</dd>
             </div>
             <div>
-              <dt className="uppercase">Components</dt>
+              <dt className="uppercase">{t('spells.components')}</dt>
               <dd className="text-fg">{fm.components.join(', ')}</dd>
             </div>
             <div>
-              <dt className="uppercase">Duration</dt>
+              <dt className="uppercase">{t('spells.duration')}</dt>
               <dd className="text-fg">{fm.duration}</dd>
             </div>
             {fm.target && (
               <div>
-                <dt className="uppercase">Target</dt>
+                <dt className="uppercase">{t('spells.target')}</dt>
                 <dd className="text-fg">{fm.target}</dd>
               </div>
             )}

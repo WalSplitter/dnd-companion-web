@@ -1,5 +1,6 @@
 import { isRecord, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
+import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
 import { ABILITIES } from './types'
@@ -91,13 +92,15 @@ function isTemplateFile(raw: RawFile): boolean {
  *  - the app's own `type: character|item|spell` marker (see `types.ts`)
  *  - an existing campaign vault's schema with no `type:` marker — characters and spell notes are
  *    detected structurally and normalized by `adapters/legacyCharacterSheet.ts` / `adapters/legacySpell.ts`
- * Files matching neither are skipped (this includes that vault's item notes: their schema varies
- * too much per category — weapon/armor/food/... — for a single structural adapter to be worthwhile
- * yet, so items only show up as the inline `InlineItem` entries a character's inventory table
- * already carries, not as browsable `vault.items` entries).
+ * Files matching neither, and not the experimental `Gegenstand/...`-tagged "Endeavour" item shape
+ * (see `adapters/endeavourItem.ts`, collected into `vault.endeavourItems`), are kept as plain notes.
+ * The legacy vault's own item notes fall into this last bucket: their schema varies too much per
+ * category — weapon/armor/food/... — for a single structural adapter to be worthwhile yet, so items
+ * only show up as the inline `InlineItem` entries a character's inventory table already carries, not
+ * as browsable `vault.items` entries.
  */
 export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets): Vault {
-  const vault: Vault = { characters: [], items: [], spells: [], notes: [] }
+  const vault: Vault = { characters: [], items: [], spells: [], notes: [], endeavourItems: [] }
   const rawFiles = files.filter((f) => f.path.toLowerCase().endsWith('.md')).map(parseRawFile)
 
   for (const raw of rawFiles) {
@@ -125,6 +128,10 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       // `renderObsidianBody` (`WikiLink.tsx`) uniformly, which strips Obsidian-only syntax while
       // preserving line breaks and turning wikilinks into clickable links.
       vault.spells.push({ path: raw.path, frontmatter: normalizeLegacySpellNote(raw), body: raw.body })
+    } else if (looksLikeEndeavourItem(raw.data)) {
+      // Experimental — see `adapters/endeavourItem.ts`'s doc comment for why this is a separate
+      // collection rather than folded into `vault.items`.
+      vault.endeavourItems.push({ path: raw.path, frontmatter: normalizeEndeavourItem(raw), body: raw.body })
     } else {
       // Everything else (rule pages, class/feature lore, weapon/item stat blocks the legacy vault's
       // varying schemas aren't worth a dedicated adapter for yet, ...) is kept as a plain note so any

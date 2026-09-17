@@ -1,19 +1,22 @@
 import { Card } from '../../../components/Card'
 import { D20RollButton } from '../../../dice/RollButton'
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { formatModifier, isSavingThrowProficient, savingThrowBonus } from '../../../vault/deriveStats'
 import { ABILITIES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
 
 export function SavingThrows({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const canEdit = editPermission === 'granted'
 
   return (
-    <Card title="Saving Throws">
+    <Card title={t('cards.savingThrows')}>
       <ul className="space-y-1.5">
-        {ABILITIES.map(({ key, label }) => {
+        {ABILITIES.map(({ key }) => {
+          const label = t(`ability.${key}`)
           const proficient = isSavingThrowProficient(character, key)
           const bonus = savingThrowBonus(character, key)
           const target = character._write?.saving_throw_proficiencies?.[key]
@@ -23,7 +26,7 @@ export function SavingThrows({ character, characterPath }: { character: Characte
               {canEdit && target ? (
                 <button
                   type="button"
-                  aria-label={`Toggle ${label} saving throw proficiency`}
+                  aria-label={t('a11y.toggleSavingThrow', { label })}
                   onClick={() => {
                     const next = !proficient
                     void updateCharacterField(characterPath, target, next ? 1 : 0, (c) => ({
@@ -43,7 +46,7 @@ export function SavingThrows({ character, characterPath }: { character: Characte
               <span className="w-8 font-semibold text-fg">{formatModifier(bonus)}</span>
               <span className="text-fg-muted">{label}</span>
               <D20RollButton
-                label={`${label} save`}
+                label={t('roll.saveSuffix', { label })}
                 modifier={bonus}
                 className="ml-auto rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-primary hover:text-primary"
               />

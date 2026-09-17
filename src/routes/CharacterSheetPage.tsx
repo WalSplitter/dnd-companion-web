@@ -1,8 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
+import { useT } from '../i18n/I18nContext'
 import { useVaultStore } from '../store/vaultStore'
 import { CharacterSheet } from '../features/character-sheet/CharacterSheet'
 
 export function CharacterSheetPage() {
+  const t = useT()
   const { characterName } = useParams<{ characterName: string }>()
   const character = useVaultStore((s) =>
     s.vault.characters.find((c) => c.frontmatter.name === decodeURIComponent(characterName ?? '')),
@@ -12,9 +14,9 @@ export function CharacterSheetPage() {
   if (!character) {
     return (
       <div className="rounded-xl border border-dashed border-border p-10 text-center text-fg-muted">
-        Character not found.{' '}
+        {t('characterSheet.notFound')}{' '}
         <Link to="/" className="text-primary hover:underline">
-          Back to character list
+          {t('characterSheet.backToList')}
         </Link>
       </div>
     )

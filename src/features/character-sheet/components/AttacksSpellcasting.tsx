@@ -1,6 +1,7 @@
 import { Card } from '../../../components/Card'
 import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
+import { useT } from '../../../i18n/I18nContext'
 import { WikiLink } from '../../../vault/components/WikiLink'
 import { formatModifier, spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
@@ -17,6 +18,7 @@ export function AttacksSpellcasting({
   characterPath: string
   index: VaultIndex
 }) {
+  const t = useT()
   if (!character.spellcasting) return null
 
   const dc = spellSaveDC(character)
@@ -26,20 +28,20 @@ export function AttacksSpellcasting({
     .filter((s) => s?.frontmatter.level === 0)
 
   return (
-    <Card title="Attacks &amp; Spellcasting">
+    <Card title={t('cards.attacksSpellcasting')}>
       <div className="mb-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">Ability</div>
+          <div className="text-xs uppercase text-fg-muted">{t('stats.ability')}</div>
           <div className="font-semibold uppercase text-fg">{character.spellcasting.ability}</div>
         </div>
         <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">Save DC</div>
+          <div className="text-xs uppercase text-fg-muted">{t('stats.saveDC')}</div>
           <div className="font-semibold text-fg">{dc ?? '—'}</div>
         </div>
         <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">Attack</div>
+          <div className="text-xs uppercase text-fg-muted">{t('stats.attack')}</div>
           {attack !== undefined ? (
-            <D20RollButton label="Spell attack" modifier={attack} className="font-semibold text-fg">
+            <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="font-semibold text-fg">
               {formatModifier(attack)}
             </D20RollButton>
           ) : (
@@ -50,7 +52,7 @@ export function AttacksSpellcasting({
 
       {character.spellcasting.slots && (
         <div className="mb-3">
-          <div className="mb-1 text-xs uppercase text-fg-muted">Spell Slots</div>
+          <div className="mb-1 text-xs uppercase text-fg-muted">{t('stats.spellSlots')}</div>
           <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import type { FieldWriteTarget, SpellcastingInfo } from '../../../vault/types'
 
@@ -15,6 +16,7 @@ export function SpellSlotTracker({
   characterPath?: string
   writeTargets?: Record<string, FieldWriteTarget>
 }) {
+  const t = useT()
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const canEdit = editPermission === 'granted' && Boolean(characterPath)
@@ -29,7 +31,7 @@ export function SpellSlotTracker({
         const target = writeTargets?.[level]
         return (
           <div key={level} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5">
-            <span className="w-11 shrink-0 text-xs uppercase text-fg-muted">Lvl {level}</span>
+            <span className="w-11 shrink-0 text-xs uppercase text-fg-muted">{t('spells.slotLevelLabel', { level })}</span>
             <div className="flex flex-1 flex-wrap gap-1">
               {Array.from({ length: max }, (_, i) => {
                 const filled = i < remaining
@@ -39,7 +41,7 @@ export function SpellSlotTracker({
                   <button
                     key={i}
                     type="button"
-                    aria-label={`Level ${level} slot ${i + 1}`}
+                    aria-label={t('a11y.spellSlot', { level, n: i + 1 })}
                     onClick={() => {
                       const nextRemaining = remaining === i + 1 ? i : i + 1
                       const nextUsed = max - nextRemaining

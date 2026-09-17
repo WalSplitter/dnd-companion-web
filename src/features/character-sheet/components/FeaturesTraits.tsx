@@ -1,13 +1,15 @@
 import { Card } from '../../../components/Card'
+import { useT } from '../../../i18n/I18nContext'
 import { renderObsidianLine } from '../../../vault/components/WikiLink'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function FeaturesTraits({ character }: { character: CharacterFrontmatter }) {
+  const t = useT()
   const features = character.features ?? []
   if (features.length === 0) return null
 
   return (
-    <Card title="Features &amp; Traits">
+    <Card title={t('cards.featuresTraits')}>
       <ul className="space-y-3">
         {features.map((f) => (
           <li key={f.name}>

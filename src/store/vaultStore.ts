@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { sampleVaultFiles } from '../sample-vault'
+import { detectRuleset, type RulesetDetectionResult } from '../vault/detectRuleset'
 import { buildVault } from '../vault/parseFrontmatter'
 import { clearVaultHandle, loadVaultHandle, saveVaultHandle } from '../vault/handleStore'
 import {
@@ -14,8 +15,9 @@ import { writeFieldValue } from '../vault/writeback/persist'
 import type { CharacterFrontmatter, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 const SAMPLE_VAULT = buildVault(sampleVaultFiles)
+const SAMPLE_RULESET = detectRuleset(sampleVaultFiles)
 
-export type VaultSource = 'sample' | 'user'
+export type VaultSource = 'sample' | 'user' | 'dev'
 type VaultStatus = 'loading' | 'loaded' | 'error'
 /** 'unavailable': no file handles to write through (sample vault, or the <input webkitdirectory>
  * fallback for browsers without the File System Access API) — fields stay read-only. */
@@ -31,6 +33,8 @@ interface VaultState {
   loadingProgress: { done: number; total: number } | null
   vault: Vault
   index: VaultIndex
+  /** Best-effort guess at which ruleset the loaded vault's content follows — see `detectRuleset.ts`. */
+  ruleset: RulesetDetectionResult
   error: string | null
   rootHandle: FileSystemDirectoryHandle | null
   fileHandles: Map<string, FileSystemFileHandle> | null
@@ -38,6 +42,11 @@ interface VaultState {
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
   loadSampleVault: () => void
+  /** TEMPORARY, dev-only — loads the bundled dummy character + Endeavour-schema mock items, merged
+   * with the real vault read live off disk (`src/dev-vault/`). Dynamically imported so a production
+   * build never bundles that vault's content — see that module's doc comment. No-op outside dev.
+   * Remove once the DM's real vault has character/item sheets to develop against instead. */
+  loadDevVault: () => Promise<void>
   loadFromDirectoryPicker: () => Promise<void>
   loadFromFileList: (fileList: FileList) => Promise<void>
   restoreLastVault: () => Promise<void>
@@ -73,7 +82,7 @@ function applyVault(files: VaultSourceFile[], imageAssets?: ImageAssets) {
   revokeActiveImageAssets()
   activeImageAssets = imageAssets ?? null
   const vault = buildVault(files, imageAssets)
-  return { vault, index: buildVaultIndex(vault) }
+  return { vault, index: buildVaultIndex(vault), ruleset: detectRuleset(files) }
 }
 
 export const useVaultStore = create<VaultState>((set, get) => ({
@@ -84,6 +93,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   loadingProgress: null,
   vault: SAMPLE_VAULT,
   index: buildVaultIndex(SAMPLE_VAULT),
+  ruleset: SAMPLE_RULESET,
   error: null,
   rootHandle: null,
   fileHandles: null,
@@ -100,6 +110,34 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       loadingProgress: null,
       vault: SAMPLE_VAULT,
       index: buildVaultIndex(SAMPLE_VAULT),
+      ruleset: SAMPLE_RULESET,
+      error: null,
+      rootHandle: null,
+      fileHandles: null,
+      editPermission: 'unavailable',
+      writeError: null,
+    })
+    void clearVaultHandle()
+  },
+
+  loadDevVault: async () => {
+    // `import.meta.env.DEV` is statically replaced at build time, so this whole branch — including
+    // the dynamic import — is dead code a production build's tree-shaking removes entirely; that's
+    // what actually keeps the real Endeavour vault's content out of `npm run build`'s output, not
+    // just the button being hidden (see `dev-vault/index.ts`'s doc comment).
+    if (!import.meta.env.DEV) return
+    const { devVaultFiles } = await import('../dev-vault')
+    const vault = buildVault(devVaultFiles)
+    revokeActiveImageAssets()
+    set({
+      status: 'loaded',
+      source: 'dev',
+      vaultName: null,
+      reconnectName: null,
+      loadingProgress: null,
+      vault,
+      index: buildVaultIndex(vault),
+      ruleset: detectRuleset(devVaultFiles),
       error: null,
       rootHandle: null,
       fileHandles: null,

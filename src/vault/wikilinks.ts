@@ -1,4 +1,5 @@
-import type { CharacterFrontmatter, ItemFrontmatter, SpellFrontmatter, Vault, VaultFile, VaultNote } from './types'
+import { endeavourItemSummary } from './adapters/endeavourItem'
+import type { CharacterFrontmatter, EndeavourItemFrontmatter, ItemFrontmatter, SpellFrontmatter, Vault, VaultFile, VaultNote } from './types'
 
 const WIKILINK_RE = /^\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]$/
 
@@ -21,6 +22,8 @@ export function wikilinkTarget(raw: string): string {
 export interface VaultIndex {
   charactersByName: Map<string, VaultFile<CharacterFrontmatter>>
   itemsByName: Map<string, VaultFile<ItemFrontmatter>>
+  /** Experimental "Endeavour" tag-scheme items — see `adapters/endeavourItem.ts`. */
+  endeavourItemsByName: Map<string, VaultFile<EndeavourItemFrontmatter>>
   spellsByName: Map<string, VaultFile<SpellFrontmatter>>
   notesByName: Map<string, VaultNote>
 }
@@ -36,13 +39,16 @@ export function buildVaultIndex(vault: Vault): VaultIndex {
   const itemsByName = new Map<string, VaultFile<ItemFrontmatter>>()
   for (const item of vault.items) itemsByName.set(normalize(item.frontmatter.name), item)
 
+  const endeavourItemsByName = new Map<string, VaultFile<EndeavourItemFrontmatter>>()
+  for (const item of vault.endeavourItems) endeavourItemsByName.set(normalize(item.frontmatter.name), item)
+
   const spellsByName = new Map<string, VaultFile<SpellFrontmatter>>()
   for (const spell of vault.spells) spellsByName.set(normalize(spell.frontmatter.name), spell)
 
   const notesByName = new Map<string, VaultNote>()
   for (const note of vault.notes) notesByName.set(normalize(note.name), note)
 
-  return { charactersByName, itemsByName, spellsByName, notesByName }
+  return { charactersByName, itemsByName, endeavourItemsByName, spellsByName, notesByName }
 }
 
 export function resolveCharacterLink(index: VaultIndex, link: string): VaultFile<CharacterFrontmatter> | undefined {
@@ -51,6 +57,12 @@ export function resolveCharacterLink(index: VaultIndex, link: string): VaultFile
 
 export function resolveItemLink(index: VaultIndex, link: string): VaultFile<ItemFrontmatter> | undefined {
   return index.itemsByName.get(normalize(wikilinkTarget(link)))
+}
+
+/** Experimental "Endeavour" tag-scheme items — see `adapters/endeavourItem.ts`. Tried as a fallback
+ * wherever a native `resolveItemLink` lookup comes up empty (see `entryWeight`/`ItemList.tsx`). */
+export function resolveEndeavourItemLink(index: VaultIndex, link: string): VaultFile<EndeavourItemFrontmatter> | undefined {
+  return index.endeavourItemsByName.get(normalize(wikilinkTarget(link)))
 }
 
 export function resolveSpellLink(index: VaultIndex, link: string): VaultFile<SpellFrontmatter> | undefined {
@@ -84,6 +96,17 @@ export function resolveWikilink(index: VaultIndex, link: string): ResolvedWikili
   const item = resolveItemLink(index, target)
   if (item) {
     return { kind: 'item', name: item.frontmatter.name, path: item.path, body: item.body, summary: item.frontmatter.category }
+  }
+
+  const endeavourItem = resolveEndeavourItemLink(index, target)
+  if (endeavourItem) {
+    return {
+      kind: 'item',
+      name: endeavourItem.frontmatter.name,
+      path: endeavourItem.path,
+      body: endeavourItem.body,
+      summary: endeavourItemSummary(endeavourItem.frontmatter),
+    }
   }
 
   const spell = resolveSpellLink(index, target)

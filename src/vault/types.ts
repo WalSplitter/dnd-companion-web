@@ -1,3 +1,7 @@
+import type { EndeavourItemFrontmatter } from './adapters/endeavourItem'
+
+export type { EndeavourItemFrontmatter } from './adapters/endeavourItem'
+
 export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 
 export const ABILITIES: { key: AbilityKey; label: string }[] = [
@@ -254,4 +258,8 @@ export interface Vault {
   items: VaultFile<ItemFrontmatter>[]
   spells: VaultFile<SpellFrontmatter>[]
   notes: VaultNote[]
+  /** Items detected via the experimental "Endeavour" vault tag scheme (`Gegenstand/Waffe/...`) —
+   * see `adapters/endeavourItem.ts`. Kept separate from `items` (the native `type: item` schema)
+   * rather than merged in; see that module's doc comment for why. */
+  endeavourItems: VaultFile<EndeavourItemFrontmatter>[]
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useT } from '../i18n/I18nContext'
 import { formatModifier } from '../vault/deriveStats'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
 
@@ -22,6 +23,7 @@ export function D20RollButton({
    * tile's own number the clickable roll trigger instead of adding a separate icon next to it. */
   children?: React.ReactNode
 }) {
+  const t = useT()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
 
   function roll(e: React.MouseEvent) {
@@ -32,13 +34,7 @@ export function D20RollButton({
   }
 
   return (
-    <RollButtonShell
-      outcome={outcome}
-      onClose={() => setOutcome(null)}
-      onClick={roll}
-      className={className}
-      title="Click to roll · Shift = advantage · Alt = disadvantage"
-    >
+    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={t('roll.tooltipD20')}>
       {children ?? '🎲'}
     </RollButtonShell>
   )
@@ -58,6 +54,7 @@ export function DamageRollButton({
   damageType?: string
   className?: string
 }) {
+  const t = useT()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
 
   function roll(e: React.MouseEvent) {
@@ -65,11 +62,16 @@ export function DamageRollButton({
     e.stopPropagation()
     const critical = e.shiftKey
     const result = rollDamage(`${dice}${bonus ? formatModifier(bonus) : ''}`, { critical })
-    if (result) setOutcome({ kind: 'damage', label: `${label}${critical ? ' (crit)' : ''}${damageType ? ` · ${damageType}` : ''}`, result })
+    if (result)
+      setOutcome({
+        kind: 'damage',
+        label: `${label}${critical ? t('roll.critSuffix') : ''}${damageType ? ` · ${damageType}` : ''}`,
+        result,
+      })
   }
 
   return (
-    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title="Click to roll · Shift = critical">
+    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={t('roll.tooltipDamage')}>
       {dice}
       {bonus ? formatModifier(bonus) : ''}
     </RollButtonShell>
@@ -121,6 +123,7 @@ function RollButtonShell({
 }
 
 function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose: () => void }) {
+  const t = useT()
   const { result } = outcome
   const isD20 = outcome.kind === 'd20'
   const crit = isD20 && (result as D20RollResult).isCriticalHit
@@ -141,7 +144,7 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
             onClose()
           }}
           className="text-xs text-fg-muted hover:text-fg"
-          aria-label="Close"
+          aria-label={t('common.close')}
         >
           ✕
         </button>
@@ -152,8 +155,8 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
         {result.modifier ? ` ${formatModifier(result.modifier)}` : ''}
         {isD20 && (result as D20RollResult).mode !== 'normal' && ` · ${(result as D20RollResult).mode}`}
       </span>
-      {crit && <span className="mt-1 block text-xs font-semibold text-success">Critical!</span>}
-      {fumble && <span className="mt-1 block text-xs font-semibold text-danger">Fumble!</span>}
+      {crit && <span className="mt-1 block text-xs font-semibold text-success">{t('roll.critical')}</span>}
+      {fumble && <span className="mt-1 block text-xs font-semibold text-danger">{t('roll.fumble')}</span>}
     </span>
   )
 }

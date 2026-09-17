@@ -1,4 +1,5 @@
 import { Card } from '../../components/Card'
+import { useT } from '../../i18n/I18nContext'
 import type { CharacterFrontmatter, InventoryEntry } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { resolveItemLink } from '../../vault/wikilinks'
@@ -24,6 +25,7 @@ export function InventoryPanel({
   characterPath: string
   index: VaultIndex
 }) {
+  const t = useT()
   const equipped = character.inventory?.equipped ?? []
   const carried = character.inventory?.carried ?? []
 
@@ -31,17 +33,17 @@ export function InventoryPanel({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Card title="Equipped">
-        <ItemList entries={equipped} index={index} emptyLabel="Nothing equipped." characterPath={characterPath} section="equipped" />
+      <Card title={t('cards.equipped')}>
+        <ItemList entries={equipped} index={index} emptyLabel={t('inventory.nothingEquipped')} characterPath={characterPath} section="equipped" />
       </Card>
-      <Card title="Carried">
-        <ItemList entries={carried} index={index} emptyLabel="Backpack is empty." characterPath={characterPath} section="carried" />
+      <Card title={t('cards.carried')}>
+        <ItemList entries={carried} index={index} emptyLabel={t('inventory.backpackEmpty')} characterPath={characterPath} section="carried" />
       </Card>
-      <Card title="Currency">
+      <Card title={t('cards.currency')}>
         <CurrencyDisplay currency={character.currency} />
       </Card>
-      <Card title="Total Weight">
-        <div className="text-2xl font-bold text-fg">{totalWeight} lb</div>
+      <Card title={t('cards.totalWeight')}>
+        <div className="text-2xl font-bold text-fg">{t('inventory.weightValue', { value: totalWeight })}</div>
       </Card>
     </div>
   )

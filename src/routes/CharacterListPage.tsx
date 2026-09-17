@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom'
+import { useT } from '../i18n/I18nContext'
 import { useVaultStore } from '../store/vaultStore'
 import { classSummary } from '../vault/deriveStats'
 
 export function CharacterListPage() {
+  const t = useT()
   const characters = useVaultStore((s) => s.vault.characters)
 
   if (characters.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border p-10 text-center text-fg-muted">
-        No characters found in this vault. Open a vault folder that contains files with{' '}
-        <code className="rounded bg-surface-2 px-1 py-0.5">type: character</code> frontmatter.
+        {t('characterList.emptyBefore')} <code className="rounded bg-surface-2 px-1 py-0.5">type: character</code>{' '}
+        {t('characterList.emptyAfter')}
       </div>
     )
   }
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-semibold text-fg">Characters</h1>
+      <h1 className="mb-4 text-2xl font-semibold text-fg">{t('characterList.title')}</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {characters.map((c) => (
           <Link

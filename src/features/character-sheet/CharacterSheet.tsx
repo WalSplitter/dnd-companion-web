@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../../i18n/I18nContext'
 import { VaultIndexProvider } from '../../vault/VaultIndexContext'
 import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
@@ -31,13 +32,14 @@ export function CharacterSheet({
   index: VaultIndex
   body?: string
 }) {
+  const t = useT()
   const [tab, setTab] = useState<Tab>('sheet')
   const hasSpells = Boolean(character.spellcasting)
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'sheet', label: 'Sheet' },
-    { key: 'inventory', label: 'Inventory' },
-    ...(hasSpells ? ([{ key: 'spells', label: 'Spells' }] as const) : []),
+    { key: 'sheet', label: t('tabs.sheet') },
+    { key: 'inventory', label: t('tabs.inventory') },
+    ...(hasSpells ? ([{ key: 'spells', label: t('tabs.spells') }] as const) : []),
   ]
 
   return (

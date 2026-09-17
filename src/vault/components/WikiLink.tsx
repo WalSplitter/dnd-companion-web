@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useT, type TranslationKey } from '../../i18n/I18nContext'
 import { useVaultIndex } from '../VaultIndexContext'
 import { basename, resolveWikilink, type ResolvedWikilink } from '../wikilinks'
 
 const WIKILINK_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
 const HOVER_OPEN_DELAY_MS = 350
 
-const KIND_LABEL: Record<ResolvedWikilink['kind'], string> = {
-  character: 'Character',
-  item: 'Item',
-  spell: 'Spell',
-  note: 'Note',
-  unresolved: 'Unresolved',
+const KIND_KEY: Record<ResolvedWikilink['kind'], TranslationKey> = {
+  character: 'wikilink.character',
+  item: 'wikilink.item',
+  spell: 'wikilink.spell',
+  note: 'wikilink.note',
+  unresolved: 'wikilink.unresolved',
 }
 
 /** Turns every `[[Target]]` / `[[Target|Alias]]` in a single line of text into a clickable
@@ -155,6 +156,7 @@ export function WikiLink({ target, display }: { target: string; display: string 
 }
 
 function WikiLinkPopover({ resolved, onClose }: { resolved: ResolvedWikilink; onClose: () => void }) {
+  const t = useT()
   return (
     <span
       role="dialog"
@@ -162,19 +164,19 @@ function WikiLinkPopover({ resolved, onClose }: { resolved: ResolvedWikilink; on
     >
       <span className="mb-1 flex items-start justify-between gap-2">
         <span className="font-semibold text-fg">{resolved.name}</span>
-        <button type="button" onClick={onClose} className="text-xs text-fg-muted hover:text-fg" aria-label="Close">
+        <button type="button" onClick={onClose} className="text-xs text-fg-muted hover:text-fg" aria-label={t('common.close')}>
           ✕
         </button>
       </span>
       <span className="mb-1.5 block text-xs uppercase tracking-wide text-fg-muted">
-        {KIND_LABEL[resolved.kind]}
+        {t(KIND_KEY[resolved.kind])}
         {resolved.summary ? ` · ${resolved.summary}` : ''}
       </span>
       {resolved.kind === 'unresolved' ? (
-        <span className="block text-sm text-fg-muted">No note found for “{resolved.name}”.</span>
+        <span className="block text-sm text-fg-muted">{t('wikilink.noNoteFound', { name: resolved.name })}</span>
       ) : (
         <span className="block max-h-64 overflow-y-auto text-sm text-fg-muted [&_p]:mb-0">
-          {renderObsidianBody(resolved.body) ?? <span className="italic">No description.</span>}
+          {renderObsidianBody(resolved.body) ?? <span className="italic">{t('wikilink.noDescription')}</span>}
         </span>
       )}
       {resolved.kind === 'character' && (
@@ -183,7 +185,7 @@ function WikiLinkPopover({ resolved, onClose }: { resolved: ResolvedWikilink; on
           className="mt-2 inline-block text-xs text-primary hover:underline"
           onClick={onClose}
         >
-          Open full sheet →
+          {t('wikilink.openFullSheet')}
         </Link>
       )}
     </span>

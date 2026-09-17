@@ -99,6 +99,9 @@ pair under `src/vault/adapters/` that maps the new shape onto `CharacterFrontmat
 `buildVault()` alongside the existing legacy adapter — the rest of the app (derived stats, the sheet
 UI, inventory, spells) is entirely format-agnostic.
 
+A DM-provided preliminary export of a new campaign vault is being evaluated against this — see
+`docs/inventory-vault-alignment.md` and the draft, not-yet-wired `src/vault/adapters/endeavourItem.ts`.
+
 ## Browser support
 
 Vault folder access uses the File System Access API, which is Chromium-only (Chrome, Edge, Opera).
@@ -106,6 +109,7 @@ Firefox and Safari fall back to a one-shot `<input webkitdirectory>` picker with
 
 ## Not yet implemented
 
-- Editing: the app is read-only. Nothing it does writes back to the vault.
+- Native-schema inventory (`inventory.equipped`/`carried` wikilinks) and currency are read-only; only
+  the legacy adapter's Meta-Bind fallback fields write back today (see `src/vault/writeback/`).
 - Death saves are display-only (no click-to-toggle).
 - PWA/offline packaging (`vite-plugin-pwa`) isn't wired up yet.

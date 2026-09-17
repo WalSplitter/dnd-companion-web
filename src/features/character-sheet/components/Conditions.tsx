@@ -1,9 +1,11 @@
 import { Card } from '../../../components/Card'
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { renderObsidianLine } from '../../../vault/components/WikiLink'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function Conditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
   const conditions = character.conditions
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
@@ -14,12 +16,12 @@ export function Conditions({ character, characterPath }: { character: CharacterF
   const writeTargets = character._write
 
   return (
-    <Card title="Conditions">
+    <Card title={t('cards.conditions')}>
       <div className="space-y-3">
         {luck && (
           <div>
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="text-fg-muted">Luck Points</span>
+              <span className="text-fg-muted">{t('stats.luckPoints')}</span>
               <span className="font-semibold text-fg">
                 {luck.current}/{luck.max}
               </span>
@@ -34,7 +36,7 @@ export function Conditions({ character, characterPath }: { character: CharacterF
                   <button
                     key={i}
                     type="button"
-                    aria-label={`Luck point ${i + 1}`}
+                    aria-label={t('a11y.luckPoint', { n: i + 1 })}
                     onClick={() =>
                       void updateCharacterField(characterPath, target, !held, (c) => {
                         if (!c.conditions?.luck_points) return c
@@ -52,7 +54,7 @@ export function Conditions({ character, characterPath }: { character: CharacterF
         {exhaustion !== undefined && (
           <div>
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="text-fg-muted">Exhaustion</span>
+              <span className="text-fg-muted">{t('stats.exhaustion')}</span>
               <span className={`font-semibold ${exhaustion >= 6 ? 'text-danger' : 'text-fg'}`}>
                 {exhaustion}/{exhaustion_max}
               </span>
@@ -67,7 +69,7 @@ export function Conditions({ character, characterPath }: { character: CharacterF
                   <button
                     key={i}
                     type="button"
-                    aria-label={`Exhaustion level ${i + 1}`}
+                    aria-label={t('a11y.exhaustionLevel', { n: i + 1 })}
                     onClick={() => {
                       const next = exhaustion === i + 1 ? i : i + 1
                       void updateCharacterField(characterPath, target, next, (c) =>

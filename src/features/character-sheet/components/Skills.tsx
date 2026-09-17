@@ -1,5 +1,6 @@
 import { Card } from '../../../components/Card'
 import { D20RollButton } from '../../../dice/RollButton'
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { formatModifier, skillBonus, skillProficiencyLevel } from '../../../vault/deriveStats'
 import { SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
@@ -17,14 +18,16 @@ function withSkillLevel(character: CharacterFrontmatter, key: SkillKey, level: '
 }
 
 export function Skills({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const canEdit = editPermission === 'granted'
 
   return (
-    <Card title="Skills">
+    <Card title={t('cards.skills')}>
       <ul className="space-y-1.5">
-        {SKILLS.map(({ key, label, ability }) => {
+        {SKILLS.map(({ key, ability }) => {
+          const label = t(`skill.${key}`)
           const bonus = skillBonus(character, key)
           const level = skillProficiencyLevel(character, key)
           const target = character._write?.skills?.[key]
@@ -34,7 +37,7 @@ export function Skills({ character, characterPath }: { character: CharacterFront
               {canEdit && target ? (
                 <button
                   type="button"
-                  aria-label={`Cycle ${label} proficiency`}
+                  aria-label={t('a11y.cycleSkillProficiency', { label })}
                   onClick={() => {
                     const nextLevel = NEXT_LEVEL[level]
                     void updateCharacterField(characterPath, target, LEVEL_TO_RAW[nextLevel], (c) => withSkillLevel(c, key, nextLevel))

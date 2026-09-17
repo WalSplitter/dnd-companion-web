@@ -1,18 +1,21 @@
 import { Card } from '../../../components/Card'
 import { EditableNumber } from '../../../components/EditableNumber'
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier, formatModifier } from '../../../vault/deriveStats'
 import { ABILITIES, type CharacterFrontmatter } from '../../../vault/types'
 
 export function AbilityScores({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const canEdit = editPermission === 'granted'
 
   return (
-    <Card title="Ability Scores">
+    <Card title={t('cards.abilityScores')}>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {ABILITIES.map(({ key, label }) => {
+        {ABILITIES.map(({ key }) => {
+          const label = t(`ability.${key}`)
           const score = character.abilities[key]
           const mod = abilityModifier(score)
           const target = character._write?.abilities?.[key]

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card } from '../../../components/Card'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { DamageRollButton } from '../../../dice/RollButton'
+import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
@@ -13,7 +14,17 @@ import type { CharacterFrontmatter } from '../../../vault/types'
  * thumb showing the live value. Re-mounted with `key={current}` whenever the committed value
  * changes from outside, same reasoning as `EditableNumber`.
  */
-function HpBarSlider({ current, max, onCommit }: { current: number; max: number; onCommit: (next: number) => void }) {
+function HpBarSlider({
+  current,
+  max,
+  onCommit,
+  ariaLabel,
+}: {
+  current: number
+  max: number
+  onCommit: (next: number) => void
+  ariaLabel: string
+}) {
   const [value, setValue] = useState(current)
   const [dragging, setDragging] = useState(false)
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
@@ -48,13 +59,14 @@ function HpBarSlider({ current, max, onCommit }: { current: number; max: number;
         onKeyUp={endDrag}
         onBlur={() => setDragging(false)}
         className="absolute inset-x-0 -top-2 h-6 w-full cursor-pointer opacity-0"
-        aria-label="Current hit points"
+        aria-label={ariaLabel}
       />
     </div>
   )
 }
 
 export function HitPoints({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
   const { current, max, temp = 0 } = character.hp
   const pct = Math.max(0, Math.min(100, (current / max) * 100))
   const hitDiceTotal = character.hit_dice.total
@@ -67,7 +79,7 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
   const writeTargets = character._write
 
   return (
-    <Card title="Hit Points">
+    <Card title={t('cards.hitPoints')}>
       <div className="flex items-end justify-between">
         <span className="flex items-baseline gap-1 text-2xl font-bold text-fg">
           {canEdit && writeTargets?.hp_current ? (
@@ -96,10 +108,14 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
               }
               className="w-10 rounded-md border border-border bg-surface-2 px-1 text-center text-sm font-medium text-accent"
             />
-            temp
+            {t('stats.temp')}
           </span>
         ) : (
-          temp > 0 && <span className="text-sm font-medium text-accent">+{temp} temp</span>
+          temp > 0 && (
+            <span className="text-sm font-medium text-accent">
+              +{temp} {t('stats.temp')}
+            </span>
+          )
         )}
       </div>
       {canEdit && writeTargets?.hp_current ? (
@@ -107,6 +123,7 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
           key={current}
           current={current}
           max={max}
+          ariaLabel={t('a11y.currentHp')}
           onCommit={(next) =>
             void updateCharacterField(characterPath, writeTargets.hp_current, next, (c) => ({ ...c, hp: { ...c.hp, current: next } }))
           }
@@ -117,7 +134,7 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
         </div>
       )}
       <div className="mt-3 flex items-center justify-between text-sm text-fg-muted">
-        <span>Hit Dice</span>
+        <span>{t('stats.hitDice')}</span>
         <span className="flex items-center gap-1.5 font-semibold text-fg">
           {canEdit && writeTargets?.hit_dice_remaining ? (
             <EditableNumber
@@ -136,7 +153,7 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
             hitDiceRemaining
           )}
           /{hitDiceTotal} {character.hit_dice.die}
-          <DamageRollButton label="Hit Die" dice={`1${character.hit_dice.die}`} bonus={conMod} />
+          <DamageRollButton label={t('roll.hitDie')} dice={`1${character.hit_dice.die}`} bonus={conMod} />
         </span>
       </div>
     </Card>
