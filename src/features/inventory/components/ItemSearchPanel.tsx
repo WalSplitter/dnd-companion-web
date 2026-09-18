@@ -16,24 +16,33 @@ export interface ContainerOption {
  * equipped container — either by dragging a result onto a `ContainerGrid`, or via this panel's own
  * quantity + "Hinzufügen" fallback (adds `quantity` separate tiles, per the mockup's annotation that
  * multiple units are *not* stacked into one cell).
+ *
+ * Also hosts the fallback for gear the DM hasn't written a vault page for yet: a small form to create
+ * a *temporary* item (name + slot cost), placed with the same target container + quantity controls.
+ * It's only ever stored on the character sheet — see `EndeavourCustomItem`.
  */
 export function ItemSearchPanel({
   items,
   containerOptions,
   onAdd,
+  onAddCustom,
   onSelect,
-  selectedLink,
+  selectedKey,
 }: {
   items: VaultFile<EndeavourItemFrontmatter>[]
   containerOptions: ContainerOption[]
   onAdd: (link: string, containerIndex: number, quantity: number) => void
+  onAddCustom: (name: string, plaetze: number, containerIndex: number, quantity: number) => void
   onSelect: (selected: SelectedGridItem) => void
-  selectedLink: string | undefined
+  selectedKey: string | undefined
 }) {
   const t = useT()
   const [query, setQuery] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [targetIndex, setTargetIndex] = useState(containerOptions[0]?.index ?? 0)
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customSlots, setCustomSlots] = useState(1)
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -41,7 +50,7 @@ export function ItemSearchPanel({
     return items.filter((i) => i.frontmatter.name.toLowerCase().includes(q)).slice(0, 20)
   }, [items, query])
 
-  const selectedResult = results.find((r) => `[[${r.frontmatter.name}]]` === selectedLink)
+  const selectedResult = results.find((r) => `[[${r.frontmatter.name}]]` === selectedKey)
   const validTargetIndex = containerOptions.some((o) => o.index === targetIndex) ? targetIndex : containerOptions[0]?.index
 
   return (
@@ -68,8 +77,8 @@ export function ItemSearchPanel({
                 key={result.path}
                 draggable
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'new', link }))}
-                onClick={() => onSelect({ link, item: result })}
-                className={`flex items-center gap-2 cursor-grab py-1.5 text-sm hover:text-accent ${selectedLink === link ? 'font-medium text-accent' : 'text-fg'}`}
+                onClick={() => onSelect({ key: link, item: result })}
+                className={`flex items-center gap-2 cursor-grab py-1.5 text-sm hover:text-accent ${selectedKey === link ? 'font-medium text-accent' : 'text-fg'}`}
               >
                 <span className={`h-2 w-2 shrink-0 rounded-full ${KIND_DOT_CLASSES[result.frontmatter.kind]}`} />
                 {result.frontmatter.name}
@@ -122,6 +131,63 @@ export function ItemSearchPanel({
           >
             {t('endeavourInventory.addToInventory')}
           </button>
+        </div>
+      )}
+
+      {containerOptions.length > 0 && (
+        <div className="mt-3 border-t border-border pt-2">
+          <button
+            type="button"
+            aria-expanded={customOpen}
+            onClick={() => {
+              if (!customOpen && !customName) setCustomName(query.trim())
+              setCustomOpen((open) => !open)
+            }}
+            className="text-xs text-accent hover:underline"
+          >
+            {t('endeavourInventory.customToggle')}
+          </button>
+
+          {customOpen && (
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <div className="min-w-32 flex-1">
+                <label className="mb-1 block text-xs text-fg-muted" htmlFor="endeavour-custom-name">
+                  {t('endeavourInventory.customName')}
+                </label>
+                <input
+                  id="endeavour-custom-name"
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-fg"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-fg-muted" htmlFor="endeavour-custom-slots">
+                  {t('endeavourInventory.customSlots')}
+                </label>
+                <input
+                  id="endeavour-custom-slots"
+                  type="number"
+                  min={1}
+                  value={customSlots}
+                  onChange={(e) => setCustomSlots(Math.max(1, Math.round(Number(e.target.value)) || 1))}
+                  className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-sm text-fg"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!customName.trim() || validTargetIndex === undefined}
+                onClick={() => {
+                  if (!customName.trim() || validTargetIndex === undefined) return
+                  onAddCustom(customName.trim(), customSlots, validTargetIndex, quantity)
+                }}
+                className="rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-fg disabled:opacity-50"
+              >
+                {t('endeavourInventory.customAdd')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

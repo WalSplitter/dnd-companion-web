@@ -4,8 +4,11 @@ import { renderObsidianBody } from '../../../vault/components/WikiLink'
 import type { VaultFile } from '../../../vault/types'
 
 export interface SelectedGridItem {
-  link: string
+  /** Selection identity — a vault item's wikilink, or a temporary item's `custom:` key (see `entryKey`). */
+  key: string
   item: VaultFile<EndeavourItemFrontmatter> | undefined
+  /** True for a player-created temporary item that has no vault page (yet). */
+  custom?: boolean
 }
 
 /** Shows the currently selected item's details — selection can come from clicking a placed tile
@@ -23,7 +26,7 @@ export function ItemDetailPanel({ selected }: { selected: SelectedGridItem | nul
   if (!selected.item) {
     return (
       <div className="rounded-lg border border-border bg-surface p-3">
-        <div className="font-medium text-danger">{t('inventory.unresolvedReference', { name: selected.link })}</div>
+        <div className="font-medium text-danger">{t('inventory.unresolvedReference', { name: selected.key })}</div>
       </div>
     )
   }
@@ -35,8 +38,11 @@ export function ItemDetailPanel({ selected }: { selected: SelectedGridItem | nul
     <div className="rounded-lg border border-border bg-surface p-3">
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-medium text-fg">{fm.name}</span>
-        <span className="shrink-0 text-xs uppercase text-fg-muted">{endeavourItemSummary(fm)}</span>
+        <span className="shrink-0 text-xs uppercase text-fg-muted">
+          {selected.custom ? t('endeavourInventory.customBadge') : endeavourItemSummary(fm)}
+        </span>
       </div>
+      {selected.custom && <p className="mt-1 text-xs text-fg-muted">{t('endeavourInventory.customNotice')}</p>}
       <dl className="mt-2 grid grid-cols-2 gap-1 text-xs text-fg-muted">
         {fm.cost && (
           <>

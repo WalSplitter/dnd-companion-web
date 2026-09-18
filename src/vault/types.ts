@@ -208,8 +208,23 @@ export interface InlineItem {
 export interface EndeavourContainerSlotAssignment {
   /** Wikilink to the equipped container item, e.g. `"[[Rucksack (Groß)]]"`. */
   container: string
-  /** Wikilinks to the items placed inside, in grid fill order (row-major, see `grid.ts`). */
-  items: string[]
+  /** The items placed inside, in grid fill order (row-major, see `grid.ts`). */
+  items: EndeavourInventoryEntry[]
+}
+
+/** A wikilink to a vault item note, or a player-created temporary item (see `EndeavourCustomItem`). */
+export type EndeavourInventoryEntry = string | EndeavourCustomItem
+
+/**
+ * Fallback for gear picked up spontaneously in a session that the DM hasn't written an item note for
+ * yet: stored inline on the character sheet only (name + slot cost) — deliberately never turned into
+ * a markdown page automatically, to avoid duplicates/wrong entries in the vault. The DM later
+ * replaces it with a real `[[Wikilink]]` entry once an actual item page exists. Each unit is its own
+ * entry (no quantity field), matching how vault items are placed one tile per unit.
+ */
+export interface EndeavourCustomItem {
+  name: string
+  plaetze: number
 }
 
 export interface ItemFrontmatter {

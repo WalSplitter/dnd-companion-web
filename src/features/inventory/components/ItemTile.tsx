@@ -1,14 +1,14 @@
 import { useT } from '../../../i18n/I18nContext'
 import type { ContainerTile } from '../grid'
-import { KIND_TILE_CLASSES } from '../itemColors'
+import { CUSTOM_TILE_CLASSES, KIND_TILE_CLASSES } from '../itemColors'
 
 /** Native-DnD payload for picking up an already-placed tile and dropping it onto a *different*
  * container's `ContainerGrid` — see `EndeavourInventoryGrid.handleDrop`'s `move` branch. Distinct
  * `type` from the search panel's `{ type: 'new' }` payload so a drop target can tell "move this
- * existing item" apart from "place a fresh one". */
+ * existing item" apart from "place a fresh one". Carries only source indices: the entry itself
+ * (wikilink or temporary custom item) is looked up from the character's data on drop. */
 export interface MoveTilePayload {
   type: 'move'
-  link: string
   sourceContainerIndex: number
   sourceLinkIndex: number
 }
@@ -33,7 +33,11 @@ export function ItemTile({
 }) {
   const t = useT()
   const name = tile.item?.frontmatter.name ?? t('endeavourInventory.unresolvedItem')
-  const kindClasses = tile.item ? KIND_TILE_CLASSES[tile.item.frontmatter.kind] : 'border-border bg-surface-2'
+  const kindClasses = tile.custom
+    ? CUSTOM_TILE_CLASSES
+    : tile.item
+      ? KIND_TILE_CLASSES[tile.item.frontmatter.kind]
+      : 'border-border bg-surface-2'
 
   return (
     <div
@@ -41,7 +45,7 @@ export function ItemTile({
       tabIndex={0}
       draggable
       onDragStart={(e) => {
-        const payload: MoveTilePayload = { type: 'move', link: tile.link, sourceContainerIndex: containerIndex, sourceLinkIndex: tile.linkIndex }
+        const payload: MoveTilePayload = { type: 'move', sourceContainerIndex: containerIndex, sourceLinkIndex: tile.linkIndex }
         e.dataTransfer.setData('text/plain', JSON.stringify(payload))
       }}
       onClick={onSelect}
@@ -57,6 +61,9 @@ export function ItemTile({
       }`}
     >
       <span className="line-clamp-2">{name}</span>
+      {tile.custom && (
+        <span className="text-[9px] uppercase text-fg-muted">{t('endeavourInventory.customBadge')}</span>
+      )}
       <button
         type="button"
         aria-label={t('endeavourInventory.removeAria', { name })}

@@ -16,6 +16,10 @@ export const KIND_TILE_CLASSES: Record<EndeavourItemFrontmatter['kind'], string>
   container: 'border-border bg-surface-2',
 }
 
+/** Player-created temporary items (see `EndeavourCustomItem`): neutral tint + dashed border, so
+ * they read as "not yet in the vault" next to the kind-colored real items. */
+export const CUSTOM_TILE_CLASSES = 'border-dashed border-fg-muted/70 bg-fg-muted/10'
+
 /** Solid-color swatch classes for the same kinds, used as a small legend dot in the search results
  * list (a tile-sized tint would be too subtle at that size). */
 export const KIND_DOT_CLASSES: Record<EndeavourItemFrontmatter['kind'], string> = {

@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useT, type TranslationKey } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
-import type { CharacterFrontmatter, EndeavourContainerSlotAssignment } from '../../../vault/types'
+import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry } from '../../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { containerCapacity, layoutContainer } from '../grid'
+import { containerCapacity, isCustomEntry, layoutContainer, resolveEntry } from '../grid'
 import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
 import { ContainerGrid } from './ContainerGrid'
@@ -23,8 +23,8 @@ function parseDropPayload(raw: string): DropPayload {
     const parsed = JSON.parse(raw) as unknown
     if (parsed && typeof parsed === 'object') {
       const p = parsed as Record<string, unknown>
-      if (p.type === 'move' && typeof p.link === 'string' && typeof p.sourceContainerIndex === 'number' && typeof p.sourceLinkIndex === 'number') {
-        return { type: 'move', link: p.link, sourceContainerIndex: p.sourceContainerIndex, sourceLinkIndex: p.sourceLinkIndex }
+      if (p.type === 'move' && typeof p.sourceContainerIndex === 'number' && typeof p.sourceLinkIndex === 'number') {
+        return { type: 'move', sourceContainerIndex: p.sourceContainerIndex, sourceLinkIndex: p.sourceLinkIndex }
       }
       if (p.type === 'new' && typeof p.link === 'string') return { type: 'new', link: p.link }
     }
@@ -40,7 +40,8 @@ function parseDropPayload(raw: string): DropPayload {
  * container/`Plaetze` system (`character.endeavour_inventory`) — see the feature's plan doc. Shows
  * every equipped container at once (main `Gepäck` backpack(s) as full grids, 1-slot `Schnellzugriff`
  * pouches as a small row), a vault-wide item search that places into any of them, and the selected
- * item's details.
+ * item's details. Entries are vault-item wikilinks or player-created temporary items
+ * (`EndeavourCustomItem`) for gear the DM hasn't written a page for yet.
  */
 export function EndeavourInventoryGrid({
   character,
@@ -95,7 +96,7 @@ export function EndeavourInventoryGrid({
     setEndeavourInventory(characterPath, nextContainers)
   }
 
-  function updateAssignment(containerIndex: number, nextItems: string[]) {
+  function updateAssignment(containerIndex: number, nextItems: EndeavourInventoryEntry[]) {
     commit(containers.map((c, i) => (i === containerIndex ? { ...c, items: nextItems } : c)))
   }
 
@@ -108,28 +109,37 @@ export function EndeavourInventoryGrid({
     )
   }
 
+  function selectTile(r: (typeof resolved)[number], linkIndex: number) {
+    const tile = r.layout.tiles.find((tile) => tile.linkIndex === linkIndex)
+    if (tile) setSelected({ key: tile.key, item: tile.item, custom: tile.custom })
+  }
+
   /** Pure attempt: checks size against the container's `max_size`, then whether it still fits
    * alongside `currentItems` — without touching state, so callers (single drop vs. a quantity loop
    * vs. a cross-container move) decide when to actually commit. */
-  function tryPlace(currentItems: string[], link: string, containerIndex: number): { ok: true; items: string[] } | { ok: false; reason: PlaceFailure } {
+  function tryPlace(
+    currentItems: EndeavourInventoryEntry[],
+    entry: EndeavourInventoryEntry,
+    containerIndex: number,
+  ): { ok: true; items: EndeavourInventoryEntry[] } | { ok: false; reason: PlaceFailure } {
     const target = resolved.find((r) => r.containerIndex === containerIndex)
     if (!target) return { ok: false, reason: 'no_room' }
 
-    const itemFile = resolveEndeavourItemLink(index, link)
+    const itemFile = resolveEntry(index, entry)
     const itemSize = itemFile ? resolveItemSize(itemFile.frontmatter) : undefined
     if (itemSize && target.maxSize && compareEndeavourItemSize(itemSize, target.maxSize) > 0) {
       return { ok: false, reason: 'too_big' }
     }
 
-    const nextItems = [...currentItems, link]
+    const nextItems = [...currentItems, entry]
     const layout = layoutContainer(nextItems, index, target.capacity)
     if (layout.overflow.some((o) => o.linkIndex === nextItems.length - 1)) return { ok: false, reason: 'no_room' }
     return { ok: true, items: nextItems }
   }
 
-  function warningMessage(reason: PlaceFailure, link: string, containerIndex: number): string {
-    const itemFile = resolveEndeavourItemLink(index, link)
-    const name = itemFile?.frontmatter.name ?? link
+  function warningMessage(reason: PlaceFailure, entry: EndeavourInventoryEntry, containerIndex: number): string {
+    const itemFile = resolveEntry(index, entry)
+    const name = itemFile?.frontmatter.name ?? (isCustomEntry(entry) ? entry.name : entry)
     if (reason === 'no_room') return t('endeavourInventory.warningNoRoom', { name })
 
     const itemSize = itemFile ? resolveItemSize(itemFile.frontmatter) : undefined
@@ -158,15 +168,15 @@ export function EndeavourInventoryGrid({
   function moveTile(sourceContainerIndex: number, sourceLinkIndex: number, targetContainerIndex: number) {
     if (sourceContainerIndex === targetContainerIndex) return
     const sourceAssignment = containers[sourceContainerIndex]
-    const link = sourceAssignment?.items[sourceLinkIndex]
-    if (!sourceAssignment || link === undefined) return
+    const entry = sourceAssignment?.items[sourceLinkIndex]
+    if (!sourceAssignment || entry === undefined) return
 
     const targetAssignment = containers[targetContainerIndex]
     if (!targetAssignment) return
 
-    const result = tryPlace(targetAssignment.items, link, targetContainerIndex)
+    const result = tryPlace(targetAssignment.items, entry, targetContainerIndex)
     if (!result.ok) {
-      setWarning(warningMessage(result.reason, link, targetContainerIndex))
+      setWarning(warningMessage(result.reason, entry, targetContainerIndex))
       return
     }
 
@@ -186,7 +196,9 @@ export function EndeavourInventoryGrid({
     else placeNew(payload.link, containerIndex)
   }
 
-  function handleAdd(link: string, containerIndex: number, quantity: number) {
+  /** Places `quantity` separate copies of `entry` (one tile per unit, never stacked into one cell),
+   * stopping at the first that doesn't fit and reporting how many made it. */
+  function addEntries(entry: EndeavourInventoryEntry, containerIndex: number, quantity: number) {
     const assignment = containers[containerIndex]
     if (!assignment) return
 
@@ -194,7 +206,7 @@ export function EndeavourInventoryGrid({
     let placed = 0
     let failure: PlaceFailure | null = null
     for (let i = 0; i < quantity; i++) {
-      const result = tryPlace(items, link, containerIndex)
+      const result = tryPlace(items, isCustomEntry(entry) ? { ...entry } : entry, containerIndex)
       if (!result.ok) {
         failure = result.reason
         break
@@ -206,8 +218,20 @@ export function EndeavourInventoryGrid({
     if (placed > 0) updateAssignment(containerIndex, items)
 
     if (!failure) setWarning(null)
-    else if (placed === 0) setWarning(warningMessage(failure, link, containerIndex))
+    else if (placed === 0) setWarning(warningMessage(failure, entry, containerIndex))
     else setWarning(t('endeavourInventory.warningPartial', { placed, requested: quantity }))
+  }
+
+  /** Fallback for gear the DM hasn't written a vault page for yet. Refuses a name that already
+   * exists in the vault (case-insensitive) so a temporary item never shadows/duplicates a real one —
+   * the player should add the real item via the search instead. */
+  function handleAddCustom(name: string, plaetze: number, containerIndex: number, quantity: number) {
+    const lower = name.trim().toLowerCase()
+    if (vaultEndeavourItems.some((i) => i.frontmatter.name.trim().toLowerCase() === lower)) {
+      setWarning(t('endeavourInventory.warningDuplicate', { name }))
+      return
+    }
+    addEntries({ name, plaetze }, containerIndex, quantity)
   }
 
   const mainCapacity = mainContainers[0]
@@ -226,11 +250,8 @@ export function EndeavourInventoryGrid({
                     layout={r.layout}
                     containerIndex={r.containerIndex}
                     columns={1}
-                    selectedLinkIndex={r.layout.tiles.find((tile) => tile.link === selected?.link)?.linkIndex}
-                    onSelectTile={(linkIndex) => {
-                      const tile = r.layout.tiles.find((t) => t.linkIndex === linkIndex)
-                      if (tile) setSelected({ link: tile.link, item: tile.item })
-                    }}
+                    selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
+                    onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
                     onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
                     onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
                   />
@@ -248,11 +269,8 @@ export function EndeavourInventoryGrid({
             label={r.name || t('endeavourInventory.backpack')}
             layout={r.layout}
             containerIndex={r.containerIndex}
-            selectedLinkIndex={r.layout.tiles.find((tile) => tile.link === selected?.link)?.linkIndex}
-            onSelectTile={(linkIndex) => {
-              const tile = r.layout.tiles.find((t) => t.linkIndex === linkIndex)
-              if (tile) setSelected({ link: tile.link, item: tile.item })
-            }}
+            selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
+            onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
             onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
             onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
           />
@@ -274,9 +292,10 @@ export function EndeavourInventoryGrid({
         <ItemSearchPanel
           items={searchableItems}
           containerOptions={containerOptions}
-          onAdd={handleAdd}
+          onAdd={addEntries}
+          onAddCustom={handleAddCustom}
           onSelect={setSelected}
-          selectedLink={selected?.link}
+          selectedKey={selected?.key}
         />
         {warning && <div className="rounded-md border border-danger bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
         <ItemDetailPanel selected={selected} />

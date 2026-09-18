@@ -34,6 +34,9 @@ endeavour_inventory:
         - "[[Schaufel]]"
         - "[[Blendlaterne]]"
         - "[[Platzhalter Schwert]]"
+        # Temporärer Gegenstand ohne Vault-Seite (Fallback für spontan aufgesammelte Ausrüstung)
+        - name: Seltsamer Schlüssel
+          plaetze: 1
     - container: "[[Gürteltasche]]"
       items:
         - "[[Köcher]]"

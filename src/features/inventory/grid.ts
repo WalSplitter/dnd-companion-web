@@ -1,5 +1,5 @@
 import { resolveSlotCost, type EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
-import type { VaultFile } from '../../vault/types'
+import type { EndeavourCustomItem, EndeavourInventoryEntry, VaultFile } from '../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 
 /** Fixed grid width for the slot-grid inventory UI, matching the DM's mockup (7 columns). */
@@ -33,10 +33,13 @@ export function findBestFit(occupied: boolean[], capacity: number, slotCost: num
 }
 
 export interface ContainerTile {
-  /** Index into the container's `items` wikilink list this tile was placed from — the stable handle
-   * for removing/selecting it, since two tiles can point at the same item name. */
+  /** Index into the container's `items` list this tile was placed from — the stable handle for
+   * removing/selecting it, since two tiles can point at the same item name. */
   linkIndex: number
-  link: string
+  /** Selection identity — see `entryKey`. */
+  key: string
+  /** True for a player-created temporary item (`EndeavourCustomItem`) rather than a vault item. */
+  custom: boolean
   item: VaultFile<EndeavourItemFrontmatter> | undefined
   start: number
   length: number
@@ -46,7 +49,7 @@ export interface ContainerLayout {
   tiles: ContainerTile[]
   /** Entries that didn't fit within `capacity` — e.g. the list was edited elsewhere and now
    * overflows. Kept visible-but-unplaced rather than silently dropped. */
-  overflow: { linkIndex: number; link: string; item: VaultFile<EndeavourItemFrontmatter> | undefined }[]
+  overflow: { linkIndex: number; entry: EndeavourInventoryEntry; item: VaultFile<EndeavourItemFrontmatter> | undefined }[]
   used: number
   capacity: number
   /** Per-cell occupancy (length === `capacity`) — `true` for every cell a tile spans, including its
@@ -61,23 +64,44 @@ function slotCostOf(item: VaultFile<EndeavourItemFrontmatter> | undefined): numb
   return resolveSlotCost(item.frontmatter) ?? 1
 }
 
-/** Lays out a container's `items` wikilinks into its grid, in list order (first-fit, see
- * `findBestFit`). Pure — takes the resolved capacity so callers decide how it was derived. */
-export function layoutContainer(itemLinks: string[], index: VaultIndex, capacity: number, columns = GRID_COLUMNS): ContainerLayout {
+export function isCustomEntry(entry: EndeavourInventoryEntry): entry is EndeavourCustomItem {
+  return typeof entry !== 'string'
+}
+
+/** Stable identity of an entry for selection/highlighting: a vault item's own wikilink, or a
+ * `custom:` key built from a temporary item's name + slot cost. */
+export function entryKey(entry: EndeavourInventoryEntry): string {
+  return isCustomEntry(entry) ? `custom:${entry.name}|${entry.plaetze}` : entry
+}
+
+/** Resolves an entry to an item file. A temporary item becomes a synthetic `equipment` file so
+ * everything downstream (detail panel, size check against `MaxGroesse`, slot cost) treats it like
+ * any other item without special-casing. Values come straight from character YAML, so they're
+ * sanitized here rather than trusted. */
+export function resolveEntry(index: VaultIndex, entry: EndeavourInventoryEntry): VaultFile<EndeavourItemFrontmatter> | undefined {
+  if (!isCustomEntry(entry)) return resolveEndeavourItemLink(index, entry)
+  const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : '?'
+  const plaetze = Number.isFinite(entry.plaetze) ? Math.max(1, Math.round(entry.plaetze)) : 1
+  return { path: `custom:${name}`, frontmatter: { kind: 'equipment', name, plaetze }, body: '' }
+}
+
+/** Lays out a container's `items` into its grid, in list order (first-fit, see `findBestFit`).
+ * Pure — takes the resolved capacity so callers decide how it was derived. */
+export function layoutContainer(entries: EndeavourInventoryEntry[], index: VaultIndex, capacity: number, columns = GRID_COLUMNS): ContainerLayout {
   const occupied = new Array<boolean>(capacity).fill(false)
   const tiles: ContainerTile[] = []
   const overflow: ContainerLayout['overflow'] = []
 
-  itemLinks.forEach((link, linkIndex) => {
-    const item = resolveEndeavourItemLink(index, link)
+  entries.forEach((entry, linkIndex) => {
+    const item = resolveEntry(index, entry)
     const length = Math.min(slotCostOf(item), columns)
     const start = findBestFit(occupied, capacity, length, columns)
     if (start === null) {
-      overflow.push({ linkIndex, link, item })
+      overflow.push({ linkIndex, entry, item })
       return
     }
     for (let i = start; i < start + length; i++) occupied[i] = true
-    tiles.push({ linkIndex, link, item, start, length })
+    tiles.push({ linkIndex, key: entryKey(entry), custom: isCustomEntry(entry), item, start, length })
   })
 
   return { tiles, overflow, used: occupied.filter(Boolean).length, capacity, occupied }

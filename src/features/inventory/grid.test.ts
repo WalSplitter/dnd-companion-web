@@ -55,8 +55,8 @@ describe('layoutContainer', () => {
     const layout = layoutContainer(['[[Schaufel]]', '[[Köcher]]'], index, 15)
 
     expect(layout.tiles).toEqual([
-      { linkIndex: 0, link: '[[Schaufel]]', item: schaufel, start: 0, length: 2 },
-      { linkIndex: 1, link: '[[Köcher]]', item: koecher, start: 2, length: 1 },
+      { linkIndex: 0, key: '[[Schaufel]]', custom: false, item: schaufel, start: 0, length: 2 },
+      { linkIndex: 1, key: '[[Köcher]]', custom: false, item: koecher, start: 2, length: 1 },
     ])
     expect(layout.used).toBe(3)
     expect(layout.capacity).toBe(15)
@@ -66,7 +66,21 @@ describe('layoutContainer', () => {
   it('treats an unresolved wikilink as a 1-slot tile rather than crashing', () => {
     const index = indexWith()
     const layout = layoutContainer(['[[Nichtvorhanden]]'], index, 5)
-    expect(layout.tiles).toEqual([{ linkIndex: 0, link: '[[Nichtvorhanden]]', item: undefined, start: 0, length: 1 }])
+    expect(layout.tiles).toEqual([{ linkIndex: 0, key: '[[Nichtvorhanden]]', custom: false, item: undefined, start: 0, length: 1 }])
+  })
+
+  it('lays out a temporary custom item by its own slot cost, flagged as custom', () => {
+    const layout = layoutContainer([{ name: 'Seltsamer Schlüssel', plaetze: 2 }], indexWith(), 15)
+    expect(layout.tiles).toHaveLength(1)
+    expect(layout.tiles[0]).toMatchObject({ key: 'custom:Seltsamer Schlüssel|2', custom: true, start: 0, length: 2 })
+    expect(layout.tiles[0].item?.frontmatter).toMatchObject({ kind: 'equipment', name: 'Seltsamer Schlüssel', plaetze: 2 })
+    expect(layout.used).toBe(2)
+  })
+
+  it('sanitizes a malformed custom item (bad slot cost) instead of crashing', () => {
+    const layout = layoutContainer([{ name: '  ', plaetze: Number.NaN }], indexWith(), 5)
+    expect(layout.tiles[0]).toMatchObject({ custom: true, length: 1 })
+    expect(layout.tiles[0].item?.frontmatter.name).toBe('?')
   })
 
   it('moves entries that no longer fit into overflow instead of dropping them', () => {
@@ -74,6 +88,6 @@ describe('layoutContainer', () => {
     const index = indexWith(zelt)
     const layout = layoutContainer(['[[Zelt]]', '[[Zelt]]'], index, GRID_COLUMNS)
     expect(layout.tiles).toHaveLength(1)
-    expect(layout.overflow).toEqual([{ linkIndex: 1, link: '[[Zelt]]', item: zelt }])
+    expect(layout.overflow).toEqual([{ linkIndex: 1, entry: '[[Zelt]]', item: zelt }])
   })
 })
