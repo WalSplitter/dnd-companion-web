@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { parseRawFile } from '../rawFile'
-import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
+import {
+  compareEndeavourItemSize,
+  looksLikeEndeavourItem,
+  normalizeEndeavourItem,
+  resolveItemSize,
+  resolveSlotCost,
+  type EndeavourItemFrontmatter,
+} from './endeavourItem'
 
 // Fixtures are synthetic — built from the inferred field schema in `docs/inventory-vault-alignment.md`,
 // not real notes (none exist in the new vault yet). These only guard the parsing logic itself; they
@@ -172,5 +179,85 @@ tags: [Werkzeug]
       cost: undefined,
       kind: 'tool',
     })
+  })
+
+  it('normalizes real-schema generic equipment (Gegenstand/Ausrüstung)', () => {
+    const file = raw(
+      'Schaufel.md',
+      `---
+tags: [Gegenstand/Ausrüstung]
+Kosten: 2 GM
+Plaetze: 2
+Stapelgroesse: 1
+---
+`,
+    )
+    expect(normalizeEndeavourItem(file)).toEqual({
+      name: 'Schaufel',
+      size: undefined,
+      weight_class: undefined,
+      cost: '2 GM',
+      plaetze: 2,
+      kind: 'equipment',
+      stack_size: 1,
+    })
+  })
+
+  it('normalizes a real-schema container (Gegenstand/Behälter)', () => {
+    const file = raw(
+      'Rucksack (Groß).md',
+      `---
+tags: [Gegenstand/Behälter]
+Kosten: 4 GM
+Plaetze: 15
+MaxGroesse: Groß
+---
+`,
+    )
+    expect(normalizeEndeavourItem(file)).toEqual({
+      name: 'Rucksack (Groß)',
+      size: undefined,
+      weight_class: undefined,
+      cost: '4 GM',
+      plaetze: 15,
+      kind: 'container',
+      max_size: 'gross',
+    })
+  })
+})
+
+describe('resolveSlotCost', () => {
+  it('uses Plaetze directly when present (real schema)', () => {
+    expect(resolveSlotCost({ name: 'Zelt', kind: 'equipment', plaetze: 4 })).toBe(4)
+  })
+
+  it('falls back to the Größe+Gewicht derivation when Plaetze is absent (speculative schema)', () => {
+    const mittelSchwer: EndeavourItemFrontmatter = { name: 'Vorschlaghammer', kind: 'tool', size: 'klein', weight_class: 'schwer' }
+    expect(resolveSlotCost(mittelSchwer)).toBe(2)
+    const sehrSchwer: EndeavourItemFrontmatter = { name: 'Amboss', kind: 'tool', size: 'gross', weight_class: 'sehr_schwer' }
+    expect(resolveSlotCost(sehrSchwer)).toBe(5)
+  })
+
+  it('returns undefined when neither Plaetze nor size is known', () => {
+    expect(resolveSlotCost({ name: 'Unbekannt', kind: 'tool' })).toBeUndefined()
+  })
+})
+
+describe('resolveItemSize', () => {
+  it('prefers an explicit Größe field', () => {
+    expect(resolveItemSize({ name: 'Langschwert', kind: 'weapon', weapon_kind: 'melee', size: 'mittel', plaetze: 1 })).toBe('mittel')
+  })
+
+  it('approximates size from Plaetze when no explicit size is set', () => {
+    expect(resolveItemSize({ name: 'Zelt', kind: 'equipment', plaetze: 4 })).toBe('sehr_gross')
+    expect(resolveItemSize({ name: 'Köcher', kind: 'equipment', plaetze: 1 })).toBe('klein')
+  })
+})
+
+describe('compareEndeavourItemSize', () => {
+  it('orders Klein < Mittel < Groß < Sehr groß', () => {
+    expect(compareEndeavourItemSize('klein', 'mittel')).toBeLessThan(0)
+    expect(compareEndeavourItemSize('sehr_gross', 'gross')).toBeGreaterThan(0)
+    expect(compareEndeavourItemSize('gross', 'gross')).toBe(0)
   })
 })

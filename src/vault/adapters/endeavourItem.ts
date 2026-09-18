@@ -35,6 +35,10 @@ interface EndeavourItemBase {
   size?: EndeavourItemSize
   weight_class?: EndeavourWeightClass
   cost?: string
+  /** `Plaetze` — direct, authoritative slot cost (or, on a container, total slot capacity) from the
+   * real vault's confirmed item schema. Takes priority over the `size`/`weight_class` derivation
+   * below whenever present — see `resolveSlotCost()`. */
+  plaetze?: number
 }
 
 export interface EndeavourWeaponItem extends EndeavourItemBase {
@@ -103,12 +107,32 @@ export interface EndeavourToolItem extends EndeavourItemBase {
   kind: 'tool'
 }
 
+/** Generic gear (`Gegenstand/Ausrüstung`) — the real vault's confirmed, simple item schema: just
+ * `Kosten`/`Plaetze`/`Stapelgroesse`, no size/weight-class fields at all. */
+export interface EndeavourEquipmentItem extends EndeavourItemBase {
+  kind: 'equipment'
+  /** `Stapelgroesse` — max stack size. Per the DM's own annotation on the mockup, this does *not*
+   * mean several units share one grid cell: each unit is still placed as its own tile. Kept for
+   * display and to cap how many can be added in one "Hinzufügen" action. */
+  stack_size?: number
+}
+
+/** A wearable/carryable container (`Gegenstand/Behälter`) — a backpack (`Gepäck`) or belt pouch
+ * (`Schnellzugriff`), per `Inventar.md`. `plaetze` is its total slot capacity here, not a cost. */
+export interface EndeavourContainerItem extends EndeavourItemBase {
+  kind: 'container'
+  /** `MaxGroesse` — largest item size this container accepts (see `Gepäck.md`/`Schnellzugriff.md`). */
+  max_size?: EndeavourItemSize
+}
+
 export type EndeavourItemFrontmatter =
   | EndeavourWeaponItem
   | EndeavourArmorItem
   | EndeavourShieldItem
   | EndeavourMagicItem
   | EndeavourToolItem
+  | EndeavourEquipmentItem
+  | EndeavourContainerItem
 
 function tagList(data: Record<string, unknown>): string[] {
   const tags = data.tags
@@ -186,6 +210,7 @@ function baseFields(raw: RawFile): EndeavourItemBase {
     size: endeavourSize(data.Größe),
     weight_class: endeavourWeightClass(data.Gewicht),
     cost: stringField(data.Kosten),
+    plaetze: numberField(data.Plaetze),
   }
 }
 
@@ -247,7 +272,64 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
     }
   }
 
+  if (hasTag(tags, 'Gegenstand/Behälter')) {
+    return {
+      ...base,
+      kind: 'container',
+      max_size: endeavourSize(data.MaxGroesse),
+    }
+  }
+
+  if (hasTag(tags, 'Gegenstand/Ausrüstung')) {
+    return {
+      ...base,
+      kind: 'equipment',
+      stack_size: numberField(data.Stapelgroesse),
+    }
+  }
+
   return { ...base, kind: 'tool' }
+}
+
+/** Slot cost the item takes in a container's grid — the real vault's confirmed schema states this
+ * directly via `Plaetze`. Falls back to the old speculative Größe+Gewicht derivation
+ * (`Gegenstandsgrößen.md`: Klein=1/Mittel=2/Groß=3/SehrGroß=4, +1 schwer/+2 sehr schwer) for items
+ * that only carry those fields (e.g. the still-unconfirmed weapon/armor dummy fixtures). On a
+ * container, this is its total slot *capacity*, not a cost — callers must not conflate the two. */
+export function resolveSlotCost(fm: EndeavourItemFrontmatter): number | undefined {
+  if (fm.plaetze !== undefined) return fm.plaetze
+  if (!fm.size) return undefined
+  const base = SIZE_SLOT_COST[fm.size]
+  const surcharge = fm.weight_class === 'sehr_schwer' ? 2 : fm.weight_class === 'schwer' ? 1 : 0
+  return base + surcharge
+}
+
+const SIZE_SLOT_COST: Record<EndeavourItemSize, number> = { klein: 1, mittel: 2, gross: 3, sehr_gross: 4 }
+const SLOT_COST_SIZE: [number, EndeavourItemSize][] = [
+  [1, 'klein'],
+  [2, 'mittel'],
+  [3, 'gross'],
+]
+
+/** Item size category — used only to check against a container's `max_size`. Uses the explicit
+ * `Größe` field when present (old speculative weapon/armor schema); otherwise approximated from the
+ * resolved slot cost (1→Klein, 2→Mittel, 3→Groß, 4+→Sehr Groß) since the real, confirmed equipment
+ * schema no longer carries a size field of its own — see the alignment doc / plan for why this is an
+ * approximation (a weight surcharge folded into `Plaetze` can inflate the apparent size a category). */
+export function resolveItemSize(fm: EndeavourItemFrontmatter): EndeavourItemSize | undefined {
+  if (fm.size) return fm.size
+  const cost = resolveSlotCost(fm)
+  if (cost === undefined) return undefined
+  for (const [max, size] of SLOT_COST_SIZE) if (cost <= max) return size
+  return 'sehr_gross'
+}
+
+const SIZE_ORDER: Record<EndeavourItemSize, number> = { klein: 0, mittel: 1, gross: 2, sehr_gross: 3 }
+
+/** Ordinal comparison (Klein < Mittel < Groß < Sehr groß), e.g. `compareEndeavourItemSize(a, b) <= 0`
+ * to check an item of size `a` fits a container capped at max size `b`. */
+export function compareEndeavourItemSize(a: EndeavourItemSize, b: EndeavourItemSize): number {
+  return SIZE_ORDER[a] - SIZE_ORDER[b]
 }
 
 const WEAPON_KIND_LABEL: Record<EndeavourWeaponKind, string> = { melee: 'Nahkampf', ranged: 'Fernkampf', thrown: 'Wurf' }
@@ -266,5 +348,9 @@ export function endeavourItemSummary(fm: EndeavourItemFrontmatter): string {
       return 'Magischer Gegenstand'
     case 'tool':
       return 'Werkzeug'
+    case 'equipment':
+      return 'Ausrüstung'
+    case 'container':
+      return 'Behälter'
   }
 }

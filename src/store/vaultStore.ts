@@ -12,7 +12,7 @@ import {
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
 import { writeFieldValue } from '../vault/writeback/persist'
-import type { CharacterFrontmatter, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
+import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 const SAMPLE_VAULT = buildVault(sampleVaultFiles)
 const SAMPLE_RULESET = detectRuleset(sampleVaultFiles)
@@ -66,6 +66,15 @@ interface VaultState {
     logicalValue: number | boolean,
     mutate: (character: CharacterFrontmatter) => CharacterFrontmatter,
   ) => Promise<void>
+  /**
+   * Replaces a character's slot-grid inventory (`endeavour_inventory.containers`). Unlike
+   * `updateCharacterField`, this always applies locally regardless of `editPermission`/write
+   * targets: the YAML patcher (`writeback/yamlPatch.ts`) only rewrites single scalar lines, not
+   * arrays, so there is no disk write-back path for container contents yet — this is a deliberate,
+   * local-only scope for the new inventory grid (see the feature's plan doc). Numeric field edits
+   * elsewhere are unaffected and keep requiring granted write permission as before.
+   */
+  setEndeavourInventory: (characterPath: string, containers: EndeavourContainerSlotAssignment[]) => void
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -312,5 +321,17 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       console.error('[vault] updateCharacterField failed, rolling back:', err)
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
     }
+  },
+
+  setEndeavourInventory: (characterPath, containers) => {
+    const { vault } = get()
+    set({
+      vault: {
+        ...vault,
+        characters: vault.characters.map((c) =>
+          c.path === characterPath ? { ...c, frontmatter: { ...c.frontmatter, endeavour_inventory: { containers } } } : c,
+        ),
+      },
+    })
   },
 }))

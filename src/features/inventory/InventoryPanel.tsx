@@ -4,6 +4,7 @@ import type { CharacterFrontmatter, InventoryEntry } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { resolveItemLink } from '../../vault/wikilinks'
 import { CurrencyDisplay } from './components/CurrencyDisplay'
+import { EndeavourInventoryGrid } from './components/EndeavourInventoryGrid'
 import { ItemList } from './components/ItemList'
 
 function entryWeight(entry: InventoryEntry, index: VaultIndex): number {
@@ -26,6 +27,11 @@ export function InventoryPanel({
   index: VaultIndex
 }) {
   const t = useT()
+
+  if (character.endeavour_inventory) {
+    return <EndeavourInventoryGrid character={character} characterPath={characterPath} index={index} />
+  }
+
   const equipped = character.inventory?.equipped ?? []
   const carried = character.inventory?.carried ?? []
 

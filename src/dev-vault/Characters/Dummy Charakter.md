@@ -27,15 +27,18 @@ hit_dice:
   die: d8
   total: 1
   used: 0
-inventory:
-  equipped:
-    - "[[Platzhalter Schwert]]"
-    - "[[Platzhalter Ruestung]]"
-    - "[[Platzhalter Schild]]"
-  carried:
-    - "[[Platzhalter Bogen]]"
-    - "[[Platzhalter Zaubergegenstand]]"
-    - "[[Platzhalter Werkzeug]]"
+endeavour_inventory:
+  containers:
+    - container: "[[Rucksack (Groß)]]"
+      items:
+        - "[[Schaufel]]"
+        - "[[Blendlaterne]]"
+        - "[[Platzhalter Schwert]]"
+    - container: "[[Gürteltasche]]"
+      items:
+        - "[[Köcher]]"
+    - container: "[[Gürteltasche]]"
+      items: []
 currency: { cp: 12, sp: 8, ep: 0, gp: 30, pp: 1 }
 ---
 
@@ -44,7 +47,15 @@ Charakterbögen enthält (siehe `docs/inventory-vault-alignment.md`). Beim Laden
 laden (dev)" wird dieser Charakter zusammen mit den echten Dateien aus `Endeavour_PlayerVault` (Regeln
 etc., read-only eingelesen — siehe `endeavourRealVault.ts`) angezeigt. Nur dieser Charakter + seine
 Items sind lokal in `dnd-companion-web` gebündelt; der externe Vault-Ordner wird dadurch nicht
-verändert. Die Items in diesem Inventar nutzen bewusst das experimentelle "Endeavour"-Tag-Schema
-(`Gegenstand/Waffe/...`, siehe `src/vault/adapters/endeavourItem.ts`), damit am Inventar-UI gegen die
-echte Feldstruktur (soweit aus den DM-Vorlagen ableitbar) entwickelt werden kann. Sobald der DM echte
-Charakterbögen pflegt, kann dieser Ordner (`src/dev-vault/`) wieder entfernt werden.
+verändert.
+
+`endeavour_inventory` nutzt das neue Platz-Raster-Inventar (siehe
+`src/features/inventory/components/EndeavourInventoryGrid.tsx`): der Rucksack (Groß), die Ausrüstung
+und die Gürteltasche sind 1:1 die realen, vom DM gelieferten Beispiel-Dateien (Tags
+`Gegenstand/Behälter`/`Gegenstand/Ausrüstung`, Felder `Kosten`/`Plaetze`/`MaxGroesse`/`Stapelgroesse`)
+— nur `Platzhalter Trank.md` (stapelbares Verbrauchsgut zum Testen der Mengen-Eingabe) und die
+Waffen/Rüstungs/Schild/Magie-Platzhalter sind erfunden, da es dafür noch keine reale Beispieldatei
+gibt (sie nutzen weiterhin das ältere, spekulative Größe/Gewicht-Schema statt `Plaetze`). Das Zelt ist
+bewusst nicht vorplatziert, sondern nur über die Suche zu finden — es passt wegen `Plaetze: 4` ("Sehr
+Groß") nicht in den Rucksack (`MaxGroesse: Groß`), gut zum Live-Testen der Größenprüfung. Sobald der DM
+echte Charakterbögen pflegt, kann dieser Ordner (`src/dev-vault/`) wieder entfernt werden.

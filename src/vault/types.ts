@@ -163,6 +163,10 @@ export interface CharacterFrontmatter {
    * inline items with the data already attached, skipping wikilink resolution entirely.
    */
   inventory?: { equipped?: InventoryEntry[]; carried?: InventoryEntry[] }
+  /** Slot-grid inventory (new "Endeavour" container/`Plaetze` system) — see
+   * `EndeavourContainerSlotAssignment`. Present only for characters using that system; absent
+   * everywhere else, in which case the UI falls back to `inventory` above. */
+  endeavour_inventory?: { containers: EndeavourContainerSlotAssignment[] }
   currency?: Currency
   spellcasting?: SpellcastingInfo
   spells_known?: string[]
@@ -194,6 +198,18 @@ export interface InlineItem {
   /** Set only when the value actually came from a `count{n}`/`gewicht{n}` frontmatter fallback
    * field (Meta-Bind-style sheets) rather than a literal number typed into the table cell. */
   _write?: { quantity?: FieldWriteTarget; weight_lb?: FieldWriteTarget }
+}
+
+/** One equipped container (a backpack/`Gepäck` or a belt pouch/`Schnellzugriff`, see `Inventar.md`)
+ * and what's placed inside it, for the new slot-grid inventory UI — see
+ * `src/features/inventory/components/EndeavourInventoryGrid.tsx`. Kept separate from `inventory`
+ * above (that field stays wikilink-list based, used by the native/legacy schemas); this shape is
+ * additive and only populated by characters using the Endeavour container/`Plaetze` system. */
+export interface EndeavourContainerSlotAssignment {
+  /** Wikilink to the equipped container item, e.g. `"[[Rucksack (Groß)]]"`. */
+  container: string
+  /** Wikilinks to the items placed inside, in grid fill order (row-major, see `grid.ts`). */
+  items: string[]
 }
 
 export interface ItemFrontmatter {
