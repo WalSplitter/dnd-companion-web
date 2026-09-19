@@ -30,7 +30,7 @@ export function Conditions({ character, characterPath }: { character: CharacterF
               {Array.from({ length: luck.max }, (_, i) => {
                 const held = luck.held[i]
                 const target = writeTargets?.luck_points?.[i]
-                const pipClass = `h-3 w-3 rounded-full ${held ? 'bg-accent' : 'border border-border bg-transparent'}`
+                const pipClass = `size-3.5 rounded-full ${held ? 'bg-accent shadow-[0_0_8px_var(--color-accent)]' : 'border border-trim/40 bg-transparent'}`
                 if (!canEdit || !target) return <span key={i} className={pipClass} />
                 return (
                   <button
@@ -62,7 +62,7 @@ export function Conditions({ character, characterPath }: { character: CharacterF
             <div className="flex flex-wrap gap-1">
               {Array.from({ length: exhaustion_max }, (_, i) => {
                 const filled = i < exhaustion
-                const pipClass = `h-3 w-3 rounded-sm ${filled ? 'bg-danger' : 'border border-border bg-transparent'}`
+                const pipClass = `size-3.5 rounded-sm ${filled ? 'bg-danger shadow-[0_0_8px_var(--color-danger)]' : 'border border-trim/40 bg-transparent'}`
                 const target = writeTargets?.exhaustion
                 if (!canEdit || !target) return <span key={i} className={pipClass} />
                 return (

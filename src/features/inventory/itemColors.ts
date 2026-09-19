@@ -3,17 +3,17 @@ import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourIte
 /**
  * Background/border tint per item kind, so weapons/armor/magic items/plain gear are visually
  * distinguishable at a glance in the slot grid (requested after the first grid draft). Deliberately
- * low-opacity tints layered over the existing surface tokens rather than solid theme colors, so they
- * stay legible and non-clashing across every theme (dark/light/fluent/purple/...).
+ * low-opacity gradients layered over the existing surface tokens rather than solid theme colors, so
+ * they stay legible and non-clashing across every theme (dark/light/fluent/purple/...).
  */
 export const KIND_TILE_CLASSES: Record<EndeavourItemFrontmatter['kind'], string> = {
-  weapon: 'border-red-500/50 bg-red-500/15',
-  armor: 'border-blue-500/50 bg-blue-500/15',
-  shield: 'border-indigo-500/50 bg-indigo-500/15',
-  magic_item: 'border-purple-500/50 bg-purple-500/15',
-  equipment: 'border-emerald-500/50 bg-emerald-500/15',
-  tool: 'border-amber-500/50 bg-amber-500/15',
-  container: 'border-border bg-surface-2',
+  weapon: 'border-red-500/60 bg-linear-to-b from-red-500/30 to-red-500/10',
+  armor: 'border-blue-500/60 bg-linear-to-b from-blue-500/30 to-blue-500/10',
+  shield: 'border-indigo-500/60 bg-linear-to-b from-indigo-500/30 to-indigo-500/10',
+  magic_item: 'border-purple-500/60 bg-linear-to-b from-purple-500/30 to-purple-500/10',
+  equipment: 'border-emerald-500/60 bg-linear-to-b from-emerald-500/30 to-emerald-500/10',
+  tool: 'border-amber-500/60 bg-linear-to-b from-amber-500/30 to-amber-500/10',
+  container: 'border-trim/40 bg-surface-2',
 }
 
 /** Player-created temporary items (see `EndeavourCustomItem`): neutral tint + dashed border, so

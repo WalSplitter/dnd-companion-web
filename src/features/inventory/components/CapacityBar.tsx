@@ -9,11 +9,15 @@ import { useT } from '../../../i18n/I18nContext'
 export function CapacityBar({ used, capacity }: { used: number; capacity: number }) {
   const t = useT()
   const over = used > capacity
+  const pct = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0
 
   return (
-    <div className={`rounded-lg border px-3 py-2 text-center ${over ? 'border-danger bg-danger/10' : 'border-border bg-surface-2'}`}>
-      <div className={`text-lg font-bold ${over ? 'text-danger' : 'text-fg'}`}>{t('endeavourInventory.capacityValue', { used, capacity })}</div>
-      <div className="text-xs uppercase text-fg-muted">{t('endeavourInventory.capacityLabel')}</div>
+    <div className={`rpg-plate flex h-full flex-col justify-center px-3 py-2 text-center ${over ? '!border-danger !bg-danger/10' : ''}`}>
+      <div className={`font-num text-lg leading-tight ${over ? 'text-danger' : 'text-fg'}`}>{t('endeavourInventory.capacityValue', { used, capacity })}</div>
+      <div className="my-1 h-1.5 overflow-hidden rounded-full border border-trim/30 bg-black/35">
+        <div className={`h-full rounded-full bg-linear-to-r ${over ? 'from-danger/60 to-danger' : 'from-trim/60 to-trim'}`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('endeavourInventory.capacityLabel')}</div>
     </div>
   )
 }

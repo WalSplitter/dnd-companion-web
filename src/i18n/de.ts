@@ -113,6 +113,7 @@ export const de = {
   'stats.passivePerception': 'Passive Wahrnehmung',
   'stats.languages': 'Sprachen',
   'stats.tools': 'Werkzeuge',
+  'stats.level': 'Stufe',
   'senses.darkvision': 'Dunkelsicht',
   'senses.blindsight': 'Blindsicht',
   'senses.tremorsense': 'Erschütterungssinn',
@@ -210,6 +211,8 @@ export const de = {
   'wikilink.openFullSheet': 'Vollständigen Bogen öffnen →',
 
   'common.close': 'Schließen',
+  'common.showMore': 'Mehr anzeigen',
+  'common.showLess': 'Weniger anzeigen',
 
   'a11y.toggleSavingThrow': '{{label}}-Rettungswurf-Übung umschalten',
   'a11y.cycleSkillProficiency': '{{label}}-Übung durchschalten',

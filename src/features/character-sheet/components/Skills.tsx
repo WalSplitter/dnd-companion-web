@@ -25,7 +25,7 @@ export function Skills({ character, characterPath }: { character: CharacterFront
 
   return (
     <Card title={t('cards.skills')}>
-      <ul className="space-y-1.5">
+      <ul className="space-y-0.5">
         {SKILLS.map(({ key, ability }) => {
           const label = t(`skill.${key}`)
           const bonus = skillBonus(character, key)
@@ -33,7 +33,10 @@ export function Skills({ character, characterPath }: { character: CharacterFront
           const target = character._write?.skills?.[key]
           const dot = <ProficiencyDot level={level} />
           return (
-            <li key={key} className="flex items-center gap-2 text-sm">
+            <li
+              key={key}
+              className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${level === 'none' ? '' : 'bg-trim/[0.06]'}`}
+            >
               {canEdit && target ? (
                 <button
                   type="button"
@@ -49,10 +52,10 @@ export function Skills({ character, characterPath }: { character: CharacterFront
               ) : (
                 dot
               )}
-              <span className="w-8 font-semibold text-fg">{formatModifier(bonus)}</span>
-              <span className="text-fg-muted">{label}</span>
+              <span className={`w-8 text-right font-num ${level === 'none' ? 'text-fg' : 'text-trim'}`}>{formatModifier(bonus)}</span>
+              <span className={level === 'none' ? 'text-fg-muted' : 'text-fg'}>{label}</span>
               <span className="ml-auto flex items-center gap-2">
-                <span className="text-xs uppercase text-fg-muted/70">{ability}</span>
+                <span className="text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted/70">{ability}</span>
                 <D20RollButton label={label} modifier={bonus} />
               </span>
             </li>

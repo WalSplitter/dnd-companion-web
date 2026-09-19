@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
@@ -237,19 +238,20 @@ export function EndeavourInventoryGrid({
   const mainCapacity = mainContainers[0]
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
-      <div className="space-y-3">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
+      <div className="space-y-4">
         {quickContainers.length > 0 && (
           <div>
-            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-fg-muted">{t('endeavourInventory.quickSlots')}</div>
-            <div className="flex flex-wrap gap-2">
+            <SectionTitle className="mb-2">{t('endeavourInventory.quickSlots')}</SectionTitle>
+            <div className="flex flex-wrap gap-3">
               {quickContainers.map((r) => (
-                <div key={r.containerIndex} className="w-24">
+                <div key={r.containerIndex} className="w-32">
                   <ContainerGrid
                     label={r.name}
                     layout={r.layout}
                     containerIndex={r.containerIndex}
                     columns={1}
+                    compact
                     selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
                     onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
                     onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
@@ -276,8 +278,8 @@ export function EndeavourInventoryGrid({
           />
         ))}
 
-        <div className="flex flex-wrap gap-3">
-          <div className="flex-1">
+        <div className="flex flex-wrap items-stretch gap-3">
+          <div className="flex min-w-64 flex-1">
             <CurrencyDisplay currency={character.currency} />
           </div>
           {mainCapacity && (
@@ -288,7 +290,7 @@ export function EndeavourInventoryGrid({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <ItemSearchPanel
           items={searchableItems}
           containerOptions={containerOptions}
@@ -297,7 +299,7 @@ export function EndeavourInventoryGrid({
           onSelect={setSelected}
           selectedKey={selected?.key}
         />
-        {warning && <div className="rounded-md border border-danger bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
+        {warning && <div role="alert" className="rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
         <ItemDetailPanel selected={selected} />
       </div>
     </div>

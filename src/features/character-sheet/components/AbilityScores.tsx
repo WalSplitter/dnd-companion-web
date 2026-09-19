@@ -13,19 +13,19 @@ export function AbilityScores({ character, characterPath }: { character: Charact
 
   return (
     <Card title={t('cards.abilityScores')}>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-x-2 gap-y-5 pb-1 pt-1">
         {ABILITIES.map(({ key }) => {
           const label = t(`ability.${key}`)
           const score = character.abilities[key]
           const mod = abilityModifier(score)
           const target = character._write?.abilities?.[key]
           return (
-            <div
-              key={key}
-              className="flex flex-col items-center rounded-lg border border-border bg-surface-2 px-2 py-3 text-center"
-            >
-              <span className="text-xs font-medium uppercase text-fg-muted">{label.slice(0, 3)}</span>
-              <span className="mt-1 text-xl font-bold text-fg">{formatModifier(mod)}</span>
+            <div key={key} className="flex flex-col items-center text-center" title={label}>
+              <span className="mb-2 font-display text-[0.7rem] font-bold uppercase tracking-[0.18em] text-fg-muted">{label.slice(0, 3)}</span>
+              <div className="rpg-medallion">
+                <span className="font-num text-2xl text-fg">{formatModifier(mod)}</span>
+              </div>
+              <div className="rpg-plate relative -mt-2.5 px-2.5 py-0.5">
               {canEdit && target ? (
                 <EditableNumber
                   key={score}
@@ -33,11 +33,12 @@ export function AbilityScores({ character, characterPath }: { character: Charact
                   onCommit={(next) =>
                     void updateCharacterField(characterPath, target, next, (c) => ({ ...c, abilities: { ...c.abilities, [key]: next } }))
                   }
-                  className="mt-0.5 w-12 rounded-md border border-border bg-surface px-1 text-center text-xs text-fg-muted"
+                  className="w-11 rounded border border-border bg-surface px-1 text-center text-xs font-semibold text-fg"
                 />
               ) : (
-                <span className="mt-0.5 text-xs text-fg-muted">{score}</span>
+                <span className="text-xs font-semibold text-fg-muted">{score}</span>
               )}
+              </div>
             </div>
           )
         })}

@@ -9,7 +9,7 @@ import { AbilityScores } from './components/AbilityScores'
 import { About } from './components/About'
 import { Attacks } from './components/Attacks'
 import { AttacksSpellcasting } from './components/AttacksSpellcasting'
-import { CombatStats } from './components/CombatStats'
+import { ArmorClass, CombatStats } from './components/CombatStats'
 import { Conditions } from './components/Conditions'
 import { DeathSaves } from './components/DeathSaves'
 import { FeaturesTraits } from './components/FeaturesTraits'
@@ -44,43 +44,46 @@ export function CharacterSheet({
 
   return (
     <VaultIndexProvider index={index}>
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Header character={character} />
 
-        <div className="flex gap-1 border-b border-border">
-          {tabs.map((t) => (
+        {/* Vitals stay visible on every tab, like a game HUD. */}
+        <section className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 p-4">
+          <ArmorClass character={character} />
+          <HitPoints character={character} characterPath={characterPath} />
+          <CombatStats character={character} />
+        </section>
+        <DeathSaves character={character} />
+
+        <div role="tablist" className="flex gap-1 border-b border-trim/25">
+          {tabs.map((entry) => (
             <button
-              key={t.key}
+              key={entry.key}
               type="button"
-              onClick={() => setTab(t.key)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
-                tab === t.key ? 'border-primary text-fg' : 'border-transparent text-fg-muted hover:text-fg'
-              }`}
+              role="tab"
+              aria-selected={tab === entry.key}
+              onClick={() => setTab(entry.key)}
+              className="rpg-tab cursor-pointer"
             >
-              {t.label}
+              {entry.label}
             </button>
           ))}
         </div>
 
         {tab === 'sheet' && (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className="space-y-4">
               <AbilityScores character={character} characterPath={characterPath} />
               <SavingThrows character={character} characterPath={characterPath} />
-              <Skills character={character} characterPath={characterPath} />
-            </div>
-            <div className="space-y-4">
-              <CombatStats character={character} />
-              <HitPoints character={character} characterPath={characterPath} />
-              <DeathSaves character={character} />
-              <Conditions character={character} characterPath={characterPath} />
-              {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} index={index} />}
-              <Attacks character={character} />
-            </div>
-            <div className="space-y-4">
-              <About body={body} />
               <SensesLanguages character={character} />
+            </div>
+            <Skills character={character} characterPath={characterPath} />
+            <div className="space-y-4">
+              <Attacks character={character} />
+              {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} index={index} />}
+              <Conditions character={character} characterPath={characterPath} />
               <FeaturesTraits character={character} />
+              <About body={body} />
             </div>
           </div>
         )}

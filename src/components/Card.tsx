@@ -1,9 +1,11 @@
 import type { PropsWithChildren, ReactNode } from 'react'
+import { SectionTitle } from './SectionTitle'
 
-export function Card({ title, children }: PropsWithChildren<{ title?: ReactNode }>) {
+/** Framed sheet panel. The title sits on a gilded rule, like a section header on a game menu. */
+export function Card({ title, children, className = '' }: PropsWithChildren<{ title?: ReactNode; className?: string }>) {
   return (
-    <section className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-      {title && <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-fg-muted">{title}</h2>}
+    <section className={`rpg-panel p-4 ${className}`}>
+      {title && <SectionTitle className="mb-3">{title}</SectionTitle>}
       {children}
     </section>
   )

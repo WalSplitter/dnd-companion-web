@@ -56,8 +56,8 @@ export function ItemTile({
         }
       }}
       style={{ gridColumn: `span ${tile.length}` }}
-      className={`relative flex min-h-12 cursor-grab flex-col items-center justify-center rounded-md border px-1 py-1 text-center text-[11px] leading-tight text-fg transition-colors ${kindClasses} ${
-        selected ? 'ring-2 ring-accent' : ''
+      className={`relative flex min-h-14 cursor-grab flex-col items-center justify-center rounded-md border px-1.5 py-1 text-center text-[11px] font-medium leading-tight text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] transition hover:brightness-125 ${kindClasses} ${
+        selected ? 'ring-2 ring-trim' : ''
       }`}
     >
       <span className="line-clamp-2">{name}</span>
@@ -71,7 +71,7 @@ export function ItemTile({
           e.stopPropagation()
           onRemove()
         }}
-        className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-surface text-[10px] text-fg-muted hover:text-danger"
+        className="absolute right-0.5 top-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full border border-trim/30 bg-surface/85 text-[10px] text-fg-muted transition hover:border-danger hover:bg-danger hover:text-white"
       >
         ×
       </button>

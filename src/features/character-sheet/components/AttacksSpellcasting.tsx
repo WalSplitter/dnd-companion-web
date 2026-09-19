@@ -1,4 +1,5 @@
 import { Card } from '../../../components/Card'
+import { StatPlate } from '../../../components/StatPlate'
 import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/I18nContext'
@@ -29,30 +30,23 @@ export function AttacksSpellcasting({
 
   return (
     <Card title={t('cards.attacksSpellcasting')}>
-      <div className="mb-3 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">{t('stats.ability')}</div>
-          <div className="font-semibold uppercase text-fg">{character.spellcasting.ability}</div>
-        </div>
-        <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">{t('stats.saveDC')}</div>
-          <div className="font-semibold text-fg">{dc ?? '—'}</div>
-        </div>
-        <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
-          <div className="text-xs uppercase text-fg-muted">{t('stats.attack')}</div>
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <StatPlate label={t('stats.ability')} value={character.spellcasting.ability.toUpperCase()} />
+        <StatPlate label={t('stats.saveDC')} value={String(dc ?? '—')} />
+        <StatPlate label={t('stats.attack')}>
           {attack !== undefined ? (
-            <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="font-semibold text-fg">
+            <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="cursor-pointer transition hover:text-trim">
               {formatModifier(attack)}
             </D20RollButton>
           ) : (
-            <div className="font-semibold text-fg">—</div>
+            '—'
           )}
-        </div>
+        </StatPlate>
       </div>
 
       {character.spellcasting.slots && (
         <div className="mb-3">
-          <div className="mb-1 text-xs uppercase text-fg-muted">{t('stats.spellSlots')}</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wider text-fg-muted">{t('stats.spellSlots')}</div>
           <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
         </div>
       )}

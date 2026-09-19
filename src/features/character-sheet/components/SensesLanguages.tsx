@@ -10,25 +10,25 @@ export function SensesLanguages({ character }: { character: CharacterFrontmatter
 
   return (
     <Card title={t('cards.sensesLanguages')}>
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between">
+      <dl className="space-y-2.5 text-sm">
+        <div className="flex items-center justify-between">
           <dt className="text-fg-muted">{t('stats.passivePerception')}</dt>
-          <dd className="font-semibold text-fg">{passivePerception(character)}</dd>
+          <dd className="rpg-plate min-w-9 px-2 py-0.5 text-center font-num text-fg">{passivePerception(character)}</dd>
         </div>
         {senseEntries.map(([key, value]) => (
-          <div key={key} className="flex justify-between">
+          <div key={key} className="flex items-center justify-between">
             <dt className="capitalize text-fg-muted">{t(`senses.${key}` as TranslationKey)}</dt>
-            <dd className="font-semibold text-fg">{value}</dd>
+            <dd className="rpg-plate px-2 py-0.5 text-center font-num text-fg">{value}</dd>
           </div>
         ))}
         {character.languages && character.languages.length > 0 && (
-          <div>
+          <div className="border-t border-trim/20 pt-2.5">
             <dt className="text-fg-muted">{t('stats.languages')}</dt>
             <dd className="mt-1 text-fg">{character.languages.join(', ')}</dd>
           </div>
         )}
         {character.tool_proficiencies && character.tool_proficiencies.length > 0 && (
-          <div>
+          <div className="border-t border-trim/20 pt-2.5">
             <dt className="text-fg-muted">{t('stats.tools')}</dt>
             <dd className="mt-1 text-fg">{character.tool_proficiencies.join(', ')}</dd>
           </div>

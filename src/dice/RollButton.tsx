@@ -112,7 +112,7 @@ function RollButtonShell({
         title={title}
         className={
           className ??
-          'rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-primary hover:text-primary'
+          'cursor-pointer rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim hover:shadow-[0_0_10px_-3px_var(--color-trim)]'
         }
       >
         {children}
@@ -132,7 +132,7 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
   return (
     <span
       role="dialog"
-      className="absolute left-1/2 top-full z-50 mt-1.5 w-48 -translate-x-1/2 rounded-lg border border-border bg-surface p-2.5 text-center shadow-lg"
+      className="rpg-panel absolute left-1/2 top-full z-50 mt-1.5 w-48 -translate-x-1/2 bg-surface p-2.5 text-center shadow-xl"
     >
       <span className="mb-1 flex items-start justify-between gap-2 text-left">
         <span className="text-xs font-medium text-fg-muted">{outcome.label}</span>
@@ -149,7 +149,7 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
           ✕
         </button>
       </span>
-      <span className={`block text-2xl font-bold ${crit ? 'text-success' : fumble ? 'text-danger' : 'text-fg'}`}>{result.total}</span>
+      <span className={`block font-num text-3xl ${crit ? 'text-success' : fumble ? 'text-danger' : 'text-fg'}`}>{result.total}</span>
       <span className="mt-0.5 block text-xs text-fg-muted">
         [{result.rolls.join(', ')}]
         {result.modifier ? ` ${formatModifier(result.modifier)}` : ''}

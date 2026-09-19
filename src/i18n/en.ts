@@ -125,6 +125,7 @@ export const en = {
   'stats.passivePerception': 'Passive Perception',
   'stats.languages': 'Languages',
   'stats.tools': 'Tools',
+  'stats.level': 'Level',
   'senses.darkvision': 'Darkvision',
   'senses.blindsight': 'Blindsight',
   'senses.tremorsense': 'Tremorsense',
@@ -231,6 +232,8 @@ export const en = {
 
   // Shared
   'common.close': 'Close',
+  'common.showMore': 'Show more',
+  'common.showLess': 'Show less',
 
   // Accessibility labels (screen-reader only, not visually shown)
   'a11y.toggleSavingThrow': 'Toggle {{label}} saving throw proficiency',

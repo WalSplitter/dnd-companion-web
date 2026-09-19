@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { SectionTitle } from '../../../components/SectionTitle'
 import { useT } from '../../../i18n/I18nContext'
 import type { EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import type { VaultFile } from '../../../vault/types'
@@ -54,21 +55,21 @@ export function ItemSearchPanel({
   const validTargetIndex = containerOptions.some((o) => o.index === targetIndex) ? targetIndex : containerOptions[0]?.index
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-fg-muted" htmlFor="endeavour-item-search">
-        {t('endeavourInventory.searchLabel')}
-      </label>
+    <div className="rpg-panel p-4">
+      <SectionTitle className="mb-2.5">
+        <label htmlFor="endeavour-item-search">{t('endeavourInventory.searchLabel')}</label>
+      </SectionTitle>
       <input
         id="endeavour-item-search"
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('endeavourInventory.searchPlaceholder')}
-        className="w-full rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-fg"
+        className="rpg-input"
       />
 
       {query.trim() && (
-        <ul className="mt-2 max-h-48 divide-y divide-border overflow-y-auto">
+        <ul className="mt-2 max-h-48 divide-y divide-trim/15 overflow-y-auto">
           {results.length === 0 && <li className="py-2 text-xs text-fg-muted">{t('endeavourInventory.searchNoResults')}</li>}
           {results.map((result) => {
             const link = `[[${result.frontmatter.name}]]`
@@ -78,9 +79,9 @@ export function ItemSearchPanel({
                 draggable
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'new', link }))}
                 onClick={() => onSelect({ key: link, item: result })}
-                className={`flex items-center gap-2 cursor-grab py-1.5 text-sm hover:text-accent ${selectedKey === link ? 'font-medium text-accent' : 'text-fg'}`}
+                className={`flex cursor-grab items-center gap-2 rounded-sm px-1.5 py-1.5 text-sm transition hover:bg-trim/10 ${selectedKey === link ? 'bg-trim/15 font-medium text-trim' : 'text-fg'}`}
               >
-                <span className={`h-2 w-2 shrink-0 rounded-full ${KIND_DOT_CLASSES[result.frontmatter.kind]}`} />
+                <span className={`size-2 shrink-0 rotate-45 ${KIND_DOT_CLASSES[result.frontmatter.kind]}`} />
                 {result.frontmatter.name}
               </li>
             )
@@ -98,7 +99,7 @@ export function ItemSearchPanel({
               id="endeavour-target-container"
               value={validTargetIndex}
               onChange={(e) => setTargetIndex(Number(e.target.value))}
-              className="w-full rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-fg"
+              className="rpg-input"
             >
               {containerOptions.map((opt) => (
                 <option key={opt.index} value={opt.index}>
@@ -117,7 +118,7 @@ export function ItemSearchPanel({
               min={1}
               value={quantity}
               onChange={(e) => setQuantity(Math.max(1, Math.round(Number(e.target.value)) || 1))}
-              className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-sm text-fg"
+              className="rpg-input !w-16 text-center"
             />
           </div>
           <button
@@ -127,7 +128,7 @@ export function ItemSearchPanel({
               if (!selectedResult || validTargetIndex === undefined) return
               onAdd(`[[${selectedResult.frontmatter.name}]]`, validTargetIndex, quantity)
             }}
-            className="rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-fg disabled:opacity-50"
+            className="rpg-button"
           >
             {t('endeavourInventory.addToInventory')}
           </button>
@@ -135,7 +136,7 @@ export function ItemSearchPanel({
       )}
 
       {containerOptions.length > 0 && (
-        <div className="mt-3 border-t border-border pt-2">
+        <div className="mt-3 border-t border-trim/25 pt-2">
           <button
             type="button"
             aria-expanded={customOpen}
@@ -143,7 +144,7 @@ export function ItemSearchPanel({
               if (!customOpen && !customName) setCustomName(query.trim())
               setCustomOpen((open) => !open)
             }}
-            className="text-xs text-accent hover:underline"
+            className="cursor-pointer text-xs text-trim hover:underline"
           >
             {t('endeavourInventory.customToggle')}
           </button>
@@ -159,7 +160,7 @@ export function ItemSearchPanel({
                   type="text"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
-                  className="w-full rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-fg"
+                  className="rpg-input"
                 />
               </div>
               <div>
@@ -172,7 +173,7 @@ export function ItemSearchPanel({
                   min={1}
                   value={customSlots}
                   onChange={(e) => setCustomSlots(Math.max(1, Math.round(Number(e.target.value)) || 1))}
-                  className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-sm text-fg"
+                  className="rpg-input !w-16 text-center"
                 />
               </div>
               <button
@@ -182,7 +183,7 @@ export function ItemSearchPanel({
                   if (!customName.trim() || validTargetIndex === undefined) return
                   onAddCustom(customName.trim(), customSlots, validTargetIndex, quantity)
                 }}
-                className="rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-fg disabled:opacity-50"
+                className="rpg-button"
               >
                 {t('endeavourInventory.customAdd')}
               </button>

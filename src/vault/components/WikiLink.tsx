@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useT, type TranslationKey } from '../../i18n/I18nContext'
 import { useVaultIndex } from '../VaultIndexContext'
 import { basename, resolveWikilink, type ResolvedWikilink } from '../wikilinks'
 
-const WIKILINK_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
+/** Matches `[[Target]]` / `[[Target|Alias]]`, or an inline-code span (`Target`) — notes commonly mark
+ * vault references (tags, field names, note titles) with backticks instead of brackets. */
+const REFERENCE_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|`([^`\n]+)`/g
 const HOVER_OPEN_DELAY_MS = 350
+const DIALOG_WIDTH_PX = 320
+const DIALOG_GAP_PX = 6
 
 const KIND_KEY: Record<ResolvedWikilink['kind'], TranslationKey> = {
   character: 'wikilink.character',
@@ -15,19 +20,27 @@ const KIND_KEY: Record<ResolvedWikilink['kind'], TranslationKey> = {
   unresolved: 'wikilink.unresolved',
 }
 
-/** Turns every `[[Target]]` / `[[Target|Alias]]` in a single line of text into a clickable
- * `WikiLink`, leaving surrounding plain text untouched. Used by `renderObsidianBody` below and by
- * any component that only ever has single-line text to render (e.g. a feature name). */
+/** Turns every `[[Target]]` / `[[Target|Alias]]` — and every inline-code span — in a single line of
+ * text into a clickable `WikiLink`, leaving surrounding plain text untouched. Used by
+ * `renderObsidianBody` below and by any component that only ever has single-line text to render
+ * (e.g. a feature name). */
 export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = []
   let lastIndex = 0
   let i = 0
-  WIKILINK_RE.lastIndex = 0
+  REFERENCE_RE.lastIndex = 0
   let match: RegExpExecArray | null
-  while ((match = WIKILINK_RE.exec(line))) {
+  while ((match = REFERENCE_RE.exec(line))) {
     if (match.index > lastIndex) nodes.push(line.slice(lastIndex, match.index))
-    const [, target, alias] = match
-    nodes.push(<WikiLink key={`${keyPrefix}-link-${i++}`} target={target.trim()} display={alias ? alias.trim() : basename(target)} />)
+    const [, target, alias, code] = match
+    const key = `${keyPrefix}-link-${i++}`
+    nodes.push(
+      code !== undefined ? (
+        <WikiLink key={key} target={code.trim()} display={code.trim()} />
+      ) : (
+        <WikiLink key={key} target={target.trim()} display={alias ? alias.trim() : basename(target)} />
+      ),
+    )
     lastIndex = match.index + match[0].length
   }
   if (lastIndex < line.length) nodes.push(line.slice(lastIndex))
@@ -37,8 +50,8 @@ export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[]
 /**
  * Renders a raw Obsidian note body as readable prose: drops fenced code blocks (dynamic-embed /
  * meta-bind-button / dataviewjs and similar), heading/blockquote/callout lines, and bold markers,
- * keeps paragraph breaks, and turns wikilinks into clickable `WikiLink`s instead of flattening them
- * to plain text.
+ * keeps paragraph breaks, and turns wikilinks and inline-code references into clickable
+ * `WikiLink`s instead of flattening them to plain text.
  */
 export function renderObsidianBody(raw: string | undefined): ReactNode {
   if (!raw) return null
@@ -83,26 +96,35 @@ export function renderObsidianBody(raw: string | undefined): ReactNode {
 }
 
 /**
- * A clickable rendering of an Obsidian `[[Wikilink]]`. Opens a small popover with the resolved
- * target's content — on click (stays open, "pinned", until dismissed) or on hover (closes again on
- * mouse-out) — mirroring how Obsidian's own hover preview / click-to-open works.
+ * A clickable rendering of an Obsidian `[[Wikilink]]` (or a backticked reference) as a link tag.
+ * Opens a dialog with the resolved target's content — on click (stays open, "pinned", until
+ * dismissed) or on hover (closes again on mouse-out) — mirroring how Obsidian's own hover preview /
+ * click-to-open works. Targets that don't resolve to a vault page get a muted, dashed tag and a
+ * "no note found" dialog instead.
  */
 export function WikiLink({ target, display }: { target: string; display: string }) {
   const index = useVaultIndex()
   const [open, setOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const containerRef = useRef<HTMLSpanElement>(null)
+  const anchorRef = useRef<HTMLButtonElement>(null)
+  // The dialog is portaled to <body> so no clipping `overflow` ancestor can cut it off. React
+  // synthetic events still bubble through the portal to the wrapper span, which is how a pointer-down
+  // inside the dialog (or inside a nested link's dialog) is told apart from a click outside.
+  const insideRef = useRef(false)
 
   const resolved = resolveWikilink(index, target)
 
   useEffect(() => {
     if (!pinned) return
-    function onPointerDown(e: PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setPinned(false)
+    insideRef.current = false
+    function onPointerDown() {
+      if (insideRef.current) {
+        insideRef.current = false
+        return
       }
+      setOpen(false)
+      setPinned(false)
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -120,15 +142,20 @@ export function WikiLink({ target, display }: { target: string; display: string 
 
   useEffect(() => () => clearTimeout(hoverTimer.current), [])
 
+  function close() {
+    setOpen(false)
+    setPinned(false)
+  }
+
   return (
-    <span ref={containerRef} className="relative inline-block">
+    <span onPointerDown={() => (insideRef.current = true)}>
       <button
+        ref={anchorRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           if (open && pinned) {
-            setOpen(false)
-            setPinned(false)
+            close()
           } else {
             setOpen(true)
             setPinned(true)
@@ -142,42 +169,88 @@ export function WikiLink({ target, display }: { target: string; display: string 
           clearTimeout(hoverTimer.current)
           if (!pinned) setOpen(false)
         }}
-        className={
+        className={`inline-block max-w-full rounded-sm px-1 text-left no-underline transition [overflow-wrap:anywhere] ${
           resolved.kind === 'unresolved'
-            ? 'cursor-help border-b border-dashed border-fg-muted/50 text-fg-muted no-underline'
-            : 'cursor-pointer border-b border-primary/40 text-primary no-underline hover:border-primary'
-        }
+            ? 'cursor-help border-b border-dashed border-fg-muted/50 bg-fg/5 text-fg-muted'
+            : 'cursor-pointer border-b border-primary/50 bg-primary/10 text-primary hover:bg-primary/20'
+        }`}
       >
         {display}
       </button>
-      {open && <WikiLinkPopover resolved={resolved} onClose={() => setOpen(false)} />}
+      {open && <WikiLinkDialog resolved={resolved} fallbackName={display} anchorRef={anchorRef} onClose={close} />}
     </span>
   )
 }
 
-function WikiLinkPopover({ resolved, onClose }: { resolved: ResolvedWikilink; onClose: () => void }) {
+/** Fixed-position placement under (or, near the bottom edge, above) the anchor, kept inside the viewport. */
+function useAnchoredPosition(anchorRef: RefObject<HTMLElement | null>) {
+  const [position, setPosition] = useState<{ left: number; top?: number; bottom?: number } | null>(null)
+
+  useLayoutEffect(() => {
+    function update() {
+      const anchor = anchorRef.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      const width = Math.min(DIALOG_WIDTH_PX, window.innerWidth - 16)
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
+      const spaceBelow = window.innerHeight - rect.bottom
+      setPosition(
+        spaceBelow < 280 && rect.top > spaceBelow
+          ? { left, bottom: window.innerHeight - rect.top + DIALOG_GAP_PX }
+          : { left, top: rect.bottom + DIALOG_GAP_PX },
+      )
+    }
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [anchorRef])
+
+  return position
+}
+
+function WikiLinkDialog({
+  resolved,
+  fallbackName,
+  anchorRef,
+  onClose,
+}: {
+  resolved: ResolvedWikilink
+  fallbackName: string
+  anchorRef: RefObject<HTMLElement | null>
+  onClose: () => void
+}) {
   const t = useT()
-  return (
-    <span
+  const position = useAnchoredPosition(anchorRef)
+  const name = resolved.name || fallbackName
+  if (!position) return null
+
+  return createPortal(
+    <div
       role="dialog"
-      className="absolute left-0 top-full z-50 mt-1.5 w-72 max-w-[80vw] rounded-lg border border-border bg-surface p-3 text-left align-top shadow-lg"
+      aria-label={name}
+      className="rpg-panel fixed z-50 max-h-[70vh] bg-surface p-3 text-left shadow-2xl"
+      style={{ ...position, width: Math.min(DIALOG_WIDTH_PX, window.innerWidth - 16) }}
     >
-      <span className="mb-1 flex items-start justify-between gap-2">
-        <span className="font-semibold text-fg">{resolved.name}</span>
-        <button type="button" onClick={onClose} className="text-xs text-fg-muted hover:text-fg" aria-label={t('common.close')}>
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <span className="font-display text-sm font-bold tracking-wide text-fg [overflow-wrap:anywhere]">{name}</span>
+        <button type="button" onClick={onClose} className="cursor-pointer text-xs text-fg-muted hover:text-fg" aria-label={t('common.close')}>
           ✕
         </button>
-      </span>
-      <span className="mb-1.5 block text-xs uppercase tracking-wide text-fg-muted">
+      </div>
+      <div className="mb-1.5 text-xs uppercase tracking-wide text-trim">
         {t(KIND_KEY[resolved.kind])}
         {resolved.summary ? ` · ${resolved.summary}` : ''}
-      </span>
+      </div>
       {resolved.kind === 'unresolved' ? (
-        <span className="block text-sm text-fg-muted">{t('wikilink.noNoteFound', { name: resolved.name })}</span>
+        <div className="text-sm text-fg-muted">{t('wikilink.noNoteFound', { name })}</div>
       ) : (
-        <span className="block max-h-64 overflow-y-auto text-sm text-fg-muted [&_p]:mb-0">
+        <div className="max-h-64 overflow-y-auto text-sm text-fg-muted [overflow-wrap:anywhere]">
           {renderObsidianBody(resolved.body) ?? <span className="italic">{t('wikilink.noDescription')}</span>}
-        </span>
+        </div>
       )}
       {resolved.kind === 'character' && (
         <Link
@@ -188,6 +261,7 @@ function WikiLinkPopover({ resolved, onClose }: { resolved: ResolvedWikilink; on
           {t('wikilink.openFullSheet')}
         </Link>
       )}
-    </span>
+    </div>,
+    document.body,
   )
 }

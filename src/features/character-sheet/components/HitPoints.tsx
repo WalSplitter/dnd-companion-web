@@ -1,11 +1,17 @@
 import { useState } from 'react'
-import { Card } from '../../../components/Card'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { DamageRollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
+
+/** Bar colour follows how hurt the character is, like a game HUD: healthy → bloodied → critical. */
+function hpFillClass(pct: number): string {
+  if (pct > 50) return 'from-success/60 to-success'
+  if (pct > 25) return 'from-warning/60 to-warning'
+  return 'from-danger/60 to-danger'
+}
 
 /**
  * The HP bar itself is the slider — not a separate control underneath it. A fully transparent
@@ -35,13 +41,11 @@ function HpBarSlider({
   }
 
   return (
-    <div className="relative mt-2 h-2">
-      <div className="absolute inset-0 h-2 overflow-hidden rounded-full bg-surface-2">
-        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${pct}%` }} />
-      </div>
+    <div className="relative mt-3 h-5">
+      <HpBarTrack pct={pct} />
       {dragging && (
         <div
-          className="pointer-events-none absolute -top-7 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-surface px-1.5 py-0.5 text-xs font-semibold text-fg shadow-md"
+          className="pointer-events-none absolute -top-8 -translate-x-1/2 whitespace-nowrap rounded-md border border-trim/50 bg-surface px-1.5 py-0.5 text-xs font-semibold text-fg shadow-md"
           style={{ left: `${pct}%` }}
         >
           {value}
@@ -58,9 +62,19 @@ function HpBarSlider({
         onKeyDown={() => setDragging(true)}
         onKeyUp={endDrag}
         onBlur={() => setDragging(false)}
-        className="absolute inset-x-0 -top-2 h-6 w-full cursor-pointer opacity-0"
+        className="absolute inset-x-0 -top-1 h-7 w-full cursor-pointer opacity-0"
         aria-label={ariaLabel}
       />
+    </div>
+  )
+}
+
+/** The bevelled bar itself: dark inset groove, gradient fill, and tick marks every 10 %. */
+function HpBarTrack({ pct }: { pct: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden rounded-full border border-trim/60 bg-black/35 shadow-[inset_0_2px_6px_rgb(0_0_0/0.55)]">
+      <div className={`h-full rounded-full bg-linear-to-r transition-[width] ${hpFillClass(pct)}`} style={{ width: `${pct}%` }} />
+      <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_calc(10%-1px),rgb(0_0_0/0.3)_calc(10%-1px),rgb(0_0_0/0.3)_10%)]" />
     </div>
   )
 }
@@ -78,45 +92,55 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
   const canEdit = editPermission === 'granted'
   const writeTargets = character._write
 
-  return (
-    <Card title={t('cards.hitPoints')}>
-      <div className="flex items-end justify-between">
-        <span className="flex items-baseline gap-1 text-2xl font-bold text-fg">
-          {canEdit && writeTargets?.hp_current ? (
-            <EditableNumber
-              key={current}
-              value={current}
-              max={max}
-              onCommit={(next) =>
-                void updateCharacterField(characterPath, writeTargets.hp_current, next, (c) => ({ ...c, hp: { ...c.hp, current: next } }))
-              }
-              className="w-14 rounded-md border border-border bg-surface-2 px-1 text-center text-2xl font-bold text-fg"
-            />
-          ) : (
-            current
-          )}
-          <span className="text-base font-normal text-fg-muted">/ {max}</span>
+  const currentControl =
+    canEdit && writeTargets?.hp_current ? (
+      <EditableNumber
+        key={current}
+        value={current}
+        max={max}
+        onCommit={(next) =>
+          void updateCharacterField(characterPath, writeTargets.hp_current, next, (c) => ({ ...c, hp: { ...c.hp, current: next } }))
+        }
+        className="w-20 rounded-md border border-border bg-surface-2 px-1 text-center font-num text-4xl text-fg"
+      />
+    ) : (
+      current
+    )
+
+  const tempControl =
+    canEdit && writeTargets?.hp_temp ? (
+      <span className="rpg-plate flex items-center gap-1 px-2 py-1 text-sm font-medium text-accent">
+        +
+        <EditableNumber
+          key={temp}
+          value={temp}
+          onCommit={(next) =>
+            void updateCharacterField(characterPath, writeTargets.hp_temp, next, (c) => ({ ...c, hp: { ...c.hp, temp: next } }))
+          }
+          className="w-10 rounded-md border border-border bg-surface-2 px-1 text-center text-sm font-medium text-accent"
+        />
+        {t('stats.temp')}
+      </span>
+    ) : (
+      temp > 0 && (
+        <span className="rpg-plate px-2 py-1 text-sm font-medium text-accent">
+          +{temp} {t('stats.temp')}
         </span>
-        {canEdit && writeTargets?.hp_temp ? (
-          <span className="flex items-center gap-1 text-sm font-medium text-accent">
-            +
-            <EditableNumber
-              key={temp}
-              value={temp}
-              onCommit={(next) =>
-                void updateCharacterField(characterPath, writeTargets.hp_temp, next, (c) => ({ ...c, hp: { ...c.hp, temp: next } }))
-              }
-              className="w-10 rounded-md border border-border bg-surface-2 px-1 text-center text-sm font-medium text-accent"
-            />
-            {t('stats.temp')}
-          </span>
-        ) : (
-          temp > 0 && (
-            <span className="text-sm font-medium text-accent">
-              +{temp} {t('stats.temp')}
-            </span>
-          )
-        )}
+      )
+    )
+
+  return (
+    <div className="min-w-0 flex-1 basis-64">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.16em] text-trim">
+          <span aria-hidden className="size-1.5 rotate-45 bg-trim" />
+          {t('cards.hitPoints')}
+        </h2>
+        {tempControl}
+      </div>
+      <div className="mt-1 flex items-baseline gap-2 font-num text-4xl leading-none text-fg">
+        {currentControl}
+        <span className="text-xl font-medium text-fg-muted">/ {max}</span>
       </div>
       {canEdit && writeTargets?.hp_current ? (
         <HpBarSlider
@@ -129,11 +153,11 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
           }
         />
       ) : (
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        <div className="relative mt-3 h-5">
+          <HpBarTrack pct={pct} />
         </div>
       )}
-      <div className="mt-3 flex items-center justify-between text-sm text-fg-muted">
+      <div className="mt-3 flex items-center justify-between border-t border-trim/20 pt-2 text-sm text-fg-muted">
         <span>{t('stats.hitDice')}</span>
         <span className="flex items-center gap-1.5 font-semibold text-fg">
           {canEdit && writeTargets?.hit_dice_remaining ? (
@@ -156,6 +180,6 @@ export function HitPoints({ character, characterPath }: { character: CharacterFr
           <DamageRollButton label={t('roll.hitDie')} dice={`1${character.hit_dice.die}`} bonus={conMod} />
         </span>
       </div>
-    </Card>
+    </div>
   )
 }

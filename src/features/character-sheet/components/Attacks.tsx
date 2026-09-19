@@ -19,17 +19,20 @@ export function Attacks({ character }: { character: CharacterFrontmatter }) {
     <Card title={t('cards.attacks')}>
       <ul className="space-y-2">
         {attacks.map((attack) => (
-          <li key={attack.name} className="rounded-lg border border-border bg-surface-2 p-2.5">
+          <li key={attack.name} className="rpg-plate p-2.5">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="font-semibold text-fg">{attack.name}</span>
-              <span className="text-xs uppercase text-fg-muted">{t(KIND_KEY[attack.kind])}</span>
-              {attack.range && <span className="text-xs text-fg-muted">{attack.range}</span>}
-              {attack.properties && attack.properties.length > 0 && (
-                <span className="text-xs text-fg-muted">({attack.properties.join(', ')})</span>
-              )}
-              <span className="ml-auto flex items-center gap-1.5">
-                <D20RollButton label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus} />
-                <span className="text-xs text-fg-muted">{formatModifier(attack.attack_bonus)}</span>
+              <span className="font-display font-bold tracking-wide text-fg">{attack.name}</span>
+              <span className="rounded-sm bg-trim/15 px-1.5 py-px text-[0.65rem] font-medium uppercase tracking-wider text-trim">{t(KIND_KEY[attack.kind])}</span>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+              <span className="text-xs text-fg-muted">
+                {attack.range}
+                {attack.properties && attack.properties.length > 0 && ` (${attack.properties.join(', ')})`}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <D20RollButton label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus}>
+                  🎲 {formatModifier(attack.attack_bonus)}
+                </D20RollButton>
                 <DamageRollButton
                   label={t('roll.damageSuffix', { name: attack.name })}
                   dice={attack.damage_dice}

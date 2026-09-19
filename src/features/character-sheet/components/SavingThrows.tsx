@@ -14,7 +14,7 @@ export function SavingThrows({ character, characterPath }: { character: Characte
 
   return (
     <Card title={t('cards.savingThrows')}>
-      <ul className="space-y-1.5">
+      <ul className="space-y-0.5">
         {ABILITIES.map(({ key }) => {
           const label = t(`ability.${key}`)
           const proficient = isSavingThrowProficient(character, key)
@@ -22,7 +22,10 @@ export function SavingThrows({ character, characterPath }: { character: Characte
           const target = character._write?.saving_throw_proficiencies?.[key]
           const dot = <ProficiencyDot active={proficient} />
           return (
-            <li key={key} className="flex items-center gap-2 text-sm">
+            <li
+              key={key}
+              className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${proficient ? 'bg-trim/[0.06]' : ''}`}
+            >
               {canEdit && target ? (
                 <button
                   type="button"
@@ -43,12 +46,12 @@ export function SavingThrows({ character, characterPath }: { character: Characte
               ) : (
                 dot
               )}
-              <span className="w-8 font-semibold text-fg">{formatModifier(bonus)}</span>
-              <span className="text-fg-muted">{label}</span>
+              <span className={`w-8 text-right font-num ${proficient ? 'text-trim' : 'text-fg'}`}>{formatModifier(bonus)}</span>
+              <span className={proficient ? 'text-fg' : 'text-fg-muted'}>{label}</span>
               <D20RollButton
                 label={t('roll.saveSuffix', { label })}
                 modifier={bonus}
-                className="ml-auto rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-primary hover:text-primary"
+                className="ml-auto rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim"
               />
             </li>
           )
