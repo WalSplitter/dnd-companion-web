@@ -132,7 +132,7 @@ function endeavourItemDetails(fm: EndeavourItemFrontmatter): string[] {
       if (fm.damage_reduction !== undefined) details.push(`SR: ${fm.damage_reduction}`)
       if (fm.strength_requirement !== undefined) details.push(`Stärke: ${fm.strength_requirement}`)
       if (fm.speed_cap !== undefined) details.push(`BW-Cap: ${fm.speed_cap}`)
-      if (fm.stealth_disadvantage) details.push('Heimlichkeit: Nachteil')
+      if (fm.stealth_disadvantage) details.push(`Heimlichkeit: ${fm.stealth_disadvantage}`)
       break
     case 'shield':
       if (fm.rk !== undefined) details.push(`RK: ${fm.rk}`)

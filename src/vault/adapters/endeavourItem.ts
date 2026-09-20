@@ -2,24 +2,33 @@ import type { RawFile } from '../rawFile'
 import { linkDisplay } from './legacyCharacterSheet'
 
 /**
- * DRAFT / SPECULATIVE — adapter skeleton for the new "Endeavour" campaign vault
- * (`E:\Git\Endeavour_PlayerVault`), which the DM has described as a preliminary export, far from
- * final. See `docs/inventory-vault-alignment.md` for the full analysis this is based on.
+ * Adapter for the "Endeavour" campaign vault's item notes
+ * (`01 - Spielerbereich/Gegenstände/` — the DM's real, canonical item database, ~175 notes across
+ * Ausrüstung/Behälter/Rüstung/Waffen/Nahrungsmittel as of this writing). `container`/`equipment`/
+ * `weapon` kinds below are confirmed against those real notes; `armor`/`shield` are partially
+ * confirmed (RK/Stärke/BW_cap/Kosten match, but see `stealth_disadvantage`'s and `EndeavourItemBase`'s
+ * doc comments for fields that turned out different from the original guess); `magic_item`/`tool`
+ * remain unconfirmed — no real note of either kind exists yet.
  *
- * Every field below is inferred from hidden Dataview display templates
- * (`zHidden\_Embeds\embed Gegenstand\*`) meant to be transcluded into item notes. A handful of real,
- * DM-provided example items now exist (`container`/`equipment` kinds only — see
- * `01 - Spielerbereich/Kampagne/Gruppe/Dummy/Items/`), confirming those two kinds' fields; the
- * `weapon`/`armor`/`shield`/`magic_item`/`tool` kinds are still unconfirmed against any real note.
- * Treat those kinds as likely to change once the DM ships real notes for them.
+ * Known gap: `Gegenstand/Nahrungsmittel/...` (food/drink, e.g. `Gegenstände/Nahrungsmittel/Speisen/
+ * Laib Brot.md`) isn't a recognized kind here yet — it falls through to the `tool` catch-all below,
+ * which is wrong, just not yet load-bearing for anything the app does with items.
+ *
+ * A real weapon note carries *both* a melee stat block (`Reichweite`/`Schaden`/`Schadensart`/
+ * `Eigenschaften`) and a ranged one (`Range1-3`/`SchadenFern`/`SchadensartFern`/`EigenschaftenFern`) on
+ * the same file — whichever doesn't apply is just left blank, and a dual-purpose weapon (e.g. a
+ * throwable spear) has both filled in. This adapter picks one primary `weapon_kind` per item (melee >
+ * thrown > ranged) and only surfaces that profile's fields, the same simplification
+ * `legacyCharacterSheet.ts`'s `resolveWeaponAttacks()` already makes for the older vault's identical
+ * tag/field scheme.
  *
  * Wired into `buildVault()` (`parseFrontmatter.ts`), but deliberately into its own
  * `Vault.endeavourItems` collection rather than the native `Vault.items` — the tag scheme this
  * detects (`Gegenstand/Waffe/...`) is the same one the *existing* legacy vault's weapon/armor notes
  * already carry (see `legacyCharacterSheet.ts`'s `resolveWeaponAttacks`), so folding these into
  * `vault.items` would also change behavior for a vault this app already supports (its own
- * weapon/armor notes would start showing up there too) — a decision to make deliberately once real
- * Endeavour item notes exist, not a side effect of this experimental adapter.
+ * weapon/armor notes would start showing up there too) — a decision to make deliberately, not a side
+ * effect of this adapter.
  */
 
 export type EndeavourItemSize = 'klein' | 'mittel' | 'gross' | 'sehr_gross'
@@ -47,7 +56,8 @@ export interface EndeavourWeaponItem extends EndeavourItemBase {
   weapon_kind: EndeavourWeaponKind
   /** `Hände` — one- or two-handed. */
   hands?: 'one' | 'two'
-  /** `Kategorie` — e.g. simple/martial. Kept as free text, taxonomy not confirmed yet. */
+  /** Derived from the `Gegenstand/Waffe/Einfach` ("Einfach"/simple) vs `Gegenstand/Waffe/Kriegswaffe`
+   * ("Kriegswaffe"/martial) tag — there's no separate `Kategorie` field on real weapon notes. */
   category?: string
   /** `Verfügbarkeit`. */
   availability?: string
@@ -77,8 +87,9 @@ export interface EndeavourArmorItem extends EndeavourItemBase {
   damage_reduction?: number
   /** `Stärke` — STR requirement to avoid a penalty. */
   strength_requirement?: number
-  /** `Heimlichkeit` — stealth disadvantage flag. */
-  stealth_disadvantage?: boolean
+  /** `Heimlichkeit` — a numeric stealth-check malus (e.g. `-1`) on real armor/shield notes, not the
+   * boolean flag originally guessed here; blank/absent means no penalty. */
+  stealth_disadvantage?: number
   /** `BW_cap` — movement speed cap while worn. */
   speed_cap?: number
 }
@@ -156,11 +167,22 @@ export function looksLikeEndeavourItem(data: Record<string, unknown>): boolean {
   return hasTag(tags, 'Gegenstand') || hasTag(tags, 'Werkzeug')
 }
 
+/** Priority order (melee > thrown > ranged) matters: a dual-purpose weapon (e.g. a throwable spear)
+ * carries both a `Nahkampfwaffe` and a `Fernkampfwaffe/Wurfwaffe` tag at once — see the module doc
+ * comment for why only one profile is surfaced. */
 function endeavourWeaponKind(tags: string[]): EndeavourWeaponKind | undefined {
-  if (hasTag(tags, 'Gegenstand/Waffe/Klasse/Nahkampfwaffe')) return 'melee'
-  if (hasTag(tags, 'Gegenstand/Waffe/Klasse/Fernkampfwaffe/Wurfwaffe')) return 'thrown'
-  if (hasTag(tags, 'Gegenstand/Waffe/Klasse/Fernkampfwaffe')) return 'ranged'
+  if (hasTag(tags, 'Gegenstand/Waffe/Nahkampfwaffe')) return 'melee'
+  if (hasTag(tags, 'Gegenstand/Waffe/Fernkampfwaffe/Wurfwaffe')) return 'thrown'
+  if (hasTag(tags, 'Gegenstand/Waffe/Fernkampfwaffe')) return 'ranged'
   return undefined
+}
+
+/** `Range1`/`Range2`/`Range3` (short/medium/long, e.g. `"4,5(3)"`) joined the same way
+ * `legacyCharacterSheet.ts`'s `resolveWeaponAttacks()` already does for the identical field names on
+ * the older vault's ranged weapon notes. */
+function rangedRangeString(data: Record<string, unknown>): string | undefined {
+  const parts = [data.Range1, data.Range2, data.Range3].filter((v) => v !== undefined && v !== null && v !== '').map(String)
+  return parts.length > 0 ? parts.join('/') : undefined
 }
 
 const SIZE_MAP: Record<string, EndeavourItemSize> = {
@@ -223,17 +245,19 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
   const base = baseFields(raw)
 
   if (hasTag(tags, 'Gegenstand/Waffe')) {
+    const weaponKind = endeavourWeaponKind(tags) ?? 'melee'
+    const isMelee = weaponKind === 'melee'
     return {
       ...base,
       kind: 'weapon',
-      weapon_kind: endeavourWeaponKind(tags) ?? 'melee',
+      weapon_kind: weaponKind,
       hands: data.Hände === 2 || data.Hände === '2' ? 'two' : data.Hände === 1 || data.Hände === '1' ? 'one' : undefined,
-      category: stringField(data.Kategorie),
+      category: hasTag(tags, 'Gegenstand/Waffe/Kriegswaffe') ? 'Kriegswaffe' : hasTag(tags, 'Gegenstand/Waffe/Einfach') ? 'Einfach' : undefined,
       availability: stringField(data.Verfügbarkeit),
-      range: stringField(data.Reichweite),
-      damage_dice: stringField(data.Schaden),
-      damage_type: stringField(data.Schadensart),
-      properties: propertyLabels(data.Eigenschaften),
+      range: isMelee ? stringField(data.Reichweite) : rangedRangeString(data),
+      damage_dice: stringField(isMelee ? data.Schaden : data.SchadenFern),
+      damage_type: stringField(isMelee ? data.Schadensart : data.SchadensartFern),
+      properties: propertyLabels(isMelee ? data.Eigenschaften : data.EigenschaftenFern),
     }
   }
 
@@ -246,7 +270,7 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
       rp: numberField(data.RP),
       damage_reduction: numberField(data.SR),
       strength_requirement: numberField(data.Stärke),
-      stealth_disadvantage: data.Heimlichkeit === true,
+      stealth_disadvantage: numberField(data.Heimlichkeit),
       speed_cap: numberField(data.BW_cap),
     }
   }

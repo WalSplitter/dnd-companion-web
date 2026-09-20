@@ -9,9 +9,11 @@ import {
   type EndeavourItemFrontmatter,
 } from './endeavourItem'
 
-// Fixtures are synthetic — built from the inferred field schema in `docs/inventory-vault-alignment.md`,
-// not real notes (none exist in the new vault yet). These only guard the parsing logic itself; they
-// will need replacing with real fixtures once the DM ships actual item notes.
+// Weapon/container/equipment fixtures below are trimmed excerpts of real notes under
+// `01 - Spielerbereich/Gegenstände/` in the Endeavour vault (e.g. Kurzschwert.md, Langbogen.md,
+// Rucksack (Groß).md). Armor/shield are close to real notes but still carry a couple of unconfirmed
+// guesses (see `endeavourItem.ts`'s doc comments); magic_item/tool are still fully synthetic — no real
+// note of either kind exists yet.
 
 function raw(path: string, content: string) {
   return parseRawFile({ path, content })
@@ -19,7 +21,7 @@ function raw(path: string, content: string) {
 
 describe('looksLikeEndeavourItem', () => {
   it('matches a Gegenstand/Waffe tag', () => {
-    expect(looksLikeEndeavourItem({ tags: ['Gegenstand/Waffe/Klasse/Nahkampfwaffe'] })).toBe(true)
+    expect(looksLikeEndeavourItem({ tags: ['Gegenstand/Waffe/Nahkampfwaffe'] })).toBe(true)
   })
 
   it('matches the inconsistently-named bare Werkzeug tag', () => {
@@ -36,52 +38,119 @@ describe('looksLikeEndeavourItem', () => {
 })
 
 describe('normalizeEndeavourItem', () => {
-  it('normalizes a melee weapon', () => {
+  it('normalizes a melee weapon (Kurzschwert.md)', () => {
     const file = raw(
-      'Streitaxt.md',
+      'Kurzschwert.md',
       `---
-tags: [Gegenstand/Waffe/Klasse/Nahkampfwaffe]
-Größe: Mittel
-Gewicht: Schwer
-Kosten: 10 GM
-Hände: 1
-Kategorie: Martial
-Verfügbarkeit: Verbreitet
-Reichweite: 5 ft
-Schaden: 1d8
+tags:
+  - Gegenstand/Waffe/Nahkampfwaffe
+  - Gegenstand/Waffe/Schwert
+  - Gegenstand/Waffe/Kriegswaffe
+Reichweite: 1,5(1)
+Schaden: 1d6
 Schadensart: "[[Hiebschaden]]"
-Eigenschaften: ["[[Vielseitig]]"]
+Eigenschaften:
+  - "[[Finesse]]"
+  - "[[Leicht]]"
+SchadenFern:
+SchadensartFern:
+Hände: 1
+Plaetze: 1
+Kosten: 15 GM
+Verfügbarkeit: gewöhnlich
 ---
 `,
     )
     expect(normalizeEndeavourItem(file)).toEqual({
-      name: 'Streitaxt',
-      size: 'mittel',
-      weight_class: 'schwer',
-      cost: '10 GM',
+      name: 'Kurzschwert',
+      size: undefined,
+      weight_class: undefined,
+      cost: '15 GM',
+      plaetze: 1,
       kind: 'weapon',
       weapon_kind: 'melee',
       hands: 'one',
-      category: 'Martial',
-      availability: 'Verbreitet',
-      range: '5 ft',
-      damage_dice: '1d8',
+      category: 'Kriegswaffe',
+      availability: 'gewöhnlich',
+      range: '1,5(1)',
+      damage_dice: '1d6',
       damage_type: 'Hiebschaden',
-      properties: ['Vielseitig'],
+      properties: ['Finesse', 'Leicht'],
     })
   })
 
-  it('normalizes a thrown weapon', () => {
+  it('normalizes a ranged-only weapon, reading the SchadenFern/Range field set (Langbogen.md)', () => {
     const file = raw(
-      'Wurfmesser.md',
+      'Langbogen.md',
       `---
-tags: [Gegenstand/Waffe/Klasse/Fernkampfwaffe/Wurfwaffe]
+tags:
+  - Gegenstand/Waffe/Bogen
+  - Gegenstand/Waffe/Fernkampfwaffe/Schusswaffe
+  - Gegenstand/Waffe/Kriegswaffe
+Reichweite:
+Schaden:
+Schadensart:
+SchadenFern: 1d10
+SchadensartFern: "[[Stichschaden]]"
+Range1: 4,5(3)
+Range2: 24(16)
+Range3: 48(32)
+EigenschaftenFern:
+  - "[[Geschosse]] (Pfeile)"
+Hände: 2
+Plaetze: 2
+Kosten: 50 GM
+Verfügbarkeit: ungewöhnlich
 ---
 `,
     )
-    expect(normalizeEndeavourItem(file).kind === 'weapon' && (normalizeEndeavourItem(file) as { weapon_kind: string }).weapon_kind).toBe(
-      'thrown',
+    expect(normalizeEndeavourItem(file)).toEqual({
+      name: 'Langbogen',
+      size: undefined,
+      weight_class: undefined,
+      cost: '50 GM',
+      plaetze: 2,
+      kind: 'weapon',
+      weapon_kind: 'ranged',
+      hands: 'two',
+      category: 'Kriegswaffe',
+      availability: 'ungewöhnlich',
+      range: '4,5(3)/24(16)/48(32)',
+      damage_dice: '1d10',
+      damage_type: 'Stichschaden',
+      // `linkDisplay` only strips a wikilink that spans the *whole* string; "[[Geschosse]] (Pfeile)"
+      // has trailing text, so it passes through unchanged (matches `propertyLabels`'s real behavior).
+      properties: ['[[Geschosse]] (Pfeile)'],
+    })
+  })
+
+  it('picks the melee profile for a dual-purpose thrown weapon (Speer.md)', () => {
+    const file = raw(
+      'Speer.md',
+      `---
+tags:
+  - Gegenstand/Waffe/Nahkampfwaffe
+  - Gegenstand/Waffe/Fernkampfwaffe/Wurfwaffe
+  - Gegenstand/Waffe/Einfach
+Reichweite: 3(2)
+Schaden: 1d6
+Schadensart: "[[Stichschaden]]"
+SchadenFern: 1d6
+SchadensartFern: "[[Stichschaden]]"
+Range1: 3(2)
+Range2: 12(8)
+Range3: 24(16)
+Hände: 1
+Plaetze: 3
+Kosten: 2 GM
+Verfügbarkeit: häufig
+---
+`,
     )
+    const item = normalizeEndeavourItem(file)
+    expect(item.kind === 'weapon' && item.weapon_kind).toBe('melee')
+    expect(item.kind === 'weapon' && item.range).toBe('3(2)')
+    expect(item.kind === 'weapon' && item.category).toBe('Einfach')
   })
 
   it('normalizes armor, capturing both RK and RP', () => {
@@ -94,7 +163,7 @@ RK: 14
 RP: 2
 SR: 1
 Stärke: 13
-Heimlichkeit: true
+Heimlichkeit: -1
 BW_cap: 6
 ---
 `,
@@ -110,7 +179,7 @@ BW_cap: 6
       rp: 2,
       damage_reduction: 1,
       strength_requirement: 13,
-      stealth_disadvantage: true,
+      stealth_disadvantage: -1,
       speed_cap: 6,
     })
   })
