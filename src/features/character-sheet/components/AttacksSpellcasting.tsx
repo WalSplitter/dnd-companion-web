@@ -5,7 +5,7 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/I18nContext'
 import { WikiLink } from '../../../vault/components/WikiLink'
 import { formatModifier, spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
-import type { CharacterFrontmatter } from '../../../vault/types'
+import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
@@ -28,10 +28,17 @@ export function AttacksSpellcasting({
     .map((link) => resolveSpellLink(index, link))
     .filter((s) => s?.frontmatter.level === 0)
 
+  // On a Nimble-flavored sheet, `spellcasting.ability` is still the untouched D&D bridge ability
+  // (see `CharacterFrontmatter.nimble_attributes`'s doc comment) — shown as its Nimble equivalent
+  // here so this plate doesn't show a stray D&D letter amid an otherwise all-Nimble sheet.
+  const abilityAbbr = character.nimble_attributes
+    ? ABILITY_TO_NIMBLE_ATTRIBUTE[character.spellcasting.ability].toUpperCase()
+    : character.spellcasting.ability.toUpperCase()
+
   return (
     <Card title={t('cards.attacksSpellcasting')}>
       <div className="mb-3 grid grid-cols-3 gap-2">
-        <StatPlate label={t('stats.ability')} value={character.spellcasting.ability.toUpperCase()} />
+        <StatPlate label={t('stats.ability')} value={abilityAbbr} />
         <StatPlate label={t('stats.saveDC')} value={String(dc ?? '—')} />
         <StatPlate label={t('stats.attack')}>
           {attack !== undefined ? (

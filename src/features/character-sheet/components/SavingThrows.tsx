@@ -2,15 +2,48 @@ import { Card } from '../../../components/Card'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/I18nContext'
 import { useVaultStore } from '../../../store/vaultStore'
-import { formatModifier, isSavingThrowProficient, savingThrowBonus } from '../../../vault/deriveStats'
-import { ABILITIES, type CharacterFrontmatter } from '../../../vault/types'
+import { formatModifier, isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
+import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+
+/** Nimble saving throws have no proficiency system at all — every save is just `W20 + Attributswert`
+ * for whichever of the six save-backed attributes applies (see `NIMBLE_SAVE_ATTRIBUTES`). */
+function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter }) {
+  const t = useT()
+  return (
+    <ul className="space-y-0.5">
+      {NIMBLE_SAVE_ATTRIBUTES.map((key) => {
+        const label = t(`nimbleAttribute.${key}`)
+        const bonus = nimbleAttributeValue(character, key)
+        return (
+          <li key={key} className="flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10">
+            <span className="w-8 text-right font-num text-fg">{formatModifier(bonus)}</span>
+            <span className="text-fg-muted">{label}</span>
+            <D20RollButton
+              label={t('roll.saveSuffix', { label })}
+              modifier={bonus}
+              className="ml-auto rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim"
+            />
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 export function SavingThrows({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const t = useT()
   const editPermission = useVaultStore((s) => s.editPermission)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const canEdit = editPermission === 'granted'
+
+  if (character.nimble_attributes) {
+    return (
+      <Card title={t('cards.savingThrows')}>
+        <NimbleSavingThrowsList character={character} />
+      </Card>
+    )
+  }
 
   return (
     <Card title={t('cards.savingThrows')}>

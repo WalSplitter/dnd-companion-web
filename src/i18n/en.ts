@@ -64,6 +64,16 @@ export const en = {
   'ability.wis': 'Wisdom',
   'ability.cha': 'Charisma',
 
+  // Nimble attributes (the real Endeavour vault's own ruleset — see types.ts's NIMBLE_ATTRIBUTES)
+  'nimbleAttribute.st': 'Strength',
+  'nimbleAttribute.bw': 'Agility',
+  'nimbleAttribute.ko': 'Constitution',
+  'nimbleAttribute.ge': 'Finesse',
+  'nimbleAttribute.in': 'Instinct',
+  'nimbleAttribute.vs': 'Mind',
+  'nimbleAttribute.pr': 'Presence',
+  'nimbleAttribute.en': 'Resolve',
+
   // Skills
   'skill.acrobatics': 'Acrobatics',
   'skill.animal_handling': 'Animal Handling',

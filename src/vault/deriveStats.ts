@@ -1,4 +1,4 @@
-import { SKILLS, type AbilityKey, type CharacterFrontmatter, type SkillKey } from './types'
+import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from './types'
 
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2)
@@ -54,6 +54,18 @@ export function spellAttackBonus(character: CharacterFrontmatter): number | unde
   const ability = character.spellcasting?.ability
   if (!ability) return undefined
   return character.proficiency_bonus + abilityModifier(character.abilities[ability])
+}
+
+/** Nimble attribute rolls are `W20 + Attributswert` directly — no score-to-modifier conversion. */
+export function nimbleAttributeValue(character: CharacterFrontmatter, attribute: NimbleAttributeKey): number {
+  return character.nimble_attributes?.[attribute] ?? 0
+}
+
+/** Nimble skill rolls add an independently-trained flat bonus (0-10, untrained = 0) on top of the
+ * governing attribute's value — unlike D&D, there's no shared proficiency bonus multiplying up. */
+export function nimbleSkillBonus(character: CharacterFrontmatter, skill: SkillKey): number {
+  const attribute = NIMBLE_SKILL_ATTRIBUTES[skill]
+  return nimbleAttributeValue(character, attribute) + (character.nimble_skills?.[skill] ?? 0)
 }
 
 export function totalCharacterLevel(character: CharacterFrontmatter): number {

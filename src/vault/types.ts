@@ -54,6 +54,75 @@ export const SKILLS: { key: SkillKey; label: string; ability: AbilityKey }[] = [
   { key: 'persuasion', label: 'Persuasion', ability: 'cha' },
 ]
 
+/**
+ * The real "Endeavour" campaign vault's ruleset (tagged `Regeln/Nimble` throughout
+ * `01 - Spielerbereich/Regeln/Allgemein/Attribute|Fertigkeiten|Rettungswürfe`) uses eight attributes
+ * instead of the six D&D-style `abilities` above — notably splitting D&D's DEX into `bw`
+ * (Beweglichkeit: dodge/initiative/acrobatics) and `ge` (Geschick: ranged attacks, finesse, precise
+ * handwork), and WIS into `in` (Instinkt: perception/insight/survival) and `vs` (Verstand:
+ * knowledge skills, folded in with INT-like lore). An attribute's value (-5..+5) is used directly as
+ * the roll modifier — there's no D&D-style score-to-modifier conversion. Two-letter keys match the
+ * vault's own abbreviations (see each attribute note's `aliases`) rather than inventing new ones.
+ */
+export type NimbleAttributeKey = 'st' | 'bw' | 'ko' | 'ge' | 'in' | 'vs' | 'pr' | 'en'
+
+export const NIMBLE_ATTRIBUTES: { key: NimbleAttributeKey; label: string }[] = [
+  { key: 'st', label: 'Stärke' },
+  { key: 'bw', label: 'Beweglichkeit' },
+  { key: 'ko', label: 'Konstitution' },
+  { key: 'ge', label: 'Geschick' },
+  { key: 'in', label: 'Instinkt' },
+  { key: 'vs', label: 'Verstand' },
+  { key: 'pr', label: 'Präsenz' },
+  { key: 'en', label: 'Entschlossenheit' },
+]
+
+/** Only six of the eight attributes back a saving throw (see `Rettungswürfe/`) — `ge` and `in` don't
+ * (per their own rule notes, they're used for attacks/turn order instead). */
+export const NIMBLE_SAVE_ATTRIBUTES: NimbleAttributeKey[] = ['st', 'bw', 'ko', 'vs', 'pr', 'en']
+
+/**
+ * The vault's 18 Nimble skills (`Regeln/Allgemein/Fertigkeiten/`) turn out to share the exact same
+ * names as this app's own D&D-shaped `SkillKey`s — just regrouped under different governing
+ * attributes (e.g. `medicine` moves from D&D's WIS to Nimble's `vs`/Verstand) — so `SkillKey` and its
+ * `skill.*` i18n labels are reused as-is; only this attribute mapping is Nimble-specific.
+ */
+/**
+ * Bridges an `AbilityKey` (still used untouched by AC/initiative/spellcasting math — see
+ * `CharacterFrontmatter.nimble_attributes`'s doc comment) to its closest Nimble attribute, purely so
+ * a stat that's labeled by ability (e.g. the spellcasting ability plate) can show the vault's own
+ * terminology instead of a stray D&D letter on an otherwise all-Nimble sheet.
+ */
+export const ABILITY_TO_NIMBLE_ATTRIBUTE: Record<AbilityKey, NimbleAttributeKey> = {
+  str: 'st',
+  dex: 'bw',
+  con: 'ko',
+  int: 'vs',
+  wis: 'in',
+  cha: 'pr',
+}
+
+export const NIMBLE_SKILL_ATTRIBUTES: Record<SkillKey, NimbleAttributeKey> = {
+  athletics: 'st',
+  acrobatics: 'bw',
+  sleight_of_hand: 'ge',
+  stealth: 'ge',
+  arcana: 'vs',
+  history: 'vs',
+  investigation: 'vs',
+  nature: 'vs',
+  religion: 'vs',
+  medicine: 'vs',
+  animal_handling: 'in',
+  insight: 'in',
+  perception: 'in',
+  survival: 'in',
+  deception: 'pr',
+  intimidation: 'pr',
+  performance: 'pr',
+  persuasion: 'pr',
+}
+
 export interface CharacterClass {
   name: string
   level: number
@@ -105,6 +174,8 @@ export interface CharacterWriteTargets {
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
   /** Legacy schema only, same reason. Raw value is 0 (none) | 1 (proficient) | 2 (expertise). */
   skills?: Record<SkillKey, FieldWriteTarget>
+  nimble_attributes?: Record<NimbleAttributeKey, FieldWriteTarget>
+  nimble_skills?: Partial<Record<SkillKey, FieldWriteTarget>>
 }
 
 export interface ConditionsInfo {
@@ -171,6 +242,15 @@ export interface CharacterFrontmatter {
   spellcasting?: SpellcastingInfo
   spells_known?: string[]
   features?: CharacterFeature[]
+  /**
+   * Real "Endeavour"/Nimble ruleset attributes/skills (see `NIMBLE_ATTRIBUTES`/`NIMBLE_SKILL_ATTRIBUTES`)
+   * — present only for characters using that vault's actual rules instead of this schema's default
+   * D&D-shaped `abilities`/`skill_proficiencies`. When present, the Ability Scores/Skills/Saving
+   * Throws cards render these instead. `abilities`/`proficiency_bonus` stay a required bridge either
+   * way — combat math untouched by this (AC, initiative, spellcasting DC) still reads them directly.
+   */
+  nimble_attributes?: Record<NimbleAttributeKey, number>
+  nimble_skills?: Partial<Record<SkillKey, number>>
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
   conditions?: ConditionsInfo

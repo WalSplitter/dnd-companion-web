@@ -3,12 +3,14 @@ import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/l
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
-import { ABILITIES } from './types'
+import { ABILITIES, NIMBLE_ATTRIBUTES } from './types'
 import type {
   AbilityKey,
   CharacterFrontmatter,
   CharacterWriteTargets,
   FieldWriteTarget,
+  NimbleAttributeKey,
+  SkillKey,
   Vault,
   VaultFile,
   VaultFrontmatter,
@@ -68,6 +70,18 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
     const abilities = {} as Record<AbilityKey, FieldWriteTarget>
     for (const { key } of ABILITIES) abilities[key] = { path, keyPath: ['abilities', key] }
     targets.abilities = abilities
+  }
+
+  if (isRecord(data.nimble_attributes)) {
+    const nimbleAttributes = {} as Record<NimbleAttributeKey, FieldWriteTarget>
+    for (const { key } of NIMBLE_ATTRIBUTES) nimbleAttributes[key] = { path, keyPath: ['nimble_attributes', key] }
+    targets.nimble_attributes = nimbleAttributes
+  }
+
+  if (isRecord(data.nimble_skills)) {
+    const nimbleSkills: Partial<Record<SkillKey, FieldWriteTarget>> = {}
+    for (const skill of Object.keys(data.nimble_skills) as SkillKey[]) nimbleSkills[skill] = { path, keyPath: ['nimble_skills', skill] }
+    targets.nimble_skills = nimbleSkills
   }
 
   const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined

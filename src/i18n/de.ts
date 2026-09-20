@@ -55,6 +55,15 @@ export const de = {
   'ability.wis': 'Weisheit',
   'ability.cha': 'Charisma',
 
+  'nimbleAttribute.st': 'Stärke',
+  'nimbleAttribute.bw': 'Beweglichkeit',
+  'nimbleAttribute.ko': 'Konstitution',
+  'nimbleAttribute.ge': 'Geschick',
+  'nimbleAttribute.in': 'Instinkt',
+  'nimbleAttribute.vs': 'Verstand',
+  'nimbleAttribute.pr': 'Präsenz',
+  'nimbleAttribute.en': 'Entschlossenheit',
+
   'skill.acrobatics': 'Akrobatik',
   'skill.animal_handling': 'Mit Tieren umgehen',
   'skill.arcana': 'Arkane Kunde',
