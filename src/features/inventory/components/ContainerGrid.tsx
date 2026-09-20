@@ -5,6 +5,17 @@ import { GRID_COLUMNS, type ContainerLayout } from '../grid'
 import { ItemTile } from './ItemTile'
 
 /**
+ * `text-transform: uppercase` (used for both label renderings below) always maps German "ß" to "SS"
+ * — that's the CSS spec's explicit uppercasing rule, applied regardless of `lang` — which mangles a
+ * vault-sourced container name like "Rucksack (Groß)" into "RUCKSACK (GROSS)". Swapping in the
+ * capital ẞ (U+1E9E, present in the Cinzel display font used here) first sidesteps that: it's already
+ * uppercase, so the CSS transform leaves it untouched.
+ */
+function upperCaseSafe(text: string): string {
+  return text.replace(/ß/g, 'ẞ')
+}
+
+/**
  * One equipped container's slot grid (the big `Gepäck` backpack, or one small 1-slot `Schnellzugriff`
  * pouch — both render through this same component, just with a different `columns`/size). Native
  * HTML5 drag-and-drop drop target (no extra dependency): dropping either a search result or an
@@ -57,10 +68,10 @@ export function ContainerGrid({
     >
       {compact ? (
         <div className="mb-1.5 break-words font-display text-[0.65rem] font-bold uppercase leading-tight tracking-wider text-trim" title={label}>
-          {label}
+          {upperCaseSafe(label)}
         </div>
       ) : (
-        <SectionTitle className="mb-2.5">{label}</SectionTitle>
+        <SectionTitle className="mb-2.5">{upperCaseSafe(label)}</SectionTitle>
       )}
       <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
         {Array.from({ length: layout.capacity }, (_, cellIndex) => {

@@ -13,8 +13,6 @@ export function VaultLoaderControls() {
   const error = useVaultStore((s) => s.error)
   const editPermission = useVaultStore((s) => s.editPermission)
   const writeError = useVaultStore((s) => s.writeError)
-  const loadSampleVault = useVaultStore((s) => s.loadSampleVault)
-  const loadDevVault = useVaultStore((s) => s.loadDevVault)
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
   const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
   const restoreLastVault = useVaultStore((s) => s.restoreLastVault)
@@ -35,7 +33,7 @@ export function VaultLoaderControls() {
       <span className="hidden max-w-[12rem] items-baseline gap-1 text-sm text-fg-muted sm:inline-flex">
         <span className="shrink-0">{t('vaultLoader.label')}</span>
         <span className="truncate font-medium text-fg" title={source === 'user' ? vaultName ?? undefined : undefined}>
-          {source === 'sample' ? t('vaultLoader.sampleData') : source === 'dev' ? t('vaultLoader.devData') : vaultName}
+          {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
         </span>
       </span>
 
@@ -89,28 +87,6 @@ export function VaultLoaderControls() {
             }}
           />
         </>
-      )}
-
-      {source !== 'sample' && (
-        <button
-          type="button"
-          onClick={loadSampleVault}
-          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-fg hover:bg-surface-2"
-        >
-          {t('vaultLoader.useSampleVault')}
-        </button>
-      )}
-
-      {/* TEMPORARY, dev-only — see `src/dev-vault/index.ts`. Remove once the DM's real vault has
-          character/item sheets to develop the inventory UI against instead. */}
-      {import.meta.env.DEV && source !== 'dev' && (
-        <button
-          type="button"
-          onClick={() => void loadDevVault()}
-          className="rounded-md border border-dashed border-border px-3 py-1.5 text-sm font-medium text-fg-muted hover:bg-surface-2"
-        >
-          {t('vaultLoader.loadDevVault')}
-        </button>
       )}
 
       {source === 'user' && editPermission !== 'unavailable' && (

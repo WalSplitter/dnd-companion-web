@@ -1,4 +1,4 @@
-import { isRecord, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
+import { isRecord, linkFile, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
@@ -88,6 +88,29 @@ function isTemplateFile(raw: RawFile): boolean {
 }
 
 /**
+ * The app's own `type: character` schema keeps everything on one file by default (see
+ * `ownSchemaWriteTargets`'s comment) — but, like the legacy vault's `Inventar <Name>.md`/
+ * `Spell Sheet <Name>.md` convention (`legacyCharacterSheet.ts`'s `findLinkedSheet`/
+ * `findSpellSource`), a character's `endeavour_inventory`/`currency` and/or
+ * `spellcasting`/`spells_known` can instead live on a separate note backlinked via a
+ * `Charakter: "[[<character file name>]]"` field. Whichever of these fields isn't already set
+ * directly on the character's own file is filled in from the first backlinked note that carries it; a
+ * field already present on the character's own file always wins (so a linked sheet can't silently
+ * override an inline value).
+ */
+function resolveLinkedCharacterExtensions(characterFileName: string, data: Record<string, unknown>, files: RawFile[]) {
+  const target = characterFileName.trim().toLowerCase()
+  const linked = files.filter((f) => linkFile(f.data.Charakter).toLowerCase() === target)
+
+  return {
+    endeavour_inventory: data.endeavour_inventory ?? linked.find((f) => isRecord(f.data.endeavour_inventory))?.data.endeavour_inventory,
+    currency: data.currency ?? linked.find((f) => isRecord(f.data.currency))?.data.currency,
+    spellcasting: data.spellcasting ?? linked.find((f) => isRecord(f.data.spellcasting))?.data.spellcasting,
+    spells_known: data.spells_known ?? linked.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known,
+  }
+}
+
+/**
  * Parses all source files and buckets them by type. Two frontmatter conventions are recognized:
  *  - the app's own `type: character|item|spell` marker (see `types.ts`)
  *  - an existing campaign vault's schema with no `type:` marker — characters and spell notes are
@@ -115,9 +138,10 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       }
       if (type === 'character') {
         const character = parsed.frontmatter as CharacterFrontmatter
+        const linkedExtensions = resolveLinkedCharacterExtensions(raw.name, raw.data, rawFiles)
         vault.characters.push({
           ...parsed,
-          frontmatter: { ...character, _write: ownSchemaWriteTargets(raw.path, raw.data) },
+          frontmatter: { ...character, ...linkedExtensions, _write: ownSchemaWriteTargets(raw.path, raw.data) },
         } as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)
       } else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)
       else vault.spells.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'spell' }>>)

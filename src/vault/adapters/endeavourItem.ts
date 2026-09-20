@@ -7,9 +7,11 @@ import { linkDisplay } from './legacyCharacterSheet'
  * final. See `docs/inventory-vault-alignment.md` for the full analysis this is based on.
  *
  * Every field below is inferred from hidden Dataview display templates
- * (`zHidden\_Embeds\embed Gegenstand\*`) meant to be transcluded into item notes — **no real item
- * note exists in the vault yet** to confirm field names/types against. Treat every type here as
- * likely to change once the DM ships real item/character notes.
+ * (`zHidden\_Embeds\embed Gegenstand\*`) meant to be transcluded into item notes. A handful of real,
+ * DM-provided example items now exist (`container`/`equipment` kinds only — see
+ * `01 - Spielerbereich/Kampagne/Gruppe/Dummy/Items/`), confirming those two kinds' fields; the
+ * `weapon`/`armor`/`shield`/`magic_item`/`tool` kinds are still unconfirmed against any real note.
+ * Treat those kinds as likely to change once the DM ships real notes for them.
  *
  * Wired into `buildVault()` (`parseFrontmatter.ts`), but deliberately into its own
  * `Vault.endeavourItems` collection rather than the native `Vault.items` — the tag scheme this
@@ -17,8 +19,7 @@ import { linkDisplay } from './legacyCharacterSheet'
  * already carry (see `legacyCharacterSheet.ts`'s `resolveWeaponAttacks`), so folding these into
  * `vault.items` would also change behavior for a vault this app already supports (its own
  * weapon/armor notes would start showing up there too) — a decision to make deliberately once real
- * Endeavour item notes exist, not a side effect of this dev-only scaffolding
- * (see `src/dev-vault/`, itself temporary until the DM ships real character/item notes).
+ * Endeavour item notes exist, not a side effect of this experimental adapter.
  */
 
 export type EndeavourItemSize = 'klein' | 'mittel' | 'gross' | 'sehr_gross'
