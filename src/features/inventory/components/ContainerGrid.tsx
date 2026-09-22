@@ -34,6 +34,7 @@ export function ContainerGrid({
   onSelectTile,
   onRemoveTile,
   onDropPayload,
+  canEdit,
 }: {
   label: string
   layout: ContainerLayout
@@ -44,6 +45,9 @@ export function ContainerGrid({
   onSelectTile: (linkIndex: number) => void
   onRemoveTile: (linkIndex: number) => void
   onDropPayload: (raw: string) => void
+  /** Hides each tile's remove control and disables dragging it — a locked container still shows what's
+   * inside (click to view details), it just can't be rearranged until editing is unlocked. */
+  canEdit: boolean
 }) {
   const t = useT()
   const [dragOver, setDragOver] = useState(false)
@@ -85,6 +89,7 @@ export function ContainerGrid({
                 selected={selectedLinkIndex === tile.linkIndex}
                 onSelect={() => onSelectTile(tile.linkIndex)}
                 onRemove={() => onRemoveTile(tile.linkIndex)}
+                canEdit={canEdit}
               />
             )
           }

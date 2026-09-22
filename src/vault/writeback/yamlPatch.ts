@@ -9,7 +9,15 @@
  * and it refuses to write (throws `YamlPatchError`) rather than guess whenever the file doesn't look
  * exactly like what it expects. A full YAML re-serialize would risk reformatting the whole file on
  * every auto-saved edit — an unacceptable blast radius against someone's real campaign vault.
+ *
+ * `patchFrontmatterBlock` (below) relaxes this for exactly one case — the slot-grid inventory's
+ * `endeavour_inventory.containers`, an array of objects no scalar patch can express — by replacing
+ * that one key's *entire* multi-line value instead of a single line. Still scoped to one key's
+ * subtree, not a whole-file re-serialize: everything outside that block (other keys, comments, the
+ * markdown body) stays byte-identical.
  */
+
+import { dump } from 'js-yaml'
 
 export class YamlPatchError extends Error {
   constructor(message: string) {
@@ -27,18 +35,10 @@ function formatValue(value: number | boolean): string {
   return typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value)
 }
 
-export function patchFrontmatterField(content: string, keyPath: string[], value: number | boolean): string {
-  if (keyPath.length === 0) throw new YamlPatchError('empty key path')
-
-  const match = FRONTMATTER_RE.exec(content)
-  if (!match) throw new YamlPatchError('no frontmatter block found')
-  const [, openDelim, yamlText, closeDelim, rest] = match
-
-  const newline = yamlText.includes('\r\n') ? '\r\n' : '\n'
-  const lines = yamlText.split(/\r?\n/)
-
+/** Locates the line holding `keyPath` (tracked by indentation, the same stack-based walk both
+ * patchers need), throwing if the file doesn't look exactly like what it expects. */
+function findKeyLine(lines: string[], keyPath: string[]): number {
   const stack: { indent: number; key: string }[] = []
-  let targetLine = -1
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
@@ -54,16 +54,75 @@ export function patchFrontmatterField(content: string, keyPath: string[], value:
     stack.push({ indent, key })
 
     const path = stack.map((s) => s.key)
-    if (path.length === keyPath.length && path.every((k, idx) => k === keyPath[idx])) {
-      targetLine = i
+    if (path.length === keyPath.length && path.every((k, idx) => k === keyPath[idx])) return i
+  }
+
+  throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+}
+
+export function patchFrontmatterField(content: string, keyPath: string[], value: number | boolean): string {
+  if (keyPath.length === 0) throw new YamlPatchError('empty key path')
+
+  const match = FRONTMATTER_RE.exec(content)
+  if (!match) throw new YamlPatchError('no frontmatter block found')
+  const [, openDelim, yamlText, closeDelim, rest] = match
+
+  const newline = yamlText.includes('\r\n') ? '\r\n' : '\n'
+  const lines = yamlText.split(/\r?\n/)
+  const targetLine = findKeyLine(lines, keyPath)
+
+  const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
+  lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`
+
+  return openDelim + lines.join(newline) + closeDelim + rest
+}
+
+/**
+ * Replaces a key's entire value — which may span many lines (a nested array/object), not just one
+ * scalar — with a freshly-dumped YAML rendering of `value`. Used for the one field a line-level
+ * patch can't express: the slot-grid inventory's `endeavour_inventory.containers`.
+ *
+ * The block being replaced is found the same indentation-based way `patchFrontmatterField` finds its
+ * target line, then extended forward through every subsequent line indented *deeper* than the key
+ * itself (its nested list items, their own nested keys, ...) — the first line back at or above the
+ * key's own indent ends it. Re-dumping necessarily picks its own quote/list style for just this
+ * subtree (`js-yaml`'s defaults, not necessarily matching the rest of the file's hand-authored
+ * style) — everything outside the block is untouched.
+ */
+export function patchFrontmatterBlock(content: string, keyPath: string[], value: unknown): string {
+  if (keyPath.length === 0) throw new YamlPatchError('empty key path')
+
+  const match = FRONTMATTER_RE.exec(content)
+  if (!match) throw new YamlPatchError('no frontmatter block found')
+  const [, openDelim, yamlText, closeDelim, rest] = match
+
+  const newline = yamlText.includes('\r\n') ? '\r\n' : '\n'
+  const lines = yamlText.split(/\r?\n/)
+  const targetLine = findKeyLine(lines, keyPath)
+
+  const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
+  const keyIndent = keyMatch[1].length
+
+  let blockEnd = lines.length
+  for (let i = targetLine + 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.trim() === '' || line.trim().startsWith('#')) continue
+    const indent = /^( *)/.exec(line)![1].length
+    if (indent <= keyIndent) {
+      blockEnd = i
       break
     }
   }
 
-  if (targetLine === -1) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+  const lastKey = keyPath[keyPath.length - 1]
+  const dumped = dump({ [lastKey]: value }, { indent: 2, lineWidth: -1 }).replace(/\r?\n$/, '')
+  const indentPrefix = ' '.repeat(keyIndent)
+  const replacement = dumped
+    .split('\n')
+    .map((line) => (line ? indentPrefix + line : line))
+    .join(newline)
 
-  const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
-  lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`
+  lines.splice(targetLine, blockEnd - targetLine, replacement)
 
   return openDelim + lines.join(newline) + closeDelim + rest
 }

@@ -112,12 +112,19 @@ function isTemplateFile(raw: RawFile): boolean {
  * field already present on the character's own file always wins (so a linked sheet can't silently
  * override an inline value).
  */
-function resolveLinkedCharacterExtensions(characterFileName: string, data: Record<string, unknown>, files: RawFile[]) {
+function resolveLinkedCharacterExtensions(ownPath: string, characterFileName: string, data: Record<string, unknown>, files: RawFile[]) {
   const target = characterFileName.trim().toLowerCase()
   const linked = files.filter((f) => linkFile(f.data.Charakter).toLowerCase() === target)
 
+  const endeavourInventoryPath = isRecord(data.endeavour_inventory) ? ownPath : linked.find((f) => isRecord(f.data.endeavour_inventory))?.path
+
   return {
     endeavour_inventory: data.endeavour_inventory ?? linked.find((f) => isRecord(f.data.endeavour_inventory))?.data.endeavour_inventory,
+    /** Which file actually owns the `endeavour_inventory` key — the character's own file when it
+     * carries the field inline, otherwise the first linked note that does. Feeds
+     * `CharacterWriteTargets.endeavour_inventory` (see `buildVault`) so edits from the slot-grid
+     * inventory UI know which file to patch. `undefined` when neither has the field yet. */
+    endeavour_inventory_path: endeavourInventoryPath,
     currency: data.currency ?? linked.find((f) => isRecord(f.data.currency))?.data.currency,
     spellcasting: data.spellcasting ?? linked.find((f) => isRecord(f.data.spellcasting))?.data.spellcasting,
     spells_known: data.spells_known ?? linked.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known,
@@ -152,10 +159,15 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       }
       if (type === 'character') {
         const character = parsed.frontmatter as CharacterFrontmatter
-        const linkedExtensions = resolveLinkedCharacterExtensions(raw.name, raw.data, rawFiles)
+        const { endeavour_inventory_path, ...linkedExtensions } = resolveLinkedCharacterExtensions(raw.path, raw.name, raw.data, rawFiles)
+        const writeTargets = ownSchemaWriteTargets(raw.path, raw.data)
         vault.characters.push({
           ...parsed,
-          frontmatter: { ...character, ...linkedExtensions, _write: ownSchemaWriteTargets(raw.path, raw.data) },
+          frontmatter: {
+            ...character,
+            ...linkedExtensions,
+            _write: endeavour_inventory_path ? { ...writeTargets, endeavour_inventory: { path: endeavour_inventory_path } } : writeTargets,
+          },
         } as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)
       } else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)
       else vault.spells.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'spell' }>>)

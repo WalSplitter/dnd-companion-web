@@ -63,4 +63,32 @@ describe('buildVault', () => {
     expect(vault.items).toHaveLength(1)
     expect(vault.spells).toHaveLength(0)
   })
+
+  it('points endeavour_inventory write-back at the character file when it carries the field inline', () => {
+    const withInventory = {
+      path: 'Characters/Test.md',
+      content: characterFile.content.replace(
+        'hit_dice: { die: d10, total: 3 }',
+        'hit_dice: { die: d10, total: 3 }\nendeavour_inventory:\n  containers: []',
+      ),
+    }
+    const vault = buildVault([withInventory])
+    expect(vault.characters[0].frontmatter._write?.endeavour_inventory).toEqual({ path: 'Characters/Test.md' })
+  })
+
+  it('points endeavour_inventory write-back at a linked sheet, matched by filename via Charakter, when the character file has no inline field', () => {
+    const linkedInventory = {
+      path: 'Characters/Test Inventar.md',
+      content: '---\nCharakter: "[[Test]]"\nendeavour_inventory:\n  containers:\n    - container: "[[Rucksack]]"\n      items: []\n---\n',
+    }
+    const vault = buildVault([characterFile, linkedInventory])
+    const character = vault.characters[0]
+    expect(character.frontmatter._write?.endeavour_inventory).toEqual({ path: 'Characters/Test Inventar.md' })
+    expect(character.frontmatter.endeavour_inventory).toEqual({ containers: [{ container: '[[Rucksack]]', items: [] }] })
+  })
+
+  it('leaves endeavour_inventory write-back unset when neither the character file nor a linked sheet carries the field', () => {
+    const vault = buildVault([characterFile])
+    expect(vault.characters[0].frontmatter._write?.endeavour_inventory).toBeUndefined()
+  })
 })

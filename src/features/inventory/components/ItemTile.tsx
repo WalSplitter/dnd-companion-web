@@ -24,12 +24,16 @@ export function ItemTile({
   selected,
   onSelect,
   onRemove,
+  canEdit,
 }: {
   tile: ContainerTile
   containerIndex: number
   selected: boolean
   onSelect: () => void
   onRemove: () => void
+  /** Hides the remove control and disables dragging — the tile is still clickable to view its
+   * details, just not rearrangeable, while editing is locked (see `EndeavourInventoryGrid`). */
+  canEdit: boolean
 }) {
   const t = useT()
   const name = tile.item?.frontmatter.name ?? t('endeavourInventory.unresolvedItem')
@@ -43,7 +47,7 @@ export function ItemTile({
     <div
       role="button"
       tabIndex={0}
-      draggable
+      draggable={canEdit}
       onDragStart={(e) => {
         const payload: MoveTilePayload = { type: 'move', sourceContainerIndex: containerIndex, sourceLinkIndex: tile.linkIndex }
         e.dataTransfer.setData('text/plain', JSON.stringify(payload))
@@ -56,7 +60,7 @@ export function ItemTile({
         }
       }}
       style={{ gridColumn: `span ${tile.length}` }}
-      className={`relative flex min-h-14 cursor-grab flex-col items-center justify-center rounded-md border px-1.5 py-1 text-center text-[11px] font-medium leading-tight text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] transition hover:brightness-125 ${kindClasses} ${
+      className={`relative flex min-h-14 flex-col items-center justify-center rounded-md border px-1.5 py-1 text-center text-[11px] font-medium leading-tight text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] transition hover:brightness-125 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${kindClasses} ${
         selected ? 'ring-2 ring-trim' : ''
       }`}
     >
@@ -64,17 +68,22 @@ export function ItemTile({
       {tile.custom && (
         <span className="text-[9px] uppercase text-fg-muted">{t('endeavourInventory.customBadge')}</span>
       )}
-      <button
-        type="button"
-        aria-label={t('endeavourInventory.removeAria', { name })}
-        onClick={(e) => {
-          e.stopPropagation()
-          onRemove()
-        }}
-        className="absolute right-0.5 top-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full border border-trim/30 bg-surface/85 text-[10px] text-fg-muted transition hover:border-danger hover:bg-danger hover:text-white"
-      >
-        ×
-      </button>
+      {tile.charges !== undefined && (
+        <span className="rpg-plate absolute bottom-0.5 left-0.5 px-1 text-[9px] font-semibold leading-tight text-fg">{tile.charges}</span>
+      )}
+      {canEdit && (
+        <button
+          type="button"
+          aria-label={t('endeavourInventory.removeAria', { name })}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove()
+          }}
+          className="absolute right-0.5 top-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full border border-trim/30 bg-surface/85 text-[10px] text-fg-muted transition hover:border-danger hover:bg-danger hover:text-white"
+        >
+          ×
+        </button>
+      )}
     </div>
   )
 }

@@ -11,7 +11,7 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { writeFieldValue } from '../vault/writeback/persist'
+import { writeEndeavourInventory, writeFieldValue } from '../vault/writeback/persist'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 const SAMPLE_VAULT = buildVault(sampleVaultFiles)
@@ -62,14 +62,15 @@ interface VaultState {
     mutate: (character: CharacterFrontmatter) => CharacterFrontmatter,
   ) => Promise<void>
   /**
-   * Replaces a character's slot-grid inventory (`endeavour_inventory.containers`). Unlike
-   * `updateCharacterField`, this always applies locally regardless of `editPermission`/write
-   * targets: the YAML patcher (`writeback/yamlPatch.ts`) only rewrites single scalar lines, not
-   * arrays, so there is no disk write-back path for container contents yet — this is a deliberate,
-   * local-only scope for the new inventory grid (see the feature's plan doc). Numeric field edits
-   * elsewhere are unaffected and keep requiring granted write permission as before.
+   * Replaces a character's slot-grid inventory (`endeavour_inventory.containers`) — always applied
+   * locally first (so rearranging items works even without write permission, same as before), then
+   * written back to whichever file owns the field (`CharacterWriteTargets.endeavour_inventory` — the
+   * character's own file, or a linked sheet) via `patchFrontmatterBlock`, same optimistic-write +
+   * rollback-on-failure shape as `updateCharacterField`. A no-op disk write (stays local-only) when
+   * editing isn't permitted, no file handle is known for that path, or the field has no write target
+   * yet (a brand-new character with nowhere on disk to place `endeavour_inventory`).
    */
-  setEndeavourInventory: (characterPath: string, containers: EndeavourContainerSlotAssignment[]) => void
+  setEndeavourInventory: (characterPath: string, containers: EndeavourContainerSlotAssignment[]) => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -291,8 +292,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     }
   },
 
-  setEndeavourInventory: (characterPath, containers) => {
-    const { vault } = get()
+  setEndeavourInventory: async (characterPath, containers) => {
+    const { vault, fileHandles, editPermission } = get()
+    const previousVault = vault
+    const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.endeavour_inventory
+
     set({
       vault: {
         ...vault,
@@ -300,6 +304,19 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           c.path === characterPath ? { ...c, frontmatter: { ...c.frontmatter, endeavour_inventory: { containers } } } : c,
         ),
       },
+      writeError: null,
     })
+
+    if (editPermission !== 'granted' || !fileHandles || !target) return
+    const fileHandle = fileHandles.get(target.path)
+    if (!fileHandle) return
+
+    try {
+      await writeEndeavourInventory(fileHandle, containers)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[vault] setEndeavourInventory failed, rolling back:', err)
+      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
+    }
   },
 }))

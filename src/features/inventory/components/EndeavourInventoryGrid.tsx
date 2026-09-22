@@ -5,7 +5,7 @@ import { useVaultStore } from '../../../store/vaultStore'
 import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry } from '../../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { containerCapacity, isCustomEntry, layoutContainer, resolveEntry } from '../grid'
+import { containerCapacity, isCustomEntry, isStackEntry, layoutContainer, resolveEntry } from '../grid'
 import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
 import { ContainerGrid } from './ContainerGrid'
@@ -56,6 +56,7 @@ export function EndeavourInventoryGrid({
   const t = useT()
   const setEndeavourInventory = useVaultStore((s) => s.setEndeavourInventory)
   const vaultEndeavourItems = useVaultStore((s) => s.vault.endeavourItems)
+  const canEdit = useVaultStore((s) => s.editPermission === 'granted')
   const containers = character.endeavour_inventory?.containers ?? []
 
   const [selected, setSelected] = useState<SelectedGridItem | null>(null)
@@ -94,7 +95,7 @@ export function EndeavourInventoryGrid({
   const searchableItems = vaultEndeavourItems.filter((i) => i.frontmatter.kind !== 'container')
 
   function commit(nextContainers: EndeavourContainerSlotAssignment[]) {
-    setEndeavourInventory(characterPath, nextContainers)
+    void setEndeavourInventory(characterPath, nextContainers)
   }
 
   function updateAssignment(containerIndex: number, nextItems: EndeavourInventoryEntry[]) {
@@ -102,6 +103,7 @@ export function EndeavourInventoryGrid({
   }
 
   function removeTile(containerIndex: number, linkIndex: number) {
+    if (!canEdit) return // defense in depth — the remove button itself is hidden when !canEdit
     const assignment = containers[containerIndex]
     if (!assignment) return
     updateAssignment(
@@ -112,7 +114,45 @@ export function EndeavourInventoryGrid({
 
   function selectTile(r: (typeof resolved)[number], linkIndex: number) {
     const tile = r.layout.tiles.find((tile) => tile.linkIndex === linkIndex)
-    if (tile) setSelected({ key: tile.key, item: tile.item, custom: tile.custom })
+    if (tile) setSelected({ key: tile.key, item: tile.item, custom: tile.custom, containerIndex: r.containerIndex, linkIndex })
+  }
+
+  /** The item's max uses per stack (`Stapelgroesse`), or `undefined` when it isn't a stackable
+   * consumable — only vault-resolved `equipment` items with a `stack_size` > 1 track charges. */
+  function stackSizeFor(link: string): number | undefined {
+    const fm = resolveEndeavourItemLink(index, link)?.frontmatter
+    return fm?.kind === 'equipment' && fm.stack_size !== undefined && fm.stack_size > 1 ? fm.stack_size : undefined
+  }
+
+  /** Wraps a freshly-placed wikilink into a charge-tracking `EndeavourStackEntry` when the item is a
+   * stackable consumable, starting at its full `stack_size`; every other item stays a plain string. */
+  function entryForLink(link: string): EndeavourInventoryEntry {
+    const size = stackSizeFor(link)
+    return size !== undefined ? { link, charges: size } : link
+  }
+
+  /** Fresh copy of an entry so placing several copies in one `addEntries` call gives each tile its
+   * own independent `charges` counter rather than sharing one object reference. */
+  function freshCopy(entry: EndeavourInventoryEntry): EndeavourInventoryEntry {
+    if (isCustomEntry(entry)) return { ...entry }
+    if (isStackEntry(entry)) return { ...entry }
+    return entry
+  }
+
+  /** Adjusts a placed stack's remaining uses, clamped to `[0, stack_size]`. No-op for anything that
+   * isn't a charge-tracking entry. */
+  function setCharges(containerIndex: number, linkIndex: number, next: number) {
+    if (!canEdit) return // defense in depth — the stepper itself only renders when canEdit
+    const assignment = containers[containerIndex]
+    const entry = assignment?.items[linkIndex]
+    if (!entry || !isStackEntry(entry)) return
+    const max = stackSizeFor(entry.link) ?? entry.charges
+    const clamped = Math.max(0, Math.min(max, Math.round(next)))
+    if (clamped === entry.charges) return
+    updateAssignment(
+      containerIndex,
+      assignment.items.map((it, i) => (i === linkIndex ? { ...entry, charges: clamped } : it)),
+    )
   }
 
   /** Pure attempt: checks size against the container's `max_size`, then whether it still fits
@@ -140,7 +180,7 @@ export function EndeavourInventoryGrid({
 
   function warningMessage(reason: PlaceFailure, entry: EndeavourInventoryEntry, containerIndex: number): string {
     const itemFile = resolveEntry(index, entry)
-    const name = itemFile?.frontmatter.name ?? (isCustomEntry(entry) ? entry.name : entry)
+    const name = itemFile?.frontmatter.name ?? (isCustomEntry(entry) ? entry.name : isStackEntry(entry) ? entry.link : entry)
     if (reason === 'no_room') return t('endeavourInventory.warningNoRoom', { name })
 
     const itemSize = itemFile ? resolveItemSize(itemFile.frontmatter) : undefined
@@ -153,9 +193,10 @@ export function EndeavourInventoryGrid({
   function placeNew(link: string, containerIndex: number) {
     const assignment = containers[containerIndex]
     if (!assignment) return
-    const result = tryPlace(assignment.items, link, containerIndex)
+    const entry = entryForLink(link)
+    const result = tryPlace(assignment.items, entry, containerIndex)
     if (!result.ok) {
-      setWarning(warningMessage(result.reason, link, containerIndex))
+      setWarning(warningMessage(result.reason, entry, containerIndex))
       return
     }
     updateAssignment(containerIndex, result.items)
@@ -192,6 +233,10 @@ export function EndeavourInventoryGrid({
   }
 
   function handleDrop(raw: string, containerIndex: number) {
+    if (!canEdit) {
+      setWarning(t('endeavourInventory.editLocked'))
+      return
+    }
     const payload = parseDropPayload(raw)
     if (payload.type === 'move') moveTile(payload.sourceContainerIndex, payload.sourceLinkIndex, containerIndex)
     else placeNew(payload.link, containerIndex)
@@ -200,14 +245,16 @@ export function EndeavourInventoryGrid({
   /** Places `quantity` separate copies of `entry` (one tile per unit, never stacked into one cell),
    * stopping at the first that doesn't fit and reporting how many made it. */
   function addEntries(entry: EndeavourInventoryEntry, containerIndex: number, quantity: number) {
+    if (!canEdit) return // defense in depth — ItemSearchPanel's "add" buttons are disabled when !canEdit
     const assignment = containers[containerIndex]
     if (!assignment) return
 
+    const seed = typeof entry === 'string' ? entryForLink(entry) : entry
     let items = assignment.items
     let placed = 0
     let failure: PlaceFailure | null = null
     for (let i = 0; i < quantity; i++) {
-      const result = tryPlace(items, isCustomEntry(entry) ? { ...entry } : entry, containerIndex)
+      const result = tryPlace(items, freshCopy(seed), containerIndex)
       if (!result.ok) {
         failure = result.reason
         break
@@ -237,6 +284,16 @@ export function EndeavourInventoryGrid({
 
   const mainCapacity = mainContainers[0]
 
+  const selContainerIndex = selected?.containerIndex
+  const selLinkIndex = selected?.linkIndex
+  const selectedEntry =
+    selContainerIndex !== undefined && selLinkIndex !== undefined ? containers[selContainerIndex]?.items[selLinkIndex] : undefined
+  const selectedCharges = selectedEntry && isStackEntry(selectedEntry) ? selectedEntry.charges : undefined
+  const onChangeSelectedCharges =
+    canEdit && selContainerIndex !== undefined && selLinkIndex !== undefined
+      ? (next: number) => setCharges(selContainerIndex, selLinkIndex, next)
+      : undefined
+
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
       <div className="space-y-4">
@@ -256,6 +313,7 @@ export function EndeavourInventoryGrid({
                     onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
                     onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
                     onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
+                    canEdit={canEdit}
                   />
                 </div>
               ))}
@@ -275,6 +333,7 @@ export function EndeavourInventoryGrid({
             onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
             onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
             onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
+            canEdit={canEdit}
           />
         ))}
 
@@ -291,6 +350,7 @@ export function EndeavourInventoryGrid({
       </div>
 
       <div className="space-y-4">
+        {!canEdit && <div className="rounded-md border border-l-4 border-trim/50 bg-trim/10 px-3 py-2 text-sm text-fg-muted">{t('endeavourInventory.editLocked')}</div>}
         <ItemSearchPanel
           items={searchableItems}
           containerOptions={containerOptions}
@@ -298,9 +358,10 @@ export function EndeavourInventoryGrid({
           onAddCustom={handleAddCustom}
           onSelect={setSelected}
           selectedKey={selected?.key}
+          canEdit={canEdit}
         />
         {warning && <div role="alert" className="rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
-        <ItemDetailPanel selected={selected} />
+        <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} />
       </div>
     </div>
   )

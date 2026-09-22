@@ -176,6 +176,10 @@ export interface CharacterWriteTargets {
   skills?: Record<SkillKey, FieldWriteTarget>
   nimble_attributes?: Record<NimbleAttributeKey, FieldWriteTarget>
   nimble_skills?: Partial<Record<SkillKey, FieldWriteTarget>>
+  /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
+   * (see `resolveLinkedCharacterExtensions`). Absent when neither carries the field yet (a brand-new
+   * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
+  endeavour_inventory?: { path: string }
 }
 
 export interface ConditionsInfo {
@@ -292,8 +296,21 @@ export interface EndeavourContainerSlotAssignment {
   items: EndeavourInventoryEntry[]
 }
 
-/** A wikilink to a vault item note, or a player-created temporary item (see `EndeavourCustomItem`). */
-export type EndeavourInventoryEntry = string | EndeavourCustomItem
+/** A wikilink to a vault item note, a player-created temporary item (see `EndeavourCustomItem`), or a
+ * placed stack of a consumable item that tracks remaining uses (see `EndeavourStackEntry`). */
+export type EndeavourInventoryEntry = string | EndeavourCustomItem | EndeavourStackEntry
+
+/**
+ * A placed vault-item wikilink whose note tracks per-stack uses (`Stapelgroesse` — e.g. a torch
+ * usable 4 times before it's spent; see `EndeavourEquipmentItem.stack_size`). Kept distinct from the
+ * plain wikilink string above so the vast majority of non-stackable items never carry an unused
+ * counter. `charges` starts at the item's `stack_size` when placed and is then adjusted independently
+ * per tile — never re-derived from `stack_size` afterward, so a partially-used stack survives reloads.
+ */
+export interface EndeavourStackEntry {
+  link: string
+  charges: number
+}
 
 /**
  * Fallback for gear picked up spontaneously in a session that the DM hasn't written an item note for

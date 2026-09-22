@@ -1,5 +1,5 @@
 import { resolveSlotCost, type EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
-import type { EndeavourCustomItem, EndeavourInventoryEntry, VaultFile } from '../../vault/types'
+import type { EndeavourCustomItem, EndeavourInventoryEntry, EndeavourStackEntry, VaultFile } from '../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 
 /** Fixed grid width for the slot-grid inventory UI, matching the DM's mockup (7 columns). */
@@ -43,6 +43,9 @@ export interface ContainerTile {
   item: VaultFile<EndeavourItemFrontmatter> | undefined
   start: number
   length: number
+  /** Uses remaining, for a stackable/consumable item (`EndeavourStackEntry`) — `undefined` for every
+   * other entry shape. */
+  charges: number | undefined
 }
 
 export interface ContainerLayout {
@@ -65,13 +68,20 @@ function slotCostOf(item: VaultFile<EndeavourItemFrontmatter> | undefined): numb
 }
 
 export function isCustomEntry(entry: EndeavourInventoryEntry): entry is EndeavourCustomItem {
-  return typeof entry !== 'string'
+  return typeof entry === 'object' && 'name' in entry
 }
 
-/** Stable identity of an entry for selection/highlighting: a vault item's own wikilink, or a
- * `custom:` key built from a temporary item's name + slot cost. */
+/** True for a placed stack of a consumable item that tracks remaining uses — see `EndeavourStackEntry`. */
+export function isStackEntry(entry: EndeavourInventoryEntry): entry is EndeavourStackEntry {
+  return typeof entry === 'object' && 'link' in entry
+}
+
+/** Stable identity of an entry for selection/highlighting: a vault item's own wikilink (a stack entry
+ * keys the same as its plain wikilink — `charges` changing shouldn't change which tile is "selected"),
+ * or a `custom:` key built from a temporary item's name + slot cost. */
 export function entryKey(entry: EndeavourInventoryEntry): string {
-  return isCustomEntry(entry) ? `custom:${entry.name}|${entry.plaetze}` : entry
+  if (isCustomEntry(entry)) return `custom:${entry.name}|${entry.plaetze}`
+  return isStackEntry(entry) ? entry.link : entry
 }
 
 /** Resolves an entry to an item file. A temporary item becomes a synthetic `equipment` file so
@@ -79,10 +89,12 @@ export function entryKey(entry: EndeavourInventoryEntry): string {
  * any other item without special-casing. Values come straight from character YAML, so they're
  * sanitized here rather than trusted. */
 export function resolveEntry(index: VaultIndex, entry: EndeavourInventoryEntry): VaultFile<EndeavourItemFrontmatter> | undefined {
-  if (!isCustomEntry(entry)) return resolveEndeavourItemLink(index, entry)
-  const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : '?'
-  const plaetze = Number.isFinite(entry.plaetze) ? Math.max(1, Math.round(entry.plaetze)) : 1
-  return { path: `custom:${name}`, frontmatter: { kind: 'equipment', name, plaetze }, body: '' }
+  if (isCustomEntry(entry)) {
+    const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : '?'
+    const plaetze = Number.isFinite(entry.plaetze) ? Math.max(1, Math.round(entry.plaetze)) : 1
+    return { path: `custom:${name}`, frontmatter: { kind: 'equipment', name, plaetze }, body: '' }
+  }
+  return resolveEndeavourItemLink(index, isStackEntry(entry) ? entry.link : entry)
 }
 
 /** Lays out a container's `items` into its grid, in list order (first-fit, see `findBestFit`).
@@ -101,7 +113,15 @@ export function layoutContainer(entries: EndeavourInventoryEntry[], index: Vault
       return
     }
     for (let i = start; i < start + length; i++) occupied[i] = true
-    tiles.push({ linkIndex, key: entryKey(entry), custom: isCustomEntry(entry), item, start, length })
+    tiles.push({
+      linkIndex,
+      key: entryKey(entry),
+      custom: isCustomEntry(entry),
+      item,
+      start,
+      length,
+      charges: isStackEntry(entry) ? entry.charges : undefined,
+    })
   })
 
   return { tiles, overflow, used: occupied.filter(Boolean).length, capacity, occupied }

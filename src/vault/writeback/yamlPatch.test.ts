@@ -1,5 +1,6 @@
+import { load } from 'js-yaml'
 import { describe, expect, it } from 'vitest'
-import { patchFrontmatterField, YamlPatchError } from './yamlPatch'
+import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 const fixture = `---
 Stufe: 6
@@ -68,5 +69,57 @@ describe('patchFrontmatterField', () => {
 
   it('throws when there is no frontmatter block at all', () => {
     expect(() => patchFrontmatterField('# Just a note\nNo frontmatter here.', ['Stufe'], 1)).toThrow(YamlPatchError)
+  })
+})
+
+// Matches the real Endeavour vault's `Inventar <Name>.md` shape (Charakter-linked backpack/pouch
+// notes — see `EndeavourInventoryGrid.tsx`).
+const inventoryFixture = `---
+Charakter: "[[Dummy]]"
+endeavour_inventory:
+  containers:
+    - container: "[[Rucksack (Groß)]]"
+      items:
+        - "[[Schaufel]]"
+        - "[[Blendlaterne]]"
+        - "[[Kurzschwert]]"
+        - name: Seltsamer Schlüssel
+          plaetze: 1
+    - container: "[[Gürteltasche]]"
+      items:
+        - "[[Köcher]]"
+currency: { cp: 12, sp: 8, ep: 0, gp: 30, pp: 1 }
+---
+
+Inventar zu [[Dummy]].
+`
+
+describe('patchFrontmatterBlock', () => {
+  it('round-trips a placed stack entry (wikilink + charges) into the containers array', () => {
+    const containers = [
+      { container: '[[Rucksack (Groß)]]', items: ['[[Schaufel]]', { link: '[[Fackel]]', charges: 2 }] },
+      { container: '[[Gürteltasche]]', items: ['[[Köcher]]'] },
+    ]
+    const patched = patchFrontmatterBlock(inventoryFixture, ['endeavour_inventory', 'containers'], containers)
+
+    const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(patched)
+    expect(match).toBeTruthy()
+    const parsed = load(match![1]) as Record<string, unknown>
+    expect(parsed.endeavour_inventory).toEqual({ containers })
+  })
+
+  it('leaves sibling keys, other frontmatter, and the body untouched', () => {
+    const patched = patchFrontmatterBlock(
+      inventoryFixture,
+      ['endeavour_inventory', 'containers'],
+      [{ container: '[[Rucksack (Groß)]]', items: [] }],
+    )
+    expect(patched).toContain('Charakter: "[[Dummy]]"')
+    expect(patched).toContain('currency: { cp: 12, sp: 8, ep: 0, gp: 30, pp: 1 }')
+    expect(patched.endsWith('\nInventar zu [[Dummy]].\n')).toBe(true)
+  })
+
+  it('throws and changes nothing when the key path does not exist', () => {
+    expect(() => patchFrontmatterBlock(inventoryFixture, ['does_not_exist'], [])).toThrow(YamlPatchError)
   })
 })

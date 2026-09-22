@@ -1,5 +1,6 @@
+import { load } from 'js-yaml'
 import { describe, expect, it } from 'vitest'
-import { encodeFieldValue, writeFieldValue } from './persist'
+import { encodeFieldValue, writeEndeavourInventory, writeFieldValue } from './persist'
 import type { FieldWriteTarget } from '../types'
 
 const fixture = `---
@@ -62,5 +63,30 @@ describe('writeFieldValue', () => {
     const { handle, getContent } = fakeFileHandle(fixture)
     await expect(writeFieldValue(handle, { path: 'x', keyPath: ['DoesNotExist'] }, 1)).rejects.toThrow()
     expect(getContent()).toBe(fixture)
+  })
+})
+
+const inventoryFixture = `---
+Charakter: "[[Dummy]]"
+endeavour_inventory:
+  containers:
+    - container: "[[Rucksack (Groß)]]"
+      items:
+        - "[[Schaufel]]"
+---
+Inventar zu [[Dummy]].
+`
+
+describe('writeEndeavourInventory', () => {
+  it('reads, patches, and writes back the whole containers array through the file handle', async () => {
+    const { handle, getContent } = fakeFileHandle(inventoryFixture)
+    const containers = [{ container: '[[Rucksack (Groß)]]', items: [{ link: '[[Fackel]]', charges: 3 }] }]
+
+    await writeEndeavourInventory(handle, containers)
+
+    const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(getContent())
+    const parsed = load(match![1]) as Record<string, unknown>
+    expect(parsed.endeavour_inventory).toEqual({ containers })
+    expect(getContent()).toContain('Inventar zu [[Dummy]].') // rest of the file untouched
   })
 })

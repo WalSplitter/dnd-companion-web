@@ -15,11 +15,11 @@ export interface ContainerOption {
  * Searches every non-container item known to the loaded vault (per the mockup: "Suchfeld, wo man
  * nach allen verfügbaren Gegenständen in der Vault suchen kann") and lets the user place one into an
  * equipped container — either by dragging a result onto a `ContainerGrid`, or via this panel's own
- * quantity + "Hinzufügen" fallback (adds `quantity` separate tiles, per the mockup's annotation that
- * multiple units are *not* stacked into one cell).
+ * "Hinzufügen" fallback. Each click adds one tile (per the mockup's annotation that multiple units
+ * are *not* stacked into one cell) — clicking again adds another.
  *
  * Also hosts the fallback for gear the DM hasn't written a vault page for yet: a small form to create
- * a *temporary* item (name + slot cost), placed with the same target container + quantity controls.
+ * a *temporary* item (name + slot cost), placed with the same target container control.
  * It's only ever stored on the character sheet — see `EndeavourCustomItem`.
  */
 export function ItemSearchPanel({
@@ -29,6 +29,7 @@ export function ItemSearchPanel({
   onAddCustom,
   onSelect,
   selectedKey,
+  canEdit,
 }: {
   items: VaultFile<EndeavourItemFrontmatter>[]
   containerOptions: ContainerOption[]
@@ -36,10 +37,12 @@ export function ItemSearchPanel({
   onAddCustom: (name: string, plaetze: number, containerIndex: number, quantity: number) => void
   onSelect: (selected: SelectedGridItem) => void
   selectedKey: string | undefined
+  /** Disables placing anything (the "Hinzufügen" buttons and dragging a result onto a container) —
+   * results stay browsable/selectable so the detail panel still works while locked. */
+  canEdit: boolean
 }) {
   const t = useT()
   const [query, setQuery] = useState('')
-  const [quantity, setQuantity] = useState(1)
   const [targetIndex, setTargetIndex] = useState(containerOptions[0]?.index ?? 0)
   const [customOpen, setCustomOpen] = useState(false)
   const [customName, setCustomName] = useState('')
@@ -76,10 +79,10 @@ export function ItemSearchPanel({
             return (
               <li
                 key={result.path}
-                draggable
+                draggable={canEdit}
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'new', link }))}
                 onClick={() => onSelect({ key: link, item: result })}
-                className={`flex cursor-grab items-center gap-2 rounded-sm px-1.5 py-1.5 text-sm transition hover:bg-trim/10 ${selectedKey === link ? 'bg-trim/15 font-medium text-trim' : 'text-fg'}`}
+                className={`flex items-center gap-2 rounded-sm px-1.5 py-1.5 text-sm transition hover:bg-trim/10 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${selectedKey === link ? 'bg-trim/15 font-medium text-trim' : 'text-fg'}`}
               >
                 <span className={`size-2 shrink-0 rotate-45 ${KIND_DOT_CLASSES[result.frontmatter.kind]}`} />
                 {result.frontmatter.name}
@@ -108,25 +111,12 @@ export function ItemSearchPanel({
               ))}
             </select>
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-fg-muted" htmlFor="endeavour-quantity">
-              {t('endeavourInventory.quantity')}
-            </label>
-            <input
-              id="endeavour-quantity"
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Math.round(Number(e.target.value)) || 1))}
-              className="rpg-input !w-16 text-center"
-            />
-          </div>
           <button
             type="button"
-            disabled={!selectedResult || validTargetIndex === undefined}
+            disabled={!canEdit || !selectedResult || validTargetIndex === undefined}
             onClick={() => {
               if (!selectedResult || validTargetIndex === undefined) return
-              onAdd(`[[${selectedResult.frontmatter.name}]]`, validTargetIndex, quantity)
+              onAdd(`[[${selectedResult.frontmatter.name}]]`, validTargetIndex, 1)
             }}
             className="rpg-button"
           >
@@ -178,10 +168,10 @@ export function ItemSearchPanel({
               </div>
               <button
                 type="button"
-                disabled={!customName.trim() || validTargetIndex === undefined}
+                disabled={!canEdit || !customName.trim() || validTargetIndex === undefined}
                 onClick={() => {
                   if (!customName.trim() || validTargetIndex === undefined) return
-                  onAddCustom(customName.trim(), customSlots, validTargetIndex, quantity)
+                  onAddCustom(customName.trim(), customSlots, validTargetIndex, 1)
                 }}
                 className="rpg-button"
               >

@@ -1,5 +1,5 @@
-import type { FieldWriteTarget } from '../types'
-import { patchFrontmatterField, YamlPatchError } from './yamlPatch'
+import type { EndeavourContainerSlotAssignment, FieldWriteTarget } from '../types'
+import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
 
@@ -20,6 +20,20 @@ export async function writeFieldValue(
   const file = await fileHandle.getFile()
   const content = await file.text()
   const patched = patchFrontmatterField(content, target.keyPath, encodeFieldValue(target, logicalValue))
+  const writable = await fileHandle.createWritable()
+  await writable.write(patched)
+  await writable.close()
+}
+
+/** Reads, patches, and writes back the slot-grid inventory's whole `endeavour_inventory.containers`
+ * array (not a single scalar — see `patchFrontmatterBlock`) through an already-permitted file handle. */
+export async function writeEndeavourInventory(
+  fileHandle: FileSystemFileHandle,
+  containers: EndeavourContainerSlotAssignment[],
+): Promise<void> {
+  const file = await fileHandle.getFile()
+  const content = await file.text()
+  const patched = patchFrontmatterBlock(content, ['endeavour_inventory', 'containers'], containers)
   const writable = await fileHandle.createWritable()
   await writable.write(patched)
   await writable.close()
