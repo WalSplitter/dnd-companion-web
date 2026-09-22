@@ -255,6 +255,18 @@ export interface CharacterFrontmatter {
    */
   nimble_attributes?: Record<NimbleAttributeKey, number>
   nimble_skills?: Partial<Record<SkillKey, number>>
+  /** Own-schema input field: a `"[[Name.jpg]]"` wikilink to a portrait attachment, resolved into
+   * `portrait_url` below by `buildVault` (`parseFrontmatter.ts`). Not itself read by the UI. */
+  portrait?: string
+  /**
+   * Own-schema input field: free-text narrative shown by the "About" card. The own schema's
+   * markdown body is written to be read in Obsidian (title, vitals tables, an embedded portrait, a
+   * dev-note callout, ...) and duplicates data the sheet already renders structurally, so it isn't
+   * fit to show as-is — this field is the one piece of that body actually worth surfacing. Legacy
+   * vault characters have no such field; the "About" card falls back to their (already short) raw
+   * body instead (see `CharacterSheetPage.tsx`).
+   */
+  backstory?: string
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
   conditions?: ConditionsInfo

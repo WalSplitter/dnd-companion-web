@@ -90,7 +90,7 @@ export function resolveWikilink(index: VaultIndex, link: string): ResolvedWikili
 
   const character = resolveCharacterLink(index, target)
   if (character) {
-    return { kind: 'character', name: character.frontmatter.name, path: character.path, body: character.body }
+    return { kind: 'character', name: character.frontmatter.name, path: character.path, body: character.frontmatter.backstory ?? character.body }
   }
 
   const item = resolveItemLink(index, target)

@@ -91,4 +91,19 @@ describe('buildVault', () => {
     const vault = buildVault([characterFile])
     expect(vault.characters[0].frontmatter._write?.endeavour_inventory).toBeUndefined()
   })
+
+  it('resolves a portrait attachment reference against the loaded image assets', () => {
+    const withPortrait = {
+      path: 'Characters/Test.md',
+      content: characterFile.content.replace('name: Test Hero', 'name: Test Hero\nportrait: "[[Test Portrait.jpg]]"'),
+    }
+    const imageAssets = new Map([['test portrait.jpg', 'blob:mock-url']])
+    const vault = buildVault([withPortrait], imageAssets)
+    expect(vault.characters[0].frontmatter.portrait_url).toBe('blob:mock-url')
+  })
+
+  it('leaves portrait_url undefined when there is no portrait field or no matching asset', () => {
+    const vault = buildVault([characterFile], new Map())
+    expect(vault.characters[0].frontmatter.portrait_url).toBeUndefined()
+  })
 })

@@ -1,4 +1,4 @@
-import { isRecord, linkFile, looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
+import { isRecord, linkFile, looksLikeLegacyCharacter, normalizeLegacyCharacter, resolvePortraitLink } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
@@ -166,6 +166,7 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
           frontmatter: {
             ...character,
             ...linkedExtensions,
+            portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
             _write: endeavour_inventory_path ? { ...writeTargets, endeavour_inventory: { path: endeavour_inventory_path } } : writeTargets,
           },
         } as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)

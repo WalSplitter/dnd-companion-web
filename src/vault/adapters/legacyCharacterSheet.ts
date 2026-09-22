@@ -320,12 +320,18 @@ function resolveCurrency(geld: unknown): Currency | undefined {
   return currency
 }
 
-/** Resolves a `Bild: "[[Name.jpg]]"` attachment reference against the loaded image assets. */
-function resolvePortrait(hintergrund: Record<string, unknown>, imageAssets: ImageAssets | undefined): string | undefined {
+/** Resolves a `"[[Name.jpg]]"` attachment reference (e.g. a `Bild`/`portrait` field) against the
+ * loaded image assets, keyed by bare filename regardless of which vault folder it lives in. */
+export function resolvePortraitLink(link: unknown, imageAssets: ImageAssets | undefined): string | undefined {
   if (!imageAssets) return undefined
-  const target = linkFile(hintergrund.Bild)
+  const target = linkFile(link)
   if (!target) return undefined
   return imageAssets.get(target.toLowerCase())
+}
+
+/** Resolves a `Bild: "[[Name.jpg]]"` attachment reference against the loaded image assets. */
+function resolvePortrait(hintergrund: Record<string, unknown>, imageAssets: ImageAssets | undefined): string | undefined {
+  return resolvePortraitLink(hintergrund.Bild, imageAssets)
 }
 
 const LUCK_POINT_KEYS = ['GlücksPunkt1', 'GlücksPunkt2', 'GlücksPunkt3', 'GlücksPunkt4', 'GlücksPunkt5']
