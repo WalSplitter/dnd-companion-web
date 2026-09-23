@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useT } from '../../i18n/I18nContext'
+import { useT } from '../../i18n/useI18n'
 import { VaultIndexProvider } from '../../vault/VaultIndexContext'
 import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'

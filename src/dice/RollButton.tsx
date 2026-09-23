@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useT } from '../i18n/I18nContext'
+import { useT } from '../i18n/useI18n'
 import { formatModifier } from '../vault/deriveStats'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
 

@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { StatPlate } from '../../../components/StatPlate'
 import { D20RollButton } from '../../../dice/RollButton'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { formatModifier, initiativeBonus } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 

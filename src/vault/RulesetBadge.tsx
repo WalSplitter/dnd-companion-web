@@ -1,4 +1,4 @@
-import { useT } from '../i18n/I18nContext'
+import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 
 /** Shown in the app header next to the vault name — a best-effort hint at which ruleset the loaded

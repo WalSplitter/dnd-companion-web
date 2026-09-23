@@ -85,7 +85,7 @@ export function linkFile(raw: unknown): string {
 
 /**
  * Kept as raw markdown (wikilinks intact, only bold markers stripped) rather than resolved to
- * plain text — the UI renders feature descriptions through `renderObsidianLine` (`WikiLink.tsx`),
+ * plain text — the UI renders feature descriptions through `renderObsidianLine` (`renderObsidian.tsx`),
  * which turns `[[...]]` into clickable links, so flattening them here would lose that.
  */
 function firstSummaryLine(body: string): string | undefined {
@@ -288,25 +288,13 @@ function resolveSpellSlotWriteTargets(
   return targets
 }
 
-/** One write target per ability score, all on the character's own file — no ambiguity, unlike
- * spell slots/resource pools which can live on a linked sheet. */
-function abilityWriteTargets(characterPath: string): Record<AbilityKey, FieldWriteTarget> {
-  const targets = {} as Record<AbilityKey, FieldWriteTarget>
-  for (const [de, en] of Object.entries(ABILITY_MAP)) targets[en] = { path: characterPath, keyPath: ['Attribute', de] }
-  return targets
-}
-
-/** Legacy schema only — see `CharacterWriteTargets.saving_throw_proficiencies`'s doc comment for why. */
-function savingThrowWriteTargets(characterPath: string): Record<AbilityKey, FieldWriteTarget> {
-  const targets = {} as Record<AbilityKey, FieldWriteTarget>
-  for (const [de, en] of Object.entries(ABILITY_MAP)) targets[en] = { path: characterPath, keyPath: ['Rettungswürfe', de] }
-  return targets
-}
-
-/** Legacy schema only — see `CharacterWriteTargets.skills`'s doc comment for why. */
-function skillWriteTargets(characterPath: string): Record<SkillKey, FieldWriteTarget> {
-  const targets = {} as Record<SkillKey, FieldWriteTarget>
-  for (const [de, en] of Object.entries(SKILL_MAP)) targets[en] = { path: characterPath, keyPath: ['Fertigkeiten', de] }
+/** One write target per key of `map`, all on the character's own file under `section` — no
+ * ambiguity, unlike spell slots/resource pools which can live on a linked sheet. Used for ability
+ * scores (`Attribute`), and — legacy schema only, see `CharacterWriteTargets.saving_throw_proficiencies`
+ * and `.skills` for why — saving throws (`Rettungswürfe`) and skills (`Fertigkeiten`). */
+function sectionWriteTargets<K extends string>(characterPath: string, section: string, map: Record<string, K>): Record<K, FieldWriteTarget> {
+  const targets = {} as Record<K, FieldWriteTarget>
+  for (const [de, en] of Object.entries(map)) targets[en] = { path: characterPath, keyPath: [section, de] }
   return targets
 }
 
@@ -511,7 +499,7 @@ export function normalizeLegacyCharacter(
 
   const level = typeof data.Stufe === 'number' ? data.Stufe : 1
   const proficiencyBonus = Math.ceil(level / 4) + 1
-  const dexMod = Math.floor((abilities.dex - 10) / 2)
+  const dexMod = abilityModifier(abilities.dex)
 
   const savesRaw = isRecord(data.Rettungswürfe) ? data.Rettungswürfe : {}
   const savingThrowProficiencies = Object.entries(ABILITY_MAP)
@@ -576,9 +564,9 @@ export function normalizeLegacyCharacter(
     ...(typeof gesundheit.TW === 'number' ? { hit_dice_remaining: { path: file.path, keyPath: ['Gesundheit', 'TW'] } } : {}),
     ...conditionTargets,
     ...(spellSlotTargets ? { spell_slots: spellSlotTargets } : {}),
-    abilities: abilityWriteTargets(file.path),
-    saving_throw_proficiencies: savingThrowWriteTargets(file.path),
-    skills: skillWriteTargets(file.path),
+    abilities: sectionWriteTargets(file.path, 'Attribute', ABILITY_MAP),
+    saving_throw_proficiencies: sectionWriteTargets(file.path, 'Rettungswürfe', ABILITY_MAP),
+    skills: sectionWriteTargets(file.path, 'Fertigkeiten', SKILL_MAP),
     ...(inventoryFile ? { currency: currencyWriteTargets(inventoryFile.path, inventoryFile.data.Geld) } : {}),
   }
 

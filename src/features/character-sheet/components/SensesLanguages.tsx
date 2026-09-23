@@ -1,5 +1,5 @@
 import { Card } from '../../../components/Card'
-import { useT, type TranslationKey } from '../../../i18n/I18nContext'
+import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { passivePerception } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 

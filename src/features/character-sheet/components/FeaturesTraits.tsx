@@ -1,6 +1,6 @@
 import { Card } from '../../../components/Card'
-import { useT } from '../../../i18n/I18nContext'
-import { renderObsidianLine } from '../../../vault/components/WikiLink'
+import { useT } from '../../../i18n/useI18n'
+import { renderObsidianLine } from '../../../vault/components/renderObsidian'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function FeaturesTraits({ character }: { character: CharacterFrontmatter }) {

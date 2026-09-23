@@ -1,10 +1,10 @@
-import { renderObsidianBody } from '../../../vault/components/WikiLink'
+import { renderObsidianBody } from '../../../vault/components/renderObsidian'
 import { spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter, SpellFrontmatter, VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 
 export function SpellList({ links, index, character }: { links: string[]; index: VaultIndex; character: CharacterFrontmatter }) {
   const t = useT()

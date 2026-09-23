@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
 import type { Vault, VaultFile } from '../../vault/types'
 import { buildVaultIndex } from '../../vault/wikilinks'
-import { containerCapacity, findBestFit, GRID_COLUMNS, layoutContainer } from './grid'
+import { containerCapacity, findBestFit, GRID_COLUMNS, layoutContainer, resolveContainers } from './grid'
 
 function endeavourItem(path: string, frontmatter: EndeavourItemFrontmatter): VaultFile<EndeavourItemFrontmatter> {
   return { path, frontmatter, body: '' }
@@ -89,5 +89,25 @@ describe('layoutContainer', () => {
     const layout = layoutContainer(['[[Zelt]]', '[[Zelt]]'], index, GRID_COLUMNS)
     expect(layout.tiles).toHaveLength(1)
     expect(layout.overflow).toEqual([{ linkIndex: 1, entry: '[[Zelt]]', item: zelt }])
+  })
+})
+
+describe('resolveContainers', () => {
+  it('numbers containers that share a name and leaves unique ones alone', () => {
+    const index = indexWith(
+      endeavourItem('Items/Gürteltasche.md', { kind: 'container', name: 'Gürteltasche', plaetze: 1 } as EndeavourItemFrontmatter),
+      endeavourItem('Items/Rucksack.md', { kind: 'container', name: 'Rucksack', plaetze: 10 } as EndeavourItemFrontmatter),
+    )
+    const resolved = resolveContainers(
+      [
+        { container: '[[Gürteltasche]]', items: [] },
+        { container: '[[Rucksack]]', items: [] },
+        { container: '[[Gürteltasche]]', items: [] },
+      ],
+      index,
+    )
+    expect(resolved.map((r) => r.name)).toEqual(['Gürteltasche 1', 'Rucksack', 'Gürteltasche 2'])
+    expect(resolved.map((r) => r.capacity)).toEqual([1, 10, 1])
+    expect(resolved.map((r) => r.containerIndex)).toEqual([0, 1, 2])
   })
 })

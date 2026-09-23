@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useT } from '../i18n/I18nContext'
+import { useT } from '../i18n/useI18n'
 import { formatErrorReport, reportError, useErrorLogStore, type ErrorLogEntry } from '../store/errorLogStore'
 
 /** Red-neon glass log in the bottom-right corner; one card per error, stacked. Also catches

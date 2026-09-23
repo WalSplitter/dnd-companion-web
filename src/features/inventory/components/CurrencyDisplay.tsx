@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { EditableNumber } from '../../../components/EditableNumber'
-import { useT, type TranslationKey } from '../../../i18n/I18nContext'
+import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import type { CharacterFrontmatter, Currency } from '../../../vault/types'
 

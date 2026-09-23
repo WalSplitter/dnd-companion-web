@@ -1,4 +1,4 @@
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import type { FieldWriteTarget, SpellcastingInfo } from '../../../vault/types'
 

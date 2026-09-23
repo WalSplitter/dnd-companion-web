@@ -97,295 +97,264 @@ function applyVault(files: VaultSourceFile[], imageAssets?: ImageAssets) {
   return { vault, index: buildVaultIndex(vault), ruleset: detectRuleset(files) }
 }
 
-export const useVaultStore = create<VaultState>((set, get) => ({
-  status: 'loaded',
-  source: 'sample',
-  vaultName: null,
-  reconnectName: null,
-  loadingProgress: null,
-  vault: SAMPLE_VAULT,
-  index: buildVaultIndex(SAMPLE_VAULT),
-  ruleset: SAMPLE_RULESET,
-  error: null,
-  rootHandle: null,
-  fileHandles: null,
-  editPermission: 'unavailable',
-  writeError: null,
+function errorMessage(err: unknown): string {
+  if (err instanceof DOMException) return `${err.name}: ${err.message}`
+  return err instanceof Error ? err.message : String(err)
+}
 
-  loadSampleVault: () => {
-    revokeActiveImageAssets()
+/** Returns `vault` with `mutate` applied to one character's frontmatter. */
+function mapCharacter(vault: Vault, characterPath: string, mutate: (character: CharacterFrontmatter) => CharacterFrontmatter): Vault {
+  return { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) }
+}
+
+/** State shared by every "a vault is showing" transition that has no folder handles to write through. */
+const NO_WRITE_ACCESS = { rootHandle: null, fileHandles: null, editPermission: 'unavailable' } as const
+
+export const useVaultStore = create<VaultState>((set, get) => {
+  /** Reads a vault folder (reporting progress) and makes it the active vault, ready for a later edit-permission request. */
+  async function loadFromHandle(handle: FileSystemDirectoryHandle) {
+    const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
+      set({ loadingProgress: { done, total } }),
+    )
     set({
       status: 'loaded',
-      source: 'sample',
-      vaultName: null,
+      source: 'user',
+      vaultName: handle.name,
       reconnectName: null,
       loadingProgress: null,
-      vault: SAMPLE_VAULT,
-      index: buildVaultIndex(SAMPLE_VAULT),
-      ruleset: SAMPLE_RULESET,
-      error: null,
-      rootHandle: null,
-      fileHandles: null,
-      editPermission: 'unavailable',
+      rootHandle: handle,
+      fileHandles,
+      editPermission: 'not-requested',
       writeError: null,
+      ...applyVault(files, imageAssets),
     })
-    void clearVaultHandle()
-  },
+  }
 
-  loadFromDirectoryPicker: async () => {
-    set({ status: 'loading', error: null, loadingProgress: null })
+  /**
+   * Applies `mutate` to the character locally, then runs `write` (if any) against disk. If the write
+   * fails only that character is rolled back to its previous frontmatter — so a concurrent edit to
+   * another character isn't clobbered — and a retryable entry lands in the error log.
+   */
+  async function editCharacter(
+    characterPath: string,
+    mutate: (character: CharacterFrontmatter) => CharacterFrontmatter,
+    write: (() => Promise<void>) | null,
+    failure: { source: string; context?: Record<string, unknown>; retry: () => void },
+  ) {
+    const previous = get().vault.characters.find((c) => c.path === characterPath)?.frontmatter
+    set({ vault: mapCharacter(get().vault, characterPath, mutate), writeError: null })
+    if (!write) return
+
     try {
-      const handle = await showVaultDirectoryPicker()
-      const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
-        set({ loadingProgress: { done, total } }),
-      )
+      await write()
+    } catch (err) {
+      console.error(`[${failure.source}] failed, rolling back:`, err)
+      reportError({
+        titleKey: 'errorLog.saveFailed',
+        hintKey: 'errorLog.hint.rolledBack',
+        source: failure.source,
+        error: err,
+        context: failure.context,
+        action: { labelKey: 'errorLog.retry', run: failure.retry },
+      })
+      set({
+        vault: previous ? mapCharacter(get().vault, characterPath, () => previous) : get().vault,
+        writeError: errorMessage(err),
+      })
+    }
+  }
+
+  return {
+    status: 'loaded',
+    source: 'sample',
+    vaultName: null,
+    reconnectName: null,
+    loadingProgress: null,
+    vault: SAMPLE_VAULT,
+    index: buildVaultIndex(SAMPLE_VAULT),
+    ruleset: SAMPLE_RULESET,
+    error: null,
+    ...NO_WRITE_ACCESS,
+    writeError: null,
+
+    loadSampleVault: () => {
+      revokeActiveImageAssets()
       set({
         status: 'loaded',
-        source: 'user',
-        vaultName: handle.name,
+        source: 'sample',
+        vaultName: null,
         reconnectName: null,
         loadingProgress: null,
-        rootHandle: handle,
-        fileHandles,
-        editPermission: 'not-requested',
+        vault: SAMPLE_VAULT,
+        index: buildVaultIndex(SAMPLE_VAULT),
+        ruleset: SAMPLE_RULESET,
+        error: null,
+        ...NO_WRITE_ACCESS,
         writeError: null,
-        ...applyVault(files, imageAssets),
       })
-      void saveVaultHandle(handle)
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] loadFromDirectoryPicker failed:', err)
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        set({ status: 'loaded', error: null, loadingProgress: null })
-        return
-      }
-      const message = err instanceof DOMException ? `${err.name}: ${err.message}` : err instanceof Error ? err.message : String(err)
-      set({ status: 'error', error: message, loadingProgress: null })
-      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
-    }
-  },
+      void clearVaultHandle()
+    },
 
-  loadFromFileList: async (fileList: FileList) => {
-    set({ status: 'loading', error: null, loadingProgress: null })
-    try {
-      const { files, imageAssets } = await readVaultFromFileList(fileList)
-      const name = files[0]?.path.split('/')[0] ?? null
-      set({
-        status: 'loaded',
-        source: 'user',
-        vaultName: name,
-        reconnectName: null,
-        rootHandle: null,
-        fileHandles: null,
-        editPermission: 'unavailable',
-        writeError: null,
-        ...applyVault(files, imageAssets),
-      })
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] loadFromFileList failed:', err)
-      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromFileList', error: err })
-      set({ status: 'error', error: err instanceof Error ? err.message : String(err) })
-    }
-  },
-
-  /** Called once on app start: reconnects silently if permission is still granted, otherwise offers a manual reconnect. */
-  restoreLastVault: async () => {
-    if (!isFileSystemAccessSupported()) return
-    const handle = await loadVaultHandle()
-    if (!handle) return
-
-    const permission = await handle.queryPermission({ mode: 'read' }).catch(() => 'denied' as const)
-    if (permission === 'granted') {
+    loadFromDirectoryPicker: async () => {
+      set({ status: 'loading', error: null, loadingProgress: null })
       try {
-        set({ status: 'loading', error: null, loadingProgress: null })
-        const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
-          set({ loadingProgress: { done, total } }),
-        )
+        const handle = await showVaultDirectoryPicker()
+        await loadFromHandle(handle)
+        void saveVaultHandle(handle)
+      } catch (err) {
+        console.error('[vault] loadFromDirectoryPicker failed:', err)
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          set({ status: 'loaded', error: null, loadingProgress: null })
+          return
+        }
+        set({ status: 'error', error: errorMessage(err), loadingProgress: null })
+        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
+      }
+    },
+
+    loadFromFileList: async (fileList: FileList) => {
+      set({ status: 'loading', error: null, loadingProgress: null })
+      try {
+        const { files, imageAssets } = await readVaultFromFileList(fileList)
         set({
           status: 'loaded',
           source: 'user',
-          vaultName: handle.name,
+          vaultName: files[0]?.path.split('/')[0] ?? null,
           reconnectName: null,
-          loadingProgress: null,
-          rootHandle: handle,
-          fileHandles,
-          editPermission: 'not-requested',
+          ...NO_WRITE_ACCESS,
           writeError: null,
           ...applyVault(files, imageAssets),
         })
-        return
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[vault] restoreLastVault failed:', err)
-        set({ status: 'loaded', loadingProgress: null })
-        // fall through to offering a manual reconnect
+        console.error('[vault] loadFromFileList failed:', err)
+        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromFileList', error: err })
+        set({ status: 'error', error: errorMessage(err) })
       }
-    }
-    set({ reconnectName: handle.name })
-  },
+    },
 
-  /** Re-grants access to the last used vault folder. Must run from a user gesture (browser requirement). */
-  reconnectVault: async () => {
-    const handle = await loadVaultHandle()
-    if (!handle) {
-      set({ reconnectName: null })
-      return
-    }
-    set({ status: 'loading', error: null, loadingProgress: null })
-    try {
-      const permission = await handle.requestPermission({ mode: 'read' })
-      if (permission !== 'granted') {
-        set({ status: 'loaded', error: 'Permission to read the vault folder was denied.', loadingProgress: null })
-        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: 'Permission to read the vault folder was denied.' })
-        return
-      }
-      const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
-        set({ loadingProgress: { done, total } }),
-      )
-      set({
-        status: 'loaded',
-        source: 'user',
-        vaultName: handle.name,
-        reconnectName: null,
-        loadingProgress: null,
-        rootHandle: handle,
-        fileHandles,
-        editPermission: 'not-requested',
-        writeError: null,
-        ...applyVault(files, imageAssets),
-      })
-    } catch (err) {
-      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: err })
-      set({ status: 'error', error: err instanceof Error ? err.message : String(err), loadingProgress: null })
-    }
-  },
+    /** Called once on app start: reconnects silently if permission is still granted, otherwise offers a manual reconnect. */
+    restoreLastVault: async () => {
+      if (!isFileSystemAccessSupported()) return
+      const handle = await loadVaultHandle()
+      if (!handle) return
 
-  forgetVault: async () => {
-    await clearVaultHandle()
-    set({ reconnectName: null })
-    if (get().source !== 'user') return
-    get().loadSampleVault()
-  },
-
-  requestEditPermission: async () => {
-    const { rootHandle } = get()
-    if (!rootHandle) return
-    try {
-      const result = await rootHandle.requestPermission({ mode: 'readwrite' })
-      set({ editPermission: result === 'granted' ? 'granted' : 'denied' })
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] requestEditPermission failed:', err)
-      set({ editPermission: 'denied' })
-    }
-  },
-
-  updateCharacterField: async (characterPath, target, logicalValue, mutate) => {
-    if (!target) return
-    const { fileHandles, editPermission, vault } = get()
-    if (editPermission !== 'granted' || !fileHandles) return
-    const fileHandle = fileHandles.get(target.path)
-    if (!fileHandle) return
-
-    const previousVault = vault
-    set({
-      vault: { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) },
-      writeError: null,
-    })
-
-    try {
-      await writeFieldValue(fileHandle, target, logicalValue)
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] updateCharacterField failed, rolling back:', err)
-      reportError({
-        titleKey: 'errorLog.saveFailed',
-        hintKey: 'errorLog.hint.rolledBack',
-        source: 'vault.updateCharacterField',
-        error: err,
-        context: { characterPath, target, value: logicalValue },
-        action: { labelKey: 'errorLog.retry', run: () => void get().updateCharacterField(characterPath, target, logicalValue, mutate) },
-      })
-      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
-    }
-  },
-
-  setEndeavourInventory: async (characterPath, containers) => {
-    const { vault, fileHandles, editPermission } = get()
-    const previousVault = vault
-    const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.endeavour_inventory
-
-    set({
-      vault: {
-        ...vault,
-        characters: vault.characters.map((c) =>
-          c.path === characterPath ? { ...c, frontmatter: { ...c.frontmatter, endeavour_inventory: { containers } } } : c,
-        ),
-      },
-      writeError: null,
-    })
-
-    if (editPermission !== 'granted' || !fileHandles || !target) return
-    const fileHandle = fileHandles.get(target.path)
-    if (!fileHandle) return
-
-    try {
-      await writeEndeavourInventory(fileHandle, containers)
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] setEndeavourInventory failed, rolling back:', err)
-      reportError({
-        titleKey: 'errorLog.saveFailed',
-        hintKey: 'errorLog.hint.rolledBack',
-        source: 'vault.setEndeavourInventory',
-        error: err,
-        context: { characterPath, writePath: target.path, containers },
-        action: { labelKey: 'errorLog.retry', run: () => void get().setEndeavourInventory(characterPath, containers) },
-      })
-      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
-    }
-  },
-
-  setCurrency: async (characterPath, currency) => {
-    const { vault, fileHandles, editPermission } = get()
-    if (editPermission !== 'granted' || !fileHandles) return
-    const character = vault.characters.find((c) => c.path === characterPath)?.frontmatter
-    const targets = character?._write
-    if (!character || !targets) return
-    const previous = character.currency ?? {}
-
-    const previousVault = vault
-    set({
-      vault: { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: { ...c.frontmatter, currency } } : c)) },
-      writeError: null,
-    })
-
-    try {
-      if (targets.currency_block) {
-        const handle = fileHandles.get(targets.currency_block.path)
-        if (!handle) throw new Error(`no file handle for ${targets.currency_block.path}`)
-        await writeCurrencyBlock(handle, currency)
-      } else if (targets.currency) {
-        for (const [coin, target] of Object.entries(targets.currency) as [keyof Currency, FieldWriteTarget][]) {
-          if ((currency[coin] ?? 0) === (previous[coin] ?? 0)) continue
-          const handle = fileHandles.get(target.path)
-          if (!handle) throw new Error(`no file handle for ${target.path}`)
-          await writeFieldValue(handle, target, currency[coin] ?? 0)
+      const permission = await handle.queryPermission({ mode: 'read' }).catch(() => 'denied' as const)
+      if (permission === 'granted') {
+        try {
+          set({ status: 'loading', error: null, loadingProgress: null })
+          await loadFromHandle(handle)
+          return
+        } catch (err) {
+          console.error('[vault] restoreLastVault failed:', err)
+          set({ status: 'loaded', loadingProgress: null })
+          // fall through to offering a manual reconnect
         }
       }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[vault] setCurrency failed, rolling back:', err)
-      reportError({
-        titleKey: 'errorLog.saveFailed',
-        hintKey: 'errorLog.hint.rolledBack',
-        source: 'vault.setCurrency',
-        error: err,
-        action: { labelKey: 'errorLog.retry', run: () => void get().setCurrency(characterPath, currency) },
-        context: { characterPath, previous, next: currency, writeTargets: { currency_block: targets.currency_block, currency: targets.currency } },
+      set({ reconnectName: handle.name })
+    },
+
+    /** Re-grants access to the last used vault folder. Must run from a user gesture (browser requirement). */
+    reconnectVault: async () => {
+      const handle = await loadVaultHandle()
+      if (!handle) {
+        set({ reconnectName: null })
+        return
+      }
+      set({ status: 'loading', error: null, loadingProgress: null })
+      try {
+        const permission = await handle.requestPermission({ mode: 'read' })
+        if (permission !== 'granted') {
+          const message = 'Permission to read the vault folder was denied.'
+          set({ status: 'loaded', error: message, loadingProgress: null })
+          reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: message })
+          return
+        }
+        await loadFromHandle(handle)
+      } catch (err) {
+        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: err })
+        set({ status: 'error', error: errorMessage(err), loadingProgress: null })
+      }
+    },
+
+    forgetVault: async () => {
+      await clearVaultHandle()
+      set({ reconnectName: null })
+      if (get().source !== 'user') return
+      get().loadSampleVault()
+    },
+
+    requestEditPermission: async () => {
+      const { rootHandle } = get()
+      if (!rootHandle) return
+      try {
+        const result = await rootHandle.requestPermission({ mode: 'readwrite' })
+        set({ editPermission: result === 'granted' ? 'granted' : 'denied' })
+      } catch (err) {
+        console.error('[vault] requestEditPermission failed:', err)
+        set({ editPermission: 'denied' })
+      }
+    },
+
+    updateCharacterField: async (characterPath, target, logicalValue, mutate) => {
+      if (!target) return
+      const { fileHandles, editPermission } = get()
+      if (editPermission !== 'granted' || !fileHandles) return
+      const fileHandle = fileHandles.get(target.path)
+      if (!fileHandle) return
+
+      await editCharacter(characterPath, mutate, () => writeFieldValue(fileHandle, target, logicalValue), {
+        source: 'vault.updateCharacterField',
+        context: { characterPath, target, value: logicalValue },
+        retry: () => void get().updateCharacterField(characterPath, target, logicalValue, mutate),
       })
-      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
-    }
-  },
-}))
+    },
+
+    setEndeavourInventory: async (characterPath, containers) => {
+      const { vault, fileHandles, editPermission } = get()
+      const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.endeavour_inventory
+      const fileHandle = editPermission === 'granted' && target ? fileHandles?.get(target.path) : undefined
+
+      await editCharacter(
+        characterPath,
+        (c) => ({ ...c, endeavour_inventory: { containers } }),
+        // Local-only (no write) when editing isn't permitted or the field has no file to go to.
+        fileHandle ? () => writeEndeavourInventory(fileHandle, containers) : null,
+        {
+          source: 'vault.setEndeavourInventory',
+          context: { characterPath, writePath: target?.path, containers },
+          retry: () => void get().setEndeavourInventory(characterPath, containers),
+        },
+      )
+    },
+
+    setCurrency: async (characterPath, currency) => {
+      const { vault, fileHandles, editPermission } = get()
+      if (editPermission !== 'granted' || !fileHandles) return
+      const character = vault.characters.find((c) => c.path === characterPath)?.frontmatter
+      const targets = character?._write
+      if (!character || !targets) return
+      const previous = character.currency ?? {}
+
+      async function write() {
+        if (targets?.currency_block) {
+          const handle = fileHandles?.get(targets.currency_block.path)
+          if (!handle) throw new Error(`no file handle for ${targets.currency_block.path}`)
+          await writeCurrencyBlock(handle, currency)
+        } else if (targets?.currency) {
+          for (const [coin, target] of Object.entries(targets.currency) as [keyof Currency, FieldWriteTarget][]) {
+            if ((currency[coin] ?? 0) === (previous[coin] ?? 0)) continue
+            const handle = fileHandles?.get(target.path)
+            if (!handle) throw new Error(`no file handle for ${target.path}`)
+            await writeFieldValue(handle, target, currency[coin] ?? 0)
+          }
+        }
+      }
+
+      await editCharacter(characterPath, (c) => ({ ...c, currency }), write, {
+        source: 'vault.setCurrency',
+        context: { characterPath, previous, next: currency, writeTargets: { currency_block: targets.currency_block, currency: targets.currency } },
+        retry: () => void get().setCurrency(characterPath, currency),
+      })
+    },
+  }
+})

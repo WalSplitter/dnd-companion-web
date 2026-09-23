@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { TranslationKey } from '../i18n/I18nContext'
+import type { TranslationKey } from '../i18n/useI18n'
 
 const STORAGE_KEY = 'dnd-companion.errorLog'
 const MAX_ENTRIES = 8

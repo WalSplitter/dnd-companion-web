@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card } from '../../../components/Card'
-import { useT } from '../../../i18n/I18nContext'
-import { renderObsidianBody } from '../../../vault/components/WikiLink'
+import { useT } from '../../../i18n/useI18n'
+import { renderObsidianBody } from '../../../vault/components/renderObsidian'
 
 /** Backstory / notes from the character file body. Long text is folded behind a fade so it doesn't
  * push the rest of the sheet down. */

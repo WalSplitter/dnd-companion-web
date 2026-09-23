@@ -1,5 +1,5 @@
 import { Card } from '../../components/Card'
-import { useT } from '../../i18n/I18nContext'
+import { useT } from '../../i18n/useI18n'
 import type { CharacterFrontmatter, InventoryEntry } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { resolveItemLink } from '../../vault/wikilinks'

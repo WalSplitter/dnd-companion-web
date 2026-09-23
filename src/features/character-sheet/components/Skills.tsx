@@ -1,7 +1,7 @@
 import { Card } from '../../../components/Card'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { D20RollButton } from '../../../dice/RollButton'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { formatModifier, nimbleSkillBonus, skillBonus, skillProficiencyLevel } from '../../../vault/deriveStats'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'

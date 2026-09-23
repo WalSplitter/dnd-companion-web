@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useT } from '../i18n/I18nContext'
+import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { classSummary, totalCharacterLevel } from '../vault/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'

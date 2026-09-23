@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useT, type TranslationKey } from '../i18n/I18nContext'
+import { useT, type TranslationKey } from '../i18n/useI18n'
 import { THEMES, useThemeStore } from './themeStore'
 
 /** Mounted once near the app root: syncs the persisted theme onto `<html data-theme>`. */

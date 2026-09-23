@@ -1,6 +1,6 @@
 import { Card } from '../../../components/Card'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
-import { useT, type TranslationKey } from '../../../i18n/I18nContext'
+import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { formatModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 

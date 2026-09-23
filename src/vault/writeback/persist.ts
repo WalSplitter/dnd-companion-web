@@ -11,41 +11,35 @@ export function encodeFieldValue(target: FieldWriteTarget, logicalValue: number 
   return logicalValue
 }
 
-/** Reads, patches, and writes back a single frontmatter field through an already-permitted file handle. */
-export async function writeFieldValue(
+/** Reads the file, runs `patch` over its text, and writes the result back through an already-permitted handle. */
+async function rewriteFile(fileHandle: FileSystemFileHandle, patch: (content: string) => string): Promise<void> {
+  const file = await fileHandle.getFile()
+  const patched = patch(await file.text())
+  const writable = await fileHandle.createWritable()
+  await writable.write(patched)
+  await writable.close()
+}
+
+/** Patches a single frontmatter field. */
+export function writeFieldValue(
   fileHandle: FileSystemFileHandle,
   target: FieldWriteTarget,
   logicalValue: number | boolean,
 ): Promise<void> {
-  const file = await fileHandle.getFile()
-  const content = await file.text()
-  const patched = patchFrontmatterField(content, target.keyPath, encodeFieldValue(target, logicalValue))
-  const writable = await fileHandle.createWritable()
-  await writable.write(patched)
-  await writable.close()
+  return rewriteFile(fileHandle, (content) => patchFrontmatterField(content, target.keyPath, encodeFieldValue(target, logicalValue)))
 }
 
-/** Reads, patches, and writes back the slot-grid inventory's whole `endeavour_inventory.containers`
- * array (not a single scalar — see `patchFrontmatterBlock`) through an already-permitted file handle. */
-export async function writeEndeavourInventory(
+/** Rewrites the slot-grid inventory's whole `endeavour_inventory.containers` array (not a single
+ * scalar — see `patchFrontmatterBlock`). */
+export function writeEndeavourInventory(
   fileHandle: FileSystemFileHandle,
   containers: EndeavourContainerSlotAssignment[],
 ): Promise<void> {
-  const file = await fileHandle.getFile()
-  const content = await file.text()
-  const patched = patchFrontmatterBlock(content, ['endeavour_inventory', 'containers'], containers)
-  const writable = await fileHandle.createWritable()
-  await writable.write(patched)
-  await writable.close()
+  return rewriteFile(fileHandle, (content) => patchFrontmatterBlock(content, ['endeavour_inventory', 'containers'], containers))
 }
 
 /** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how
  * the vault's inventory notes hand-write it. */
-export async function writeCurrencyBlock(fileHandle: FileSystemFileHandle, currency: Currency): Promise<void> {
-  const file = await fileHandle.getFile()
-  const content = await file.text()
-  const patched = patchFrontmatterBlock(content, ['currency'], currency, 1)
-  const writable = await fileHandle.createWritable()
-  await writable.write(patched)
-  await writable.close()
+export function writeCurrencyBlock(fileHandle: FileSystemFileHandle, currency: Currency): Promise<void> {
+  return rewriteFile(fileHandle, (content) => patchFrontmatterBlock(content, ['currency'], currency, 1))
 }

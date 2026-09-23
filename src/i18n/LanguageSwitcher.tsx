@@ -1,4 +1,4 @@
-import { useI18n, type Lang } from './I18nContext'
+import { useI18n, type Lang } from './useI18n'
 
 const LANGS: { key: Lang; label: string }[] = [
   { key: 'en', label: 'EN' },

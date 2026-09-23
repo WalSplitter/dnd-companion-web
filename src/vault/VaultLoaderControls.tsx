@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useT } from '../i18n/I18nContext'
+import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { isFileSystemAccessSupported } from './vaultLoader'
 
@@ -20,9 +20,7 @@ export function VaultLoaderControls() {
 
   useEffect(() => {
     void restoreLastVault()
-    // Only ever attempt this once, on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [restoreLastVault])
 
   const supportsPicker = isFileSystemAccessSupported()
 

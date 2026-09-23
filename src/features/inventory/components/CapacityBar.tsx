@@ -1,4 +1,4 @@
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 
 /**
  * Replaces the old lb-weight display for the new slot-based system: the real example items carry no

@@ -1,4 +1,4 @@
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 
 export function ProficiencyDot({ level = 'none' as 'none' | 'proficient' | 'expertise', active }: { level?: 'none' | 'proficient' | 'expertise'; active?: boolean }) {
   const t = useT()

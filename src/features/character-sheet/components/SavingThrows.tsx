@@ -1,6 +1,6 @@
 import { Card } from '../../../components/Card'
 import { D20RollButton } from '../../../dice/RollButton'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { formatModifier, isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
 import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'

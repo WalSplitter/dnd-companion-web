@@ -194,7 +194,7 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       vault.characters.push({ path: raw.path, frontmatter: normalizeLegacyCharacter(raw, rawFiles, imageAssets), body: raw.body })
     } else if (looksLikeLegacySpellNote(raw.data)) {
       // Kept raw (not pre-flattened to plain text) — the UI renders every spell/item body through
-      // `renderObsidianBody` (`WikiLink.tsx`) uniformly, which strips Obsidian-only syntax while
+      // `renderObsidianBody` (`renderObsidian.tsx`) uniformly, which strips Obsidian-only syntax while
       // preserving line breaks and turning wikilinks into clickable links.
       vault.spells.push({ path: raw.path, frontmatter: normalizeLegacySpellNote(raw), body: raw.body })
     } else if (looksLikeEndeavourItem(raw.data)) {

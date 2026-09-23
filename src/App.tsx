@@ -1,19 +1,22 @@
+import { lazy, Suspense } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
 import { ErrorToaster } from './components/ErrorToaster'
-import { useT } from './i18n/I18nContext'
+import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { RulesetBadge } from './vault/RulesetBadge'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
 import { CharacterListPage } from './routes/CharacterListPage'
-import { CharacterSheetPage } from './routes/CharacterSheetPage'
 import { useVaultStore } from './store/vaultStore'
+
+// The sheet (with inventory, spells, markdown rendering) is the heavy part — load it on first visit only.
+const CharacterSheetPage = lazy(() => import('./routes/CharacterSheetPage').then((m) => ({ default: m.CharacterSheetPage })))
 
 function App() {
   const t = useT()
   const isLoading = useVaultStore((s) => s.status === 'loading')
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
-  const percent = loadingProgress ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
+  const percent = loadingProgress && loadingProgress.total > 0 ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
 
   return (
     <div className="min-h-full">
@@ -46,10 +49,12 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Routes>
-          <Route path="/" element={<CharacterListPage />} />
-          <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<CharacterListPage />} />
+            <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { GRID_COLUMNS, type ContainerLayout } from '../grid'
 import { ItemTile } from './ItemTile'
 

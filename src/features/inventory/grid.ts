@@ -1,5 +1,5 @@
-import { resolveSlotCost, type EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
-import type { EndeavourCustomItem, EndeavourInventoryEntry, EndeavourStackEntry, VaultFile } from '../../vault/types'
+import { resolveSlotCost, type EndeavourItemFrontmatter, type EndeavourItemSize } from '../../vault/adapters/endeavourItem'
+import type { EndeavourContainerSlotAssignment, EndeavourCustomItem, EndeavourInventoryEntry, EndeavourStackEntry, VaultFile } from '../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 
 /** Fixed grid width for the slot-grid inventory UI, matching the DM's mockup (7 columns). */
@@ -130,4 +130,41 @@ export function layoutContainer(entries: EndeavourInventoryEntry[], index: Vault
 /** A container item's own total slot capacity (its `Plaetze` is a capacity here, not a cost). */
 export function containerCapacity(fm: EndeavourItemFrontmatter): number {
   return resolveSlotCost(fm) ?? 0
+}
+
+export interface ResolvedContainer {
+  containerIndex: number
+  assignment: EndeavourContainerSlotAssignment
+  capacity: number
+  maxSize: EndeavourItemSize | undefined
+  /** Display name, numbered ("Gürteltasche 1", "Gürteltasche 2") when the same container is equipped more than once. */
+  name: string
+  layout: ContainerLayout
+}
+
+/** Resolves every equipped container to its capacity, size limit, display name and grid layout.
+ * Duplicate container names get a running number so "Ablegen in"/quick-slot labels can tell them apart. */
+export function resolveContainers(containers: EndeavourContainerSlotAssignment[], index: VaultIndex): ResolvedContainer[] {
+  const base = containers.map((assignment, containerIndex) => {
+    const fm = resolveEndeavourItemLink(index, assignment.container)?.frontmatter
+    const capacity = fm ? containerCapacity(fm) : 0
+    return {
+      containerIndex,
+      assignment,
+      capacity,
+      maxSize: fm?.kind === 'container' ? fm.max_size : undefined,
+      baseName: fm?.name ?? assignment.container,
+      layout: layoutContainer(assignment.items, index, capacity),
+    }
+  })
+
+  const totals = new Map<string, number>()
+  for (const r of base) totals.set(r.baseName, (totals.get(r.baseName) ?? 0) + 1)
+  const running = new Map<string, number>()
+  return base.map(({ baseName, ...r }) => {
+    if ((totals.get(baseName) ?? 1) <= 1) return { ...r, name: baseName }
+    const next = (running.get(baseName) ?? 0) + 1
+    running.set(baseName, next)
+    return { ...r, name: `${baseName} ${next}` }
+  })
 }

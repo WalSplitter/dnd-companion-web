@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import type { EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import type { VaultFile } from '../../../vault/types'
 import { KIND_DOT_CLASSES } from '../itemColors'

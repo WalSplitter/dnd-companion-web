@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
-import { useT, type TranslationKey } from '../../../i18n/I18nContext'
+import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry } from '../../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { containerCapacity, isCustomEntry, isStackEntry, layoutContainer, resolveEntry } from '../grid'
+import { isCustomEntry, isStackEntry, layoutContainer, resolveContainers, resolveEntry, type ResolvedContainer } from '../grid'
 import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
 import { ContainerGrid } from './ContainerGrid'
@@ -57,37 +57,12 @@ export function EndeavourInventoryGrid({
   const setEndeavourInventory = useVaultStore((s) => s.setEndeavourInventory)
   const vaultEndeavourItems = useVaultStore((s) => s.vault.endeavourItems)
   const canEdit = useVaultStore((s) => s.editPermission === 'granted')
-  const containers = character.endeavour_inventory?.containers ?? []
+  const containers = useMemo(() => character.endeavour_inventory?.containers ?? [], [character.endeavour_inventory])
 
   const [selected, setSelected] = useState<SelectedGridItem | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
 
-  const resolvedBase = containers.map((assignment, containerIndex) => {
-    const containerFile = resolveEndeavourItemLink(index, assignment.container)
-    const fm = containerFile?.frontmatter
-    const capacity = fm ? containerCapacity(fm) : 0
-    const maxSize = fm?.kind === 'container' ? fm.max_size : undefined
-    return {
-      containerIndex,
-      assignment,
-      capacity,
-      maxSize,
-      baseName: fm?.name ?? assignment.container,
-      layout: layoutContainer(assignment.items, index, capacity),
-    }
-  })
-
-  // Disambiguate labels when the same container item is equipped more than once (e.g. two
-  // Gürteltaschen) — otherwise "Ablegen in"/the quick-slot labels can't tell them apart.
-  const nameCounts = new Map<string, number>()
-  for (const r of resolvedBase) nameCounts.set(r.baseName, (nameCounts.get(r.baseName) ?? 0) + 1)
-  const nameRunning = new Map<string, number>()
-  const resolved = resolvedBase.map((r) => {
-    if ((nameCounts.get(r.baseName) ?? 1) <= 1) return { ...r, name: r.baseName }
-    const next = (nameRunning.get(r.baseName) ?? 0) + 1
-    nameRunning.set(r.baseName, next)
-    return { ...r, name: `${r.baseName} ${next}` }
-  })
+  const resolved = useMemo(() => resolveContainers(containers, index), [containers, index])
 
   const quickContainers = resolved.filter((r) => r.capacity === 1)
   const mainContainers = resolved.filter((r) => r.capacity !== 1)
@@ -112,7 +87,7 @@ export function EndeavourInventoryGrid({
     )
   }
 
-  function selectTile(r: (typeof resolved)[number], linkIndex: number) {
+  function selectTile(r: ResolvedContainer, linkIndex: number) {
     const tile = r.layout.tiles.find((tile) => tile.linkIndex === linkIndex)
     if (tile) setSelected({ key: tile.key, item: tile.item, custom: tile.custom, containerIndex: r.containerIndex, linkIndex })
   }
@@ -134,9 +109,7 @@ export function EndeavourInventoryGrid({
   /** Fresh copy of an entry so placing several copies in one `addEntries` call gives each tile its
    * own independent `charges` counter rather than sharing one object reference. */
   function freshCopy(entry: EndeavourInventoryEntry): EndeavourInventoryEntry {
-    if (isCustomEntry(entry)) return { ...entry }
-    if (isStackEntry(entry)) return { ...entry }
-    return entry
+    return isCustomEntry(entry) || isStackEntry(entry) ? { ...entry } : entry
   }
 
   /** Adjusts a placed stack's remaining uses, clamped to `[0, stack_size]`. No-op for anything that

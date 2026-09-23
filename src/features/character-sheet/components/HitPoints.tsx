@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { DamageRollButton } from '../../../dice/RollButton'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'

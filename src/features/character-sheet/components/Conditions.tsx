@@ -1,7 +1,7 @@
 import { Card } from '../../../components/Card'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
-import { renderObsidianLine } from '../../../vault/components/WikiLink'
+import { renderObsidianLine } from '../../../vault/components/renderObsidian'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function Conditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {

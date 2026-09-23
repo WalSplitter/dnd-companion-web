@@ -1,5 +1,5 @@
 import { StatPlate } from '../../../components/StatPlate'
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import { classSummary } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 

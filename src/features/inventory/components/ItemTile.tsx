@@ -1,4 +1,4 @@
-import { useT } from '../../../i18n/I18nContext'
+import { useT } from '../../../i18n/useI18n'
 import type { ContainerTile } from '../grid'
 import { CUSTOM_TILE_CLASSES, KIND_TILE_CLASSES } from '../itemColors'
 

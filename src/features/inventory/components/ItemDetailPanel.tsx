@@ -1,7 +1,7 @@
 import { endeavourItemSummary, resolveSlotCost, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import { EditableNumber } from '../../../components/EditableNumber'
-import { useT, type TranslationKey } from '../../../i18n/I18nContext'
-import { renderObsidianBody } from '../../../vault/components/WikiLink'
+import { useT, type TranslationKey } from '../../../i18n/useI18n'
+import { renderObsidianBody } from '../../../vault/components/renderObsidian'
 import type { VaultFile } from '../../../vault/types'
 
 export interface SelectedGridItem {
