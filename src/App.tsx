@@ -17,14 +17,18 @@ function App() {
   return (
     <div className="min-h-full">
       <ThemeEffect />
-      <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className="text-lg font-semibold tracking-tight text-fg">
+      <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/90 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 overflow-x-auto px-4 py-3">
+          <Link
+            to="/"
+            className="shrink-0 font-display text-xl font-bold tracking-wide text-fg [text-shadow:0_0_16px_color-mix(in_srgb,var(--color-trim)_35%,transparent)]"
+          >
             {t('app.brand')}
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="flex shrink-0 items-center justify-end gap-2.5">
             <RulesetBadge />
             <VaultLoaderControls />
+            <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
             <LanguageSwitcher />
             <ThemeSwitcher />
           </div>

@@ -10,13 +10,13 @@ export const de = {
   'vaultLoader.loadingProgress': 'Lädt ({{done}}/{{total}})',
   'vaultLoader.saveFailed': 'Speichern fehlgeschlagen: {{message}}',
   'vaultLoader.reconnect': '„{{name}}“ erneut verbinden',
-  'vaultLoader.openVaultFolder': 'Vault-Ordner öffnen…',
+  'vaultLoader.openVaultFolder': 'Vault öffnen…',
   'vaultLoader.enableEditingTooltipGranted': 'Änderungen an TP, Zuständen und Zauberplätzen werden direkt in die Vault-Dateien gespeichert',
   'vaultLoader.enableEditingTooltipNotGranted':
     'Gewährt diesem Tab Schreibzugriff auf den Vault-Ordner, damit Änderungen an TP/Zuständen/Zauberplätzen in die .md-Dateien zurückgeschrieben werden',
-  'vaultLoader.editingEnabled': '🔓 Bearbeiten aktiviert',
-  'vaultLoader.editingDeniedRetry': '🔒 Bearbeiten verweigert — erneut versuchen',
-  'vaultLoader.enableEditing': '🔒 Bearbeiten aktivieren',
+  'vaultLoader.editingEnabled': '🔓 Bearbeitung an',
+  'vaultLoader.editingDeniedRetry': '🔒 Verweigert — erneut',
+  'vaultLoader.enableEditing': '🔒 Bearbeiten',
 
   'ruleset.badgeLabel': 'Regelwerk',
   'ruleset.tooltipHeuristic': 'Bestmögliche Einschätzung anhand des Vault-Inhalts — keine Garantie.',

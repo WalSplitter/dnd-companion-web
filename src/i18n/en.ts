@@ -13,13 +13,13 @@ export const en = {
   'vaultLoader.loadingProgress': 'Loading ({{done}}/{{total}})',
   'vaultLoader.saveFailed': 'Save failed: {{message}}',
   'vaultLoader.reconnect': 'Reconnect "{{name}}"',
-  'vaultLoader.openVaultFolder': 'Open vault folder…',
+  'vaultLoader.openVaultFolder': 'Open vault…',
   'vaultLoader.enableEditingTooltipGranted': 'Changes to HP, conditions and spell slots save straight back to the vault files',
   'vaultLoader.enableEditingTooltipNotGranted':
     'Grants this tab write access to the vault folder so HP/conditions/spell-slot edits save back to the .md files',
-  'vaultLoader.editingEnabled': '🔓 Editing enabled',
-  'vaultLoader.editingDeniedRetry': '🔒 Editing denied — retry',
-  'vaultLoader.enableEditing': '🔒 Enable editing',
+  'vaultLoader.editingEnabled': '🔓 Editing on',
+  'vaultLoader.editingDeniedRetry': '🔒 Denied — retry',
+  'vaultLoader.enableEditing': '🔒 Edit mode',
 
   // Ruleset detection badge
   'ruleset.badgeLabel': 'Ruleset',

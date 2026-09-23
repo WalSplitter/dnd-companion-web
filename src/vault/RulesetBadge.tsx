@@ -10,10 +10,10 @@ export function RulesetBadge() {
 
   return (
     <span
-      className="hidden items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs font-medium text-fg-muted sm:inline-flex"
+      className="hidden shrink-0 items-center gap-1 rounded-full border border-trim/30 bg-trim/5 px-2.5 py-1 text-xs font-medium text-fg-muted sm:inline-flex"
       title={`${t('ruleset.tooltipHeuristic')}${ruleset.evidence.length > 0 ? ` (${ruleset.evidence.join('; ')})` : ''}`}
     >
-      {t('ruleset.badgeLabel')}: <span className="font-semibold text-fg">{t(`ruleset.${ruleset.ruleset}`)}</span>
+      {t('ruleset.badgeLabel')}: <span className="font-semibold text-trim">{t(`ruleset.${ruleset.ruleset}`)}</span>
     </span>
   )
 }

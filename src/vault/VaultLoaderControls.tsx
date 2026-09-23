@@ -29,10 +29,10 @@ export function VaultLoaderControls() {
   const supportsPicker = isFileSystemAccessSupported()
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="hidden max-w-[12rem] items-baseline gap-1 text-sm text-fg-muted sm:inline-flex">
+    <div className="flex flex-nowrap items-center gap-2">
+      <span className="hidden max-w-[12rem] shrink-0 items-baseline gap-1 rounded-full border border-trim/30 bg-trim/5 px-2.5 py-1 text-xs text-fg-muted sm:inline-flex">
         <span className="shrink-0">{t('vaultLoader.label')}</span>
-        <span className="truncate font-medium text-fg" title={source === 'user' ? vaultName ?? undefined : undefined}>
+        <span className="truncate font-semibold text-trim" title={source === 'user' ? vaultName ?? undefined : undefined}>
           {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
         </span>
       </span>
@@ -52,27 +52,19 @@ export function VaultLoaderControls() {
           type="button"
           onClick={() => void reconnectVault()}
           title={t('vaultLoader.reconnect', { name: reconnectName })}
-          className="max-w-[12rem] truncate rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-surface-2"
+          className="max-w-[12rem] shrink-0 truncate rounded-md border border-trim/40 px-3 py-1.5 text-sm font-medium text-trim hover:bg-trim/10"
         >
           {t('vaultLoader.reconnect', { name: reconnectName })}
         </button>
       )}
 
       {supportsPicker ? (
-        <button
-          type="button"
-          onClick={() => void loadFromDirectoryPicker()}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-fg hover:opacity-90"
-        >
+        <button type="button" onClick={() => void loadFromDirectoryPicker()} className="rpg-button shrink-0 whitespace-nowrap">
           {t('vaultLoader.openVaultFolder')}
         </button>
       ) : (
         <>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-fg hover:opacity-90"
-          >
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="rpg-button shrink-0 whitespace-nowrap">
             {t('vaultLoader.openVaultFolder')}
           </button>
           <input
@@ -99,12 +91,12 @@ export function VaultLoaderControls() {
               ? t('vaultLoader.enableEditingTooltipGranted')
               : t('vaultLoader.enableEditingTooltipNotGranted')
           }
-          className={`rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+          className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition ${
             editPermission === 'granted'
               ? 'border-success/40 bg-success/10 text-success'
               : editPermission === 'denied'
                 ? 'border-danger/40 text-danger hover:bg-surface-2'
-                : 'border-border text-fg hover:bg-surface-2'
+                : 'border-trim/40 text-fg hover:bg-trim/10'
           }`}
         >
           {editPermission === 'granted'
