@@ -11,7 +11,6 @@ export const en = {
   'vaultLoader.sampleData': 'Sample data',
   'vaultLoader.loadingEllipsis': 'Loading…',
   'vaultLoader.loadingProgress': 'Loading ({{done}}/{{total}})',
-  'vaultLoader.saveFailed': 'Save failed: {{message}}',
   'vaultLoader.reconnect': 'Reconnect "{{name}}"',
   'vaultLoader.openVaultFolder': 'Open vault…',
   'vaultLoader.enableEditingTooltipGranted': 'Changes to HP, conditions and spell slots save straight back to the vault files',
@@ -164,6 +163,10 @@ export const en = {
   'errorLog.close': 'Close',
   'errorLog.details': 'Details',
   'errorLog.clearAll': 'Dismiss all',
+  'errorLog.copyHint': 'contains file paths and values from the vault',
+  'errorLog.retry': 'Retry',
+  'errorLog.hint.rolledBack': 'The change was rolled back; nothing was written to the file.',
+  'errorLog.hint.loadFailed': 'The vault was not (fully) loaded.',
 
   // Inventory
   'inventory.nothingEquipped': 'Nothing equipped.',

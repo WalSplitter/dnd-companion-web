@@ -8,7 +8,6 @@ export const de = {
   'vaultLoader.sampleData': 'Beispieldaten',
   'vaultLoader.loadingEllipsis': 'Lädt…',
   'vaultLoader.loadingProgress': 'Lädt ({{done}}/{{total}})',
-  'vaultLoader.saveFailed': 'Speichern fehlgeschlagen: {{message}}',
   'vaultLoader.reconnect': '„{{name}}“ erneut verbinden',
   'vaultLoader.openVaultFolder': 'Vault öffnen…',
   'vaultLoader.enableEditingTooltipGranted': 'Änderungen an TP, Zuständen und Zauberplätzen werden direkt in die Vault-Dateien gespeichert',
@@ -148,6 +147,10 @@ export const de = {
   'errorLog.close': 'Schließen',
   'errorLog.details': 'Details',
   'errorLog.clearAll': 'Alle schließen',
+  'errorLog.copyHint': 'enthält Dateipfade und Werte aus dem Vault',
+  'errorLog.retry': 'Erneut versuchen',
+  'errorLog.hint.rolledBack': 'Die Änderung wurde zurückgesetzt, in der Datei wurde nichts geschrieben.',
+  'errorLog.hint.loadFailed': 'Der Vault wurde nicht (vollständig) geladen.',
 
   'inventory.nothingEquipped': 'Nichts angelegt.',
   'inventory.backpackEmpty': 'Rucksack ist leer.',

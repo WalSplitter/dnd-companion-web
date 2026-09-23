@@ -161,7 +161,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       }
       const message = err instanceof DOMException ? `${err.name}: ${err.message}` : err instanceof Error ? err.message : String(err)
       set({ status: 'error', error: message, loadingProgress: null })
-      reportError({ title: 'errorLog.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
+      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
     }
   },
 
@@ -184,7 +184,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] loadFromFileList failed:', err)
-      reportError({ title: 'errorLog.loadFailed', source: 'vault.loadFromFileList', error: err })
+      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromFileList', error: err })
       set({ status: 'error', error: err instanceof Error ? err.message : String(err) })
     }
   },
@@ -237,7 +237,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const permission = await handle.requestPermission({ mode: 'read' })
       if (permission !== 'granted') {
         set({ status: 'loaded', error: 'Permission to read the vault folder was denied.', loadingProgress: null })
-        reportError({ title: 'errorLog.loadFailed', source: 'vault.reconnectVault', error: 'Permission to read the vault folder was denied.' })
+        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: 'Permission to read the vault folder was denied.' })
         return
       }
       const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
@@ -256,7 +256,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         ...applyVault(files, imageAssets),
       })
     } catch (err) {
-      reportError({ title: 'errorLog.loadFailed', source: 'vault.reconnectVault', error: err })
+      reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: err })
       set({ status: 'error', error: err instanceof Error ? err.message : String(err), loadingProgress: null })
     }
   },
@@ -299,7 +299,14 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] updateCharacterField failed, rolling back:', err)
-      reportError({ title: 'errorLog.saveFailed', source: 'vault.updateCharacterField', error: err, context: { characterPath, target, value: logicalValue } })
+      reportError({
+        titleKey: 'errorLog.saveFailed',
+        hintKey: 'errorLog.hint.rolledBack',
+        source: 'vault.updateCharacterField',
+        error: err,
+        context: { characterPath, target, value: logicalValue },
+        action: { labelKey: 'errorLog.retry', run: () => void get().updateCharacterField(characterPath, target, logicalValue, mutate) },
+      })
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
     }
   },
@@ -328,7 +335,14 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] setEndeavourInventory failed, rolling back:', err)
-      reportError({ title: 'errorLog.saveFailed', source: 'vault.setEndeavourInventory', error: err, context: { characterPath, writePath: target.path, containers } })
+      reportError({
+        titleKey: 'errorLog.saveFailed',
+        hintKey: 'errorLog.hint.rolledBack',
+        source: 'vault.setEndeavourInventory',
+        error: err,
+        context: { characterPath, writePath: target.path, containers },
+        action: { labelKey: 'errorLog.retry', run: () => void get().setEndeavourInventory(characterPath, containers) },
+      })
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
     }
   },
@@ -364,9 +378,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       // eslint-disable-next-line no-console
       console.error('[vault] setCurrency failed, rolling back:', err)
       reportError({
-        title: 'errorLog.saveFailed',
+        titleKey: 'errorLog.saveFailed',
+        hintKey: 'errorLog.hint.rolledBack',
         source: 'vault.setCurrency',
         error: err,
+        action: { labelKey: 'errorLog.retry', run: () => void get().setCurrency(characterPath, currency) },
         context: { characterPath, previous, next: currency, writeTargets: { currency_block: targets.currency_block, currency: targets.currency } },
       })
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
