@@ -1,44 +1,83 @@
 # D&D Companion
 
-A local-first character sheet viewer that reads character, item, and spell data straight out of an
-Obsidian vault — no server, no database, no cloud sync. Your vault stays exactly where it is, in its
-own repo; this app only reads it. Built primarily around this app's own D&D 5e (2024)-shaped
-frontmatter, it also understands two real campaign vaults with their own, different rules (a legacy
-German-language sheet format, and a from-scratch "Endeavour"/Nimble ruleset) — see "Vault formats"
-below.
+**A local-first D&D character sheet that lives inside your Obsidian vault.**
+Point it at a folder, and your characters, items and spells turn into an interactive sheet — no
+server, no database, no account, no cloud sync. Your notes never leave your machine.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
+
+## Features
+
+- **Reads your vault directly.** Frontmatter and `[[Wikilinks]]` are parsed in the browser; items,
+  spells and features resolve through hover/click previews just like in Obsidian.
+- **Writes back, safely.** With one click of *Enable editing*, HP, spell slots, ability scores,
+  conditions, coin purse and inventory changes are patched into the exact YAML key they came from —
+  formatting and comments in your notes are preserved. A failed write is rolled back and shown in an
+  error log with a retry button.
+- **Three vault formats in one app.** A native schema, a from-scratch "Endeavour"/Nimble ruleset with a
+  slot-grid inventory, and an adapter for an older German-language sheet format (see
+  [Vault formats](#vault-formats)).
+- **Slot-grid inventory.** Drag items between backpacks and belt pouches, search the vault for gear,
+  track charges on consumables, or add a temporary item that has no vault page yet.
+- **Derived stats, never duplicated.** Modifiers, saves, skills, passive perception and spell DC /
+  attack bonus are computed from raw values.
+- **Dice roller.** Click any attack, damage or hit-die value (`1d8`, `2d6+3`, `1W6`) to roll it.
+- **Spells and resources.** Slot tracker, known-spell list, class resource pools, luck points and
+  exhaustion.
+- **Themes and languages.** Eight colour themes; English and German UI.
+- **Fast and light.** The sheet is code-split and loaded on first visit; the whole app is a static
+  bundle.
 
 ## Getting started
 
+Requires [Node.js](https://nodejs.org) 20+.
+
 ```bash
+git clone https://github.com/WalSplitter/dnd-companion-web.git
+cd dnd-companion-web
 npm install
 npm run dev
 ```
 
-Open the printed `http://localhost:5173` URL. A bundled sample vault (one Wizard character, a few
-items and spells) loads automatically so there's something to look at immediately.
+Open the printed `http://localhost:5173` URL. A bundled sample vault (one Wizard, a few items and
+spells) loads automatically, so there is something to look at right away.
 
-To use your own vault, click **Open vault folder…** in the header and pick the vault's root folder.
-Chromium-based browsers (Chrome, Edge) use the native File System Access API and remember the folder
-across restarts (with a one-click **Reconnect** if the browser drops permission). Other browsers fall
-back to a `<input webkitdirectory>` picker, which needs to be re-selected each session.
+### Using your own vault
 
-Other commands:
+1. Click **Open vault folder…** in the header and pick your vault's root folder.
+2. Click **Enable editing** if you want changes written back to your notes (the browser asks for
+   permission once).
+
+Your vault is only ever read, and only written when you have enabled editing.
+
+| Browser | Behaviour |
+| --- | --- |
+| Chrome, Edge, Opera | File System Access API: the folder is remembered across restarts, with a one-click **Reconnect** if the browser drops permission. Editing supported. |
+| Firefox, Safari | Falls back to a `<input webkitdirectory>` picker that must be re-selected each session. **Read-only.** |
+
+## Scripts
 
 ```bash
-npm run build   # type-check + production build
-npm run test    # vitest
-npm run lint    # oxlint
+npm run dev         # start the dev server
+npm run build       # type-check + production build
+npm run preview     # serve the production build
+npm run test        # vitest (once)
+npm run test:watch  # vitest in watch mode
+npm run lint        # oxlint
 ```
 
 ## Vault formats
 
-The app recognizes several character-file shapes; any of them can live in the same vault, and a
-best-effort ruleset badge (`src/vault/detectRuleset.ts`) in the header shows which one(s) it detected.
+The app recognises several character-file shapes; they can all live in the same vault. A best-effort
+ruleset badge in the header (`src/vault/detectRuleset.ts`) shows which one(s) it detected.
 
 ### 1. Native schema (`type: character` / `item` / `spell`)
 
-The app's own frontmatter format — see `src/vault/types.ts` for the full shape. Items and spells are
-separate vault files, referenced from a character via Obsidian `[[Wikilink]]`s:
+The app's own frontmatter format (full shape in `src/vault/types.ts`). Items and spells are separate
+notes, referenced from a character via `[[Wikilinks]]`:
 
 ```yaml
 ---
@@ -68,90 +107,90 @@ features: [{ name: Arcane Recovery, source: Wizard 1, description: "..." }]
 ---
 ```
 
-Derived numbers — ability modifiers, save/skill bonuses, passive perception, spell save DC/attack —
-are computed from these raw values (`src/vault/deriveStats.ts`), never duplicated in frontmatter.
-`type: item` and `type: spell` files follow the same idea; see the bundled `src/sample-vault/` for
-complete examples.
+Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`). See
+[`src/sample-vault/`](src/sample-vault) for complete examples of characters, items and spells.
 
-A character's `endeavour_inventory`/`currency`/`spellcasting`/`spells_known` don't have to live on the
-character's own file: they're also read from separate notes that link back via
+`endeavour_inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
+character's own file: they are also read from separate notes that link back via
 `Charakter: "[[<character file name>]]"` (see `resolveLinkedCharacterExtensions()` in
-`parseFrontmatter.ts`), mirroring the legacy adapter's `Inventar <Name>.md`/`Spell Sheet <Name>.md`
-convention below. A field set directly on the character's own file always takes priority.
+`parseFrontmatter.ts`). A field set directly on the character's file always takes priority.
 
-### 2. The "Endeavour" vault: a real, from-scratch Nimble ruleset
+### 2. "Endeavour": a from-scratch Nimble ruleset
 
-One real campaign vault (tagged `Regeln/Nimble` throughout its own rules pages) uses the app's native
-`type: character` marker but a genuinely different underlying ruleset, layered on top additively:
+Uses the native `type: character` marker but a genuinely different underlying ruleset, layered on
+additively:
 
-- **Items** (`src/vault/adapters/endeavourItem.ts`): detected by tag (`Gegenstand/Waffe|Rüstung|Schild|
-  Magischer_Gegenstand|Behälter|Ausrüstung`, bare `Werkzeug`) rather than a `type:` marker, and kept in
-  their own `Vault.endeavourItems` collection rather than `Vault.items` — the tag scheme overlaps with
-  the legacy adapter's own weapon/armor detection, so folding them together would change that vault's
-  behavior too, a decision left for later.
-- **Slot-grid inventory** (`character.endeavour_inventory`, `src/features/inventory/components/
-  EndeavourInventoryGrid.tsx`): containers (a backpack, belt pouches) each have a `Plaetze` slot
-  capacity; items cost 1+ slots and are placed as individual grid tiles, dragged between containers or
-  added via search. A gear pickup with no vault page yet can be added as a temporary inline item
-  (`{ name, plaetze }`, no wikilink) as a fallback. **Local-only**: container contents aren't written
-  back to disk yet (`setEndeavourInventory()` in `vaultStore.ts`), unlike the numeric fields below.
-- **Attributes/skills** (`character.nimble_attributes`/`nimble_skills`, see `NIMBLE_ATTRIBUTES`/
-  `NIMBLE_SKILL_ATTRIBUTES` in `types.ts`): eight attributes (Stärke/Beweglichkeit/Konstitution/
-  Geschick/Instinkt/Verstand/Präsenz/Entschlossenheit, valued -5..+5 and used directly as the roll
-  modifier) instead of the six D&D `abilities`, and the 18 skills reassigned to whichever of those
-  attributes actually governs them per the vault's own rules (e.g. Medicine moves off WIS). The Ability
-  Scores/Skills/Saving Throws cards render this instead of the D&D shape whenever it's present.
-  `abilities`/`proficiency_bonus` stay populated as an internal bridge either way — AC, initiative, and
-  spellcasting DC math haven't been ported to the real Nimble formulas yet and still read them.
+- **Items** ([`endeavourItem.ts`](src/vault/adapters/endeavourItem.ts)) are detected by tag
+  (`Gegenstand/Waffe|Rüstung|Schild|Magischer_Gegenstand|Behälter|Ausrüstung`, bare `Werkzeug`) and kept
+  in their own `Vault.endeavourItems` collection, because the tag scheme overlaps with the legacy
+  adapter's weapon/armour detection.
+- **Slot-grid inventory** (`character.endeavour_inventory`,
+  [`EndeavourInventoryGrid.tsx`](src/features/inventory/components/EndeavourInventoryGrid.tsx)):
+  containers have a `Plaetze` capacity; items cost one or more slots and are placed as tiles.
+  Container contents are written back to the owning file.
+- **Attributes and skills** (`nimble_attributes` / `nimble_skills`): eight attributes valued −5…+5 and
+  used directly as the roll modifier, with the 18 skills reassigned to the attribute that governs them.
+  The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
+  `abilities` / `proficiency_bonus` stay populated as an internal bridge for AC, initiative and spell
+  DC math, which is not yet ported to the real Nimble formulas.
 
-See `01 - Spielerbereich/Kampagne/Gruppe/Dummy/` in that vault for a complete example character (sheet
-+ linked inventory/spell-sheet notes, entirely self-contained in its own folder).
+### 3. Legacy adapter (older German-language vault)
 
-### 3. Legacy adapter (an older campaign vault)
+An older vault predating this app uses a different schema with no `type:` marker (nested
+`Attribute` / `Rettungswürfe` / `Fertigkeiten` objects, Dataview-flavoured formulas, items in markdown
+tables inside a linked `Inventar <Name>.md`). The app detects it structurally and normalises it on the
+fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in the source
+vault is modified except through explicit edits.
 
-A different, older vault predates this app and uses a completely different, German-language schema
-with no `type:` marker (nested `Attribute`/`Rettungswürfe`/`Fertigkeiten` objects, Dataview-flavored
-formulas, items tracked as markdown tables in a linked `Inventar <Name>.md` file rather than as
-frontmatter). The app detects this shape structurally and normalizes it on the fly — see
-`src/vault/adapters/legacyCharacterSheet.ts`. Nothing in the source vault is modified.
+This adapter is best-effort, not full fidelity:
 
-This adapter is best-effort, not full fidelity, since the schema it targets predates this app and is
-expected to change:
+- Hit die comes from the linked class file's `Trefferwürfel`, falling back to `d8`.
+- Feature descriptions use the first summary line of the linked feature note.
+- Armor class is `Natürliche_Rüstung + Zusätzliche_Rüstung + DEX modifier` when present, otherwise
+  `10 + DEX modifier`; equipped-armour item stats are not cross-referenced.
+- Inventory and currency come from a sibling file whose `Charakter` field links back to the character.
+- Spellcasting is read from the character file or a linked spell sheet, whichever carries
+  `Zauber` / `Zauberplätze`.
 
-- Hit die is resolved by looking up the linked class file's `Trefferwürfel` field; falls back to `d8`.
-- Feature descriptions are pulled from the first summary line of the linked feature file's body.
-- Armor class uses `Verteidigung.Natürliche_Rüstung + Zusätzliche_Rüstung + DEX modifier` if present,
-  else a flat `10 + DEX modifier` — equipped-armor item stats aren't cross-referenced.
-- Inventory/currency come from a sibling file whose frontmatter `Charakter` field links back to the
-  character (matching the source vault's own convention); items are parsed from its `Am Körper` /
-  `Rucksack` markdown tables.
-- Spellcasting (spell slots, known spells) is read from either the character file itself or a linked
-  spell sheet, whichever actually carries `Zauber`/`Zauberplätze` — see `findSpellSource()`.
+## Architecture
 
-### Adding another format
+```
+src/
+├── vault/        parsing pipeline: raw frontmatter -> adapters -> normalised Vault, wikilink index,
+│   │              derived stats, ruleset detection
+│   ├── adapters/  one detect()/normalize() pair per supported format
+│   └── writeback/ surgical YAML patching, so edits keep the note's formatting
+├── store/        zustand stores: vault (load, optimistic edits + rollback) and error log
+├── features/     character-sheet, inventory (slot grid), spells
+├── components/   shared UI building blocks
+├── dice/         dice notation parser and roll button
+├── i18n/         English / German dictionaries
+├── theme/        theme tokens and switcher
+└── routes/       character list and character sheet pages
+```
 
-All formats go through the same pipeline: `buildVault()` in `src/vault/parseFrontmatter.ts` parses
-every file's raw frontmatter (`src/vault/rawFile.ts`), then tries each known shape in turn. To support
-a new vault schema, add a `detect()` + `normalize()` pair under `src/vault/adapters/` that maps the new
-shape onto `CharacterFrontmatter` (or its own parallel collection, if merging it into an existing one
-would change behavior for a vault the app already supports — see the Endeavour item adapter above for
-why), and wire it into `buildVault()` — the rest of the app (derived stats, the sheet UI, inventory,
-spells) is entirely format-agnostic. `docs/inventory-vault-alignment.md` has the original analysis this
-was based on, from back when the Endeavour vault was just a preliminary, unconfirmed export.
+Every format goes through the same pipeline: `buildVault()` in `src/vault/parseFrontmatter.ts`
+parses each file's frontmatter, then tries each known shape in turn. The rest of the app (derived
+stats, sheet UI, inventory, spells) is format-agnostic.
 
-## Browser support
+**Adding another format:** add a `detect()` + `normalize()` pair under `src/vault/adapters/` that maps
+the new shape onto `CharacterFrontmatter` (or its own parallel collection if merging would change
+behaviour for an already supported vault) and wire it into `buildVault()`. The original analysis
+behind the Endeavour support lives in
+[`docs/inventory-vault-alignment.md`](docs/inventory-vault-alignment.md).
 
-Vault folder access uses the File System Access API, which is Chromium-only (Chrome, Edge, Opera).
-Firefox and Safari fall back to a one-shot `<input webkitdirectory>` picker with no persistent handle.
+**Tech stack:** React 19, TypeScript, Vite, Tailwind CSS 4, React Router, zustand, js-yaml, Vitest,
+oxlint.
 
-## Not yet implemented
+## Roadmap
 
-- Native-schema inventory (`inventory.equipped`/`carried` wikilinks) and currency are read-only; only
-  the legacy adapter's Meta-Bind fallback fields and the Endeavour attribute/skill/ability numbers
-  write back today (see `src/vault/writeback/`).
-- The Endeavour slot-grid inventory's container contents (`endeavour_inventory`) are edited locally
-  only and never written back to disk.
+- Native-schema inventory lists (`inventory.equipped` / `carried` wikilinks) only write back quantity
+  and weight of inline items; adding and removing entries is not yet supported.
 - Death saves are display-only (no click-to-toggle).
-- The Endeavour vault's actual combat math (Ausweichwert/Initiative/Zauber-SG formulas) isn't wired up
-  yet — those numbers still come from the D&D-shaped bridge fields (`abilities`, `armor_class`, ...).
-- PWA/offline packaging (`vite-plugin-pwa`) isn't wired up yet.
+- The Endeavour combat math (Ausweichwert, Initiative, Zauber-SG) isn't wired up yet; those numbers
+  still come from the D&D-shaped bridge fields.
+- PWA / offline packaging (`vite-plugin-pwa`).
+
+## License
+
+[MIT](LICENSE)
