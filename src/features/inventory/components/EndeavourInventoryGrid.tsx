@@ -339,7 +339,7 @@ export function EndeavourInventoryGrid({
 
         <div className="flex flex-wrap items-stretch gap-3">
           <div className="flex min-w-64 flex-1">
-            <CurrencyDisplay currency={character.currency} />
+            <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
           </div>
           {mainCapacity && (
             <div className="w-40">

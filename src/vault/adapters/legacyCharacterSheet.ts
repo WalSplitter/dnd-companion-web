@@ -310,6 +310,15 @@ function skillWriteTargets(characterPath: string): Record<SkillKey, FieldWriteTa
   return targets
 }
 
+function currencyWriteTargets(path: string, geld: unknown): CharacterWriteTargets['currency'] {
+  if (!isRecord(geld)) return undefined
+  const targets: NonNullable<CharacterWriteTargets['currency']> = {}
+  for (const [de, en] of Object.entries(CURRENCY_MAP)) {
+    if (typeof geld[de] === 'number') targets[en] = { path, keyPath: ['Geld', de] }
+  }
+  return Object.keys(targets).length > 0 ? targets : undefined
+}
+
 function resolveCurrency(geld: unknown): Currency | undefined {
   if (!isRecord(geld)) return undefined
   const currency: Currency = {}
@@ -570,6 +579,7 @@ export function normalizeLegacyCharacter(
     abilities: abilityWriteTargets(file.path),
     saving_throw_proficiencies: savingThrowWriteTargets(file.path),
     skills: skillWriteTargets(file.path),
+    ...(inventoryFile ? { currency: currencyWriteTargets(inventoryFile.path, inventoryFile.data.Geld) } : {}),
   }
 
   return {

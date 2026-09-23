@@ -46,7 +46,7 @@ export function InventoryPanel({
         <ItemList entries={carried} index={index} emptyLabel={t('inventory.backpackEmpty')} characterPath={characterPath} section="carried" />
       </Card>
       <Card title={t('cards.currency')}>
-        <CurrencyDisplay currency={character.currency} />
+        <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
       </Card>
       <Card title={t('cards.totalWeight')}>
         <div className="text-2xl font-bold text-fg">{t('inventory.weightValue', { value: totalWeight })}</div>

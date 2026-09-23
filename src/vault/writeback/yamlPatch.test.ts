@@ -123,3 +123,11 @@ describe('patchFrontmatterBlock', () => {
     expect(() => patchFrontmatterBlock(inventoryFixture, ['does_not_exist'], [])).toThrow(YamlPatchError)
   })
 })
+
+describe('patchFrontmatterBlock: flow-style currency', () => {
+  it('rewrites a one-line flow map as a one-line flow map and leaves the rest untouched', () => {
+    const src = '---\nCharakter: "[[Dummy]]"\ncurrency: { cp: 12, sp: 8, ep: 0, gp: 30, pp: 1 }\n---\n\nBody\n'
+    const out = patchFrontmatterBlock(src, ['currency'], { cp: 12, sp: 8, ep: 0, gp: 31, pp: 1 }, 1)
+    expect(out).toBe('---\nCharakter: "[[Dummy]]"\ncurrency: {cp: 12, sp: 8, ep: 0, gp: 31, pp: 1}\n---\n\nBody\n')
+  })
+})

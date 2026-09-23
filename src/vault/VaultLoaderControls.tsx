@@ -10,9 +10,7 @@ export function VaultLoaderControls() {
   const vaultName = useVaultStore((s) => s.vaultName)
   const reconnectName = useVaultStore((s) => s.reconnectName)
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
-  const error = useVaultStore((s) => s.error)
   const editPermission = useVaultStore((s) => s.editPermission)
-  const writeError = useVaultStore((s) => s.writeError)
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
   const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
   const restoreLastVault = useVaultStore((s) => s.restoreLastVault)
@@ -44,8 +42,6 @@ export function VaultLoaderControls() {
             : t('vaultLoader.loadingEllipsis')}
         </span>
       )}
-      {error && <span className="text-sm text-danger">{error}</span>}
-      {writeError && <span className="text-sm text-danger">{t('vaultLoader.saveFailed', { message: writeError })}</span>}
 
       {reconnectName && (
         <button

@@ -1,4 +1,4 @@
-import type { EndeavourContainerSlotAssignment, FieldWriteTarget } from '../types'
+import type { Currency, EndeavourContainerSlotAssignment, FieldWriteTarget } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -34,6 +34,17 @@ export async function writeEndeavourInventory(
   const file = await fileHandle.getFile()
   const content = await file.text()
   const patched = patchFrontmatterBlock(content, ['endeavour_inventory', 'containers'], containers)
+  const writable = await fileHandle.createWritable()
+  await writable.write(patched)
+  await writable.close()
+}
+
+/** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how
+ * the vault's inventory notes hand-write it. */
+export async function writeCurrencyBlock(fileHandle: FileSystemFileHandle, currency: Currency): Promise<void> {
+  const file = await fileHandle.getFile()
+  const content = await file.text()
+  const patched = patchFrontmatterBlock(content, ['currency'], currency, 1)
   const writable = await fileHandle.createWritable()
   await writable.write(patched)
   await writable.close()

@@ -49,6 +49,18 @@ body {
 /* RPG-style character sheet chrome. Everything derives from the theme tokens (esp. --color-trim, the
  * "gold leaf" frame colour), so all eight themes get a matching look for free. */
 @layer components {
+  /* Number inputs: centred value, no native spinner (it shifts the text off-centre). */
+  input[type='number'] {
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
   /* Numbers on the sheet: Cinzel draws "1" like a capital I, so digits use a serif with lining figures. */
   .font-num {
     font-family: var(--font-numeric);

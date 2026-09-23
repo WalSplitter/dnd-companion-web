@@ -153,6 +153,17 @@ export const en = {
   'currency.ep': 'EP',
   'currency.sp': 'SP',
   'currency.cp': 'CP',
+  'currency.exchange': 'Exchange',
+  'currency.exchangeDown': '1 {{from}} → {{rate}} {{to}}',
+  'currency.exchangeUp': '{{rate}} {{to}} → 1 {{from}}',
+  'currency.close': 'Close',
+  'errorLog.unexpected': 'Unexpected error',
+  'errorLog.saveFailed': 'Saving failed',
+  'errorLog.loadFailed': 'Loading vault failed',
+  'errorLog.copy': 'Copy error report',
+  'errorLog.close': 'Close',
+  'errorLog.details': 'Details',
+  'errorLog.clearAll': 'Dismiss all',
 
   // Inventory
   'inventory.nothingEquipped': 'Nothing equipped.',

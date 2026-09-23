@@ -89,7 +89,7 @@ export function patchFrontmatterField(content: string, keyPath: string[], value:
  * subtree (`js-yaml`'s defaults, not necessarily matching the rest of the file's hand-authored
  * style) — everything outside the block is untouched.
  */
-export function patchFrontmatterBlock(content: string, keyPath: string[], value: unknown): string {
+export function patchFrontmatterBlock(content: string, keyPath: string[], value: unknown, flowLevel = -1): string {
   if (keyPath.length === 0) throw new YamlPatchError('empty key path')
 
   const match = FRONTMATTER_RE.exec(content)
@@ -115,7 +115,7 @@ export function patchFrontmatterBlock(content: string, keyPath: string[], value:
   }
 
   const lastKey = keyPath[keyPath.length - 1]
-  const dumped = dump({ [lastKey]: value }, { indent: 2, lineWidth: -1 }).replace(/\r?\n$/, '')
+  const dumped = dump({ [lastKey]: value }, { indent: 2, lineWidth: -1, flowLevel }).replace(/\r?\n$/, '')
   const indentPrefix = ' '.repeat(keyIndent)
   const replacement = dumped
     .split('\n')

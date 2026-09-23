@@ -126,6 +126,13 @@ function resolveLinkedCharacterExtensions(ownPath: string, characterFileName: st
      * inventory UI know which file to patch. `undefined` when neither has the field yet. */
     endeavour_inventory_path: endeavourInventoryPath,
     currency: data.currency ?? linked.find((f) => isRecord(f.data.currency))?.data.currency,
+    /** Which file owns the `currency` key — same own-file-wins rule as the value itself. */
+    currency_source: isRecord(data.currency)
+      ? { path: ownPath, record: data.currency }
+      : (() => {
+          const f = linked.find((l) => isRecord(l.data.currency))
+          return f ? { path: f.path, record: f.data.currency as Record<string, unknown> } : undefined
+        })(),
     spellcasting: data.spellcasting ?? linked.find((f) => isRecord(f.data.spellcasting))?.data.spellcasting,
     spells_known: data.spells_known ?? linked.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known,
   }
@@ -159,15 +166,26 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       }
       if (type === 'character') {
         const character = parsed.frontmatter as CharacterFrontmatter
-        const { endeavour_inventory_path, ...linkedExtensions } = resolveLinkedCharacterExtensions(raw.path, raw.name, raw.data, rawFiles)
-        const writeTargets = ownSchemaWriteTargets(raw.path, raw.data)
+        const { endeavour_inventory_path, currency_source, ...linkedExtensions } = resolveLinkedCharacterExtensions(
+          raw.path,
+          raw.name,
+          raw.data,
+          rawFiles,
+        )
+        const writeTargets = {
+          ...ownSchemaWriteTargets(raw.path, raw.data),
+          ...(currency_source ? { currency_block: { path: currency_source.path } } : {}),
+        }
         vault.characters.push({
           ...parsed,
           frontmatter: {
             ...character,
             ...linkedExtensions,
             portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
-            _write: endeavour_inventory_path ? { ...writeTargets, endeavour_inventory: { path: endeavour_inventory_path } } : writeTargets,
+            _write: (() => {
+              const merged = { ...writeTargets, ...(endeavour_inventory_path ? { endeavour_inventory: { path: endeavour_inventory_path } } : {}) }
+              return Object.keys(merged).length > 0 ? merged : undefined
+            })(),
           },
         } as VaultFile<Extract<VaultFrontmatter, { type: 'character' }>>)
       } else if (type === 'item') vault.items.push(parsed as VaultFile<Extract<VaultFrontmatter, { type: 'item' }>>)

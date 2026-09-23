@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { reportError } from './errorLogStore'
 import { sampleVaultFiles } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult } from '../vault/detectRuleset'
 import { buildVault } from '../vault/parseFrontmatter'
@@ -11,8 +12,8 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { writeEndeavourInventory, writeFieldValue } from '../vault/writeback/persist'
-import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
+import { writeCurrencyBlock, writeEndeavourInventory, writeFieldValue } from '../vault/writeback/persist'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 const SAMPLE_VAULT = buildVault(sampleVaultFiles)
 const SAMPLE_RULESET = detectRuleset(sampleVaultFiles)
@@ -71,6 +72,12 @@ interface VaultState {
    * yet (a brand-new character with nowhere on disk to place `endeavour_inventory`).
    */
   setEndeavourInventory: (characterPath: string, containers: EndeavourContainerSlotAssignment[]) => Promise<void>
+  /**
+   * Replaces a character's coin purse. Same optimistic-write + rollback shape as the other writers;
+   * disk write goes to the whole `currency` block (own schema, `_write.currency_block`) or, for the
+   * legacy vault, to each changed `Geld.*` scalar (`_write.currency`). No-op without edit permission.
+   */
+  setCurrency: (characterPath: string, currency: Currency) => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -154,6 +161,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       }
       const message = err instanceof DOMException ? `${err.name}: ${err.message}` : err instanceof Error ? err.message : String(err)
       set({ status: 'error', error: message, loadingProgress: null })
+      reportError({ title: 'errorLog.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
     }
   },
 
@@ -176,6 +184,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] loadFromFileList failed:', err)
+      reportError({ title: 'errorLog.loadFailed', source: 'vault.loadFromFileList', error: err })
       set({ status: 'error', error: err instanceof Error ? err.message : String(err) })
     }
   },
@@ -228,6 +237,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const permission = await handle.requestPermission({ mode: 'read' })
       if (permission !== 'granted') {
         set({ status: 'loaded', error: 'Permission to read the vault folder was denied.', loadingProgress: null })
+        reportError({ title: 'errorLog.loadFailed', source: 'vault.reconnectVault', error: 'Permission to read the vault folder was denied.' })
         return
       }
       const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
@@ -246,6 +256,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         ...applyVault(files, imageAssets),
       })
     } catch (err) {
+      reportError({ title: 'errorLog.loadFailed', source: 'vault.reconnectVault', error: err })
       set({ status: 'error', error: err instanceof Error ? err.message : String(err), loadingProgress: null })
     }
   },
@@ -288,6 +299,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] updateCharacterField failed, rolling back:', err)
+      reportError({ title: 'errorLog.saveFailed', source: 'vault.updateCharacterField', error: err, context: { characterPath, target, value: logicalValue } })
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
     }
   },
@@ -316,6 +328,47 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[vault] setEndeavourInventory failed, rolling back:', err)
+      reportError({ title: 'errorLog.saveFailed', source: 'vault.setEndeavourInventory', error: err, context: { characterPath, writePath: target.path, containers } })
+      set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
+    }
+  },
+
+  setCurrency: async (characterPath, currency) => {
+    const { vault, fileHandles, editPermission } = get()
+    if (editPermission !== 'granted' || !fileHandles) return
+    const character = vault.characters.find((c) => c.path === characterPath)?.frontmatter
+    const targets = character?._write
+    if (!character || !targets) return
+    const previous = character.currency ?? {}
+
+    const previousVault = vault
+    set({
+      vault: { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: { ...c.frontmatter, currency } } : c)) },
+      writeError: null,
+    })
+
+    try {
+      if (targets.currency_block) {
+        const handle = fileHandles.get(targets.currency_block.path)
+        if (!handle) throw new Error(`no file handle for ${targets.currency_block.path}`)
+        await writeCurrencyBlock(handle, currency)
+      } else if (targets.currency) {
+        for (const [coin, target] of Object.entries(targets.currency) as [keyof Currency, FieldWriteTarget][]) {
+          if ((currency[coin] ?? 0) === (previous[coin] ?? 0)) continue
+          const handle = fileHandles.get(target.path)
+          if (!handle) throw new Error(`no file handle for ${target.path}`)
+          await writeFieldValue(handle, target, currency[coin] ?? 0)
+        }
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[vault] setCurrency failed, rolling back:', err)
+      reportError({
+        title: 'errorLog.saveFailed',
+        source: 'vault.setCurrency',
+        error: err,
+        context: { characterPath, previous, next: currency, writeTargets: { currency_block: targets.currency_block, currency: targets.currency } },
+      })
       set({ vault: previousVault, writeError: err instanceof Error ? err.message : String(err) })
     }
   },
