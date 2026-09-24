@@ -135,6 +135,7 @@ export const en = {
   'stats.tempHp': 'Temporary HP',
   'stats.resilience': 'Resilience Points',
   'stats.exhaustionPenalty': 'd20 −{{n}}',
+  'stats.skillBreakdown': 'd20 + {{attribute}} ({{attributeValue}}) + skill ({{skill}})',
   'stats.dead': 'Dead',
   'stats.evasion': 'Evasion',
   'stats.evasionHint': 'Evasion = 10 + BW ({{bw}}). Dodge (reaction, 1 AP): +2 against one attack.',
@@ -274,7 +275,6 @@ export const en = {
 
   // Accessibility labels (screen-reader only, not visually shown)
   'a11y.toggleSavingThrow': 'Toggle {{label}} saving throw proficiency',
-  'a11y.cycleSkillProficiency': 'Cycle {{label}} proficiency',
   'a11y.currentHp': 'Current hit points',
   'a11y.increase': 'Increase {{label}} (Shift: +5)',
   'a11y.decrease': 'Decrease {{label}} (Shift: −5)',

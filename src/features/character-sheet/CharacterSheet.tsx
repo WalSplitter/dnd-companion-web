@@ -87,7 +87,7 @@ export function CharacterSheet({
               <SavingThrows character={character} characterPath={characterPath} />
               <SensesLanguages character={character} />
             </div>
-            <Skills character={character} characterPath={characterPath} />
+            <Skills character={character} />
             <div className="space-y-4">
               <Attacks character={character} />
               {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} index={index} />}

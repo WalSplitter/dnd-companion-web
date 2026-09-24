@@ -3,14 +3,12 @@ import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/l
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
-import { ABILITIES, NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from './types'
+import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from './types'
 import type {
-  AbilityKey,
   CharacterFrontmatter,
   CharacterWriteTargets,
   FieldWriteTarget,
   NimbleAttributeKey,
-  SkillKey,
   Vault,
   VaultFile,
   VaultFrontmatter,
@@ -71,23 +69,8 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
     targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], createIfMissing: true, encode: 'invert-from-max', max: data.hit_dice.total }
   }
 
-  if (isRecord(data.abilities)) {
-    const abilities = {} as Record<AbilityKey, FieldWriteTarget>
-    for (const { key } of ABILITIES) abilities[key] = { path, keyPath: ['abilities', key] }
-    targets.abilities = abilities
-  }
-
-  if (isRecord(data.nimble_attributes)) {
-    const nimbleAttributes = {} as Record<NimbleAttributeKey, FieldWriteTarget>
-    for (const { key } of NIMBLE_ATTRIBUTES) nimbleAttributes[key] = { path, keyPath: ['nimble_attributes', key] }
-    targets.nimble_attributes = nimbleAttributes
-  }
-
-  if (isRecord(data.nimble_skills)) {
-    const nimbleSkills: Partial<Record<SkillKey, FieldWriteTarget>> = {}
-    for (const skill of Object.keys(data.nimble_skills) as SkillKey[]) nimbleSkills[skill] = { path, keyPath: ['nimble_skills', skill] }
-    targets.nimble_skills = nimbleSkills
-  }
+  // Ability scores, Nimble attributes and skills are deliberately never writable: the DM sets them
+  // in the vault, the web app only shows them.
 
   const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined
   if (slots) {

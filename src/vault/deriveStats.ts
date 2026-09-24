@@ -82,11 +82,22 @@ export function nimbleAttributeValue(character: CharacterFrontmatter, attribute:
   return Math.min(NIMBLE_ATTRIBUTE_MAX, Math.max(NIMBLE_ATTRIBUTE_MIN, value))
 }
 
-/** Nimble skill rolls add an independently-trained flat bonus (0-10, untrained = 0) on top of the
- * governing attribute's value — unlike D&D, there's no shared proficiency bonus multiplying up. */
+/** Rule `Fertigkeiten#Maximaler Fertigkeitsbonus`: a skill's own bonus is at most +10. */
+export const NIMBLE_SKILL_MAX = 10
+
+/** A Nimble skill's trained bonus (untrained = 0), clamped to 0..+10 so an out-of-range value on
+ * disk never leaks into rolls. */
+export function nimbleSkillValue(character: CharacterFrontmatter, skill: SkillKey): number {
+  const value = character.nimble_skills?.[skill] ?? 0
+  return Math.min(NIMBLE_SKILL_MAX, Math.max(0, value))
+}
+
+/** Nimble skill rolls add the independently-trained skill bonus on top of the governing
+ * attribute's value (`W20 + Attributswert + Fertigkeitswert`) — unlike D&D, there's no shared
+ * proficiency bonus multiplying up. */
 export function nimbleSkillBonus(character: CharacterFrontmatter, skill: SkillKey): number {
   const attribute = NIMBLE_SKILL_ATTRIBUTES[skill]
-  return nimbleAttributeValue(character, attribute) + (character.nimble_skills?.[skill] ?? 0)
+  return nimbleAttributeValue(character, attribute) + nimbleSkillValue(character, skill)
 }
 
 export function totalCharacterLevel(character: CharacterFrontmatter): number {

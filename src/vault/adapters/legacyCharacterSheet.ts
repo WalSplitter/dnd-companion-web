@@ -564,9 +564,7 @@ export function normalizeLegacyCharacter(
     ...(typeof gesundheit.TW === 'number' ? { hit_dice_remaining: { path: file.path, keyPath: ['Gesundheit', 'TW'] } } : {}),
     ...conditionTargets,
     ...(spellSlotTargets ? { spell_slots: spellSlotTargets } : {}),
-    abilities: sectionWriteTargets(file.path, 'Attribute', ABILITY_MAP),
     saving_throw_proficiencies: sectionWriteTargets(file.path, 'Rettungswürfe', ABILITY_MAP),
-    skills: sectionWriteTargets(file.path, 'Fertigkeiten', SKILL_MAP),
     ...(inventoryFile ? { currency: currencyWriteTargets(inventoryFile.path, inventoryFile.data.Geld) } : {}),
   }
 

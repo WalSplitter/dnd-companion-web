@@ -581,14 +581,13 @@ describe('legacy character sheet adapter - write targets (_write)', () => {
     expect(character._write?.exhaustion).toEqual({ path: conditionsCharacterFile.path, keyPath: ['InputData', 'ErschöpfungsPunkte'] })
   })
 
-  it('targets one Attribute key per ability score', () => {
-    expect(character._write?.abilities?.str).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Attribute', 'Stärke'] })
-    expect(character._write?.abilities?.cha).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Attribute', 'Charisma'] })
+  it('never targets ability scores or skills: both are read-only in the app', () => {
+    expect(character._write).not.toHaveProperty('abilities')
+    expect(character._write).not.toHaveProperty('skills')
   })
 
-  it('targets one Rettungswürfe key per saving throw and one Fertigkeiten key per skill', () => {
+  it('targets one Rettungswürfe key per saving throw', () => {
     expect(character._write?.saving_throw_proficiencies?.dex).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Rettungswürfe', 'Geschicklichkeit'] })
-    expect(character._write?.skills?.arcana).toEqual({ path: conditionsCharacterFile.path, keyPath: ['Fertigkeiten', 'Arkane_Kunde'] })
   })
 })
 

@@ -122,6 +122,7 @@ export const de = {
   'stats.tempHp': 'Temporäre TP',
   'stats.resilience': 'Resilienzpunkte',
   'stats.exhaustionPenalty': 'W20 −{{n}}',
+  'stats.skillBreakdown': 'W20 + {{attribute}} ({{attributeValue}}) + Fertigkeit ({{skill}})',
   'stats.dead': 'Tot',
   'stats.evasion': 'Ausweichwert',
   'stats.evasionHint': 'Ausweichwert = 10 + BW ({{bw}}). Ausweichen (Reaktion, 1 AP): +2 gegen einen Angriff.',
@@ -251,7 +252,6 @@ export const de = {
   'common.showLess': 'Weniger anzeigen',
 
   'a11y.toggleSavingThrow': '{{label}}-Rettungswurf-Übung umschalten',
-  'a11y.cycleSkillProficiency': '{{label}}-Übung durchschalten',
   'a11y.currentHp': 'Aktuelle Trefferpunkte',
   'a11y.increase': '{{label}} erhöhen (Umschalt: +5)',
   'a11y.decrease': '{{label}} verringern (Umschalt: −5)',

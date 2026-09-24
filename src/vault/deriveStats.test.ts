@@ -5,6 +5,8 @@ import {
   formatModifier,
   initiativeBonus,
   nimbleAttributeValue,
+  nimbleSkillBonus,
+  nimbleSkillValue,
   speedInSquares,
   passivePerception,
   savingThrowBonus,
@@ -145,5 +147,24 @@ describe('evasionValue', () => {
 
   it('is undefined without Nimble attributes', () => {
     expect(evasionValue(character)).toBeUndefined()
+  })
+})
+
+describe('nimbleSkillValue / nimbleSkillBonus', () => {
+  const nimble = {
+    ...character,
+    nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 2, vs: 0, pr: 0, en: 0 },
+    nimble_skills: { perception: 14, insight: -3, survival: 4 },
+  }
+
+  it('caps a skill bonus at +10 and never goes below 0', () => {
+    expect(nimbleSkillValue(nimble, 'perception')).toBe(10)
+    expect(nimbleSkillValue(nimble, 'insight')).toBe(0)
+    expect(nimbleSkillValue(nimble, 'survival')).toBe(4)
+    expect(nimbleSkillValue(nimble, 'athletics')).toBe(0)
+  })
+
+  it('adds the capped skill bonus to the governing attribute', () => {
+    expect(nimbleSkillBonus(nimble, 'perception')).toBe(12)
   })
 })

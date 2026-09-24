@@ -178,13 +178,8 @@ export interface CharacterWriteTargets {
   exhaustion?: FieldWriteTarget
   /** Keyed by spell grade (same keys as `spellcasting.slots`). */
   spell_slots?: Record<string, FieldWriteTarget>
-  abilities?: Record<AbilityKey, FieldWriteTarget>
   /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
-  /** Legacy schema only, same reason. Raw value is 0 (none) | 1 (proficient) | 2 (expertise). */
-  skills?: Record<SkillKey, FieldWriteTarget>
-  nimble_attributes?: Record<NimbleAttributeKey, FieldWriteTarget>
-  nimble_skills?: Partial<Record<SkillKey, FieldWriteTarget>>
   /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
    * (see `resolveLinkedCharacterExtensions`). Absent when neither carries the field yet (a brand-new
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
