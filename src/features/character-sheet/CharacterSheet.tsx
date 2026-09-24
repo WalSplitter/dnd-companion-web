@@ -11,7 +11,7 @@ import { Attacks } from './components/Attacks'
 import { AttacksSpellcasting } from './components/AttacksSpellcasting'
 import { ArmorClass, CombatStats } from './components/CombatStats'
 import { Conditions } from './components/Conditions'
-import { DeathSaves } from './components/DeathSaves'
+import { FallenOverlay } from './components/FallenOverlay'
 import { FeaturesTraits } from './components/FeaturesTraits'
 import { Header } from './components/Header'
 import { HitPoints } from './components/HitPoints'
@@ -45,6 +45,7 @@ export function CharacterSheet({
   return (
     <VaultIndexProvider index={index}>
       <div className="space-y-5">
+        <FallenOverlay current={character.hp.current} characterPath={characterPath} />
         <Header character={character} />
 
         {/* Vitals stay visible on every tab, like a game HUD. */}
@@ -53,7 +54,6 @@ export function CharacterSheet({
           <HitPoints character={character} characterPath={characterPath} />
           <CombatStats character={character} />
         </section>
-        <DeathSaves character={character} />
 
         <div role="tablist" className="flex gap-1 border-b border-trim/25">
           {tabs.map((entry) => (

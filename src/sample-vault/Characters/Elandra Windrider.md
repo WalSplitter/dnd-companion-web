@@ -30,9 +30,6 @@ hit_dice:
   die: d6
   total: 5
   used: 1
-death_saves:
-  successes: 0
-  failures: 0
 senses:
   darkvision: 60 ft
 languages: [Common, Elvish, Draconic]

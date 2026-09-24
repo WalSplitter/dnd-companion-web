@@ -38,6 +38,13 @@ function formatValue(value: number | boolean): string {
 /** Locates the line holding `keyPath` (tracked by indentation, the same stack-based walk both
  * patchers need), throwing if the file doesn't look exactly like what it expects. */
 function findKeyLine(lines: string[], keyPath: string[]): number {
+  const line = findKeyLineOrNull(lines, keyPath)
+  if (line === null) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+  return line
+}
+
+/** Like `findKeyLine`, but returns `null` for a key path that simply isn't there. */
+function findKeyLineOrNull(lines: string[], keyPath: string[]): number | null {
   const stack: { indent: number; key: string }[] = []
 
   for (let i = 0; i < lines.length; i++) {
@@ -57,10 +64,53 @@ function findKeyLine(lines: string[], keyPath: string[]): number {
     if (path.length === keyPath.length && path.every((k, idx) => k === keyPath[idx])) return i
   }
 
-  throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+  return null
 }
 
-export function patchFrontmatterField(content: string, keyPath: string[], value: number | boolean): string {
+/**
+ * Adds `leaf: value` as the last child of the leaf's parent mapping — only for optional fields whose
+ * key may simply be absent (e.g. `hp.temp`). The parent itself must already exist as a block mapping
+ * (`hp:` with nothing after the colon); a flow map (`hp: { current: 3 }`) or a missing parent still
+ * throws rather than guessing.
+ */
+function insertMissingLeaf(lines: string[], keyPath: string[], formatted: string): void {
+  const leaf = keyPath[keyPath.length - 1]
+
+  if (keyPath.length === 1) {
+    let end = lines.length
+    while (end > 0 && lines[end - 1].trim() === '') end--
+    lines.splice(end, 0, `${leaf}: ${formatted}`)
+    return
+  }
+
+  const parentLine = findKeyLine(lines, keyPath.slice(0, -1))
+  const parentMatch = KEY_LINE_RE.exec(lines[parentLine])!
+  const parentValue = parentMatch[3].trim()
+  if (parentValue !== '' && !parentValue.startsWith('#')) {
+    throw new YamlPatchError(`cannot add ${keyPath.join('.')}: parent is not a block mapping`)
+  }
+  const parentIndent = parentMatch[1].length
+
+  let childIndent: number | null = null
+  let lastChild = parentLine
+  for (let i = parentLine + 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.trim() === '' || line.trim().startsWith('#')) continue
+    const indent = /^( *)/.exec(line)![1].length
+    if (indent <= parentIndent) break
+    childIndent ??= indent
+    lastChild = i
+  }
+
+  lines.splice(lastChild + 1, 0, `${' '.repeat(childIndent ?? parentIndent + 2)}${leaf}: ${formatted}`)
+}
+
+export function patchFrontmatterField(
+  content: string,
+  keyPath: string[],
+  value: number | boolean,
+  options: { createIfMissing?: boolean } = {},
+): string {
   if (keyPath.length === 0) throw new YamlPatchError('empty key path')
 
   const match = FRONTMATTER_RE.exec(content)
@@ -69,10 +119,15 @@ export function patchFrontmatterField(content: string, keyPath: string[], value:
 
   const newline = yamlText.includes('\r\n') ? '\r\n' : '\n'
   const lines = yamlText.split(/\r?\n/)
-  const targetLine = findKeyLine(lines, keyPath)
+  const targetLine = findKeyLineOrNull(lines, keyPath)
 
-  const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
-  lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`
+  if (targetLine === null) {
+    if (!options.createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+    insertMissingLeaf(lines, keyPath, formatValue(value))
+  } else {
+    const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
+    lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`
+  }
 
   return openDelim + lines.join(newline) + closeDelim + rest
 }

@@ -58,12 +58,12 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
 
   if (isRecord(data.hp)) {
     targets.hp_current = { path, keyPath: ['hp', 'current'] }
-    targets.hp_temp = { path, keyPath: ['hp', 'temp'] }
+    targets.hp_temp = { path, keyPath: ['hp', 'temp'], createIfMissing: true }
   }
 
   if (isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
     // Own schema stores `used`, not remaining — the UI edits remaining, so this is written inverted.
-    targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], encode: 'invert-from-max', max: data.hit_dice.total }
+    targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], createIfMissing: true, encode: 'invert-from-max', max: data.hit_dice.total }
   }
 
   if (isRecord(data.abilities)) {
@@ -87,7 +87,7 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
   const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined
   if (slots) {
     const spellSlots: Record<string, FieldWriteTarget> = {}
-    for (const grade of Object.keys(slots)) spellSlots[grade] = { path, keyPath: ['spellcasting', 'slots', grade, 'used'] }
+    for (const grade of Object.keys(slots)) spellSlots[grade] = { path, keyPath: ['spellcasting', 'slots', grade, 'used'], createIfMissing: true }
     targets.spell_slots = spellSlots
   }
 

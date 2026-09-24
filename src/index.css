@@ -262,3 +262,248 @@ body {
     transform: translateX(1.5rem) scale(0.97);
   }
 }
+
+/* 0 HP easter egg (FallenOverlay). The vignette stays while the character is down; the rain, drips
+ * and title play once when HP hits 0. Reduced motion gets the static vignette only. */
+.fallen-vignette {
+  backdrop-filter: grayscale(0.65) brightness(0.85);
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, rgb(110 0 0 / 0.55) 100%);
+}
+.fallen-drop {
+  border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  background: linear-gradient(to bottom, rgb(140 0 0 / 0), #8a0303 45%, #5c0000);
+  box-shadow: 0 0 4px rgb(90 0 0 / 0.6);
+  animation: fallen-drop linear 2 both;
+}
+.fallen-drips {
+  transform-origin: top;
+  animation: fallen-drips 4.5s cubic-bezier(0.3, 0.6, 0.4, 1) both;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.5));
+}
+.fallen-flash {
+  background: radial-gradient(ellipse at center, rgb(160 0 0 / 0.15), rgb(90 0 0 / 0.7));
+  animation: fallen-flash 5.5s ease-out both;
+}
+.fallen-title {
+  animation: fallen-title 6s ease-in-out both;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fallen-vignette {
+    animation: fallen-pulse 3.2s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fallen-rain {
+    display: none;
+  }
+}
+
+@keyframes fallen-drop {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100vh + 4rem));
+  }
+}
+@keyframes fallen-drips {
+  from {
+    transform: scaleY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  to {
+    transform: scaleY(1.15);
+    opacity: 0;
+  }
+}
+@keyframes fallen-flash {
+  from {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes fallen-title {
+  from {
+    opacity: 0;
+    transform: scale(1.25);
+    filter: blur(6px);
+  }
+  18%,
+  75% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes fallen-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Temporary HP as an arcane ward (HitPoints). Tinted with --color-accent so every theme gets its own
+ * ward colour. Motion (shimmer, pulse, drifting runes) only for users who haven't asked to reduce it. */
+.hp-ward {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgb(255 255 255 / 0.28) 0 3px,
+      transparent 3px 9px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-accent) 55%, white) 0%,
+      var(--color-accent) 45%,
+      color-mix(in srgb, var(--color-accent) 60%, black) 100%
+    );
+  background-size:
+    12.73px 12.73px,
+    100% 100%;
+  box-shadow:
+    inset 0 0 6px rgb(255 255 255 / 0.45),
+    -2px 0 8px color-mix(in srgb, var(--color-accent) 80%, transparent);
+  border-left: 1px solid rgb(255 255 255 / 0.85);
+  border-right: 1px solid rgb(255 255 255 / 0.6);
+  opacity: 0.92;
+}
+/* A glint of light sweeping across the ward. */
+.hp-ward::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.65) 50%, transparent 70%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  mix-blend-mode: overlay;
+}
+.hp-warded {
+  box-shadow:
+    inset 0 2px 6px rgb(0 0 0 / 0.55),
+    0 0 10px color-mix(in srgb, var(--color-accent) 45%, transparent),
+    0 0 1px var(--color-accent);
+}
+.hp-ward-hit {
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgb(255 255 255 / 0.9), color-mix(in srgb, var(--color-accent) 60%, transparent) 60%, transparent);
+  animation: hp-ward-hit 520ms ease-out both;
+}
+
+.hp-ward-chip {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+  opacity: 0.6;
+  transition:
+    opacity 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+.hp-ward-chip:hover,
+.hp-ward-chip:focus-within {
+  opacity: 1;
+}
+.hp-ward-chip.is-active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  background:
+    radial-gradient(ellipse at 15% 50%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--color-accent) 8%, transparent);
+  box-shadow:
+    0 0 14px -2px color-mix(in srgb, var(--color-accent) 55%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+.hp-ward-chip.is-active .hp-ward-icon {
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
+.hp-ward-total {
+  font-family: var(--font-numeric);
+  font-weight: 700;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hp-ward {
+    animation: hp-ward-flow 1.2s linear infinite;
+  }
+  .hp-ward::after {
+    animation: hp-ward-glint 3.4s ease-in-out infinite;
+  }
+  .hp-warded {
+    animation: hp-ward-pulse 2.8s ease-in-out infinite;
+  }
+  .hp-ward-chip.is-active .hp-ward-icon {
+    animation: hp-ward-icon 2.8s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-ward-hit {
+    display: none;
+  }
+}
+
+@keyframes hp-ward-flow {
+  to {
+    background-position:
+      12.73px 0,
+      0 0;
+  }
+}
+@keyframes hp-ward-glint {
+  0%,
+  35% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -50% 0;
+  }
+}
+@keyframes hp-ward-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 2px 6px rgb(0 0 0 / 0.55),
+      0 0 6px color-mix(in srgb, var(--color-accent) 30%, transparent),
+      0 0 1px var(--color-accent);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 6px rgb(0 0 0 / 0.55),
+      0 0 16px color-mix(in srgb, var(--color-accent) 60%, transparent),
+      0 0 2px var(--color-accent);
+  }
+}
+@keyframes hp-ward-icon {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px var(--color-accent));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px var(--color-accent));
+    transform: scale(1.08);
+  }
+}
+@keyframes hp-ward-hit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

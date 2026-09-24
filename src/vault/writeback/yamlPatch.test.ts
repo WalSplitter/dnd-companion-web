@@ -72,6 +72,45 @@ describe('patchFrontmatterField', () => {
   })
 })
 
+describe('patchFrontmatterField with createIfMissing', () => {
+  const ownSchema = `---
+name: Dummy
+hp:
+  current: 3
+  max: 10
+hit_dice:
+  die: d8
+  total: 1
+---
+
+Body.
+`
+
+  it('adds a missing optional leaf as the last child of its parent block', () => {
+    const patched = patchFrontmatterField(ownSchema, ['hp', 'temp'], 4, { createIfMissing: true })
+    expect(patched).toBe(ownSchema.replace('  max: 10\n', '  max: 10\n  temp: 4\n'))
+    expect(load(patched.split('---')[1])).toMatchObject({ hp: { current: 3, max: 10, temp: 4 } })
+  })
+
+  it('patches the existing line instead of adding a duplicate when the key is there', () => {
+    const once = patchFrontmatterField(ownSchema, ['hp', 'temp'], 4, { createIfMissing: true })
+    const twice = patchFrontmatterField(once, ['hp', 'temp'], 7, { createIfMissing: true })
+    expect(twice).toBe(ownSchema.replace('  max: 10\n', '  max: 10\n  temp: 7\n'))
+  })
+
+  it('keeps CRLF line endings when adding a key', () => {
+    const crlf = ownSchema.replace(/\n/g, '\r\n')
+    const patched = patchFrontmatterField(crlf, ['hit_dice', 'used'], 1, { createIfMissing: true })
+    expect(patched).toBe(crlf.replace('  total: 1\r\n', '  total: 1\r\n  used: 1\r\n'))
+  })
+
+  it('still throws when the parent is missing or a flow map', () => {
+    expect(() => patchFrontmatterField(ownSchema, ['nope', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+    const flow = ownSchema.replace('hp:\n  current: 3\n  max: 10', 'hp: { current: 3, max: 10 }')
+    expect(() => patchFrontmatterField(flow, ['hp', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+  })
+})
+
 // Matches the real Endeavour vault's `Inventar <Name>.md` shape (Charakter-linked backpack/pouch
 // notes — see `EndeavourInventoryGrid.tsx`).
 const inventoryFixture = `---

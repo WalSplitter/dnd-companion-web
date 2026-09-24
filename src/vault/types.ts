@@ -162,6 +162,9 @@ export interface FieldWriteTarget {
    * "used", disk stores "remaining", so the write is `max - used`. */
   encode?: 'direct' | 'invert-from-max'
   max?: number
+  /** The key is optional in the schema and may be absent from the file — writing it adds the key under
+   * its (existing) parent instead of failing. */
+  createIfMissing?: boolean
 }
 
 export interface CharacterWriteTargets {
@@ -238,7 +241,6 @@ export interface CharacterFrontmatter {
   speed: string
   hp: { current: number; max: number; temp?: number }
   hit_dice: { die: string; total: number; used?: number }
-  death_saves?: { successes?: number; failures?: number }
   senses?: { darkvision?: string; blindsight?: string; tremorsense?: string; truesight?: string }
   languages?: string[]
   tool_proficiencies?: string[]

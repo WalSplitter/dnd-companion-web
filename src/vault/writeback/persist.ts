@@ -26,7 +26,9 @@ export function writeFieldValue(
   target: FieldWriteTarget,
   logicalValue: number | boolean,
 ): Promise<void> {
-  return rewriteFile(fileHandle, (content) => patchFrontmatterField(content, target.keyPath, encodeFieldValue(target, logicalValue)))
+  return rewriteFile(fileHandle, (content) =>
+    patchFrontmatterField(content, target.keyPath, encodeFieldValue(target, logicalValue), { createIfMissing: target.createIfMissing }),
+  )
 }
 
 /** Rewrites the slot-grid inventory's whole `endeavour_inventory.containers` array (not a single
