@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   abilityModifier,
+  evasionValue,
   formatModifier,
   initiativeBonus,
   nimbleAttributeValue,
@@ -123,5 +124,26 @@ describe('speedInSquares', () => {
   it('returns undefined for unparseable values', () => {
     expect(speedInSquares('unknown')).toBeUndefined()
     expect(speedInSquares('30 ft, fly 60 ft')).toBeUndefined()
+  })
+})
+
+describe('evasionValue', () => {
+  const nimble = { ...character, nimble_attributes: { st: 0, bw: 3, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+
+  it('is 10 + BW', () => {
+    expect(evasionValue(nimble)).toBe(13)
+  })
+
+  it("caps the BW part at the worn armor's BW_cap, but never raises it", () => {
+    expect(evasionValue({ ...nimble, bw_cap: 2 })).toBe(12)
+    expect(evasionValue({ ...nimble, bw_cap: 5 })).toBe(13)
+  })
+
+  it('applies a negative BW in full', () => {
+    expect(evasionValue({ ...nimble, nimble_attributes: { ...nimble.nimble_attributes, bw: -2 }, bw_cap: 1 })).toBe(8)
+  })
+
+  it('is undefined without Nimble attributes', () => {
+    expect(evasionValue(character)).toBeUndefined()
   })
 })

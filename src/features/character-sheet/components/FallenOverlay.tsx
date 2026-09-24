@@ -28,7 +28,7 @@ function DripEdge() {
 
 /** The one-shot part: blood rain, dripping edge and the "you have fallen" title. Removes itself once
  * the title's fade-out finishes. */
-function BloodRain() {
+function BloodRain({ dead }: { dead: boolean }) {
   const t = useT()
   const [drops] = useState(() => makeDrops(70))
   const [visible, setVisible] = useState(true)
@@ -58,37 +58,54 @@ function BloodRain() {
       >
         <span className="text-6xl text-danger drop-shadow-[0_0_24px_#8a0000]">☠</span>
         <p className="font-display text-4xl font-bold uppercase tracking-[0.12em] text-[#d11a1a] drop-shadow-[0_2px_12px_#000] sm:text-6xl">
-          {t('fallen.title')}
+          {t(dead ? 'fallen.deadTitle' : 'fallen.title')}
         </p>
         <p className="font-display text-sm tracking-[0.18em] text-fg-muted drop-shadow-[0_1px_6px_#000] sm:text-base">
-          {t('fallen.subtitle')}
+          {t(dead ? 'fallen.deadSubtitle' : 'fallen.subtitle')}
         </p>
       </div>
     </div>
   )
 }
 
+type Fate = 'alive' | 'down' | 'dead'
+const SEVERITY: Record<Fate, number> = { alive: 0, down: 1, dead: 2 }
+
 /**
  * Easter egg for 0 HP: while the character is down the world loses its colour behind a pulsing
- * blood-red vignette, and the moment HP *drops* to 0 it rains blood with a "you have fallen" title.
- * Death saves themselves are the DM's business, so the sheet doesn't track them.
+ * blood-red vignette, and the moment HP *drop* to 0 it rains blood with a "you have fallen" title.
+ * Reaching the last exhaustion level (death, by the vault rules) plays it again as "you have died"
+ * and deepens the vignette. Death saves themselves are the DM's business, so the sheet doesn't
+ * track them.
  */
-export function FallenOverlay({ current, characterPath }: { current: number; characterPath: string }) {
-  const [prev, setPrev] = useState({ current, characterPath })
+export function FallenOverlay({
+  current,
+  exhaustion,
+  exhaustionMax,
+  characterPath,
+}: {
+  current: number
+  exhaustion: number
+  exhaustionMax: number
+  characterPath: string
+}) {
+  const fate: Fate = exhaustion >= exhaustionMax ? 'dead' : current <= 0 ? 'down' : 'alive'
+  const [prev, setPrev] = useState({ fate, characterPath })
   const [run, setRun] = useState(0)
 
-  // Adjust state during render (React's "previous prop" pattern): only a live HP change on the same
-  // character triggers the rain — opening a sheet that's already at 0 just shows the vignette.
-  if (prev.current !== current || prev.characterPath !== characterPath) {
-    setPrev({ current, characterPath })
-    if (prev.characterPath === characterPath && prev.current > 0 && current <= 0) setRun((r) => r + 1)
+  // Adjust state during render (React's "previous prop" pattern): only a live change for the worse
+  // on the same character triggers the rain; opening a sheet that's already down just shows the
+  // vignette.
+  if (prev.fate !== fate || prev.characterPath !== characterPath) {
+    setPrev({ fate, characterPath })
+    if (prev.characterPath === characterPath && SEVERITY[fate] > SEVERITY[prev.fate]) setRun((r) => r + 1)
   }
 
-  if (current > 0) return null
+  if (fate === 'alive') return null
   return (
     <>
-      <div className="fallen-vignette pointer-events-none fixed inset-0 z-40" aria-hidden />
-      {run > 0 && <BloodRain key={run} />}
+      <div className={`fallen-vignette pointer-events-none fixed inset-0 z-40 ${fate === 'dead' ? 'is-dead' : ''}`} aria-hidden />
+      {run > 0 && <BloodRain key={run} dead={fate === 'dead'} />}
     </>
   )
 }

@@ -104,10 +104,20 @@ Body.
     expect(patched).toBe(crlf.replace('  total: 1\r\n', '  total: 1\r\n  used: 1\r\n'))
   })
 
-  it('still throws when the parent is missing or a flow map', () => {
-    expect(() => patchFrontmatterField(ownSchema, ['nope', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+  it('creates missing ancestors as block mappings at the end of the frontmatter', () => {
+    const patched = patchFrontmatterField(ownSchema, ['conditions', 'exhaustion'], 2, { createIfMissing: true })
+    expect(patched).toBe(ownSchema.replace('  total: 1\n', '  total: 1\nconditions:\n  exhaustion: 2\n'))
+  })
+
+  it('nests missing keys under the deepest existing ancestor', () => {
+    const patched = patchFrontmatterField(ownSchema, ['hp', 'extra', 'deep'], 1, { createIfMissing: true })
+    expect(patched).toBe(ownSchema.replace('  max: 10\n', '  max: 10\n  extra:\n    deep: 1\n'))
+  })
+
+  it('still throws when the existing ancestor is a flow map or a scalar', () => {
     const flow = ownSchema.replace('hp:\n  current: 3\n  max: 10', 'hp: { current: 3, max: 10 }')
     expect(() => patchFrontmatterField(flow, ['hp', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+    expect(() => patchFrontmatterField(ownSchema, ['name', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
   })
 })
 

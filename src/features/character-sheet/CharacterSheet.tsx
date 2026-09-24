@@ -9,7 +9,7 @@ import { AbilityScores } from './components/AbilityScores'
 import { About } from './components/About'
 import { Attacks } from './components/Attacks'
 import { AttacksSpellcasting } from './components/AttacksSpellcasting'
-import { ArmorClass, CombatStats } from './components/CombatStats'
+import { ArmorClass, CombatStats, Evasion } from './components/CombatStats'
 import { Conditions } from './components/Conditions'
 import { FallenOverlay } from './components/FallenOverlay'
 import { FeaturesTraits } from './components/FeaturesTraits'
@@ -18,6 +18,8 @@ import { HitPoints } from './components/HitPoints'
 import { SavingThrows } from './components/SavingThrows'
 import { SensesLanguages } from './components/SensesLanguages'
 import { Skills } from './components/Skills'
+import { DEFAULT_EXHAUSTION_MAX } from './vitals'
+import { evasionValue } from '../../vault/deriveStats'
 
 type Tab = 'sheet' | 'inventory' | 'spells'
 
@@ -35,6 +37,7 @@ export function CharacterSheet({
   const t = useT()
   const [tab, setTab] = useState<Tab>('sheet')
   const hasSpells = Boolean(character.spellcasting)
+  const evasion = evasionValue(character)
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'sheet', label: t('tabs.sheet') },
@@ -45,14 +48,21 @@ export function CharacterSheet({
   return (
     <VaultIndexProvider index={index}>
       <div className="space-y-5">
-        <FallenOverlay current={character.hp.current} characterPath={characterPath} />
+        <FallenOverlay
+          current={character.hp.current}
+          exhaustion={character.conditions?.exhaustion ?? 0}
+          exhaustionMax={character.conditions?.exhaustion_max ?? DEFAULT_EXHAUSTION_MAX}
+          characterPath={characterPath}
+        />
         <Header character={character} />
 
         {/* Vitals stay visible on every tab, like a game HUD. */}
-        <section className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 p-4">
-          <ArmorClass character={character} />
-          <HitPoints character={character} characterPath={characterPath} />
-          <CombatStats character={character} />
+        <section className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-3">
+          <div className="flex shrink-0 items-end gap-2">
+            <ArmorClass character={character} />
+            {evasion !== undefined && <Evasion value={evasion} character={character} />}
+          </div>
+          <HitPoints character={character} characterPath={characterPath} stats={<CombatStats character={character} />} />
         </section>
 
         <div role="tablist" className="flex gap-1 border-b border-trim/25">

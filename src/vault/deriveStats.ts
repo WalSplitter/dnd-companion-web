@@ -98,3 +98,17 @@ export function classSummary(character: CharacterFrontmatter): string {
     .map((c) => `${c.name}${c.subclass ? ` (${c.subclass})` : ''} ${c.level}`)
     .join(' / ')
 }
+
+/** Base of the Nimble evasion value (`Ausweichwert`), before the BW bonus. */
+export const EVASION_BASE = 10
+
+/**
+ * Nimble evasion value (`Regeln/Kampf/Angriff/Ausweichwert`): 10 + BW, where worn armor may cap the
+ * BW part at its `BW_cap` (`bw_cap` on the sheet; no cap when absent). Undefined for characters
+ * without Nimble attributes, since the value doesn't exist in D&D rules.
+ */
+export function evasionValue(character: CharacterFrontmatter): number | undefined {
+  if (!character.nimble_attributes) return undefined
+  const bw = nimbleAttributeValue(character, 'bw')
+  return EVASION_BASE + (character.bw_cap === undefined ? bw : Math.min(bw, character.bw_cap))
+}

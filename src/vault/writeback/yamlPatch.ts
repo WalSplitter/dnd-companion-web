@@ -68,41 +68,57 @@ function findKeyLineOrNull(lines: string[], keyPath: string[]): number | null {
 }
 
 /**
- * Adds `leaf: value` as the last child of the leaf's parent mapping — only for optional fields whose
- * key may simply be absent (e.g. `hp.temp`). The parent itself must already exist as a block mapping
- * (`hp:` with nothing after the colon); a flow map (`hp: { current: 3 }`) or a missing parent still
- * throws rather than guessing.
+ * Adds a missing key path — only for optional fields whose key may simply be absent (e.g. `hp.temp`,
+ * or `conditions.exhaustion` with no `conditions` block yet). The deepest ancestor that does exist
+ * gets the missing keys as its last children, nested as block mappings; with no ancestor at all they
+ * go at the end of the frontmatter. That existing ancestor must be a block mapping (`hp:` with
+ * nothing after the colon): a flow map (`hp: { current: 3 }`) or a scalar still throws rather than
+ * guessing.
  */
-function insertMissingLeaf(lines: string[], keyPath: string[], formatted: string): void {
-  const leaf = keyPath[keyPath.length - 1]
-
-  if (keyPath.length === 1) {
-    let end = lines.length
-    while (end > 0 && lines[end - 1].trim() === '') end--
-    lines.splice(end, 0, `${leaf}: ${formatted}`)
-    return
+function insertMissingPath(lines: string[], keyPath: string[], formatted: string): void {
+  let depth = keyPath.length - 1
+  let ancestorLine: number | null = null
+  for (; depth > 0; depth--) {
+    ancestorLine = findKeyLineOrNull(lines, keyPath.slice(0, depth))
+    if (ancestorLine !== null) break
   }
 
-  const parentLine = findKeyLine(lines, keyPath.slice(0, -1))
-  const parentMatch = KEY_LINE_RE.exec(lines[parentLine])!
-  const parentValue = parentMatch[3].trim()
-  if (parentValue !== '' && !parentValue.startsWith('#')) {
-    throw new YamlPatchError(`cannot add ${keyPath.join('.')}: parent is not a block mapping`)
-  }
-  const parentIndent = parentMatch[1].length
+  let insertAt: number
+  let indent: number
+  let step = 2
+  if (ancestorLine === null) {
+    insertAt = lines.length
+    while (insertAt > 0 && lines[insertAt - 1].trim() === '') insertAt--
+    indent = 0
+  } else {
+    const ancestorMatch = KEY_LINE_RE.exec(lines[ancestorLine])!
+    const ancestorValue = ancestorMatch[3].trim()
+    if (ancestorValue !== '' && !ancestorValue.startsWith('#')) {
+      throw new YamlPatchError(`cannot add ${keyPath.join('.')}: ${keyPath.slice(0, depth).join('.')} is not a block mapping`)
+    }
+    const ancestorIndent = ancestorMatch[1].length
 
-  let childIndent: number | null = null
-  let lastChild = parentLine
-  for (let i = parentLine + 1; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.trim() === '' || line.trim().startsWith('#')) continue
-    const indent = /^( *)/.exec(line)![1].length
-    if (indent <= parentIndent) break
-    childIndent ??= indent
-    lastChild = i
+    let childIndent: number | null = null
+    let lastChild = ancestorLine
+    for (let i = ancestorLine + 1; i < lines.length; i++) {
+      const line = lines[i]
+      if (line.trim() === '' || line.trim().startsWith('#')) continue
+      const lineIndent = /^( *)/.exec(line)![1].length
+      if (lineIndent <= ancestorIndent) break
+      childIndent ??= lineIndent
+      lastChild = i
+    }
+    indent = childIndent ?? ancestorIndent + 2
+    step = indent - ancestorIndent
+    insertAt = lastChild + 1
   }
 
-  lines.splice(lastChild + 1, 0, `${' '.repeat(childIndent ?? parentIndent + 2)}${leaf}: ${formatted}`)
+  const missing = keyPath.slice(depth)
+  const added = missing.map((key, i) => {
+    const prefix = ' '.repeat(indent + i * step)
+    return i === missing.length - 1 ? `${prefix}${key}: ${formatted}` : `${prefix}${key}:`
+  })
+  lines.splice(insertAt, 0, ...added)
 }
 
 export function patchFrontmatterField(
@@ -123,7 +139,7 @@ export function patchFrontmatterField(
 
   if (targetLine === null) {
     if (!options.createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
-    insertMissingLeaf(lines, keyPath, formatValue(value))
+    insertMissingPath(lines, keyPath, formatValue(value))
   } else {
     const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
     lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`

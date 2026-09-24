@@ -61,6 +61,11 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
     targets.hp_temp = { path, keyPath: ['hp', 'temp'], createIfMissing: true }
   }
 
+  if (isRecord(data.resilience)) targets.resilience_current = { path, keyPath: ['resilience', 'current'] }
+
+  // Exhaustion starts at 0 and is written on first use, creating `conditions:` if needed.
+  targets.exhaustion = { path, keyPath: ['conditions', 'exhaustion'], createIfMissing: true }
+
   if (isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
     // Own schema stores `used`, not remaining — the UI edits remaining, so this is written inverted.
     targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], createIfMissing: true, encode: 'invert-from-max', max: data.hit_dice.total }

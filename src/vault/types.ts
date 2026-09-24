@@ -170,6 +170,7 @@ export interface FieldWriteTarget {
 export interface CharacterWriteTargets {
   hp_current?: FieldWriteTarget
   hp_temp?: FieldWriteTarget
+  resilience_current?: FieldWriteTarget
   /** Logical value written is the *remaining* hit dice count (matches `hit_dice.total - used`). */
   hit_dice_remaining?: FieldWriteTarget
   /** One target per luck pip, index-aligned with `conditions.luck_points` (length === max). */
@@ -240,6 +241,11 @@ export interface CharacterFrontmatter {
   armor_class: number
   speed: string
   hp: { current: number; max: number; temp?: number }
+  /** Resilience points (Nimble/Endeavour rules): the fast-swinging combat pool that absorbs damage
+   * after temp HP and before HP, and refills on rests. Own schema only. */
+  resilience?: { current: number; max: number }
+  /** `BW_cap` of the worn armor (Nimble): caps the BW part of the evasion value. Absent = no cap. */
+  bw_cap?: number
   hit_dice: { die: string; total: number; used?: number }
   senses?: { darkvision?: string; blindsight?: string; tremorsense?: string; truesight?: string }
   languages?: string[]

@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { StatPlate } from '../../../components/StatPlate'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { formatModifier, initiativeBonus, speedInSquares } from '../../../vault/deriveStats'
+import { evasionValue, formatModifier, initiativeBonus, nimbleAttributeValue, speedInSquares } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
@@ -12,7 +12,7 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
 
   return (
     <div className="flex shrink-0 flex-col items-center">
-      <div className="relative h-[5.75rem] w-20 drop-shadow-[0_0_14px_color-mix(in_srgb,var(--color-trim)_45%,transparent)]">
+      <div className="relative h-[4.6rem] w-16 drop-shadow-[0_0_14px_color-mix(in_srgb,var(--color-trim)_45%,transparent)]">
         <svg viewBox="0 0 100 116" className="absolute inset-0 size-full" aria-hidden>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -33,9 +33,53 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
             style={{ stroke: 'color-mix(in srgb, var(--color-trim) 50%, transparent)' }}
           />
         </svg>
-        <span className="absolute inset-x-0 top-[1.55rem] text-center font-num text-3xl text-fg">{character.armor_class}</span>
+        <span className="absolute inset-x-0 top-[1.2rem] text-center font-num text-2xl text-fg">{character.armor_class}</span>
       </div>
       <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.armorClass')}</span>
+    </div>
+  )
+}
+
+/**
+ * Nimble evasion value as a diamond medallion with motion streaks on either side, a sidestep to the
+ * armor class's shield. The tooltip spells out the formula and the dodge reaction's bonus.
+ */
+export function Evasion({ value, character }: { value: number; character: CharacterFrontmatter }) {
+  const t = useT()
+  const bw = nimbleAttributeValue(character, 'bw')
+  const capped = character.bw_cap !== undefined && character.bw_cap < bw
+  const hint = t(capped ? 'stats.evasionHintCapped' : 'stats.evasionHint', {
+    bw: formatModifier(bw),
+    cap: formatModifier(character.bw_cap ?? 0),
+  })
+
+  return (
+    <div className="evasion flex shrink-0 flex-col items-center" title={hint}>
+      <div className="relative h-12 w-[4.5rem]">
+        <svg viewBox="0 0 120 80" className="absolute inset-0 size-full" aria-hidden>
+          <g className="evasion-streaks" stroke="var(--color-trim)" strokeLinecap="round" fill="none">
+            <path d="M6 30h18M2 40h24M8 50h16" strokeWidth="2" opacity="0.55" />
+            <path d="M96 30h18M94 40h24M96 50h16" strokeWidth="2" opacity="0.55" />
+          </g>
+          <path
+            d="M60 3 97 40 60 77 23 40Z"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+            style={{
+              fill: 'color-mix(in srgb, var(--color-trim) 18%, var(--color-surface))',
+              stroke: 'var(--color-trim)',
+            }}
+          />
+          <path
+            d="M60 11 89 40 60 69 31 40Z"
+            fill="none"
+            strokeWidth="1"
+            style={{ stroke: 'color-mix(in srgb, var(--color-trim) 50%, transparent)' }}
+          />
+        </svg>
+        <span className="absolute inset-0 grid place-items-center font-num text-xl text-fg">{value}</span>
+      </div>
+      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.evasion')}</span>
     </div>
   )
 }
@@ -45,7 +89,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
   const initiative = initiativeBonus(character)
   const squares = speedInSquares(character.speed)
   return (
-    <div className="flex shrink-0 gap-2">
+    <div className="flex gap-2 *:flex-1">
       <StatPlate label={t('stats.initiative')}>
         <D20RollButton
           label={t('stats.initiative')}
@@ -64,7 +108,10 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           title={t('stats.movementHint', { count: squares, speed: character.speed })}
         />
       )}
-      <StatPlate label={t('stats.profBonus')} value={formatModifier(character.proficiency_bonus)} />
+      {/* Nimble has no proficiency bonus in play; its evasion value sits by the armor class instead. */}
+      {evasionValue(character) === undefined && (
+        <StatPlate label={t('stats.profBonus')} value={formatModifier(character.proficiency_bonus)} />
+      )}
     </div>
   )
 }

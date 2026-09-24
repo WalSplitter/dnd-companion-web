@@ -11,7 +11,9 @@ export function Conditions({ character, characterPath }: { character: CharacterF
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   if (!conditions) return null
 
-  const { luck_points: luck, exhaustion, exhaustion_max = 9, notes } = conditions
+  // Exhaustion lives with the other vitals (HitPoints), not here.
+  const { luck_points: luck, notes } = conditions
+  if (!luck && !notes) return null
   const canEdit = editPermission === 'granted'
   const writeTargets = character._write
 
@@ -44,38 +46,6 @@ export function Conditions({ character, characterPath }: { character: CharacterF
                         return { ...c, conditions: { ...c.conditions, luck_points: { ...c.conditions.luck_points, held: nextHeld, current: nextHeld.filter(Boolean).length } } }
                       })
                     }
-                    className={`${pipClass} cursor-pointer transition hover:opacity-70`}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        )}
-        {exhaustion !== undefined && (
-          <div>
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="text-fg-muted">{t('stats.exhaustion')}</span>
-              <span className={`font-semibold ${exhaustion >= 6 ? 'text-danger' : 'text-fg'}`}>
-                {exhaustion}/{exhaustion_max}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {Array.from({ length: exhaustion_max }, (_, i) => {
-                const filled = i < exhaustion
-                const pipClass = `size-3.5 rounded-sm ${filled ? 'bg-danger shadow-[0_0_8px_var(--color-danger)]' : 'border border-trim/40 bg-transparent'}`
-                const target = writeTargets?.exhaustion
-                if (!canEdit || !target) return <span key={i} className={pipClass} />
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-label={t('a11y.exhaustionLevel', { n: i + 1 })}
-                    onClick={() => {
-                      const next = exhaustion === i + 1 ? i : i + 1
-                      void updateCharacterField(characterPath, target, next, (c) =>
-                        c.conditions ? { ...c, conditions: { ...c.conditions, exhaustion: next } } : c,
-                      )
-                    }}
                     className={`${pipClass} cursor-pointer transition hover:opacity-70`}
                   />
                 )

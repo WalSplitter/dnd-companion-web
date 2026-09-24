@@ -90,3 +90,25 @@ describe('writeEndeavourInventory', () => {
     expect(getContent()).toContain('Inventar zu [[Dummy]].') // rest of the file untouched
   })
 })
+
+describe('writeFieldValue: writes to one file run in order', () => {
+  it('keeps both of two concurrent edits to different keys in the same file', async () => {
+    const file = fakeFileHandle(fixture)
+    await Promise.all([
+      writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 4),
+      writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'Zauberplätze', 'Grad_1'] }, 0),
+    ])
+    const data = load(file.getContent().split('---')[1]) as { InputData: { ErschöpfungsPunkte: number; Zauberplätze: { Grad_1: number } } }
+    expect(data.InputData.ErschöpfungsPunkte).toBe(4)
+    expect(data.InputData.Zauberplätze.Grad_1).toBe(0)
+  })
+
+  it('still runs later writes after an earlier one fails', async () => {
+    const file = fakeFileHandle(fixture)
+    const failed = writeFieldValue(file.handle, { path: 'x', keyPath: ['Missing'] }, 1)
+    const ok = writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 5)
+    await expect(failed).rejects.toThrow()
+    await ok
+    expect(file.getContent()).toContain('ErschöpfungsPunkte: 5')
+  })
+})
