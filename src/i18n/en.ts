@@ -45,6 +45,16 @@ export const en = {
 
   // Character list / sheet routing
   'characterList.title': 'Characters',
+  'characterList.fallen': 'Fallen',
+  'characterList.dead': 'Dead',
+  'characterList.topSkills': 'Best skills',
+  'short.armorClass': 'AC',
+  'short.evasion': 'EV',
+  'short.initiative': 'Init',
+  'short.movement': 'Squares',
+  'short.speed': 'Speed',
+  'short.profBonus': 'PB',
+  'short.spellGrade': 'L{{grade}}',
   'characterList.emptyBefore': 'No characters found in this vault. Open a vault folder that contains files with',
   'characterList.emptyAfter': 'frontmatter.',
   'characterSheet.notFound': 'Character not found.',
