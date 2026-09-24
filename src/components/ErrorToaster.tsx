@@ -29,7 +29,7 @@ export function ErrorToaster() {
       role="log"
       aria-live="assertive"
       aria-relevant="additions"
-      className={`pointer-events-none fixed bottom-0 right-0 z-[60] flex max-h-screen w-[min(30rem,100vw)] flex-col-reverse gap-6 overflow-y-auto rpg-scroll [--scroll-color:var(--color-danger)] ${
+      className={`pointer-events-none fixed bottom-0 right-0 z-[60] flex max-h-screen w-[min(30rem,100vw)] flex-col-reverse gap-6 overflow-y-auto [--scroll-color:var(--color-danger)] ${
         entries.length > 0 ? 'p-5' : ''
       }`}
     >
@@ -136,7 +136,7 @@ function ErrorCard({ entry, onClose }: { entry: ErrorLogEntry; onClose: () => vo
         )}
       </div>
       {open && (
-        <pre className="rpg-scroll mt-1.5 max-h-56 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-danger/25 bg-black/40 p-2 font-mono text-[0.65rem] leading-relaxed text-fg-muted [--scroll-color:var(--color-danger)]">
+        <pre className="mt-1.5 max-h-56 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-danger/25 bg-black/40 p-2 font-mono text-[0.65rem] leading-relaxed text-fg-muted [--scroll-color:var(--color-danger)]">
           {details}
         </pre>
       )}
