@@ -3,7 +3,7 @@ import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/l
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
-import { ABILITIES, NIMBLE_ATTRIBUTES } from './types'
+import { ABILITIES, NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from './types'
 import type {
   AbilityKey,
   CharacterFrontmatter,
@@ -139,6 +139,25 @@ function resolveLinkedCharacterExtensions(ownPath: string, characterFileName: st
 }
 
 /**
+ * Primary attributes are fixed per class: a note named like the class (e.g. `Prüfling.md`) lists them
+ * as `Primärattribute: [St, Ko]` (keys, abbreviations or full names). A multiclass character gets the
+ * union of all its classes'. `undefined` when no class note declares any.
+ */
+function resolveClassPrimaryAttributes(classes: unknown, files: RawFile[]): NimbleAttributeKey[] | undefined {
+  if (!Array.isArray(classes)) return undefined
+  const names = new Set(classes.map((c) => (isRecord(c) && typeof c.name === 'string' ? c.name.trim().toLowerCase() : '')).filter(Boolean))
+  const primary = new Set<NimbleAttributeKey>()
+  for (const f of files) {
+    if (!names.has(f.name.trim().toLowerCase()) || !Array.isArray(f.data.Primärattribute)) continue
+    for (const raw of f.data.Primärattribute) {
+      const key = parseNimbleAttributeKey(raw)
+      if (key) primary.add(key)
+    }
+  }
+  return primary.size > 0 ? NIMBLE_ATTRIBUTES.map(({ key }) => key).filter((key) => primary.has(key)) : undefined
+}
+
+/**
  * Parses all source files and buckets them by type. Two frontmatter conventions are recognized:
  *  - the app's own `type: character|item|spell` marker (see `types.ts`)
  *  - an existing campaign vault's schema with no `type:` marker — characters and spell notes are
@@ -181,6 +200,7 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
           frontmatter: {
             ...character,
             ...linkedExtensions,
+            nimble_primary_attributes: resolveClassPrimaryAttributes(raw.data.class, rawFiles),
             portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
             _write: (() => {
               const merged = { ...writeTargets, ...(endeavour_inventory_path ? { endeavour_inventory: { path: endeavour_inventory_path } } : {}) }

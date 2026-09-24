@@ -62,6 +62,8 @@ export const de = {
   'nimbleAttribute.vs': 'Verstand',
   'nimbleAttribute.pr': 'Präsenz',
   'nimbleAttribute.en': 'Entschlossenheit',
+  'attribute.primary': 'Primär',
+  'attribute.secondary': 'Sekundär',
 
   'skill.acrobatics': 'Akrobatik',
   'skill.animal_handling': 'Mit Tieren umgehen',
@@ -105,6 +107,8 @@ export const de = {
   'stats.initiative': 'Initiative',
   'stats.armorClass': 'Rüstungsklasse',
   'stats.speed': 'Geschwindigkeit',
+  'stats.movement': 'Felder / Zug',
+  'stats.movementHint': 'Bewegung: {{count}} Felder pro Zug ({{speed}})',
   'stats.ability': 'Attribut',
   'stats.saveDC': 'Rettungswurf-SG',
   'stats.attack': 'Angriff',

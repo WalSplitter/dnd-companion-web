@@ -66,6 +66,13 @@ export const SKILLS: { key: SkillKey; label: string; ability: AbilityKey }[] = [
  */
 export type NimbleAttributeKey = 'st' | 'bw' | 'ko' | 'ge' | 'in' | 'vs' | 'pr' | 'en'
 
+/** Maps any of an attribute's spellings used in the vault (`st`, `ST`, `Stärke`) to its key. */
+export function parseNimbleAttributeKey(value: unknown): NimbleAttributeKey | undefined {
+  if (typeof value !== 'string') return undefined
+  const needle = value.trim().toLowerCase()
+  return NIMBLE_ATTRIBUTES.find(({ key, label }) => key === needle || label.toLowerCase() === needle)?.key
+}
+
 export const NIMBLE_ATTRIBUTES: { key: NimbleAttributeKey; label: string }[] = [
   { key: 'st', label: 'Stärke' },
   { key: 'bw', label: 'Beweglichkeit' },
@@ -258,6 +265,10 @@ export interface CharacterFrontmatter {
    */
   nimble_attributes?: Record<NimbleAttributeKey, number>
   nimble_skills?: Partial<Record<SkillKey, number>>
+  /** Derived, not read from the character file: the union of `Primärattribute` declared on the notes
+   * named like the character's classes (see `resolveClassPrimaryAttributes`). Every other attribute
+   * counts as secondary. Absent when no class note declares any — the UI then shows no distinction. */
+  nimble_primary_attributes?: NimbleAttributeKey[]
   /** Own-schema input field: a `"[[Name.jpg]]"` wikilink to a portrait attachment, resolved into
    * `portrait_url` below by `buildVault` (`parseFrontmatter.ts`). Not itself read by the UI. */
   portrait?: string

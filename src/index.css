@@ -155,6 +155,16 @@ body {
       0 0 18px -4px color-mix(in srgb, var(--color-trim) 55%, transparent);
   }
 
+  /* Secondary attribute: same medallion, dimmed trim and no glow. */
+  .rpg-medallion-muted {
+    border-color: color-mix(in srgb, var(--color-trim) 35%, var(--color-border));
+    background: radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--color-trim) 8%, var(--color-surface-2)), var(--color-surface) 72%);
+    box-shadow:
+      0 0 0 3px var(--color-surface),
+      0 0 0 4px color-mix(in srgb, var(--color-trim) 15%, transparent),
+      inset 0 0 14px rgb(0 0 0 / 0.35);
+  }
+
   /* Game-menu style tab. */
   .rpg-tab {
     position: relative;

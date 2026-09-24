@@ -56,9 +56,30 @@ export function spellAttackBonus(character: CharacterFrontmatter): number | unde
   return character.proficiency_bonus + abilityModifier(character.abilities[ability])
 }
 
-/** Nimble attribute rolls are `W20 + Attributswert` directly — no score-to-modifier conversion. */
+/** Feet per grid square on a standard battle map. */
+export const FEET_PER_SQUARE = 5
+
+/** Movement in grid squares: `30 ft` → 6. A value already counted in squares (`6 Felder`, the legacy
+ * sheet's `Bewegung`) passes through; a bare number is read as feet. `undefined` if unparseable. */
+export function speedInSquares(speed: string): number | undefined {
+  const match = /^\s*(\d+(?:[.,]\d+)?)\s*([a-zäöüß]*)\.?\s*$/i.exec(speed)
+  if (!match) return undefined
+  const value = Number(match[1].replace(',', '.'))
+  const unit = match[2].toLowerCase()
+  if (['felder', 'feld', 'kästchen', 'squares', 'square'].includes(unit)) return value
+  if (['', 'ft', 'feet', 'foot', 'fuß', 'fuss'].includes(unit)) return Math.floor(value / FEET_PER_SQUARE)
+  return undefined
+}
+
+/** Rule `Attribute#Maximaler Attributswert`: an attribute is always within -5..+5. */
+export const NIMBLE_ATTRIBUTE_MIN = -5
+export const NIMBLE_ATTRIBUTE_MAX = 5
+
+/** Nimble attribute rolls are `W20 + Attributswert` directly — no score-to-modifier conversion.
+ * Clamped to the rule's range so an out-of-range value on disk never leaks into saves/skills. */
 export function nimbleAttributeValue(character: CharacterFrontmatter, attribute: NimbleAttributeKey): number {
-  return character.nimble_attributes?.[attribute] ?? 0
+  const value = character.nimble_attributes?.[attribute] ?? 0
+  return Math.min(NIMBLE_ATTRIBUTE_MAX, Math.max(NIMBLE_ATTRIBUTE_MIN, value))
 }
 
 /** Nimble skill rolls add an independently-trained flat bonus (0-10, untrained = 0) on top of the

@@ -73,7 +73,7 @@ export function CharacterSheet({
         {tab === 'sheet' && (
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className="space-y-4">
-              <AbilityScores character={character} characterPath={characterPath} />
+              <AbilityScores character={character} />
               <SavingThrows character={character} characterPath={characterPath} />
               <SensesLanguages character={character} />
             </div>

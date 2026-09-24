@@ -3,6 +3,8 @@ import {
   abilityModifier,
   formatModifier,
   initiativeBonus,
+  nimbleAttributeValue,
+  speedInSquares,
   passivePerception,
   savingThrowBonus,
   skillBonus,
@@ -95,5 +97,31 @@ describe('spell save DC / attack bonus', () => {
     const nonCaster = { ...character, spellcasting: undefined }
     expect(spellSaveDC(nonCaster)).toBeUndefined()
     expect(spellAttackBonus(nonCaster)).toBeUndefined()
+  })
+})
+
+describe('nimbleAttributeValue', () => {
+  it('clamps to the rule range -5..+5', () => {
+    const nimble = { ...character, nimble_attributes: { st: 7, bw: -9, ko: 3, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+    expect(nimbleAttributeValue(nimble, 'st')).toBe(5)
+    expect(nimbleAttributeValue(nimble, 'bw')).toBe(-5)
+    expect(nimbleAttributeValue(nimble, 'ko')).toBe(3)
+  })
+})
+
+describe('speedInSquares', () => {
+  it('converts feet to 5-ft grid squares', () => {
+    expect(speedInSquares('30 ft')).toBe(6)
+    expect(speedInSquares('40 feet')).toBe(8)
+    expect(speedInSquares('25')).toBe(5)
+  })
+
+  it('passes through values already in squares', () => {
+    expect(speedInSquares('6 Felder')).toBe(6)
+  })
+
+  it('returns undefined for unparseable values', () => {
+    expect(speedInSquares('unknown')).toBeUndefined()
+    expect(speedInSquares('30 ft, fly 60 ft')).toBeUndefined()
   })
 })

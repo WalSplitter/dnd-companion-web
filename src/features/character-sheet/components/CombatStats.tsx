@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { StatPlate } from '../../../components/StatPlate'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { formatModifier, initiativeBonus } from '../../../vault/deriveStats'
+import { formatModifier, initiativeBonus, speedInSquares } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
@@ -43,6 +43,7 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
 export function CombatStats({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   const initiative = initiativeBonus(character)
+  const squares = speedInSquares(character.speed)
   return (
     <div className="flex shrink-0 gap-2">
       <StatPlate label={t('stats.initiative')}>
@@ -54,7 +55,15 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           {formatModifier(initiative)}
         </D20RollButton>
       </StatPlate>
-      <StatPlate label={t('stats.speed')} value={character.speed} />
+      {squares === undefined ? (
+        <StatPlate label={t('stats.speed')} value={character.speed} />
+      ) : (
+        <StatPlate
+          label={t('stats.movement')}
+          value={String(squares)}
+          title={t('stats.movementHint', { count: squares, speed: character.speed })}
+        />
+      )}
       <StatPlate label={t('stats.profBonus')} value={formatModifier(character.proficiency_bonus)} />
     </div>
   )

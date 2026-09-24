@@ -72,6 +72,8 @@ export const en = {
   'nimbleAttribute.vs': 'Mind',
   'nimbleAttribute.pr': 'Presence',
   'nimbleAttribute.en': 'Resolve',
+  'attribute.primary': 'Primary',
+  'attribute.secondary': 'Secondary',
 
   // Skills
   'skill.acrobatics': 'Acrobatics',
@@ -118,6 +120,8 @@ export const en = {
   'stats.initiative': 'Initiative',
   'stats.armorClass': 'Armor Class',
   'stats.speed': 'Speed',
+  'stats.movement': 'Squares / turn',
+  'stats.movementHint': 'Movement: {{count}} squares per turn ({{speed}})',
   'stats.ability': 'Ability',
   'stats.saveDC': 'Save DC',
   'stats.attack': 'Attack',

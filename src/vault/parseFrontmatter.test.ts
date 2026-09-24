@@ -106,4 +106,15 @@ describe('buildVault', () => {
     const vault = buildVault([characterFile], new Map())
     expect(vault.characters[0].frontmatter.portrait_url).toBeUndefined()
   })
+
+  it('takes primary attributes from the class note, accepting keys, abbreviations and full names', () => {
+    const classNote = { path: 'Klassen/Fighter.md', content: '---\nPrimärattribute: [ST, ko, Geschick, Unsinn]\n---\n' }
+    const vault = buildVault([characterFile, classNote])
+    expect(vault.characters[0].frontmatter.nimble_primary_attributes).toEqual(['st', 'ko', 'ge'])
+  })
+
+  it('leaves primary attributes unset when no class note declares any', () => {
+    const vault = buildVault([characterFile])
+    expect(vault.characters[0].frontmatter.nimble_primary_attributes).toBeUndefined()
+  })
 })
