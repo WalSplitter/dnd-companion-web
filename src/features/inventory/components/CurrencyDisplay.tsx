@@ -7,23 +7,19 @@ import type { CharacterFrontmatter, Currency } from '../../../vault/types'
 
 type Coin = keyof Currency
 
-const DENOMINATIONS: Coin[] = ['pp', 'gp', 'ep', 'sp', 'cp']
+const DENOMINATIONS: Coin[] = ['gp', 'sp', 'cp']
 const STEPS = [1, 5, 10]
 
-/** Coin metals — fixed colours on purpose (platinum, gold, electrum, silver, copper), not theme tokens. */
+/** Coin metals — fixed colours on purpose (gold, silver, copper), not theme tokens. */
 const COIN_COLOR: Record<Coin, string> = {
-  pp: '#d5dde8',
   gp: '#f0c24b',
-  ep: '#b9c98a',
   sp: '#c4c8d0',
   cp: '#cd7f4f',
 }
 
-/** Standard 5e rates. Electrum is rarely used, so gold changes straight into silver. */
+/** House rule: only gold, silver and copper — each step is 10:1. */
 const EXCHANGE: Partial<Record<Coin, { lower: Coin; rate: number }>> = {
-  pp: { lower: 'gp', rate: 10 },
   gp: { lower: 'sp', rate: 10 },
-  ep: { lower: 'sp', rate: 5 },
   sp: { lower: 'cp', rate: 10 },
 }
 
@@ -189,7 +185,7 @@ export function CurrencyDisplay({
 
   return (
     <>
-      <div className="grid w-full grid-cols-5 gap-2">
+      <div className="grid w-full grid-cols-3 gap-2">
         {DENOMINATIONS.map((coin) => {
           const value = currency[coin] ?? 0
           const content = (

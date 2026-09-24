@@ -142,9 +142,7 @@ export interface SpellcastingInfo {
 export interface Currency {
   cp?: number
   sp?: number
-  ep?: number
   gp?: number
-  pp?: number
 }
 
 export interface FieldWriteTarget {
@@ -180,7 +178,7 @@ export interface CharacterWriteTargets {
    * (see `resolveLinkedCharacterExtensions`). Absent when neither carries the field yet (a brand-new
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
   endeavour_inventory?: { path: string }
-  /** Legacy schema: one scalar target per coin already present on disk (`Geld.PM`, ...). */
+  /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */
   currency?: Partial<Record<keyof Currency, FieldWriteTarget>>
   /** Own schema: the file owning the `currency` key, rewritten as a whole block (it may be a flow map
    * like `{ cp: 1, gp: 2 }` that no scalar patch can address). */

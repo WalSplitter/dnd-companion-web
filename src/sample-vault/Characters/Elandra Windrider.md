@@ -40,7 +40,7 @@ tool_proficiencies: ["Calligrapher's Supplies"]
 inventory:
   equipped: ["[[Quarterstaff]]", "[[Component Pouch]]"]
   carried: ["[[Spellbook]]", "[[Potion of Healing]]"]
-currency: { cp: 0, sp: 0, ep: 0, gp: 45, pp: 0 }
+currency: { cp: 0, sp: 0, gp: 45 }
 spellcasting:
   ability: int
   slots:

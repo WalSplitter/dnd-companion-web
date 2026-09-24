@@ -60,7 +60,7 @@ const SKILL_MAP: Record<string, SkillKey> = {
   Wahrnehmung: 'perception',
 }
 
-const CURRENCY_MAP: Record<string, keyof Currency> = { PM: 'pp', GM: 'gp', EM: 'ep', SM: 'sp', KM: 'cp' }
+const CURRENCY_MAP: Record<string, keyof Currency> = { GM: 'gp', SM: 'sp', KM: 'cp' }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null

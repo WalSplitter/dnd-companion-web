@@ -237,7 +237,7 @@ describe('legacy character sheet adapter', () => {
     const character = vault.characters[0].frontmatter
     expect(character.inventory?.equipped).toEqual([{ name: 'Streitaxt', quantity: 2, weight_lb: 5 }])
     expect(character.inventory?.carried).toEqual([{ name: 'Fackel', quantity: 3, weight_lb: 1 }])
-    expect(character.currency).toEqual({ pp: 10, gp: 100, ep: 3, sp: 5, cp: 9 })
+    expect(character.currency).toEqual({ gp: 100, sp: 5, cp: 9 })
   })
 
   it('has no spellcasting for a non-caster class', () => {

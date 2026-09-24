@@ -131,9 +131,7 @@ export const de = {
   'weaponKind.ranged': 'Fernkampf',
   'weaponKind.thrown': 'Wurf',
 
-  'currency.pp': 'PM',
   'currency.gp': 'GM',
-  'currency.ep': 'EM',
   'currency.sp': 'SM',
   'currency.cp': 'KM',
   'currency.exchange': 'Wechseln',

@@ -147,9 +147,7 @@ export const en = {
   'weaponKind.thrown': 'Thrown',
 
   // Currency denominations
-  'currency.pp': 'PP',
   'currency.gp': 'GP',
-  'currency.ep': 'EP',
   'currency.sp': 'SP',
   'currency.cp': 'CP',
   'currency.exchange': 'Exchange',
