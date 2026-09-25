@@ -124,11 +124,28 @@ function CharacterCardBody({ frontmatter: c }: { frontmatter: CharacterFrontmatt
   const skills = topSkills(c)
   const slots = Object.entries(c.spellcasting?.slots ?? {})
   const origin = [c.species, c.background, c.alignment].filter(Boolean).join(' · ')
+  const fallen = down || dead
 
   return (
     <div
-      className={`rpg-panel group relative flex h-full flex-col gap-3 p-4 transition duration-200 hover:-translate-y-1 hover:shadow-[0_0_24px_-6px_var(--color-trim)]`}
+      className={`rpg-panel group relative flex h-full flex-col gap-3 p-4 transition duration-200 hover:-translate-y-1 ${
+        fallen
+          ? `card-fallen hover:shadow-[0_0_28px_-6px_rgb(200_0_0/0.7)] ${dead ? 'is-dead' : ''}`
+          : 'hover:shadow-[0_0_24px_-6px_var(--color-trim)]'
+      }`}
     >
+      {/* Fallen: the sheet's grey veil and blood vignette over the card */}
+      {fallen && (
+        <>
+          {dead && (
+            <span aria-hidden className="card-fallen-skull">
+              ☠
+            </span>
+          )}
+          <div aria-hidden className="card-fallen-veil" />
+        </>
+      )}
+
       {/* Identity */}
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
@@ -136,9 +153,7 @@ function CharacterCardBody({ frontmatter: c }: { frontmatter: CharacterFrontmatt
             <img
               src={c.portrait_url}
               alt=""
-              className={`size-16 rounded-md border-2 border-trim object-cover shadow-[0_0_0_2px_var(--color-surface),0_0_16px_-4px_color-mix(in_srgb,var(--color-trim)_60%,transparent)] transition ${
-                down || dead ? 'grayscale' : ''
-              }`}
+              className="size-16 rounded-md border-2 border-trim object-cover shadow-[0_0_0_2px_var(--color-surface),0_0_16px_-4px_color-mix(in_srgb,var(--color-trim)_60%,transparent)] transition"
             />
           ) : (
             <div aria-hidden className="rpg-medallion !size-16 font-display text-xl font-bold text-trim">
@@ -153,9 +168,10 @@ function CharacterCardBody({ frontmatter: c }: { frontmatter: CharacterFrontmatt
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="truncate font-display text-lg font-bold tracking-wide text-fg">{c.name}</div>
-            {(down || dead) && (
-              <span className="shrink-0 rounded-full border border-danger/60 bg-danger/15 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-danger">
-                {dead ? `☠ ${t('characterList.dead')}` : t('characterList.fallen')}
+            {fallen && (
+              <span className="card-fallen-seal shrink-0">
+                <span aria-hidden>{dead ? '☠' : '🩸'}</span>
+                {dead ? t('characterList.dead') : t('characterList.fallen')}
               </span>
             )}
           </div>

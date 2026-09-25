@@ -616,6 +616,113 @@ button.exh-token:hover {
   background: radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgb(40 0 0 / 0.8) 100%);
 }
 
+/* A fallen/dead character's card in the list (CharacterListPage): the sheet's grey veil and blood
+ * vignette shrunk onto the card, and crimson corner brackets. Hovering
+ * lifts the veil a little, as if the character stirs. Dead cards sink darker behind a skull. */
+.card-fallen {
+  border-color: color-mix(in srgb, #8a0303 55%, var(--color-border));
+}
+.card-fallen::before,
+.card-fallen::after {
+  z-index: 20;
+  border-color: #b3121b;
+}
+.card-fallen-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: inherit;
+  pointer-events: none;
+  backdrop-filter: grayscale(0.85) brightness(0.8);
+  background: radial-gradient(ellipse 85% 80% at 50% 45%, transparent 40%, rgb(110 0 0 / 0.5) 100%);
+  transition:
+    backdrop-filter 400ms ease,
+    opacity 400ms ease;
+}
+.card-fallen:hover .card-fallen-veil {
+  backdrop-filter: grayscale(0.4) brightness(0.92);
+}
+.card-fallen.is-dead .card-fallen-veil {
+  backdrop-filter: grayscale(1) brightness(0.62);
+  background:
+    radial-gradient(ellipse 80% 75% at 50% 45%, transparent 30%, rgb(40 0 0 / 0.8) 100%),
+    rgb(0 0 0 / 0.12);
+}
+.card-fallen.is-dead:hover .card-fallen-veil {
+  backdrop-filter: grayscale(0.85) brightness(0.72);
+}
+/* Skull watermark behind a dead card's veil. */
+.card-fallen-skull {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: 9rem;
+  line-height: 1;
+  color: #b3121b;
+  opacity: 0.1;
+  filter: blur(0.5px);
+}
+/* "Fallen"/"Dead" as a wax-and-blood seal that stays in colour above the veil. */
+.card-fallen-seal {
+  position: relative;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 9999px;
+  border: 1px solid #e0454b;
+  background: radial-gradient(ellipse at 30% 25%, #c21a22, #6e0000 80%);
+  padding: 0.15rem 0.55rem;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff1ec;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.25),
+    0 0 10px rgb(200 0 0 / 0.55);
+}
+.card-fallen.is-dead .card-fallen-seal {
+  border-color: #6e0000;
+  background: radial-gradient(ellipse at 30% 25%, #2a0a0b, #0b0203 80%);
+  color: #e8e0d0;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 0 12px rgb(160 0 0 / 0.7);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-fallen-veil {
+    animation: fallen-pulse 3.2s ease-in-out infinite;
+  }
+  .card-fallen:hover .card-fallen-veil {
+    animation-duration: 1.1s;
+  }
+  .card-fallen-seal {
+    animation: card-fallen-seal 2.4s ease-in-out infinite;
+  }
+  .card-fallen.is-dead .card-fallen-seal {
+    animation-duration: 4s;
+  }
+}
+@keyframes card-fallen-seal {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 0 8px rgb(200 0 0 / 0.45);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 0 16px rgb(230 0 0 / 0.8);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .rp-fill::after {
     animation: hp-ward-glint 4.2s ease-in-out infinite;
