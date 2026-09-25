@@ -1,4 +1,5 @@
-import { basename, wikilinkTarget } from '../wikilinks'
+import { isRecord, resolvePortraitLink } from '../frontmatterFields'
+import { linkDisplay, linkFile, wikilinkTarget } from '../wikilinkSyntax'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type {
   AbilityKey,
@@ -61,27 +62,6 @@ const SKILL_MAP: Record<string, SkillKey> = {
 }
 
 const CURRENCY_MAP: Record<string, keyof Currency> = { GM: 'gp', SM: 'sp', KM: 'cp' }
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-const WIKILINK_DISPLAY_RE = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/
-
-/** Alias-aware display text for a wikilink field, e.g. `"[[Zwerge|Zwerg]]"` -> `"Zwerg"`. Falls
- * back to the target's bare filename (not a full path) when there's no alias, same as
- * `wikilinkTarget` — see its comment on why full vault-relative paths show up here at all. */
-export function linkDisplay(raw: unknown): string {
-  if (typeof raw !== 'string') return ''
-  const match = WIKILINK_DISPLAY_RE.exec(raw.trim())
-  if (!match) return raw.trim()
-  return match[2] ? match[2].trim() : basename(match[1])
-}
-
-/** The target (filename) a wikilink field points at, ignoring any display alias. */
-export function linkFile(raw: unknown): string {
-  return typeof raw === 'string' ? wikilinkTarget(raw) : ''
-}
 
 /**
  * Kept as raw markdown (wikilinks intact, only bold markers stripped) rather than resolved to
@@ -315,20 +295,6 @@ function resolveCurrency(geld: unknown): Currency | undefined {
     if (typeof value === 'number') currency[en] = value
   }
   return currency
-}
-
-/** Resolves a `"[[Name.jpg]]"` attachment reference (e.g. a `Bild`/`portrait` field) against the
- * loaded image assets, keyed by bare filename regardless of which vault folder it lives in. */
-export function resolvePortraitLink(link: unknown, imageAssets: ImageAssets | undefined): string | undefined {
-  if (!imageAssets) return undefined
-  const target = linkFile(link)
-  if (!target) return undefined
-  return imageAssets.get(target.toLowerCase())
-}
-
-/** Resolves a `Bild: "[[Name.jpg]]"` attachment reference against the loaded image assets. */
-function resolvePortrait(hintergrund: Record<string, unknown>, imageAssets: ImageAssets | undefined): string | undefined {
-  return resolvePortraitLink(hintergrund.Bild, imageAssets)
 }
 
 const LUCK_POINT_KEYS = ['GlücksPunkt1', 'GlücksPunkt2', 'GlücksPunkt3', 'GlücksPunkt4', 'GlücksPunkt5']
@@ -592,7 +558,7 @@ export function normalizeLegacyCharacter(
     spellcasting,
     spells_known: spellsKnown,
     features: collectFeatures(data, allFiles),
-    portrait_url: resolvePortrait(hintergrund, imageAssets),
+    portrait_url: resolvePortraitLink(hintergrund.Bild, imageAssets),
     conditions,
     resource_pools: resourcePools,
     attacks,

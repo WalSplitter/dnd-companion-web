@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
-import { sampleVaultFiles } from '../sample-vault'
+import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult } from '../vault/detectRuleset'
 import { buildVault } from '../vault/parseFrontmatter'
 import { clearVaultHandle, loadVaultHandle, saveVaultHandle } from '../vault/handleStore'
@@ -15,8 +15,6 @@ import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
 import { writeCurrencyBlock, writeEndeavourInventory, writeFieldValue } from '../vault/writeback/persist'
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
-const SAMPLE_VAULT = buildVault(sampleVaultFiles)
-const SAMPLE_RULESET = detectRuleset(sampleVaultFiles)
 
 export type VaultSource = 'sample' | 'user'
 type VaultStatus = 'loading' | 'loaded' | 'error'
@@ -110,6 +108,24 @@ function mapCharacter(vault: Vault, characterPath: string, mutate: (character: C
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
 const NO_WRITE_ACCESS = { rootHandle: null, fileHandles: null, editPermission: 'unavailable' } as const
 
+/** The bundled demo vault as a complete store state — parsed once, reused on every switch back to it. */
+const SAMPLE_STATE = (() => {
+  const vault = buildVault(sampleVaultFiles, sampleVaultImages)
+  return {
+    status: 'loaded',
+    source: 'sample',
+    vaultName: null,
+    reconnectName: null,
+    loadingProgress: null,
+    vault,
+    index: buildVaultIndex(vault),
+    ruleset: detectRuleset(sampleVaultFiles),
+    error: null,
+    ...NO_WRITE_ACCESS,
+    writeError: null,
+  } satisfies Partial<VaultState>
+})()
+
 export const useVaultStore = create<VaultState>((set, get) => {
   /** Reads a vault folder (reporting progress) and makes it the active vault, ready for a later edit-permission request. */
   async function loadFromHandle(handle: FileSystemDirectoryHandle) {
@@ -165,33 +181,11 @@ export const useVaultStore = create<VaultState>((set, get) => {
   }
 
   return {
-    status: 'loaded',
-    source: 'sample',
-    vaultName: null,
-    reconnectName: null,
-    loadingProgress: null,
-    vault: SAMPLE_VAULT,
-    index: buildVaultIndex(SAMPLE_VAULT),
-    ruleset: SAMPLE_RULESET,
-    error: null,
-    ...NO_WRITE_ACCESS,
-    writeError: null,
+    ...SAMPLE_STATE,
 
     loadSampleVault: () => {
       revokeActiveImageAssets()
-      set({
-        status: 'loaded',
-        source: 'sample',
-        vaultName: null,
-        reconnectName: null,
-        loadingProgress: null,
-        vault: SAMPLE_VAULT,
-        index: buildVaultIndex(SAMPLE_VAULT),
-        ruleset: SAMPLE_RULESET,
-        error: null,
-        ...NO_WRITE_ACCESS,
-        writeError: null,
-      })
+      set(SAMPLE_STATE)
       void clearVaultHandle()
     },
 
@@ -358,3 +352,8 @@ export const useVaultStore = create<VaultState>((set, get) => {
     },
   }
 })
+
+/** Whether vault edits are currently written back to disk (the user granted `readwrite` access). */
+export function useCanEdit(): boolean {
+  return useVaultStore((s) => s.editPermission === 'granted')
+}

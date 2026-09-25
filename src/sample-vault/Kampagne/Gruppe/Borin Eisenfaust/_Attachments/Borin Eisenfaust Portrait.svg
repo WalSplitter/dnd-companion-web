@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#7a3a1c"/>
+      <stop offset="0.55" stop-color="#3d1b0e"/>
+      <stop offset="1" stop-color="#170905"/>
+    </radialGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d7dd"/>
+      <stop offset="1" stop-color="#6d737c"/>
+    </linearGradient>
+    <linearGradient id="scale" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b9098"/>
+      <stop offset="1" stop-color="#3c4047"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6b894"/>
+      <stop offset="1" stop-color="#c48d68"/>
+    </linearGradient>
+    <linearGradient id="beard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b5552a"/>
+      <stop offset="1" stop-color="#6e2e14"/>
+    </linearGradient>
+    <pattern id="scales" width="16" height="12" patternUnits="userSpaceOnUse">
+      <path d="M0 0q8 14 16 0" fill="none" stroke="#2a2d32" stroke-width="1.4"/>
+    </pattern>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- shield behind -->
+  <path d="M128 22l74 20v58c0 50-34 80-74 96-40-16-74-46-74-96V42Z" fill="#5a3a22" stroke="#d8b25a" stroke-width="3" opacity="0.55"/>
+  <circle cx="128" cy="96" r="16" fill="none" stroke="#d8b25a" stroke-width="2" opacity="0.55"/>
+
+  <!-- scale armor shoulders -->
+  <path d="M26 256c2-50 40-80 102-80s100 30 102 80Z" fill="url(#scale)"/>
+  <path d="M26 256c2-50 40-80 102-80s100 30 102 80Z" fill="url(#scales)"/>
+  <path d="M60 200q68-26 136 0" fill="none" stroke="#d8b25a" stroke-width="3"/>
+
+  <!-- face -->
+  <path d="M128 70c-30 0-44 22-44 50 0 26 16 46 44 46s44-20 44-46c0-28-14-50-44-50Z" fill="url(#skin)"/>
+
+  <!-- beard -->
+  <path d="M84 122c0 46 18 96 44 110 26-14 44-64 44-110-8 16-20 24-44 24s-36-8-44-24Z" fill="url(#beard)"/>
+  <path d="M112 160q16 30 0 62M144 160q-16 30 0 62M128 166v62" fill="none" stroke="#5a240f" stroke-width="2" opacity="0.6"/>
+  <circle cx="128" cy="222" r="5" fill="#d8b25a"/>
+
+  <!-- moustache, nose, eyes -->
+  <path d="M100 142q14-12 28-2 14-10 28 2-14 4-28 0-14 4-28 0Z" fill="#8a3a1a"/>
+  <path d="M122 118q6 16 12 0" fill="#c48d68"/>
+  <path d="M100 108h18M138 108h18" stroke="#4b2a12" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="110" cy="116" r="3" fill="#1d1d1d"/>
+  <circle cx="146" cy="116" r="3" fill="#1d1d1d"/>
+  <path d="M150 96l10 26" stroke="#a15d4a" stroke-width="2" opacity="0.8"/>
+
+  <!-- helmet -->
+  <path d="M80 102c0-36 20-58 48-58s48 22 48 58Z" fill="url(#steel)" stroke="#3c4047" stroke-width="2"/>
+  <path d="M76 100h104v10H76Z" fill="#9aa0a8" stroke="#3c4047" stroke-width="2"/>
+  <path d="M123 44h10v58h-10Z" fill="#b8bec6" stroke="#3c4047" stroke-width="1.5"/>
+  <path d="M123 102h10l-2 26h-6Z" fill="#9aa0a8" stroke="#3c4047" stroke-width="1.5"/>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildVaultIndex, resolveItemLink, resolveSpellLink, wikilinkTarget } from './wikilinks'
+import { buildVaultIndex, resolveItemLink, resolveSpellLink } from './wikilinks'
+import { wikilinkTarget } from './wikilinkSyntax'
 import type { Vault } from './types'
 
 describe('wikilinkTarget', () => {

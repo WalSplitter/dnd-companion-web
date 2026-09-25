@@ -1,5 +1,5 @@
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
-import { spellAttackBonus, spellSaveDC, spellSaveDCPenalty } from '../../../vault/deriveStats'
+import { spellAttackBonus, spellSaveDC, spellSaveDCPenalty, totalCharacterLevel } from '../../../vault/deriveStats'
 import { ExhaustedValue } from '../../../components/ExhaustedValue'
 import type { CharacterFrontmatter, SpellFrontmatter, VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
@@ -29,7 +29,7 @@ export function SpellList({ links, index, character }: { links: string[]; index:
   const dc = spellSaveDC(character)
   const dcPenalty = spellSaveDCPenalty(character)
   const attack = spellAttackBonus(character)
-  const totalLevel = character.class.reduce((sum, c) => sum + c.level, 0)
+  const totalLevel = totalCharacterLevel(character)
 
   return (
     <div className="space-y-4">

@@ -42,8 +42,12 @@ npm install
 npm run dev
 ```
 
-Open the printed `http://localhost:5173` URL. A bundled sample vault (one Wizard, a few items and
-spells) loads automatically, so there is something to look at right away.
+Open the printed `http://localhost:5173` URL. A bundled sample vault loads automatically, so there is
+something to look at right away: a small German "Endeavour" player vault with two characters (an
+Arkanistin with a spell sheet, a Krieger with exhaustion and temporary HP), their slot-grid
+inventories, portraits and class notes, plus the rule and item notes they link to. It lives in
+[`src/sample-vault/`](src/sample-vault) and mirrors a real player vault's layout
+(`Kampagne/Gruppe/<Name>/`, `Gegenstände/`, `Regeln/`).
 
 ### Using your own vault
 
@@ -107,13 +111,14 @@ features: [{ name: Arcane Recovery, source: Wizard 1, description: "..." }]
 ---
 ```
 
-Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`). See
-[`src/sample-vault/`](src/sample-vault) for complete examples of characters, items and spells.
+Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`). `speed` accepts
+feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
+[`src/sample-vault/`](src/sample-vault) for complete, Endeavour-flavoured examples.
 
 `endeavour_inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
 character's own file: they are also read from separate notes that link back via
-`Charakter: "[[<character file name>]]"` (see `resolveLinkedCharacterExtensions()` in
-`parseFrontmatter.ts`). A field set directly on the character's file always takes priority.
+`Charakter: "[[<character file name>]]"` (see `resolveLinkedFields()` in
+[`nativeCharacter.ts`](src/vault/adapters/nativeCharacter.ts)). A field set directly on the character's file always takes priority.
 
 ### 2. "Endeavour": a from-scratch Nimble ruleset
 
@@ -166,20 +171,23 @@ This adapter is best-effort, not full fidelity:
 src/
 ├── vault/        parsing pipeline: raw frontmatter -> adapters -> normalised Vault, wikilink index,
 │   │              derived stats, ruleset detection
-│   ├── adapters/  one detect()/normalize() pair per supported format
+│   ├── adapters/  one detect()/normalize() pair per format (native, legacy, Endeavour items)
 │   └── writeback/ surgical YAML patching, so edits keep the note's formatting
 ├── store/        zustand stores: vault (load, optimistic edits + rollback) and error log
-├── features/     character-sheet, inventory (slot grid), spells
+├── features/     character-list, character-sheet, inventory (slot grid), spells
 ├── components/   shared UI building blocks
 ├── dice/         dice notation parser and roll button
 ├── i18n/         English / German dictionaries
 ├── theme/        theme tokens and switcher
-└── routes/       character list and character sheet pages
+├── routes/       thin page components (character list, character sheet)
+└── sample-vault/ bundled demo vault (notes + portraits), shown when no folder is open
 ```
 
 Every format goes through the same pipeline: `buildVault()` in `src/vault/parseFrontmatter.ts`
-parses each file's frontmatter, then tries each known shape in turn. The rest of the app (derived
-stats, sheet UI, inventory, spells) is format-agnostic.
+parses each file's frontmatter, then hands it to the first adapter whose shape matches. Adapters
+share the defensive field readers in `src/vault/frontmatterFields.ts` and the pure wikilink string
+helpers in `src/vault/wikilinkSyntax.ts`. The rest of the app (derived stats, sheet UI, inventory,
+spells) is format-agnostic.
 
 **Adding another format:** add a `detect()` + `normalize()` pair under `src/vault/adapters/` that maps
 the new shape onto `CharacterFrontmatter` (or its own parallel collection if merging would change

@@ -1,20 +1,19 @@
 import { Card } from '../../../components/Card'
 import { useT } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { renderObsidianLine } from '../../../vault/components/renderObsidian'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function Conditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const t = useT()
   const conditions = character.conditions
-  const editPermission = useVaultStore((s) => s.editPermission)
+  const canEdit = useCanEdit()
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   if (!conditions) return null
 
   // Exhaustion lives with the other vitals (HitPoints), not here.
   const { luck_points: luck, notes } = conditions
   if (!luck && !notes) return null
-  const canEdit = editPermission === 'granted'
   const writeTargets = character._write
 
   return (

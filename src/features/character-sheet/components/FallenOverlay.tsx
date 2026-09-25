@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../../../i18n/useI18n'
+import type { Fate } from '../vitals'
 
 type Drop = { left: number; delay: number; duration: number; width: number; height: number; opacity: number }
 
@@ -68,7 +69,6 @@ function BloodRain({ dead }: { dead: boolean }) {
   )
 }
 
-type Fate = 'alive' | 'down' | 'dead'
 const SEVERITY: Record<Fate, number> = { alive: 0, down: 1, dead: 2 }
 
 /**
@@ -78,18 +78,7 @@ const SEVERITY: Record<Fate, number> = { alive: 0, down: 1, dead: 2 }
  * and deepens the vignette. Death saves themselves are the DM's business, so the sheet doesn't
  * track them.
  */
-export function FallenOverlay({
-  current,
-  exhaustion,
-  exhaustionMax,
-  characterPath,
-}: {
-  current: number
-  exhaustion: number
-  exhaustionMax: number
-  characterPath: string
-}) {
-  const fate: Fate = exhaustion >= exhaustionMax ? 'dead' : current <= 0 ? 'down' : 'alive'
+export function FallenOverlay({ fate, characterPath }: { fate: Fate; characterPath: string }) {
   const [prev, setPrev] = useState({ fate, characterPath })
   const [run, setRun] = useState(0)
 

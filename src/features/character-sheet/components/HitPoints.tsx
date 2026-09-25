@@ -3,18 +3,11 @@ import { EditableNumber } from '../../../components/EditableNumber'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { DamageRollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
-import { DEFAULT_EXHAUSTION_MAX, stepWithin } from '../vitals'
+import { hpFillClass, maxExhaustion, percentOf, resiliencePool, stepWithin } from '../vitals'
 import { ExhaustionTrack, StepButton } from './VitalPools'
-
-/** Bar colour follows how hurt the character is, like a game HUD: healthy → bloodied → critical. */
-function hpFillClass(pct: number): string {
-  if (pct > 50) return 'from-success/60 to-success'
-  if (pct > 25) return 'from-warning/60 to-warning'
-  return 'from-danger/60 to-danger'
-}
 
 /** Divider lines every `100 / count` %: one per point for small pools, every 10 % otherwise. */
 function tickBackground(count: number): string {
@@ -46,7 +39,7 @@ function BarSlider({
 }) {
   const [value, setValue] = useState(current)
   const [dragging, setDragging] = useState(false)
-  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
+  const pct = percentOf(value, max)
 
   function endDrag() {
     setDragging(false)
@@ -198,7 +191,7 @@ function PoolRow({
   warded?: boolean
   hitKey?: number
 }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0
+  const pct = percentOf(current, max)
   const track = (p: number) => <BarTrack pct={p} fillClass={fillClass(p)} ticks={ticks} warded={warded} hitKey={hitKey} />
 
   return (
@@ -243,9 +236,8 @@ export function HitPoints({
   const hitDiceRemaining = hitDice ? hitDice.total - (hitDice.used ?? 0) : 0
   const conMod = abilityModifier(character.abilities.con)
 
-  const editPermission = useVaultStore((s) => s.editPermission)
+  const canEdit = useCanEdit()
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
-  const canEdit = editPermission === 'granted'
   const writeTargets = character._write
 
   // Previous-value pattern: bump `wardHitKey` whenever temp HP go *down* (the ward took a hit), to
@@ -282,10 +274,9 @@ export function HitPoints({
     ((next: number) =>
       void updateCharacterField(characterPath, exhaustionTarget, next, (c) => ({ ...c, conditions: { ...c.conditions, exhaustion: next } })))
 
-  const resilience =
-    typeof character.resilience?.current === 'number' && typeof character.resilience.max === 'number' ? character.resilience : undefined
+  const resilience = resiliencePool(character)
   const exhaustion = character.conditions?.exhaustion ?? 0
-  const exhaustionMax = character.conditions?.exhaustion_max ?? DEFAULT_EXHAUSTION_MAX
+  const exhaustionMax = maxExhaustion(character)
   const showExhaustion = Boolean(writeTargets?.exhaustion) || character.conditions?.exhaustion !== undefined
 
   // Damage order (vault rule `Schaden erleiden`): temp HP → resilience → HP. Temp HP are lost

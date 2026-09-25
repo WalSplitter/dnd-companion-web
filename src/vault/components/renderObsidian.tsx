@@ -1,10 +1,18 @@
 import type { ReactNode } from 'react'
-import { basename } from '../wikilinks'
+import { basename } from '../wikilinkSyntax'
 import { WikiLink } from './WikiLink'
 
 /** Matches `[[Target]]` / `[[Target|Alias]]`, or an inline-code span (`Target`) — notes commonly mark
  * vault references (tags, field names, note titles) with backticks instead of brackets. */
 const REFERENCE_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|`([^`\n]+)`/g
+
+/** Dataview inline expressions (`` `=this.Kosten` ``) are only meaningful inside Obsidian — they
+ * are not references, so they're dropped instead of rendered as unresolvable links. */
+function isDataviewInline(code: string): boolean {
+  return code.trimStart().startsWith('=')
+}
+
+const DATAVIEW_INLINE_RE = /`\s*=[^`\n]*`/g
 
 /** Turns every `[[Target]]` / `[[Target|Alias]]` — and every inline-code span — in a single line of
  * text into a clickable `WikiLink`, leaving surrounding plain text untouched. Used by
@@ -18,7 +26,9 @@ export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[]
   let match: RegExpExecArray | null
   while ((match = REFERENCE_RE.exec(line))) {
     if (match.index > lastIndex) nodes.push(line.slice(lastIndex, match.index))
+    lastIndex = match.index + match[0].length
     const [, target, alias, code] = match
+    if (code !== undefined && isDataviewInline(code)) continue
     const key = `${keyPrefix}-link-${i++}`
     nodes.push(
       code !== undefined ? (
@@ -27,7 +37,6 @@ export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[]
         <WikiLink key={key} target={target.trim()} display={alias ? alias.trim() : basename(target)} />
       ),
     )
-    lastIndex = match.index + match[0].length
   }
   if (lastIndex < line.length) nodes.push(line.slice(lastIndex))
   return nodes.length > 0 ? nodes : [line]
@@ -52,7 +61,7 @@ export function renderObsidianBody(raw: string | undefined): ReactNode {
       continue
     }
     if (inFence || trimmed.startsWith('#') || trimmed.startsWith('>')) continue
-    kept.push(trimmed.replace(/^[-*]\s+/, '').replace(/\*\*?/g, ''))
+    kept.push(trimmed.replace(DATAVIEW_INLINE_RE, '').trim().replace(/^[-*]\s+/, '').replace(/\*\*?/g, ''))
   }
 
   const paragraphs: string[] = []

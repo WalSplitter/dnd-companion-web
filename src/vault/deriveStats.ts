@@ -77,16 +77,24 @@ export function spellAttackBonus(character: CharacterFrontmatter): number | unde
 
 /** Feet per grid square on a standard battle map. */
 export const FEET_PER_SQUARE = 5
+/** Metres per grid square (the Endeavour rules count movement in metres, 1.5 m per square). */
+export const METERS_PER_SQUARE = 1.5
 
-/** Movement in grid squares: `30 ft` → 6. A value already counted in squares (`6 Felder`, the legacy
- * sheet's `Bewegung`) passes through; a bare number is read as feet. `undefined` if unparseable. */
+const SQUARE_UNITS = ['felder', 'feld', 'kästchen', 'squares', 'square']
+const FEET_UNITS = ['', 'ft', 'feet', 'foot', 'fuß', 'fuss']
+const METER_UNITS = ['m', 'meter', 'metern']
+
+/** Movement in grid squares: `30 ft` → 6, `9 m` → 6. A value already counted in squares (`6 Felder`,
+ * the legacy sheet's `Bewegung`) passes through; a bare number is read as feet. `undefined` if unparseable. */
 export function speedInSquares(speed: string): number | undefined {
   const match = /^\s*(\d+(?:[.,]\d+)?)\s*([a-zäöüß]*)\.?\s*$/i.exec(speed)
   if (!match) return undefined
   const value = Number(match[1].replace(',', '.'))
   const unit = match[2].toLowerCase()
-  if (['felder', 'feld', 'kästchen', 'squares', 'square'].includes(unit)) return value
-  if (['', 'ft', 'feet', 'foot', 'fuß', 'fuss'].includes(unit)) return Math.floor(value / FEET_PER_SQUARE)
+  if (SQUARE_UNITS.includes(unit)) return value
+  if (FEET_UNITS.includes(unit)) return Math.floor(value / FEET_PER_SQUARE)
+  // The epsilon keeps float noise from flooring an exact multiple (e.g. 7.5 / 1.5) one square short.
+  if (METER_UNITS.includes(unit)) return Math.floor(value / METERS_PER_SQUARE + 1e-9)
   return undefined
 }
 

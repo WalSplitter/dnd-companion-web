@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry } from '../../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
@@ -56,7 +56,7 @@ export function EndeavourInventoryGrid({
   const t = useT()
   const setEndeavourInventory = useVaultStore((s) => s.setEndeavourInventory)
   const vaultEndeavourItems = useVaultStore((s) => s.vault.endeavourItems)
-  const canEdit = useVaultStore((s) => s.editPermission === 'granted')
+  const canEdit = useCanEdit()
   const containers = useMemo(() => character.endeavour_inventory?.containers ?? [], [character.endeavour_inventory])
 
   const [selected, setSelected] = useState<SelectedGridItem | null>(null)

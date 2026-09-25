@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import type { CharacterFrontmatter, Currency } from '../../../vault/types'
 
 type Coin = keyof Currency
@@ -48,7 +48,7 @@ export function CurrencyDisplay({
   writeTargets?: CharacterFrontmatter['_write']
 }) {
   const t = useT()
-  const canEdit = useVaultStore((s) => s.editPermission === 'granted')
+  const canEdit = useCanEdit()
   const setCurrency = useVaultStore((s) => s.setCurrency)
   const [openCoin, setOpenCoin] = useState<Coin | null>(null)
   const [coords, setCoords] = useState({ top: 0, left: 0 })

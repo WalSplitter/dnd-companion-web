@@ -125,6 +125,12 @@ describe('speedInSquares', () => {
     expect(speedInSquares('6 Felder')).toBe(6)
   })
 
+  it('converts metres to 1.5-m grid squares', () => {
+    expect(speedInSquares('9 m')).toBe(6)
+    expect(speedInSquares('7,5 m')).toBe(5)
+    expect(speedInSquares('10 Meter')).toBe(6)
+  })
+
   it('returns undefined for unparseable values', () => {
     expect(speedInSquares('unknown')).toBeUndefined()
     expect(speedInSquares('30 ft, fly 60 ft')).toBeUndefined()

@@ -1,5 +1,6 @@
 import type { RawFile } from '../rawFile'
-import { linkDisplay } from './legacyCharacterSheet'
+import { hasTag, tagList } from '../frontmatterFields'
+import { linkDisplay } from '../wikilinkSyntax'
 
 /**
  * Adapter for the "Endeavour" campaign vault's item notes
@@ -146,15 +147,6 @@ export type EndeavourItemFrontmatter =
   | EndeavourToolItem
   | EndeavourEquipmentItem
   | EndeavourContainerItem
-
-function tagList(data: Record<string, unknown>): string[] {
-  const tags = data.tags
-  return Array.isArray(tags) ? tags.filter((t): t is string => typeof t === 'string') : []
-}
-
-function hasTag(tags: string[], needle: string): boolean {
-  return tags.some((t) => t === needle || t.startsWith(`${needle}/`))
-}
 
 /**
  * Structural detection by tag, mirroring `looksLikeLegacyCharacter`/`looksLikeLegacySpellNote`'s

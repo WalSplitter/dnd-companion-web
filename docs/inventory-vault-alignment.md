@@ -24,7 +24,7 @@ Two independent schemas feed `Vault.items` / `character.inventory` (see `README.
   (`category`, `weight_lb`, `quantity`, `value: Currency`, `properties[]`). Character references items
   by `[[Wikilink]]` in `inventory.equipped` / `inventory.carried`. Rendered **read-only**
   (`src/features/inventory/components/ItemList.tsx`'s `ItemRow`) — no `_write` support exists for
-  native-schema inventory at all (`ownSchemaWriteTargets()` in `parseFrontmatter.ts` never touches it).
+  native-schema inventory at all (`ownFileWriteTargets()` in `adapters/nativeCharacter.ts` never touches it).
 - **Legacy adapter** (`src/vault/adapters/legacyCharacterSheet.ts` + `markdownTable.ts`): German,
   no `type:` marker, items live as **markdown tables** ("Am Körper" / "Rucksack" headings) inside a
   separate `Inventar <Name>.md` file linked via `Charakter: "[[Name]]"`. Only `name`/`quantity`/`weight_lb`

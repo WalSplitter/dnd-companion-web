@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { useT } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import type { FieldWriteTarget, SpellcastingInfo } from '../../../vault/types'
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX']
@@ -27,9 +27,8 @@ export function SpellSlotTracker({
 }) {
   const t = useT()
   const gradientId = useId()
-  const editPermission = useVaultStore((s) => s.editPermission)
+  const canEdit = useCanEdit() && Boolean(characterPath)
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
-  const canEdit = editPermission === 'granted' && Boolean(characterPath)
   // The last user change, so only the crystals it touched play their ignite/shatter animation.
   const [change, setChange] = useState<{ level: string; from: number; to: number; id: number }>()
 

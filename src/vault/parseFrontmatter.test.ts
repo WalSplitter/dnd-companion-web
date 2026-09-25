@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildVault, FrontmatterValidationError, parseVaultFile } from './parseFrontmatter'
+import { buildVault, FrontmatterValidationError } from './parseFrontmatter'
 
 const characterFile = {
   path: 'Characters/Test.md',
@@ -37,22 +37,22 @@ const notesFile = {
   content: `---\ntype: note\ntitle: Session 1\n---\nUnrelated content.`,
 }
 
-describe('parseVaultFile', () => {
-  it('parses a recognized frontmatter type', () => {
-    const parsed = parseVaultFile(characterFile)
-    expect(parsed?.frontmatter.type).toBe('character')
-    expect(parsed?.frontmatter.name).toBe('Test Hero')
-    expect(parsed?.body).toBe('Backstory text.')
+describe('buildVault — native schema', () => {
+  it('parses a recognized frontmatter type with its body', () => {
+    const [parsed] = buildVault([characterFile]).characters
+    expect(parsed.frontmatter.type).toBe('character')
+    expect(parsed.frontmatter.name).toBe('Test Hero')
+    expect(parsed.body).toBe('Backstory text.')
   })
 
-  it('returns null for unrecognized types', () => {
-    expect(parseVaultFile(notesFile)).toBeNull()
+  it('keeps unrecognized types as plain notes', () => {
+    const vault = buildVault([notesFile])
+    expect(vault.characters).toHaveLength(0)
+    expect(vault.notes.map((n) => n.name)).toEqual(['Session 1'])
   })
 
   it('throws for a missing name field', () => {
-    expect(() => parseVaultFile({ path: 'bad.md', content: '---\ntype: item\n---\n' })).toThrow(
-      FrontmatterValidationError,
-    )
+    expect(() => buildVault([{ path: 'bad.md', content: '---\ntype: item\n---\n' }])).toThrow(FrontmatterValidationError)
   })
 })
 

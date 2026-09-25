@@ -181,7 +181,7 @@ export interface CharacterWriteTargets {
   /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
   /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
-   * (see `resolveLinkedCharacterExtensions`). Absent when neither carries the field yet (a brand-new
+   * (see `resolveLinkedFields` in `adapters/nativeCharacter.ts`). Absent when neither carries the field yet (a brand-new
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
   endeavour_inventory?: { path: string }
   /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */

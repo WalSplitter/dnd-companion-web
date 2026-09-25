@@ -1,6 +1,6 @@
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { endeavourItemSummary, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
 import type { CharacterFrontmatter, InlineItem, InventoryEntry, ItemFrontmatter, VaultFile } from '../../../vault/types'
@@ -61,9 +61,8 @@ function InlineItemRow({
 }) {
   const t = useT()
   const { name, quantity = 1, weight_lb } = item
-  const editPermission = useVaultStore((s) => s.editPermission)
+  const canEdit = useCanEdit()
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
-  const canEdit = editPermission === 'granted'
 
   function mutateItem(patch: Partial<InlineItem>) {
     return (c: CharacterFrontmatter): CharacterFrontmatter => {

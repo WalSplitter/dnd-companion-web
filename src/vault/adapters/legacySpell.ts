@@ -1,6 +1,8 @@
 import type { SpellDamageScaling, SpellFrontmatter } from '../types'
 import type { RawFile } from '../rawFile'
-import { ABILITY_MAP, isRecord, linkDisplay, linkFile } from './legacyCharacterSheet'
+import { isRecord } from '../frontmatterFields'
+import { linkDisplay, linkFile } from '../wikilinkSyntax'
+import { ABILITY_MAP } from './legacyCharacterSheet'
 
 /**
  * Adapter for individual spell notes in the same campaign vault as `legacyCharacterSheet.ts`

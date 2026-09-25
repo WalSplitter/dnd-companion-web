@@ -5,7 +5,8 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { evasionValue, exhaustionLevel, formatModifier, initiativeBonus, movementSquares, nimbleAttributeValue } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
-import { wikilinkTarget } from '../../../vault/wikilinks'
+import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
+import { movementHint } from '../vitals'
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
 export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
@@ -106,15 +107,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />
       ) : (
-        <StatPlate
-          label={t('stats.movement')}
-          value={exhaustion > 0 ? undefined : String(squares)}
-          title={
-            exhaustion > 0
-              ? t('stats.movementHintExhausted', { count: squares, speed: character.speed, n: exhaustion })
-              : t('stats.movementHint', { count: squares, speed: character.speed })
-          }
-        >
+        <StatPlate label={t('stats.movement')} value={exhaustion > 0 ? undefined : String(squares)} title={movementHint(t, character, squares)}>
           {exhaustion > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : undefined}
         </StatPlate>
       )}

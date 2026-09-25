@@ -2,7 +2,7 @@ import { Card } from '../../../components/Card'
 import { D20Modifier } from '../../../components/ExhaustedValue'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
 import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
@@ -34,9 +34,8 @@ function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter
 
 export function SavingThrows({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const t = useT()
-  const editPermission = useVaultStore((s) => s.editPermission)
+  const canEdit = useCanEdit()
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
-  const canEdit = editPermission === 'granted'
 
   if (character.nimble_attributes) {
     return (

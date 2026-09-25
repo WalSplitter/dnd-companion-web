@@ -1,23 +1,6 @@
 import { endeavourItemSummary } from './adapters/endeavourItem'
+import { wikilinkTarget } from './wikilinkSyntax'
 import type { CharacterFrontmatter, EndeavourItemFrontmatter, ItemFrontmatter, SpellFrontmatter, Vault, VaultFile, VaultNote } from './types'
-
-const WIKILINK_RE = /^\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]$/
-
-/** Obsidian occasionally stores a vault-relative full path instead of a bare filename (to
- * disambiguate two files sharing a basename elsewhere in the vault) — e.g. a self-referencing link
- * inside `Dunkelsicht.md` reading `[[_DnD_PFT/Regeln/.../Dunkelsicht]]` with no alias. Every file in
- * this app is indexed by basename only, so both lookups and display text need just the last path
- * segment, same as Obsidian shows when a link carries no alias. */
-export function basename(target: string): string {
-  const last = target.split('/').pop() ?? target
-  return last.replace(/\.md$/i, '').trim()
-}
-
-/** Strips `[[...]]` wrapping and an optional `|alias`, returning the target's bare filename. */
-export function wikilinkTarget(raw: string): string {
-  const match = WIKILINK_RE.exec(raw.trim())
-  return basename(match ? match[1] : raw.trim())
-}
 
 export interface VaultIndex {
   charactersByName: Map<string, VaultFile<CharacterFrontmatter>>
@@ -81,6 +64,8 @@ export interface ResolvedWikilink {
   path?: string
   body?: string
   summary?: string
+  /** Spell grade (0 = cantrip), localized by the UI in front of `summary`. */
+  spellLevel?: number
 }
 
 /** Resolves a wikilink target against every known vault collection, in the order a reader would
@@ -116,7 +101,8 @@ export function resolveWikilink(index: VaultIndex, link: string): ResolvedWikili
       name: spell.frontmatter.name,
       path: spell.path,
       body: spell.body,
-      summary: `${spell.frontmatter.level === 0 ? 'Cantrip' : `Level ${spell.frontmatter.level}`} · ${spell.frontmatter.school}`,
+      summary: spell.frontmatter.school,
+      spellLevel: spell.frontmatter.level,
     }
   }
 

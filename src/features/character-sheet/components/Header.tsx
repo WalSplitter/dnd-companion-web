@@ -1,13 +1,13 @@
 import { StatPlate } from '../../../components/StatPlate'
 import { useT } from '../../../i18n/useI18n'
-import { classSummary } from '../../../vault/deriveStats'
+import { classSummary, totalCharacterLevel } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 /** Hero banner: framed portrait (or a monogram medallion when there's none), name, class/species
  * chips and the level/XP plate. */
 export function Header({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
-  const level = character.class.reduce((sum, c) => sum + c.level, 0)
+  const level = totalCharacterLevel(character)
   const details = [character.species, character.background, character.alignment].filter(Boolean)
 
   return (

@@ -166,6 +166,7 @@ function WikiLinkDialog({
       </div>
       <div className="mb-1.5 text-xs uppercase tracking-wide text-trim">
         {t(KIND_KEY[resolved.kind])}
+        {resolved.spellLevel !== undefined && ` · ${resolved.spellLevel === 0 ? t('spells.cantripBadge') : t('spells.levelBadge', { level: resolved.spellLevel })}`}
         {resolved.summary ? ` · ${resolved.summary}` : ''}
       </div>
       {resolved.kind === 'unresolved' ? (

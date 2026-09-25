@@ -18,7 +18,7 @@ import { HitPoints } from './components/HitPoints'
 import { SavingThrows } from './components/SavingThrows'
 import { SensesLanguages } from './components/SensesLanguages'
 import { Skills } from './components/Skills'
-import { DEFAULT_EXHAUSTION_MAX } from './vitals'
+import { characterFate } from './vitals'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { evasionValue, exhaustionD20Penalty } from '../../vault/deriveStats'
 
@@ -51,12 +51,7 @@ export function CharacterSheet({
       {/* Exhaustion lowers every d20 roll on the sheet — see `D20PenaltyContext`. */}
       <D20PenaltyContext value={exhaustionD20Penalty(character)}>
         <div className="space-y-5">
-          <FallenOverlay
-            current={character.hp.current}
-            exhaustion={character.conditions?.exhaustion ?? 0}
-            exhaustionMax={character.conditions?.exhaustion_max ?? DEFAULT_EXHAUSTION_MAX}
-            characterPath={characterPath}
-          />
+          <FallenOverlay fate={characterFate(character)} characterPath={characterPath} />
           <Header character={character} />
 
           {/* Vitals stay visible on every tab, like a game HUD. */}
