@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   abilityModifier,
   evasionValue,
+  exhaustionD20Penalty,
+  movementSquares,
   formatModifier,
   initiativeBonus,
   nimbleAttributeValue,
@@ -166,5 +168,26 @@ describe('nimbleSkillValue / nimbleSkillBonus', () => {
 
   it('adds the capped skill bonus to the governing attribute', () => {
     expect(nimbleSkillBonus(nimble, 'perception')).toBe(12)
+  })
+})
+
+describe('exhaustion (rule Erschöpfung)', () => {
+  const exhausted = { ...character, conditions: { exhaustion: 3 } }
+  const nimbleExhausted = { ...exhausted, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+
+  it('takes twice the level off every d20 roll', () => {
+    expect(exhaustionD20Penalty(character)).toBe(0)
+    expect(exhaustionD20Penalty(exhausted)).toBe(6)
+  })
+
+  it('lowers the spell save DC by twice the level for Nimble characters only', () => {
+    expect(spellSaveDC(exhausted)).toBe(14)
+    expect(spellSaveDC(nimbleExhausted)).toBe(8)
+  })
+
+  it('costs one square (1.5 m) of movement per level, never below 0', () => {
+    expect(movementSquares(character)).toBe(6)
+    expect(movementSquares(exhausted)).toBe(3)
+    expect(movementSquares({ ...character, conditions: { exhaustion: 9 } })).toBe(0)
   })
 })

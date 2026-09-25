@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
 import { formatModifier } from '../vault/deriveStats'
+import { useD20Penalty } from './d20Penalty'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
 
-type RollOutcome = { kind: 'd20'; label: string; result: D20RollResult } | { kind: 'damage'; label: string; result: DiceRollResult }
+/** `penalty` is the part of a d20 result's modifier that came from `D20PenaltyContext` (exhaustion),
+ * kept apart so the popover can show it separately from the roll's own bonus. */
+type RollOutcome =
+  | { kind: 'd20'; label: string; result: D20RollResult; penalty: number }
+  | { kind: 'damage'; label: string; result: DiceRollResult }
 
 /**
  * Rolls a d20 check/save/attack (click = normal, Shift+click = advantage, Alt+click =
@@ -14,27 +19,34 @@ export function D20RollButton({
   label,
   modifier,
   className,
+  title,
   children,
 }: {
   label: string
   modifier: number
   className?: string
+  /** Tooltip; defaults to the generic "click to roll · Shift/Alt" hint. */
+  title?: string
   /** Button content — defaults to a die icon; pass e.g. the formatted modifier to make a stat
    * tile's own number the clickable roll trigger instead of adding a separate icon next to it. */
   children?: React.ReactNode
 }) {
   const t = useT()
+  const penalty = useD20Penalty()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
 
   function roll(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : 'normal'
-    setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier }) })
+    setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
   }
 
+  const baseTitle = title ?? t('roll.tooltipD20')
+  const fullTitle = penalty > 0 ? `${baseTitle}. ${t('roll.exhaustionHint', { n: penalty })}` : baseTitle
+
   return (
-    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={t('roll.tooltipD20')}>
+    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={fullTitle}>
       {children ?? '🎲'}
     </RollButtonShell>
   )
@@ -126,6 +138,8 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
   const t = useT()
   const { result } = outcome
   const isD20 = outcome.kind === 'd20'
+  const penalty = outcome.kind === 'd20' ? outcome.penalty : 0
+  const ownModifier = result.modifier + penalty
   const crit = isD20 && (result as D20RollResult).isCriticalHit
   const fumble = isD20 && (result as D20RollResult).isCriticalMiss
 
@@ -152,7 +166,8 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
       <span className={`block font-num text-3xl ${crit ? 'text-success' : fumble ? 'text-danger' : 'text-fg'}`}>{result.total}</span>
       <span className="mt-0.5 block text-xs text-fg-muted">
         [{result.rolls.join(', ')}]
-        {result.modifier ? ` ${formatModifier(result.modifier)}` : ''}
+        {ownModifier ? ` ${formatModifier(ownModifier)}` : ''}
+        {penalty > 0 && <span className="text-danger">{` −${penalty} ${t('roll.exhaustionShort')}`}</span>}
         {isD20 && (result as D20RollResult).mode !== 'normal' && ` · ${(result as D20RollResult).mode}`}
       </span>
       {crit && <span className="mt-1 block text-xs font-semibold text-success">{t('roll.critical')}</span>}

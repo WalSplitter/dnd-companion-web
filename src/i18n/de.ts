@@ -123,6 +123,7 @@ export const de = {
   'stats.speed': 'Geschwindigkeit',
   'stats.movement': 'Felder / Zug',
   'stats.movementHint': 'Bewegung: {{count}} Felder pro Zug ({{speed}})',
+  'stats.movementHintExhausted': 'Bewegung: {{count}} Felder pro Zug ({{speed}}). Erschöpfung: −{{n}} Felder (−1,5 m pro Stufe)',
   'stats.ability': 'Attribut',
   'stats.saveDC': 'Rettungswurf-SG',
   'stats.attack': 'Angriff',
@@ -246,6 +247,10 @@ export const de = {
   'roll.attackSuffix': '{{name}} Angriff',
   'roll.damageSuffix': '{{name}} Schaden',
   'roll.saveSuffix': '{{label}}-Rettungswurf',
+  'roll.checkSuffix': '{{label}}-Wurf',
+  'roll.exhaustionHint': 'Erschöpfung: −{{n}} auf das Ergebnis',
+  'roll.exhaustionShort': 'Erschöpfung',
+  'roll.checkHint': '{{label}}-Wurf: W20 {{modifier}}. {{hint}}',
   'roll.hitDie': 'Trefferwürfel',
 
   'wikilink.character': 'Charakter',

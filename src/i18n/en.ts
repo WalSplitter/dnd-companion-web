@@ -136,6 +136,7 @@ export const en = {
   'stats.speed': 'Speed',
   'stats.movement': 'Squares / turn',
   'stats.movementHint': 'Movement: {{count}} squares per turn ({{speed}})',
+  'stats.movementHintExhausted': 'Movement: {{count}} squares per turn ({{speed}}). Exhaustion: −{{n}} squares (−1.5 m per level)',
   'stats.ability': 'Ability',
   'stats.saveDC': 'Save DC',
   'stats.attack': 'Attack',
@@ -266,6 +267,10 @@ export const en = {
   'roll.attackSuffix': '{{name}} attack',
   'roll.damageSuffix': '{{name}} damage',
   'roll.saveSuffix': '{{label}} save',
+  'roll.checkSuffix': '{{label}} check',
+  'roll.exhaustionHint': 'Exhaustion: −{{n}} to the result',
+  'roll.exhaustionShort': 'exhaustion',
+  'roll.checkHint': '{{label}} check: d20 {{modifier}}. {{hint}}',
   'roll.hitDie': 'Hit Die',
 
   // Wikilink popover

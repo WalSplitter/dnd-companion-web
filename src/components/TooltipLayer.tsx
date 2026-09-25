@@ -27,9 +27,10 @@ function sentences(text: string): string[] {
     .filter(Boolean)
 }
 
-/** Numbers and modifiers (`+2`, `-1`, `10`) set in the numeric face, so formulas read at a glance. */
+/** Numbers and modifiers (`+2`, `-1`, `10`) set in the numeric face, so formulas read at a glance.
+ * Dice notation (`W20`, `1d8`) is highlighted as a whole rather than split at the letter. */
 function withNumbers(line: string): ReactNode[] {
-  return line.split(/([+−-]?\d+(?:[.,]\d+)?)/).map((part, i) =>
+  return line.split(/((?<![\p{L}\d])(?:[+−-]?\d*[WwDd]\d+|[+−-]?\d+(?:[.,]\d+)?)(?![\p{L}\d]))/u).map((part, i) =>
     i % 2 === 1 ? (
       <span key={i} className="app-tooltip-num">
         {part}

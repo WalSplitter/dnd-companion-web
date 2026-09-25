@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { StatPlate } from '../../../components/StatPlate'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { evasionValue, formatModifier, initiativeBonus, nimbleAttributeValue, speedInSquares } from '../../../vault/deriveStats'
+import { evasionValue, exhaustionLevel, formatModifier, initiativeBonus, movementSquares, nimbleAttributeValue } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinks'
 
@@ -89,7 +89,8 @@ export function Evasion({ value, character }: { value: number; character: Charac
 export function CombatStats({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   const initiative = initiativeBonus(character)
-  const squares = speedInSquares(character.speed)
+  const squares = movementSquares(character)
+  const exhaustion = exhaustionLevel(character)
   return (
     <div className="flex gap-2 *:flex-1">
       <StatPlate label={t('stats.initiative')}>
@@ -107,7 +108,11 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
         <StatPlate
           label={t('stats.movement')}
           value={String(squares)}
-          title={t('stats.movementHint', { count: squares, speed: character.speed })}
+          title={
+            exhaustion > 0
+              ? t('stats.movementHintExhausted', { count: squares, speed: character.speed, n: exhaustion })
+              : t('stats.movementHint', { count: squares, speed: character.speed })
+          }
         />
       )}
       {/* Nimble has no proficiency bonus in play; its evasion value sits by the armor class instead. */}

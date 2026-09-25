@@ -14,7 +14,7 @@ import {
   nimbleSkillValue,
   skillBonus,
   skillProficiencyLevel,
-  speedInSquares,
+  movementSquares,
   totalCharacterLevel,
 } from '../vault/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../vault/types'
@@ -107,7 +107,7 @@ function CharacterCard({ frontmatter: c }: { frontmatter: CharacterFrontmatter }
   const dead = exhaustion >= exhaustionMax
   const down = !dead && c.hp.current <= 0
   const evasion = evasionValue(c)
-  const squares = speedInSquares(c.speed)
+  const squares = movementSquares(c)
   const skills = topSkills(c)
   const slots = Object.entries(c.spellcasting?.slots ?? {})
   const origin = [c.species, c.background, c.alignment].filter(Boolean).join(' · ')

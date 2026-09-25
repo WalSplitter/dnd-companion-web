@@ -44,10 +44,25 @@ export function passivePerception(character: CharacterFrontmatter): number {
   return 10 + skillBonus(character, 'perception')
 }
 
+/** Exhaustion levels (rule `Erschöpfung`), never negative. */
+export function exhaustionLevel(character: CharacterFrontmatter): number {
+  return Math.max(0, character.conditions?.exhaustion ?? 0)
+}
+
+/** Rule `Erschöpfung#Beeinträchtigte W20-Prüfungen`: every d20 test's result is reduced by twice
+ * the exhaustion level. Applied when rolling (see `D20PenaltyProvider`), not baked into the bonuses
+ * shown on the sheet. */
+export function exhaustionD20Penalty(character: CharacterFrontmatter): number {
+  return 2 * exhaustionLevel(character)
+}
+
+/** Spell save DC. Nimble characters also lose twice their exhaustion from it (rule
+ * `Erschöpfung#Beeinträchtigte W20-Prüfungen`) — D&D has no such rule. */
 export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
   const ability = character.spellcasting?.ability
   if (!ability) return undefined
-  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability])
+  const penalty = character.nimble_attributes ? exhaustionD20Penalty(character) : 0
+  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - penalty
 }
 
 export function spellAttackBonus(character: CharacterFrontmatter): number | undefined {
@@ -69,6 +84,15 @@ export function speedInSquares(speed: string): number | undefined {
   if (['felder', 'feld', 'kästchen', 'squares', 'square'].includes(unit)) return value
   if (['', 'ft', 'feet', 'foot', 'fuß', 'fuss'].includes(unit)) return Math.floor(value / FEET_PER_SQUARE)
   return undefined
+}
+
+/**
+ * Movement in grid squares after exhaustion (rule `Erschöpfung#Verringerte Bewegungsrate`: −1.5 m
+ * per level, and one square is 1.5 m / 5 ft, so −1 square per level), never below 0.
+ */
+export function movementSquares(character: CharacterFrontmatter): number | undefined {
+  const squares = speedInSquares(character.speed)
+  return squares === undefined ? undefined : Math.max(0, squares - exhaustionLevel(character))
 }
 
 /** Rule `Attribute#Maximaler Attributswert`: an attribute is always within -5..+5. */
