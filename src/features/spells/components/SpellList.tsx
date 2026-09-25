@@ -1,5 +1,6 @@
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
-import { spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
+import { spellAttackBonus, spellSaveDC, spellSaveDCPenalty } from '../../../vault/deriveStats'
+import { ExhaustedValue } from '../../../components/ExhaustedValue'
 import type { CharacterFrontmatter, SpellFrontmatter, VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
@@ -26,6 +27,7 @@ export function SpellList({ links, index, character }: { links: string[]; index:
   }
 
   const dc = spellSaveDC(character)
+  const dcPenalty = spellSaveDCPenalty(character)
   const attack = spellAttackBonus(character)
   const totalLevel = character.class.reduce((sum, c) => sum + c.level, 0)
 
@@ -48,7 +50,7 @@ export function SpellList({ links, index, character }: { links: string[]; index:
                 .get(level)!
                 .sort((a, b) => a.frontmatter.name.localeCompare(b.frontmatter.name))
                 .map((spell) => (
-                  <SpellRow key={spell.path} spell={spell} characterLevel={totalLevel} saveDC={dc} attackBonus={attack} />
+                  <SpellRow key={spell.path} spell={spell} characterLevel={totalLevel} saveDC={dc} saveDCPenalty={dcPenalty} attackBonus={attack} />
                 ))}
             </ul>
           </div>
@@ -68,11 +70,14 @@ function SpellRow({
   spell,
   characterLevel,
   saveDC,
+  saveDCPenalty,
   attackBonus,
 }: {
   spell: VaultFile<SpellFrontmatter>
   characterLevel: number
   saveDC: number | undefined
+  /** How much exhaustion already took off `saveDC` — marks the badge when > 0. */
+  saveDCPenalty: number
   attackBonus: number | undefined
 }) {
   const t = useT()
@@ -108,7 +113,13 @@ function SpellRow({
           <span className="ml-auto flex items-center gap-1.5">
             {fm.save_ability && saveDC !== undefined && (
               <span className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-xs text-fg-muted">
-                {t('spells.saveBadge', { dc: saveDC, ability: fm.save_ability.toUpperCase() })}
+                {saveDCPenalty > 0 ? (
+                  <ExhaustedValue hint={t('exhaustion.dcHint', { base: saveDC + saveDCPenalty, n: saveDCPenalty, total: saveDC })}>
+                    {t('spells.saveBadge', { dc: saveDC, ability: fm.save_ability.toUpperCase() })}
+                  </ExhaustedValue>
+                ) : (
+                  t('spells.saveBadge', { dc: saveDC, ability: fm.save_ability.toUpperCase() })
+                )}
               </span>
             )}
             {isAttackSpell && attackBonus !== undefined && (

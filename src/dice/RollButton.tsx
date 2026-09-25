@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
 import { formatModifier } from '../vault/deriveStats'
 import { useD20Penalty } from './d20Penalty'
+import { d20RollHint, damageRollHint } from './rollHint'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
 
 /** `penalty` is the part of a d20 result's modifier that came from `D20PenaltyContext` (exhaustion),
@@ -25,8 +26,9 @@ export function D20RollButton({
   label: string
   modifier: number
   className?: string
-  /** Tooltip; defaults to the generic "click to roll · Shift/Alt" hint. */
-  title?: string
+  /** Tooltip; defaults to `d20RollHint` (what is rolled, the exhaustion breakdown, the Shift/Alt
+   * keys). `false` renders none, for a button whose container already explains the roll. */
+  title?: string | false
   /** Button content — defaults to a die icon; pass e.g. the formatted modifier to make a stat
    * tile's own number the clickable roll trigger instead of adding a separate icon next to it. */
   children?: React.ReactNode
@@ -42,8 +44,7 @@ export function D20RollButton({
     setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
   }
 
-  const baseTitle = title ?? t('roll.tooltipD20')
-  const fullTitle = penalty > 0 ? `${baseTitle}. ${t('roll.exhaustionHint', { n: penalty })}` : baseTitle
+  const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty))
 
   return (
     <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={fullTitle}>
@@ -83,7 +84,7 @@ export function DamageRollButton({
   }
 
   return (
-    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={t('roll.tooltipDamage')}>
+    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={damageRollHint(t, label, `${dice}${bonus ? formatModifier(bonus) : ''}`)}>
       {dice}
       {bonus ? formatModifier(bonus) : ''}
     </RollButtonShell>
@@ -103,7 +104,7 @@ function RollButtonShell({
   onClick: (e: React.MouseEvent) => void
   onClose: () => void
   className?: string
-  title: string
+  title?: string
 }) {
   const containerRef = useRef<HTMLSpanElement>(null)
 
@@ -168,7 +169,7 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
         [{result.rolls.join(', ')}]
         {ownModifier ? ` ${formatModifier(ownModifier)}` : ''}
         {penalty > 0 && <span className="text-danger">{` −${penalty} ${t('roll.exhaustionShort')}`}</span>}
-        {isD20 && (result as D20RollResult).mode !== 'normal' && ` · ${(result as D20RollResult).mode}`}
+        {isD20 && (result as D20RollResult).mode !== 'normal' && ` · ${t(`roll.mode.${(result as D20RollResult).mode as 'advantage' | 'disadvantage'}`)}`}
       </span>
       {crit && <span className="mt-1 block text-xs font-semibold text-success">{t('roll.critical')}</span>}
       {fumble && <span className="mt-1 block text-xs font-semibold text-danger">{t('roll.fumble')}</span>}

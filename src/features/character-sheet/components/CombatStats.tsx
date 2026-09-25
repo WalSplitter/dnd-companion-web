@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
@@ -99,7 +100,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           modifier={initiative}
           className="cursor-pointer transition hover:text-trim"
         >
-          {formatModifier(initiative)}
+          <D20Modifier value={initiative} hint={false} />
         </D20RollButton>
       </StatPlate>
       {squares === undefined ? (
@@ -107,13 +108,15 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
       ) : (
         <StatPlate
           label={t('stats.movement')}
-          value={String(squares)}
+          value={exhaustion > 0 ? undefined : String(squares)}
           title={
             exhaustion > 0
               ? t('stats.movementHintExhausted', { count: squares, speed: character.speed, n: exhaustion })
               : t('stats.movementHint', { count: squares, speed: character.speed })
           }
-        />
+        >
+          {exhaustion > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : undefined}
+        </StatPlate>
       )}
       {/* Nimble has no proficiency bonus in play; its evasion value sits by the armor class instead. */}
       {evasionValue(character) === undefined && (

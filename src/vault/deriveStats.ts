@@ -56,13 +56,17 @@ export function exhaustionD20Penalty(character: CharacterFrontmatter): number {
   return 2 * exhaustionLevel(character)
 }
 
-/** Spell save DC. Nimble characters also lose twice their exhaustion from it (rule
- * `Erschöpfung#Beeinträchtigte W20-Prüfungen`) — D&D has no such rule. */
+/** How much exhaustion lowers the spell save DC: twice the level for Nimble characters (rule
+ * `Erschöpfung#Beeinträchtigte W20-Prüfungen`), nothing in D&D, which has no such rule. */
+export function spellSaveDCPenalty(character: CharacterFrontmatter): number {
+  return character.nimble_attributes ? exhaustionD20Penalty(character) : 0
+}
+
+/** Spell save DC, already lowered by `spellSaveDCPenalty`. */
 export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
   const ability = character.spellcasting?.ability
   if (!ability) return undefined
-  const penalty = character.nimble_attributes ? exhaustionD20Penalty(character) : 0
-  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - penalty
+  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - spellSaveDCPenalty(character)
 }
 
 export function spellAttackBonus(character: CharacterFrontmatter): number | undefined {

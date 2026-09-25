@@ -2,7 +2,8 @@ import { Card } from '../../components/Card'
 import { ResourcePoolBar } from '../../components/ResourcePoolBar'
 import { D20RollButton } from '../../dice/RollButton'
 import { useT } from '../../i18n/useI18n'
-import { formatModifier, spellAttackBonus, spellSaveDC } from '../../vault/deriveStats'
+import { D20Modifier, SpellSaveDCValue } from '../../components/ExhaustedValue'
+import { spellAttackBonus } from '../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { SpellList } from './components/SpellList'
@@ -22,7 +23,6 @@ export function SpellsPanel({
     return <p className="text-sm text-fg-muted">{t('spells.noSpellcasting')}</p>
   }
 
-  const dc = spellSaveDC(character)
   const attack = spellAttackBonus(character)
 
   return (
@@ -35,13 +35,13 @@ export function SpellsPanel({
           </div>
           <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
             <div className="text-xs uppercase text-fg-muted">{t('stats.saveDC')}</div>
-            <div className="font-semibold text-fg">{dc ?? '—'}</div>
+            <SpellSaveDCValue character={character} className="font-semibold text-fg" />
           </div>
           <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
             <div className="text-xs uppercase text-fg-muted">{t('stats.attack')}</div>
             {attack !== undefined ? (
               <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="font-semibold text-fg">
-                {formatModifier(attack)}
+                <D20Modifier value={attack} hint={false} />
               </D20RollButton>
             ) : (
               <div className="font-semibold text-fg">—</div>

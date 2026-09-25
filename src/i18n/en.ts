@@ -268,9 +268,15 @@ export const en = {
   'roll.damageSuffix': '{{name}} damage',
   'roll.saveSuffix': '{{label}} save',
   'roll.checkSuffix': '{{label}} check',
-  'roll.exhaustionHint': 'Exhaustion: −{{n}} to the result',
+  'roll.d20Head': '{{label}}: d20 {{modifier}}',
+  'roll.damageHead': '{{label}}: {{formula}}',
+  'roll.penaltyBreakdown': 'Base {{base}}, exhaustion −{{n}}',
+  'roll.mode.advantage': 'advantage',
+  'roll.mode.disadvantage': 'disadvantage',
   'roll.exhaustionShort': 'exhaustion',
-  'roll.checkHint': '{{label}} check: d20 {{modifier}}. {{hint}}',
+  'exhaustion.modifierHint': 'Base {{base}}, exhaustion −{{n}} → {{total}}',
+  'exhaustion.checkHint': '{{label}} check: d20 {{total}}. Attribute {{base}}, exhaustion −{{n}}. {{hint}}',
+  'exhaustion.dcHint': 'Spell save DC {{base}}, exhaustion −{{n}} → {{total}}',
   'roll.hitDie': 'Hit Die',
 
   // Wikilink popover

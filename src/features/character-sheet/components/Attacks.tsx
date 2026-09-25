@@ -1,7 +1,7 @@
 import { Card } from '../../../components/Card'
+import { D20Modifier } from '../../../components/ExhaustedValue'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { formatModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 const KIND_KEY: Record<string, TranslationKey> = {
@@ -31,7 +31,7 @@ export function Attacks({ character }: { character: CharacterFrontmatter }) {
               </span>
               <span className="flex items-center gap-1.5">
                 <D20RollButton label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus}>
-                  🎲 {formatModifier(attack.attack_bonus)}
+                  🎲 <D20Modifier value={attack.attack_bonus} hint={false} />
                 </D20RollButton>
                 <DamageRollButton
                   label={t('roll.damageSuffix', { name: attack.name })}

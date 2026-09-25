@@ -55,64 +55,80 @@ export function TooltipLayer() {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // `anchor` is the innermost titled element under the pointer, whose tip is shown. `parked` is it
+    // plus every titled ancestor: all of their titles are parked, since the browser would otherwise
+    // fall back to the nearest ancestor's native tooltip.
     let anchor: HTMLElement | null = null
+    let parked: HTMLElement[] = []
     let timer: number | undefined
-    // React may re-set `title` while we hold the anchor (its text changed) — park it again, and
-    // follow the new text.
-    const observer = new MutationObserver(() => {
-      const text = anchor?.getAttribute('title')
-      if (!anchor || text === null || text === undefined) return
-      anchor.dataset.tip = text
-      anchor.removeAttribute('title')
-      setTip((current) => (current ? { ...current, text } : current))
+
+    const park = (el: HTMLElement) => {
+      const text = el.getAttribute('title')
+      if (text === null) return
+      el.dataset.tip = text
+      el.removeAttribute('title')
+    }
+    // React may re-set a `title` while we hold it (its text changed) — park it again, and follow the
+    // new text if it's the one on screen.
+    const observer = new MutationObserver((mutations) => {
+      for (const { target } of mutations) {
+        if (!(target instanceof HTMLElement) || !target.hasAttribute('title')) continue
+        park(target)
+        if (target === anchor) setTip((current) => (current ? { ...current, text: target.dataset.tip ?? '' } : current))
+      }
     })
 
     const release = () => {
       window.clearTimeout(timer)
       observer.disconnect()
-      if (anchor) {
-        const text = anchor.dataset.tip
-        if (text !== undefined && !anchor.hasAttribute('title')) anchor.setAttribute('title', text)
-        delete anchor.dataset.tip
-        if (anchor.getAttribute('aria-describedby') === id) anchor.removeAttribute('aria-describedby')
+      for (const el of parked) {
+        const text = el.dataset.tip
+        if (text !== undefined && !el.hasAttribute('title')) el.setAttribute('title', text)
+        delete el.dataset.tip
+        if (el.getAttribute('aria-describedby') === id) el.removeAttribute('aria-describedby')
       }
+      parked = []
       anchor = null
       setTip(null)
     }
 
-    const capture = (el: HTMLElement, delay: number) => {
-      if (el === anchor) return
+    /** Titled elements from `target` upward, innermost first — counting ones we already parked. An
+     * empty `title` doesn't count, so an element can opt out and leave the tooltip to its container. */
+    const titledChain = (target: EventTarget | null): HTMLElement[] => {
+      const chain: HTMLElement[] = []
+      for (let el = target instanceof Element ? target : null; el; el = el.parentElement) {
+        if (el instanceof HTMLElement && (el.getAttribute('title') ?? el.dataset.tip)?.trim()) chain.push(el)
+      }
+      return chain
+    }
+
+    const show = (target: EventTarget | null, delay: number) => {
+      const chain = titledChain(target)
+      const inner = chain[0]
+      if (inner === anchor) return
       release()
-      const text = el.getAttribute('title')
-      if (!text?.trim()) return
-      anchor = el
-      el.dataset.tip = text
-      el.removeAttribute('title')
-      observer.observe(el, { attributes: true, attributeFilter: ['title'] })
+      if (!inner) return
+      for (const el of chain) {
+        park(el)
+        observer.observe(el, { attributes: true, attributeFilter: ['title'] })
+      }
+      parked = chain
+      anchor = inner
       timer = window.setTimeout(() => {
-        if (anchor !== el || !el.isConnected) return
-        if (!el.hasAttribute('aria-describedby')) el.setAttribute('aria-describedby', id)
-        setTip({ text: el.dataset.tip ?? text, rect: el.getBoundingClientRect() })
+        if (anchor !== inner || !inner.isConnected) return
+        if (!inner.hasAttribute('aria-describedby')) inner.setAttribute('aria-describedby', id)
+        setTip({ text: inner.dataset.tip ?? '', rect: inner.getBoundingClientRect() })
       }, delay)
     }
 
-    const titled = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('[title]') : null)
-
     const onPointerOver = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return
-      if (anchor?.contains(e.target as Node)) return
-      const el = titled(e.target)
-      if (el) capture(el, OPEN_DELAY_MS)
-      else release()
+      if (e.pointerType !== 'touch') show(e.target, OPEN_DELAY_MS)
     }
     const onPointerOut = (e: PointerEvent) => {
       if (anchor && !anchor.contains(e.relatedTarget as Node | null)) release()
     }
     const onFocusIn = (e: FocusEvent) => {
-      const target = e.target
-      if (!(target instanceof Element) || !target.matches(':focus-visible')) return
-      const el = titled(target)
-      if (el) capture(el, 0)
+      if (e.target instanceof Element && e.target.matches(':focus-visible')) show(e.target, 0)
     }
     const onFocusOut = (e: FocusEvent) => {
       if (anchor && anchor.contains(e.target as Node) && !anchor.contains(e.relatedTarget as Node | null)) release()

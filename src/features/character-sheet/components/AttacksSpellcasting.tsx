@@ -1,10 +1,11 @@
 import { Card } from '../../../components/Card'
+import { D20Modifier, SpellSaveDCValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { WikiLink } from '../../../vault/components/WikiLink'
-import { formatModifier, spellAttackBonus, spellSaveDC } from '../../../vault/deriveStats'
+import { spellAttackBonus } from '../../../vault/deriveStats'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
@@ -22,7 +23,6 @@ export function AttacksSpellcasting({
   const t = useT()
   if (!character.spellcasting) return null
 
-  const dc = spellSaveDC(character)
   const attack = spellAttackBonus(character)
   const cantrips = (character.spells_known ?? [])
     .map((link) => resolveSpellLink(index, link))
@@ -39,11 +39,13 @@ export function AttacksSpellcasting({
     <Card title={t('cards.attacksSpellcasting')}>
       <div className="mb-3 grid grid-cols-3 gap-2">
         <StatPlate label={t('stats.ability')} value={abilityAbbr} />
-        <StatPlate label={t('stats.saveDC')} value={String(dc ?? '—')} />
+        <StatPlate label={t('stats.saveDC')}>
+          <SpellSaveDCValue character={character} />
+        </StatPlate>
         <StatPlate label={t('stats.attack')}>
           {attack !== undefined ? (
             <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="cursor-pointer transition hover:text-trim">
-              {formatModifier(attack)}
+              <D20Modifier value={attack} hint={false} />
             </D20RollButton>
           ) : (
             '—'

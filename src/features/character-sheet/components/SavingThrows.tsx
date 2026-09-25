@@ -1,8 +1,9 @@
 import { Card } from '../../../components/Card'
+import { D20Modifier } from '../../../components/ExhaustedValue'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
-import { formatModifier, isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
+import { isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
 import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
 
@@ -17,7 +18,7 @@ function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter
         const bonus = nimbleAttributeValue(character, key)
         return (
           <li key={key} className="flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10">
-            <span className="w-8 text-right font-num text-fg">{formatModifier(bonus)}</span>
+            <D20Modifier value={bonus} className="w-8 text-right font-num text-fg" />
             <span className="text-fg-muted">{label}</span>
             <D20RollButton
               label={t('roll.saveSuffix', { label })}
@@ -79,7 +80,7 @@ export function SavingThrows({ character, characterPath }: { character: Characte
               ) : (
                 dot
               )}
-              <span className={`w-8 text-right font-num ${proficient ? 'text-trim' : 'text-fg'}`}>{formatModifier(bonus)}</span>
+              <D20Modifier value={bonus} className={`w-8 text-right font-num ${proficient ? 'text-trim' : 'text-fg'}`} />
               <span className={proficient ? 'text-fg' : 'text-fg-muted'}>{label}</span>
               <D20RollButton
                 label={t('roll.saveSuffix', { label })}

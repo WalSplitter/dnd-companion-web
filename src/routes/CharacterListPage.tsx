@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { D20Modifier, ExhaustedValue } from '../components/ExhaustedValue'
+import { D20PenaltyContext } from '../dice/d20Penalty'
 import { DEFAULT_EXHAUSTION_MAX } from '../features/character-sheet/vitals'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import {
+  exhaustionD20Penalty,
   abilityModifier,
   classSummary,
   evasionValue,
@@ -98,7 +101,17 @@ function StatTile({ label, title, children }: { label: string; title: string; ch
   )
 }
 
-function CharacterCard({ frontmatter: c }: { frontmatter: CharacterFrontmatter }) {
+/** The card sits outside the sheet, so it provides the character's own exhaustion penalty for the
+ * d20 values it shows (see `D20PenaltyContext`). */
+function CharacterCard({ frontmatter }: { frontmatter: CharacterFrontmatter }) {
+  return (
+    <D20PenaltyContext value={exhaustionD20Penalty(frontmatter)}>
+      <CharacterCardBody frontmatter={frontmatter} />
+    </D20PenaltyContext>
+  )
+}
+
+function CharacterCardBody({ frontmatter: c }: { frontmatter: CharacterFrontmatter }) {
   const t = useT()
   const temp = c.hp.temp ?? 0
   const resilience = typeof c.resilience?.current === 'number' && typeof c.resilience.max === 'number' ? c.resilience : undefined
@@ -216,11 +229,18 @@ function CharacterCard({ frontmatter: c }: { frontmatter: CharacterFrontmatter }
           </StatTile>
         )}
         <StatTile label={t('short.initiative')} title={t('stats.initiative')}>
-          {formatModifier(initiativeBonus(c))}
+          <D20Modifier value={initiativeBonus(c)} />
         </StatTile>
         {squares !== undefined ? (
-          <StatTile label={t('short.movement')} title={t('stats.movementHint', { count: squares, speed: c.speed })}>
-            {squares}
+          <StatTile
+            label={t('short.movement')}
+            title={
+              exhaustion > 0
+                ? t('stats.movementHintExhausted', { count: squares, speed: c.speed, n: exhaustion })
+                : t('stats.movementHint', { count: squares, speed: c.speed })
+            }
+          >
+            {exhaustion > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : squares}
           </StatTile>
         ) : (
           <StatTile label={t('short.speed')} title={t('stats.speed')}>
@@ -261,7 +281,7 @@ function CharacterCard({ frontmatter: c }: { frontmatter: CharacterFrontmatter }
               title={t('characterList.topSkills')}
               className="rounded-full border border-trim/30 bg-trim/[0.07] px-2 py-0.5 text-[0.68rem] text-fg"
             >
-              {t(`skill.${key}`)} <span className="font-num font-bold text-trim">{formatModifier(bonus)}</span>
+              {t(`skill.${key}`)} <D20Modifier value={bonus} className="font-num font-bold text-trim" />
             </span>
           ))}
           {slots.map(([grade, slot]) => (
