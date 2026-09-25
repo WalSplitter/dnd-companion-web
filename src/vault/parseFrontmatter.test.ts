@@ -117,4 +117,75 @@ describe('buildVault', () => {
     const vault = buildVault([characterFile])
     expect(vault.characters[0].frontmatter.nimble_primary_attributes).toBeUndefined()
   })
+
+  describe('Nimble characters', () => {
+    const nimbleCharacter = (extra = '') => ({
+      path: 'Characters/Nimble.md',
+      content: `---
+type: character
+name: Nimble Hero
+class:
+  - name: Prüfling
+    level: 3
+    subclass: Wächter
+species: Homunkulus
+background: Laborgeschöpf
+alignment: Neutral
+experience: 0
+abilities: { str: 12, dex: 12, con: 12, int: 12, wis: 12, cha: 12 }
+proficiency_bonus: 2
+saving_throw_proficiencies: []
+skill_proficiencies: []
+nimble_attributes: { st: 0, bw: 4, ko: 2, ge: 0, in: 0, vs: 0, pr: 0, en: 3 }
+armor_class: 10
+speed: 30 ft
+hp: { current: 5, max: 99 }
+resilience: { current: 4, max: 99 }
+hit_dice: { die: d8, total: 3 }
+${extra}---
+`,
+    })
+    const classNote = { path: 'Klassen/Prüfling.md', content: '---\nTP_pro_Stufe: 4\nRP_pro_Stufe: 2\n---\n' }
+    const subclassNote = { path: 'Klassen/Wächter.md', content: '---\nTP_pro_Stufe: 1\n---\n' }
+    const chainShirt = {
+      path: 'Gegenstände/Rüstung/Kettenhemd.md',
+      content: '---\ntags: [Gegenstand/Rüstung/Mittel]\nRK: 3\nBW_cap: 2\n---\n',
+    }
+
+    it('takes BW_cap from the linked armor note and ignores a bw_cap typed onto the sheet', () => {
+      const vault = buildVault([nimbleCharacter('armor: "[[Kettenhemd]]"\nbw_cap: 5\n'), chainShirt])
+      expect(vault.characters[0].frontmatter.bw_cap).toBe(2)
+    })
+
+    it('accepts the German Rüstung field as well', () => {
+      const vault = buildVault([nimbleCharacter('Rüstung: "[[Kettenhemd]]"\n'), chainShirt])
+      expect(vault.characters[0].frontmatter.armor).toBe('[[Kettenhemd]]')
+      expect(vault.characters[0].frontmatter.bw_cap).toBe(2)
+    })
+
+    it('has no BW cap without worn armor', () => {
+      const vault = buildVault([nimbleCharacter('bw_cap: 1\n'), chainShirt])
+      expect(vault.characters[0].frontmatter.bw_cap).toBeUndefined()
+    })
+
+    it('drops hit dice and their write target', () => {
+      const vault = buildVault([nimbleCharacter()])
+      expect(vault.characters[0].frontmatter.hit_dice).toBeUndefined()
+      expect(vault.characters[0].frontmatter._write?.hit_dice_remaining).toBeUndefined()
+    })
+
+    it('derives max TP/RP per level from class + subclass + attribute bonus', () => {
+      const vault = buildVault([nimbleCharacter(), classNote, subclassNote])
+      const { hp, resilience } = vault.characters[0].frontmatter
+      // TP: 3 × (4 class + 1 subclass + 2 KO); RP: 3 × (2 class + 0 subclass + floor(3 EN / 2))
+      expect(hp).toEqual({ current: 5, max: 21 })
+      expect(resilience).toEqual({ current: 4, max: 9 })
+    })
+
+    it("keeps the sheet's own max when the class note declares no per-level values", () => {
+      const vault = buildVault([nimbleCharacter()])
+      expect(vault.characters[0].frontmatter.hp.max).toBe(99)
+      expect(vault.characters[0].frontmatter.resilience?.max).toBe(99)
+    })
+  })
 })

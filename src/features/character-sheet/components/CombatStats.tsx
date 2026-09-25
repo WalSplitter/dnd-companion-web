@@ -4,6 +4,7 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { evasionValue, formatModifier, initiativeBonus, nimbleAttributeValue, speedInSquares } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
+import { wikilinkTarget } from '../../../vault/wikilinks'
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
 export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
@@ -51,6 +52,7 @@ export function Evasion({ value, character }: { value: number; character: Charac
   const hint = t(capped ? 'stats.evasionHintCapped' : 'stats.evasionHint', {
     bw: formatModifier(bw),
     cap: formatModifier(character.bw_cap ?? 0),
+    armor: character.armor ? wikilinkTarget(character.armor) : '',
   })
 
   return (

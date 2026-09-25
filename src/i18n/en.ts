@@ -149,7 +149,7 @@ export const en = {
   'stats.dead': 'Dead',
   'stats.evasion': 'Evasion',
   'stats.evasionHint': 'Evasion = 10 + BW ({{bw}}). Dodge (reaction, 1 AP): +2 against one attack.',
-  'stats.evasionHintCapped': 'Evasion = 10 + BW ({{bw}}), capped at {{cap}} by your armor (BW_cap). Dodge (reaction, 1 AP): +2 against one attack.',
+  'stats.evasionHintCapped': 'Evasion = 10 + BW ({{bw}}), capped at {{cap}} by your armor {{armor}} (BW_cap). Dodge (reaction, 1 AP): +2 against one attack.',
   'a11y.currentResilience': 'Current resilience points',
   'stats.luckPoints': 'Luck Points',
   'stats.exhaustion': 'Exhaustion',

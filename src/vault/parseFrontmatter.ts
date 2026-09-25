@@ -1,7 +1,8 @@
 import { isRecord, linkFile, looksLikeLegacyCharacter, normalizeLegacyCharacter, resolvePortraitLink } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
-import { parseRawFile, type RawFile } from './rawFile'
+import { nimbleAttributeValue } from './deriveStats'
+import { findRawFileByName, parseRawFile, type RawFile } from './rawFile'
 import type { ImageAssets } from './vaultLoader'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from './types'
 import type {
@@ -64,7 +65,8 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
   // Exhaustion starts at 0 and is written on first use, creating `conditions:` if needed.
   targets.exhaustion = { path, keyPath: ['conditions', 'exhaustion'], createIfMissing: true }
 
-  if (isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
+  // Nimble has no hit dice (see `resolveLevelPools`), so a leftover `hit_dice:` block is ignored there.
+  if (!isRecord(data.nimble_attributes) && isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
     // Own schema stores `used`, not remaining — the UI edits remaining, so this is written inverted.
     targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], createIfMissing: true, encode: 'invert-from-max', max: data.hit_dice.total }
   }
@@ -145,6 +147,56 @@ function resolveClassPrimaryAttributes(classes: unknown, files: RawFile[]): Nimb
   return primary.size > 0 ? NIMBLE_ATTRIBUTES.map(({ key }) => key).filter((key) => primary.has(key)) : undefined
 }
 
+/** The worn armor's wikilink: `armor:`, or `Rüstung:` as on the old sheet (`Verteidigung.Rüstung`). */
+function armorLink(data: Record<string, unknown>): string | undefined {
+  const raw = data.armor ?? data.Rüstung
+  return typeof raw === 'string' && raw.trim() ? raw : undefined
+}
+
+/** `BW_cap` of the armor note the character links as worn (vault rule `Ausweichwert#Rüstung und
+ * BW_cap`). Undefined when no armor is worn, the note is missing or isn't armor, or it has no cap. */
+function resolveArmorBwCap(link: string | undefined, files: RawFile[]): number | undefined {
+  const file = link ? findRawFileByName(files, linkFile(link)) : undefined
+  if (!file || !looksLikeEndeavourItem(file.data)) return undefined
+  const item = normalizeEndeavourItem(file)
+  return item.kind === 'armor' ? item.bw_cap : undefined
+}
+
+function numberFrom(files: RawFile[], noteName: string, field: string): number | undefined {
+  const value = findRawFileByName(files, noteName)?.data[field]
+  return typeof value === 'number' ? value : undefined
+}
+
+/**
+ * Nimble has no hit dice: each level grants the class's `TP_pro_Stufe`/`RP_pro_Stufe` (declared on the
+ * note named like the class, e.g. `Prüfling.md`), plus the subclass note's own value if it has one,
+ * plus the attribute bonus — KO for TP (`Konstitution`), half EN rounded down for RP
+ * (`Entschlossenheit`). Both rules also apply retroactively, so the max is always recomputed from
+ * the current attributes. A pool stays undefined (the sheet's own `max` is kept) when any class note
+ * lacks its per-level value.
+ *
+ * TODO: provisional until the DM ships class notes and further rule updates — revisit (1) the field
+ * names/location `TP_pro_Stufe`/`RP_pro_Stufe` on class/subclass notes, (2) the subclass bonus counting
+ * for every level of that class (even before the subclass is picked), (3) no per-level minimum.
+ */
+function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: number; resilience?: number } {
+  if (!character.nimble_attributes || !Array.isArray(character.class) || character.class.length === 0) return {}
+  const perLevelBonus = { hp: nimbleAttributeValue(character, 'ko'), resilience: Math.floor(nimbleAttributeValue(character, 'en') / 2) }
+
+  const total = (pool: 'hp' | 'resilience', field: string): number | undefined => {
+    let sum = 0
+    for (const c of character.class) {
+      const classValue = numberFrom(files, c.name, field)
+      if (classValue === undefined || typeof c.level !== 'number') return undefined
+      const subclassValue = c.subclass ? (numberFrom(files, c.subclass, field) ?? 0) : 0
+      sum += c.level * (classValue + subclassValue + perLevelBonus[pool])
+    }
+    return Math.max(0, sum)
+  }
+
+  return { hp: total('hp', 'TP_pro_Stufe'), resilience: total('resilience', 'RP_pro_Stufe') }
+}
+
 /**
  * Parses all source files and buckets them by type. Two frontmatter conventions are recognized:
  *  - the app's own `type: character|item|spell` marker (see `types.ts`)
@@ -183,11 +235,21 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
           ...ownSchemaWriteTargets(raw.path, raw.data),
           ...(currency_source ? { currency_block: { path: currency_source.path } } : {}),
         }
+        const armor = armorLink(raw.data)
+        const pools = resolveLevelPools(character, rawFiles)
         vault.characters.push({
           ...parsed,
           frontmatter: {
             ...character,
             ...linkedExtensions,
+            armor,
+            // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored.
+            bw_cap: resolveArmorBwCap(armor, rawFiles),
+            hit_dice: character.nimble_attributes ? undefined : character.hit_dice,
+            ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
+            ...(pools.resilience !== undefined && character.resilience
+              ? { resilience: { ...character.resilience, max: pools.resilience } }
+              : {}),
             nimble_primary_attributes: resolveClassPrimaryAttributes(raw.data.class, rawFiles),
             portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
             _write: (() => {

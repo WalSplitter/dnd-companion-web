@@ -136,7 +136,7 @@ export const de = {
   'stats.dead': 'Tot',
   'stats.evasion': 'Ausweichwert',
   'stats.evasionHint': 'Ausweichwert = 10 + BW ({{bw}}). Ausweichen (Reaktion, 1 AP): +2 gegen einen Angriff.',
-  'stats.evasionHintCapped': 'Ausweichwert = 10 + BW ({{bw}}), durch die Rüstung (BW_cap) auf {{cap}} begrenzt. Ausweichen (Reaktion, 1 AP): +2 gegen einen Angriff.',
+  'stats.evasionHintCapped': 'Ausweichwert = 10 + BW ({{bw}}), durch die Rüstung {{armor}} (BW_cap) auf {{cap}} begrenzt. Ausweichen (Reaktion, 1 AP): +2 gegen einen Angriff.',
   'a11y.currentResilience': 'Aktuelle Resilienzpunkte',
   'stats.luckPoints': 'Glückspunkte',
   'stats.exhaustion': 'Erschöpfung',

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
 import { ErrorToaster } from './components/ErrorToaster'
+import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
@@ -22,6 +23,7 @@ function App() {
     <div className="min-h-full">
       <ThemeEffect />
       <ErrorToaster />
+      <TooltipLayer />
       <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/90 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 overflow-x-auto px-4 py-3">
           <Link

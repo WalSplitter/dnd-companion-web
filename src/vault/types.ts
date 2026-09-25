@@ -239,9 +239,15 @@ export interface CharacterFrontmatter {
   /** Resilience points (Nimble/Endeavour rules): the fast-swinging combat pool that absorbs damage
    * after temp HP and before HP, and refills on rests. Own schema only. */
   resilience?: { current: number; max: number }
-  /** `BW_cap` of the worn armor (Nimble): caps the BW part of the evasion value. Absent = no cap. */
+  /** Own-schema input field: a `"[[Kettenhemd]]"` wikilink to the worn armor's item note (`armor:`, or
+   * `Rüstung:` like the old sheet's `Verteidigung.Rüstung`). Its `BW_cap` feeds `bw_cap` below. */
+  armor?: string
+  /** Derived, not read from the character file: `BW_cap` of the worn `armor` (Nimble), which caps the
+   * BW part of the evasion value. Absent = no armor, or armor without a cap. */
   bw_cap?: number
-  hit_dice: { die: string; total: number; used?: number }
+  /** D&D-style hit dice. Absent for Nimble characters — that ruleset has none; HP/RP per level come
+   * from the class notes instead (see `resolveLevelPools` in `parseFrontmatter.ts`). */
+  hit_dice?: { die: string; total: number; used?: number }
   senses?: { darkvision?: string; blindsight?: string; tremorsense?: string; truesight?: string }
   languages?: string[]
   tool_proficiencies?: string[]

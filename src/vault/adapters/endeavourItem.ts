@@ -90,8 +90,8 @@ export interface EndeavourArmorItem extends EndeavourItemBase {
   /** `Heimlichkeit` — a numeric stealth-check malus (e.g. `-1`) on real armor/shield notes, not the
    * boolean flag originally guessed here; blank/absent means no penalty. */
   stealth_disadvantage?: number
-  /** `BW_cap` — movement speed cap while worn. */
-  speed_cap?: number
+  /** `BW_cap` — caps the BW part of the wearer's evasion value (`Ausweichwert`); absent = no cap. */
+  bw_cap?: number
 }
 
 export interface EndeavourShieldItem extends EndeavourItemBase {
@@ -271,7 +271,7 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
       damage_reduction: numberField(data.SR),
       strength_requirement: numberField(data.Stärke),
       stealth_disadvantage: numberField(data.Heimlichkeit),
-      speed_cap: numberField(data.BW_cap),
+      bw_cap: numberField(data.BW_cap),
     }
   }
 

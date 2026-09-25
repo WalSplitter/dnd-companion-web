@@ -133,6 +133,14 @@ additively:
   The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
   `abilities` / `proficiency_bonus` stay populated as an internal bridge for AC, initiative and spell
   DC math, which is not yet ported to the real Nimble formulas.
+- **Armor and evasion**: `armor: "[[Kettenhemd]]"` (or `Rüstung:`) links the worn armor note; its
+  `BW_cap` caps the BW part of the evasion value (`10 + BW`). The cap is never read from the
+  character file itself.
+- **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
+  Max TP/RP are `level × (class + subclass + attribute bonus)`, with `TP_pro_Stufe` / `RP_pro_Stufe`
+  read from notes named like the class and subclass, and KO (TP) / half EN rounded down (RP) as the
+  attribute bonus. Without a class note declaring them, the sheet's own `hp.max` / `resilience.max`
+  are used.
 
 ### 3. Legacy adapter (older German-language vault)
 

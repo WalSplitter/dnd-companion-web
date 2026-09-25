@@ -180,7 +180,7 @@ BW_cap: 6
       damage_reduction: 1,
       strength_requirement: 13,
       stealth_disadvantage: -1,
-      speed_cap: 6,
+      bw_cap: 6,
     })
   })
 

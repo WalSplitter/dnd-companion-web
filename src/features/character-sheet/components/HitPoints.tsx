@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
+import { SectionTitle } from '../../../components/SectionTitle'
 import { DamageRollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
@@ -238,8 +239,8 @@ export function HitPoints({
 }) {
   const t = useT()
   const { current, max, temp = 0 } = character.hp
-  const hitDiceTotal = character.hit_dice.total
-  const hitDiceRemaining = hitDiceTotal - (character.hit_dice.used ?? 0)
+  const hitDice = character.hit_dice
+  const hitDiceRemaining = hitDice ? hitDice.total - (hitDice.used ?? 0) : 0
   const conMod = abilityModifier(character.abilities.con)
 
   const editPermission = useVaultStore((s) => s.editPermission)
@@ -292,9 +293,10 @@ export function HitPoints({
   const warded = temp > 0
 
   // Temp HP don't stack (rules: you keep the old value or take the new one), so there's no "+":
-  // type a new value to replace them, or knock them down with "−".
+  // type a new value to replace them, or knock them down with "−". Always shown, dimmed at 0, so
+  // the pool is visible even on a read-only sheet.
   const tempLabel = t('stats.tempHp')
-  const tempControl = (setTemp || temp > 0) && (
+  const tempControl = (
     <span className={`hp-ward-chip flex items-center gap-1 rounded-md py-0.5 pr-2 pl-1 text-accent ${temp > 0 ? 'is-active' : ''}`} title={tempLabel}>
       <WardIcon />
       {setTemp && <StepButton direction={-1} label={tempLabel} tone="accent" disabled={temp <= 0} onStep={(d) => setTemp(stepWithin(temp, d, 0))} />}
@@ -311,10 +313,7 @@ export function HitPoints({
     <>
       <div className="min-w-0 grow-[2] basis-[26rem]">
         <div className="mb-2 flex min-h-7 items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.16em] text-trim">
-            <span aria-hidden className="size-1.5 rotate-45 bg-trim" />
-            {t('cards.vitals')}
-          </h2>
+          <SectionTitle className="min-w-0 flex-1">{t('cards.vitals')}</SectionTitle>
           {tempControl}
         </div>
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">
@@ -353,40 +352,45 @@ export function HitPoints({
 
       <div className="flex min-w-0 grow basis-64 flex-col gap-2.5">
         {stats}
-        <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 border-t border-trim/15 pt-2">
-          <RowCaption>{t('stats.hitDice')}</RowCaption>
-          <span className="flex items-center justify-end gap-1 font-num text-sm text-fg">
-            {canEdit && writeTargets?.hit_dice_remaining ? (
-              <EditableNumber
-                key={hitDiceRemaining}
-                value={hitDiceRemaining}
-                max={hitDiceTotal}
-                onCommit={(next) =>
-                  void updateCharacterField(characterPath, writeTargets.hit_dice_remaining, next, (c) => ({
-                    ...c,
-                    hit_dice: { ...c.hit_dice, used: c.hit_dice.total - next },
-                  }))
-                }
-                className={`w-6 ${quietInput}`}
-              />
-            ) : (
-              hitDiceRemaining
+        {(hitDice || showExhaustion) && (
+          <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 border-t border-trim/15 pt-2">
+            {hitDice && (
+              <>
+                <RowCaption>{t('stats.hitDice')}</RowCaption>
+                <span className="flex items-center justify-end gap-1 font-num text-sm text-fg">
+                  {canEdit && writeTargets?.hit_dice_remaining ? (
+                    <EditableNumber
+                      key={hitDiceRemaining}
+                      value={hitDiceRemaining}
+                      max={hitDice.total}
+                      onCommit={(next) =>
+                        void updateCharacterField(characterPath, writeTargets.hit_dice_remaining, next, (c) =>
+                          c.hit_dice ? { ...c, hit_dice: { ...c.hit_dice, used: c.hit_dice.total - next } } : c,
+                        )
+                      }
+                      className={`w-6 ${quietInput}`}
+                    />
+                  ) : (
+                    hitDiceRemaining
+                  )}
+                  <span className="text-fg-muted">
+                    /{hitDice.total} {hitDice.die}
+                  </span>
+                  <DamageRollButton label={t('roll.hitDie')} dice={`1${hitDice.die}`} bonus={conMod} />
+                </span>
+              </>
             )}
-            <span className="text-fg-muted">
-              /{hitDiceTotal} {character.hit_dice.die}
-            </span>
-            <DamageRollButton label={t('roll.hitDie')} dice={`1${character.hit_dice.die}`} bonus={conMod} />
-          </span>
 
-          {showExhaustion && (
-            <ExhaustionTrack
-              level={exhaustion}
-              max={exhaustionMax}
-              onChange={setExhaustion}
-              caption={<RowCaption>{t('stats.exhaustion')}</RowCaption>}
-            />
-          )}
-        </div>
+            {showExhaustion && (
+              <ExhaustionTrack
+                level={exhaustion}
+                max={exhaustionMax}
+                onChange={setExhaustion}
+                caption={<RowCaption>{t('stats.exhaustion')}</RowCaption>}
+              />
+            )}
+          </div>
+        )}
       </div>
     </>
   )
