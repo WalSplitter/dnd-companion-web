@@ -114,10 +114,52 @@ Body.
     expect(patched).toBe(ownSchema.replace('  max: 10\n', '  max: 10\n  extra:\n    deep: 1\n'))
   })
 
-  it('still throws when the existing ancestor is a flow map or a scalar', () => {
+  it('adds a missing leaf inside a one-line flow map instead of a duplicate block', () => {
     const flow = ownSchema.replace('hp:\n  current: 3\n  max: 10', 'hp: { current: 3, max: 10 }')
-    expect(() => patchFrontmatterField(flow, ['hp', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+    const patched = patchFrontmatterField(flow, ['hp', 'temp'], 1, { createIfMissing: true })
+    expect(patched).toBe(flow.replace('hp: { current: 3, max: 10 }', 'hp: { current: 3, max: 10, temp: 1 }'))
+  })
+
+  it('still throws when the existing ancestor is a scalar', () => {
     expect(() => patchFrontmatterField(ownSchema, ['name', 'temp'], 1, { createIfMissing: true })).toThrow(YamlPatchError)
+  })
+})
+
+describe('patchFrontmatterField: quoted keys and flow maps', () => {
+  // The shape that used to break the Dummy's spell sheet: a quoted grade key holding a flow map.
+  const spellSheet = `---
+Charakter: "[[Dummy]]"
+spellcasting:
+  ability: int
+  slots:
+    "1": { max: 2, used: 0 }
+    '2': {max: 1, used: 0} # zweiter Grad
+spells_known:
+  - "[[Platzhalterfunke]]"
+---
+
+Body.
+`
+
+  it('patches a leaf inside a quoted key\'s flow map in place, keeping the YAML valid', () => {
+    const patched = patchFrontmatterField(spellSheet, ['spellcasting', 'slots', '1', 'used'], 1, { createIfMissing: true })
+    expect(patched).toBe(spellSheet.replace('"1": { max: 2, used: 0 }', '"1": { max: 2, used: 1 }'))
+    expect(load(patched.split('---')[1])).toMatchObject({ spellcasting: { slots: { 1: { max: 2, used: 1 } } } })
+  })
+
+  it('keeps an unpadded flow map unpadded and preserves a trailing comment', () => {
+    const patched = patchFrontmatterField(spellSheet, ['spellcasting', 'slots', '2', 'used'], 1)
+    expect(patched).toBe(spellSheet.replace("'2': {max: 1, used: 0} # zweiter Grad", "'2': {max: 1, used: 1} # zweiter Grad"))
+  })
+
+  it('throws for a missing flow-map leaf without createIfMissing', () => {
+    expect(() => patchFrontmatterField(spellSheet, ['spellcasting', 'slots', '1', 'extra'], 1)).toThrow(YamlPatchError)
+  })
+
+  it('matches a quoted block-mapping key against its bare key path', () => {
+    const block = `---\nslots:\n  "1":\n    max: 2\n    used: 0\n---\n`
+    const patched = patchFrontmatterField(block, ['slots', '1', 'used'], 2, { createIfMissing: true })
+    expect(patched).toBe(block.replace('    used: 0', '    used: 2'))
   })
 })
 

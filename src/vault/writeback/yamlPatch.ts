@@ -7,7 +7,8 @@
  *
  * Deliberately narrow: only number/boolean values (the only value types this pass needs to write),
  * and it refuses to write (throws `YamlPatchError`) rather than guess whenever the file doesn't look
- * exactly like what it expects. A full YAML re-serialize would risk reformatting the whole file on
+ * exactly like what it expects. Keys match the way YAML reads them (`"1"` and `1` are one key), and a
+ * leaf inside a one-line flow map (`"1": { max: 2, used: 0 }`) is rewritten on that same line. A full YAML re-serialize would risk reformatting the whole file on
  * every auto-saved edit — an unacceptable blast radius against someone's real campaign vault.
  *
  * `patchFrontmatterBlock` (below) relaxes this for exactly one case — the slot-grid inventory's
@@ -17,7 +18,7 @@
  * markdown body) stays byte-identical.
  */
 
-import { dump } from 'js-yaml'
+import { dump, load } from 'js-yaml'
 
 export class YamlPatchError extends Error {
   constructor(message: string) {
@@ -33,6 +34,80 @@ const KEY_LINE_RE = /^( *)([^\s:#][^:]*):(.*)$/
 
 function formatValue(value: number | boolean): string {
   return typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value)
+}
+
+/** A key as YAML reads it: `"1"`, `'1'` and `1` all name the same key. Without this, a quoted key on
+ * disk never matched its bare key path, and `createIfMissing` added a duplicate sibling that broke the
+ * whole file's YAML. */
+function normalizeKey(raw: string): string {
+  const key = raw.trim()
+  if (key.length >= 2 && key.startsWith('"') && key.endsWith('"')) return key.slice(1, -1).replace(/\\(["\\])/g, '$1')
+  if (key.length >= 2 && key.startsWith("'") && key.endsWith("'")) return key.slice(1, -1).replace(/''/g, "'")
+  return key
+}
+
+/** Matches a key line's value that is a whole one-line flow map (`{ max: 2, used: 0 }`), optionally
+ * followed by a comment — the only flow shape `patchFlowMapLine` rewrites. */
+const FLOW_MAP_VALUE_RE = /^\s*(\{.*\})\s*(#.*)?$/
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** Renders a parsed flow map back onto one line, keeping the source's inner padding (`{ a: 1 }` vs
+ * `{a: 1}`) so an edit changes only the patched value. */
+function formatFlowMap(map: Record<string, unknown>, padded: boolean): string {
+  const entries = Object.entries(map).map(([key, value]) => {
+    const renderedKey = dump(key, { flowLevel: 0 }).trim()
+    const renderedValue = isPlainObject(value) ? formatFlowMap(value, padded) : dump(value, { flowLevel: 0, lineWidth: -1 }).trim()
+    return `${renderedKey}: ${renderedValue}`
+  })
+  if (entries.length === 0) return '{}'
+  return padded ? `{ ${entries.join(', ')} }` : `{${entries.join(', ')}}`
+}
+
+/**
+ * Patches a leaf that lives inside a one-line flow map (`"1": { max: 2, used: 0 }` → `used` under
+ * `1`), which the line-based walk can't see since the map's keys aren't lines of their own. Returns
+ * `false` when no ancestor of `keyPath` is such a flow map (the caller falls back to its block-mapping
+ * handling); throws when one is but the leaf can't be set without guessing.
+ */
+function patchFlowMapLine(lines: string[], keyPath: string[], value: number | boolean, createIfMissing: boolean): boolean {
+  for (let depth = keyPath.length - 1; depth > 0; depth--) {
+    const ancestorLine = findKeyLineOrNull(lines, keyPath.slice(0, depth))
+    if (ancestorLine === null) continue
+
+    const keyMatch = KEY_LINE_RE.exec(lines[ancestorLine])!
+    const flowMatch = FLOW_MAP_VALUE_RE.exec(keyMatch[3])
+    if (!flowMatch) return false // a block mapping (or scalar) — not ours to handle
+
+    let map: unknown
+    try {
+      map = load(flowMatch[1])
+    } catch {
+      throw new YamlPatchError(`cannot parse flow map at ${keyPath.slice(0, depth).join('.')}`)
+    }
+    if (!isPlainObject(map)) throw new YamlPatchError(`${keyPath.slice(0, depth).join('.')} is not a flow map`)
+
+    let node = map
+    const rest = keyPath.slice(depth)
+    for (const key of rest.slice(0, -1)) {
+      const child = node[key]
+      if (child === undefined && createIfMissing) node[key] = {}
+      else if (!isPlainObject(child)) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+      node = node[key] as Record<string, unknown>
+    }
+    const leaf = rest[rest.length - 1]
+    if (!(leaf in node) && !createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+    if (isPlainObject(node[leaf]) || Array.isArray(node[leaf])) throw new YamlPatchError(`${keyPath.join('.')} is not a scalar`)
+    node[leaf] = value
+
+    const padded = /^\{\s/.test(flowMatch[1])
+    const comment = flowMatch[2] ? ` ${flowMatch[2]}` : ''
+    lines[ancestorLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatFlowMap(map, padded)}${comment}`
+    return true
+  }
+  return false
 }
 
 /** Locates the line holding `keyPath` (tracked by indentation, the same stack-based walk both
@@ -56,7 +131,7 @@ function findKeyLineOrNull(lines: string[], keyPath: string[]): number | null {
     if (!keyMatch) continue // a list item, a continuation line, etc. — not a key line, skip
 
     const indent = keyMatch[1].length
-    const key = keyMatch[2].trim()
+    const key = normalizeKey(keyMatch[2])
     while (stack.length > 0 && stack[stack.length - 1].indent >= indent) stack.pop()
     stack.push({ indent, key })
 
@@ -138,8 +213,10 @@ export function patchFrontmatterField(
   const targetLine = findKeyLineOrNull(lines, keyPath)
 
   if (targetLine === null) {
-    if (!options.createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
-    insertMissingPath(lines, keyPath, formatValue(value))
+    if (!patchFlowMapLine(lines, keyPath, value, options.createIfMissing ?? false)) {
+      if (!options.createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+      insertMissingPath(lines, keyPath, formatValue(value))
+    }
   } else {
     const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
     lines[targetLine] = `${keyMatch[1]}${keyMatch[2]}: ${formatValue(value)}`
