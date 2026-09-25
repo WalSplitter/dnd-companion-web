@@ -59,7 +59,7 @@ export function ItemDetailPanel({
       <dl className="mt-2 space-y-1 text-sm">
         {fm.cost && <Row label={t('endeavourInventory.detailCost')} value={fm.cost} />}
         {slots !== undefined && <Row label={t('endeavourInventory.detailSlots')} value={String(slots)} />}
-        {fm.kind === 'equipment' && fm.stack_size !== undefined && fm.stack_size > 1 && (
+        {fm.stack_size !== undefined && fm.stack_size > 1 && (
           charges !== undefined ? (
             onChangeCharges ? (
               <ChargesRow label={t('endeavourInventory.detailCharges')} charges={charges} max={fm.stack_size} onChange={onChangeCharges} />

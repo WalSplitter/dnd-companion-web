@@ -25,7 +25,13 @@ Hintergrund: { Name: Ar'go }
     expect(detectRuleset([file("Characters/Ar'go.md", content)]).ruleset).toBe('dnd5e')
   })
 
-  it('detects a Regeln/Nimble tag as nimble', () => {
+  it('detects a Regeln/Endeavour tag as nimble', () => {
+    const result = detectRuleset([file('Regeln/Inventar.md', '---\ntags: [Regeln/Endeavour/Inventar]\n---\n')])
+    expect(result.ruleset).toBe('nimble')
+    expect(result.evidence).toContain('tags: Regeln/Endeavour')
+  })
+
+  it('still detects the older Regeln/Nimble tag as nimble', () => {
     expect(detectRuleset([file('Regeln/Inventar.md', '---\ntags: [Regeln/Nimble]\n---\n')]).ruleset).toBe('nimble')
   })
 

@@ -184,6 +184,19 @@ BW_cap: 6
     })
   })
 
+  it('reads the armor cap under its renamed "Max BW" spellings too', () => {
+    const item = normalizeEndeavourItem(raw('Brigantine.md', '---\ntags: [Gegenstand/Rüstung/Mittel]\nMax_BW: 3\n---\n'))
+    expect(item.kind === 'armor' && item.bw_cap).toBe(3)
+  })
+
+  it('reads Stapelgroesse on any item kind, e.g. throwing knives (Wurfmesser.md)', () => {
+    const item = normalizeEndeavourItem(
+      raw('Wurfmesser.md', '---\ntags: [Gegenstand/Waffe/Fernkampfwaffe/Wurfwaffe]\nPlaetze: 1\nStapelgroesse: 4\n---\n'),
+    )
+    expect(item.kind).toBe('weapon')
+    expect(item.stack_size).toBe(4)
+  })
+
   it('normalizes a shield', () => {
     const file = raw(
       'Schild.md',

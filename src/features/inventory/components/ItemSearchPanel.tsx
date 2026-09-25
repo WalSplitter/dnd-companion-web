@@ -15,8 +15,8 @@ export interface ContainerOption {
  * Searches every non-container item known to the loaded vault (per the mockup: "Suchfeld, wo man
  * nach allen verfügbaren Gegenständen in der Vault suchen kann") and lets the user place one into an
  * equipped container — either by dragging a result onto a `ContainerGrid`, or via this panel's own
- * "Hinzufügen" fallback. Each click adds one tile (per the mockup's annotation that multiple units
- * are *not* stacked into one cell) — clicking again adds another.
+ * "Hinzufügen" fallback. Each click adds one tile — for a stackable item (`Stapelgroesse`) that's
+ * one full stack sharing the slot — and clicking again adds another.
  *
  * Also hosts the fallback for gear the DM hasn't written a vault page for yet: a small form to create
  * a *temporary* item (name + slot cost), placed with the same target container control.

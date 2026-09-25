@@ -153,8 +153,8 @@ function armorLink(data: Record<string, unknown>): string | undefined {
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
-/** `BW_cap` of the armor note the character links as worn (vault rule `Ausweichwert#Rüstung und
- * BW_cap`). Undefined when no armor is worn, the note is missing or isn't armor, or it has no cap. */
+/** "Max BW" (`BW_cap`) of the armor note the character links as worn (vault rule
+ * `Ausweichwert#Rüstung und Max BW`). Undefined when no armor is worn, the note is missing or isn't armor, or it has no cap. */
 function resolveArmorBwCap(link: string | undefined, files: RawFile[]): number | undefined {
   const file = link ? findRawFileByName(files, linkFile(link)) : undefined
   if (!file || !looksLikeEndeavourItem(file.data)) return undefined

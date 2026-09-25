@@ -92,11 +92,11 @@ export function EndeavourInventoryGrid({
     if (tile) setSelected({ key: tile.key, item: tile.item, custom: tile.custom, containerIndex: r.containerIndex, linkIndex })
   }
 
-  /** The item's max uses per stack (`Stapelgroesse`), or `undefined` when it isn't a stackable
-   * consumable — only vault-resolved `equipment` items with a `stack_size` > 1 track charges. */
+  /** How many units share one slot (`Stapelgroesse`), or `undefined` when the item doesn't stack —
+   * any vault-resolved item with a `stack_size` > 1 (torches, throwing knives, ...) tracks a count. */
   function stackSizeFor(link: string): number | undefined {
     const fm = resolveEndeavourItemLink(index, link)?.frontmatter
-    return fm?.kind === 'equipment' && fm.stack_size !== undefined && fm.stack_size > 1 ? fm.stack_size : undefined
+    return fm?.stack_size !== undefined && fm.stack_size > 1 ? fm.stack_size : undefined
   }
 
   /** Wraps a freshly-placed wikilink into a charge-tracking `EndeavourStackEntry` when the item is a
@@ -215,7 +215,7 @@ export function EndeavourInventoryGrid({
     else placeNew(payload.link, containerIndex)
   }
 
-  /** Places `quantity` separate copies of `entry` (one tile per unit, never stacked into one cell),
+  /** Places `quantity` separate copies of `entry` (one tile each — a stackable item's tile is a full stack),
    * stopping at the first that doesn't fit and reporting how many made it. */
   function addEntries(entry: EndeavourInventoryEntry, containerIndex: number, quantity: number) {
     if (!canEdit) return // defense in depth — ItemSearchPanel's "add" buttons are disabled when !canEdit

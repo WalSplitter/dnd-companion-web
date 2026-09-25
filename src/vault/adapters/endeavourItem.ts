@@ -49,6 +49,10 @@ interface EndeavourItemBase {
    * real vault's confirmed item schema. Takes priority over the `size`/`weight_class` derivation
    * below whenever present — see `resolveSlotCost()`. */
   plaetze?: number
+  /** `Stapelgroesse` — how many units share one slot (rule `Gegenstandsgrößen#Stapelbare
+   * Kleinstitems`, e.g. 4 torches or 4 throwing knives per slot). Any item kind may carry it; a
+   * placed stack tracks how many units are left (see `EndeavourStackEntry`). */
+  stack_size?: number
 }
 
 export interface EndeavourWeaponItem extends EndeavourItemBase {
@@ -90,7 +94,8 @@ export interface EndeavourArmorItem extends EndeavourItemBase {
   /** `Heimlichkeit` — a numeric stealth-check malus (e.g. `-1`) on real armor/shield notes, not the
    * boolean flag originally guessed here; blank/absent means no penalty. */
   stealth_disadvantage?: number
-  /** `BW_cap` — caps the BW part of the wearer's evasion value (`Ausweichwert`); absent = no cap. */
+  /** "Max BW" (`Rüstungsbeschreibung#Max BW`) — caps the BW part of the wearer's evasion value
+   * (`Ausweichwert`); absent = no cap. Stored as `BW_cap` on the notes; see `maxBwField`. */
   bw_cap?: number
 }
 
@@ -123,10 +128,6 @@ export interface EndeavourToolItem extends EndeavourItemBase {
  * `Kosten`/`Plaetze`/`Stapelgroesse`, no size/weight-class fields at all. */
 export interface EndeavourEquipmentItem extends EndeavourItemBase {
   kind: 'equipment'
-  /** `Stapelgroesse` — max stack size. Per the DM's own annotation on the mockup, this does *not*
-   * mean several units share one grid cell: each unit is still placed as its own tile. Kept for
-   * display and to cap how many can be added in one "Hinzufügen" action. */
-  stack_size?: number
 }
 
 /** A wearable/carryable container (`Gegenstand/Behälter`) — a backpack (`Gepäck`) or belt pouch
@@ -234,7 +235,18 @@ function baseFields(raw: RawFile): EndeavourItemBase {
     weight_class: endeavourWeightClass(data.Gewicht),
     cost: stringField(data.Kosten),
     plaetze: numberField(data.Plaetze),
+    stack_size: numberField(data.Stapelgroesse),
   }
+}
+
+/** The rules renamed `BW_cap` to "Max BW"; the notes still carry `BW_cap`, but accept the likely
+ * spellings of a renamed field too, so a future frontmatter rename doesn't silently drop the cap. */
+function maxBwField(data: Record<string, unknown>): number | undefined {
+  for (const key of ['BW_cap', 'Max_BW', 'MaxBW', 'Max BW']) {
+    const value = numberField(data[key])
+    if (value !== undefined) return value
+  }
+  return undefined
 }
 
 /** Best-effort normalize, following the same shape as `normalizeLegacyCharacter`/`normalizeLegacySpellNote`.
@@ -271,7 +283,7 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
       damage_reduction: numberField(data.SR),
       strength_requirement: numberField(data.Stärke),
       stealth_disadvantage: numberField(data.Heimlichkeit),
-      bw_cap: numberField(data.BW_cap),
+      bw_cap: maxBwField(data),
     }
   }
 
@@ -309,7 +321,6 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
     return {
       ...base,
       kind: 'equipment',
-      stack_size: numberField(data.Stapelgroesse),
     }
   }
 

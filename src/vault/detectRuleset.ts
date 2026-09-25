@@ -25,10 +25,12 @@ function hasTag(tags: unknown, needle: string): boolean {
 /**
  * Best-effort, evidence-based heuristic — no supported vault format has an explicit `ruleset:`
  * marker. Treat the result as a hint, not a fact. In particular: a vault that mixes D&D-flavored
- * character fields with `Regeln/Nimble` tags is expected to come back as `'custom'` — that's the
+ * character fields with `Regeln/Endeavour` (formerly `Regeln/Nimble`) tags is expected to come back as `'custom'` — that's the
  * DM's actual, deliberate design (see `docs/inventory-vault-alignment.md`), not an edge case to
  * special-case away.
  */
+const RULE_TAGS = ['Regeln/Endeavour', 'Regeln/Nimble', 'Nimble']
+
 export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult {
   const evidence: string[] = []
   let nimble = false
@@ -39,9 +41,11 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
     if (!file.path.toLowerCase().endsWith('.md') || isDmPrivatePath(file.path)) continue
     const { data } = parseRawFile(file)
 
-    if (!nimble && (hasTag(data.tags, 'Regeln/Nimble') || hasTag(data.tags, 'Nimble'))) {
+    // The vault retagged its rules from `Regeln/Nimble` to `Regeln/Endeavour`; both still count.
+    const ruleTag = RULE_TAGS.find((tag) => hasTag(data.tags, tag))
+    if (!nimble && ruleTag) {
       nimble = true
-      evidence.push('tags: Regeln/Nimble')
+      evidence.push(`tags: ${ruleTag}`)
     }
     if (!nativeSchema && data.type === 'character') {
       nativeSchema = true

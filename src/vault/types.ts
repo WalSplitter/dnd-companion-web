@@ -55,7 +55,7 @@ export const SKILLS: { key: SkillKey; label: string; ability: AbilityKey }[] = [
 ]
 
 /**
- * The real "Endeavour" campaign vault's ruleset (tagged `Regeln/Nimble` throughout
+ * The real "Endeavour" campaign vault's ruleset (tagged `Regeln/Endeavour`, formerly `Regeln/Nimble`, throughout
  * `01 - Spielerbereich/Regeln/Allgemein/Attribute|Fertigkeiten|Rettungswürfe`) uses eight attributes
  * instead of the six D&D-style `abilities` above — notably splitting D&D's DEX into `bw`
  * (Beweglichkeit: dodge/initiative/acrobatics) and `ge` (Geschick: ranged attacks, finesse, precise
@@ -336,8 +336,8 @@ export interface EndeavourContainerSlotAssignment {
 export type EndeavourInventoryEntry = string | EndeavourCustomItem | EndeavourStackEntry
 
 /**
- * A placed vault-item wikilink whose note tracks per-stack uses (`Stapelgroesse` — e.g. a torch
- * usable 4 times before it's spent; see `EndeavourEquipmentItem.stack_size`). Kept distinct from the
+ * A placed vault-item wikilink whose note tracks per-stack uses (`Stapelgroesse` — e.g. 4 torches
+ * sharing one slot, used up one by one; see `EndeavourItemBase.stack_size`). Kept distinct from the
  * plain wikilink string above so the vast majority of non-stackable items never carry an unused
  * counter. `charges` starts at the item's `stack_size` when placed and is then adjusted independently
  * per tile — never re-derived from `stack_size` afterward, so a partially-used stack survives reloads.
