@@ -74,14 +74,17 @@ function ownSchemaWriteTargets(path: string, data: Record<string, unknown>): Cha
   // Ability scores, Nimble attributes and skills are deliberately never writable: the DM sets them
   // in the vault, the web app only shows them.
 
-  const slots = isRecord(data.spellcasting) && isRecord(data.spellcasting.slots) ? data.spellcasting.slots : undefined
-  if (slots) {
-    const spellSlots: Record<string, FieldWriteTarget> = {}
-    for (const grade of Object.keys(slots)) spellSlots[grade] = { path, keyPath: ['spellcasting', 'slots', grade, 'used'], createIfMissing: true }
-    targets.spell_slots = spellSlots
-  }
-
   return Object.keys(targets).length > 0 ? targets : undefined
+}
+
+/** `spellcasting.slots.<grade>.used` on whichever file owns `spellcasting` — the character's own file
+ * or a linked spell sheet (see `resolveLinkedCharacterExtensions`). */
+function spellSlotWriteTargets(source: { path: string; record: Record<string, unknown> } | undefined): Record<string, FieldWriteTarget> | undefined {
+  const slots = source && isRecord(source.record.slots) ? source.record.slots : undefined
+  if (!slots || Object.keys(slots).length === 0) return undefined
+  const targets: Record<string, FieldWriteTarget> = {}
+  for (const grade of Object.keys(slots)) targets[grade] = { path: source!.path, keyPath: ['spellcasting', 'slots', grade, 'used'], createIfMissing: true }
+  return targets
 }
 
 // Files under a path containing "vorlage" (German for "template") are the vault's blank
@@ -124,6 +127,13 @@ function resolveLinkedCharacterExtensions(ownPath: string, characterFileName: st
           return f ? { path: f.path, record: f.data.currency as Record<string, unknown> } : undefined
         })(),
     spellcasting: data.spellcasting ?? linked.find((f) => isRecord(f.data.spellcasting))?.data.spellcasting,
+    /** Which file owns the `spellcasting` key — same own-file-wins rule as the value itself. */
+    spellcasting_source: isRecord(data.spellcasting)
+      ? { path: ownPath, record: data.spellcasting }
+      : (() => {
+          const f = linked.find((l) => isRecord(l.data.spellcasting))
+          return f ? { path: f.path, record: f.data.spellcasting as Record<string, unknown> } : undefined
+        })(),
     spells_known: data.spells_known ?? linked.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known,
   }
 }
@@ -225,15 +235,17 @@ export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets):
       }
       if (type === 'character') {
         const character = parsed.frontmatter as CharacterFrontmatter
-        const { endeavour_inventory_path, currency_source, ...linkedExtensions } = resolveLinkedCharacterExtensions(
+        const { endeavour_inventory_path, currency_source, spellcasting_source, ...linkedExtensions } = resolveLinkedCharacterExtensions(
           raw.path,
           raw.name,
           raw.data,
           rawFiles,
         )
+        const spellSlots = spellSlotWriteTargets(spellcasting_source)
         const writeTargets = {
           ...ownSchemaWriteTargets(raw.path, raw.data),
           ...(currency_source ? { currency_block: { path: currency_source.path } } : {}),
+          ...(spellSlots ? { spell_slots: spellSlots } : {}),
         }
         const armor = armorLink(raw.data)
         const pools = resolveLevelPools(character, rawFiles)

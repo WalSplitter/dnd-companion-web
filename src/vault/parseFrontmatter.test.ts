@@ -92,6 +92,17 @@ describe('buildVault', () => {
     expect(vault.characters[0].frontmatter._write?.endeavour_inventory).toBeUndefined()
   })
 
+  it('points spell slot write-back at a linked spell sheet when the character file has no inline spellcasting', () => {
+    const linkedSpells = {
+      path: 'Characters/Spell Sheet.md',
+      content: '---\nCharakter: "[[Test]]"\nspellcasting:\n  ability: int\n  slots:\n    "1": { max: 2, used: 0 }\n---\n',
+    }
+    const vault = buildVault([characterFile, linkedSpells])
+    expect(vault.characters[0].frontmatter._write?.spell_slots).toEqual({
+      1: { path: 'Characters/Spell Sheet.md', keyPath: ['spellcasting', 'slots', '1', 'used'], createIfMissing: true },
+    })
+  })
+
   it('resolves a portrait attachment reference against the loaded image assets', () => {
     const withPortrait = {
       path: 'Characters/Test.md',
