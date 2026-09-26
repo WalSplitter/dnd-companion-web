@@ -57,6 +57,12 @@ function spellSlotWriteTargets(source: Sourced | undefined): Record<string, Fiel
   )
 }
 
+/** `spellcasting.mana.current` on whichever file owns `spellcasting`. */
+function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefined {
+  const mana = source && isRecord(source.record.mana) ? source.record.mana : undefined
+  return source && mana && typeof mana.max === 'number' ? { path: source.path, keyPath: ['spellcasting', 'mana', 'current'], createIfMissing: true } : undefined
+}
+
 /**
  * Like the legacy vault's `Inventar <Name>.md` convention, a character's `endeavour_inventory`,
  * `currency`, `spellcasting` and `spells_known` may live on separate notes that link back via
@@ -79,6 +85,7 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
   const spellcasting = blockSource('spellcasting')
   const spellsKnown = candidates.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known
   const spellSlots = spellSlotWriteTargets(spellcasting)
+  const mana = manaWriteTarget(spellcasting)
 
   return {
     values: {
@@ -91,6 +98,7 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
       ...(inventory ? { endeavour_inventory: { path: inventory.path } } : {}),
       ...(currency ? { currency_block: { path: currency.path } } : {}),
       ...(spellSlots ? { spell_slots: spellSlots } : {}),
+      ...(mana ? { mana_current: mana } : {}),
     } satisfies CharacterWriteTargets,
   }
 }

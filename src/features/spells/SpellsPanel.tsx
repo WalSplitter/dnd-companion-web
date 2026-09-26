@@ -4,9 +4,10 @@ import { D20RollButton } from '../../dice/RollButton'
 import { useT } from '../../i18n/useI18n'
 import { D20Modifier, SpellSaveDCValue } from '../../components/ExhaustedValue'
 import { spellAttackBonus } from '../../vault/deriveStats'
-import type { CharacterFrontmatter } from '../../vault/types'
+import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { SpellList } from './components/SpellList'
+import { ManaVessel } from './components/ManaVessel'
 import { SpellSlotTracker } from './components/SpellSlotTracker'
 
 export function SpellsPanel({
@@ -31,7 +32,9 @@ export function SpellsPanel({
         <div className="mb-4 grid grid-cols-3 gap-2 text-center sm:max-w-sm">
           <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
             <div className="text-xs uppercase text-fg-muted">{t('stats.ability')}</div>
-            <div className="font-semibold uppercase text-fg">{character.spellcasting.ability}</div>
+            <div className="font-semibold uppercase text-fg">
+              {character.nimble_attributes ? ABILITY_TO_NIMBLE_ATTRIBUTE[character.spellcasting.ability] : character.spellcasting.ability}
+            </div>
           </div>
           <div className="rounded-lg border border-border bg-surface-2 px-2 py-2">
             <div className="text-xs uppercase text-fg-muted">{t('stats.saveDC')}</div>
@@ -48,6 +51,9 @@ export function SpellsPanel({
             )}
           </div>
         </div>
+        {character.spellcasting.mana && (
+          <ManaVessel mana={character.spellcasting.mana} characterPath={characterPath} writeTarget={character._write?.mana_current} />
+        )}
         {character.spellcasting.slots && (
           <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />
         )}
@@ -60,7 +66,7 @@ export function SpellsPanel({
         )}
       </Card>
       <Card title={t('cards.spellsKnown')}>
-        <SpellList links={character.spells_known ?? []} index={index} character={character} />
+        <SpellList links={character.spells_known ?? []} index={index} character={character} characterPath={characterPath} />
       </Card>
     </div>
   )

@@ -2,16 +2,19 @@
 type: spell
 name: Brennende Hände
 level: 1
-school: Hervorrufung
-casting_time: 1 Aktion
-range: Selbst (4,5-m-Kegel)
+school: Feuer
+casting_time: 2 Aktionen
+actions: 2
+range: Selbst (Kegel, 3 Felder)
 components: [V, S]
 duration: Sofort
 classes: [Arkanist]
+target_kind: aoe
 damage: 3d6
 damage_type: Feuerschaden
 save_ability: dex
-target: Alle Kreaturen im Kegel
+upcast: +1d6 Schaden
+upcast_damage: +1d6
 ---
 
-Ein dünner Fächer aus Flammen schießt aus deinen Fingerspitzen. Jede Kreatur im Kegel legt einen [[Beweglichkeit|BW]]-Rettungswurf ab und erleidet bei einem Misserfolg 3W6 Feuerschaden, bei einem Erfolg die Hälfte.
+Ein Fächer aus Flammen schießt aus deinen Fingern. Jede Kreatur im Kegel legt einen [[Beweglichkeit|BW]]-Rettungswurf ab: voller Schaden bei Misserfolg, halber bei Erfolg.

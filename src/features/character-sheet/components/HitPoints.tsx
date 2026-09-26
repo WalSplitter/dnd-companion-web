@@ -7,6 +7,7 @@ import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { hpFillClass, maxExhaustion, percentOf, resiliencePool, stepWithin } from '../vitals'
+import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
 
 /** Divider lines every `100 / count` %: one per point for small pools, every 10 % otherwise. */
@@ -305,6 +306,7 @@ export function HitPoints({
       <div className="min-w-0 grow-[2] basis-[26rem]">
         <div className="mb-2 flex min-h-7 items-center justify-between gap-3">
           <SectionTitle className="min-w-0 flex-1">{t('cards.vitals')}</SectionTitle>
+          <RestMenu character={character} characterPath={characterPath} />
           {tempControl}
         </div>
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">

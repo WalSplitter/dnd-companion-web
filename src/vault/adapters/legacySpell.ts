@@ -39,6 +39,35 @@ function damageScaling(data: Record<string, unknown>): SpellDamageScaling[] | un
   return scaling.length > 0 ? scaling : undefined
 }
 
+/** `Mana` or `Manakosten`, a plain number (or numeric string) — absent on D&D-style spell notes. */
+function manaCost(data: Record<string, unknown>): number | undefined {
+  const raw = data.Mana ?? data.Manakosten
+  const n = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() ? Number(raw) : NaN
+  return Number.isFinite(n) ? n : undefined
+}
+
+/** A positive whole number from a number or numeric-string field (`Aktionen: 2`, `AP: "1"`). */
+function count(raw: unknown): number | undefined {
+  const n = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() ? Number(raw) : NaN
+  return Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
+function text(raw: unknown): string | undefined {
+  const value = typeof raw === 'string' ? raw.trim() : raw === undefined || raw === null ? '' : linkDisplay(raw)
+  return value || undefined
+}
+
+/** `Ziel:` as the vault writes it (`AoE`, `Einzel`, `Selbst`, …) mapped to Nimble's target kinds. */
+function targetKind(raw: unknown): SpellFrontmatter['target_kind'] {
+  const value = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+  if (!value) return undefined
+  if (/^(aoe|fläche|bereich|linie|kegel)/.test(value)) return 'aoe'
+  if (/^einzel/.test(value)) return 'single'
+  if (/^selbst/.test(value)) return 'self'
+  if (/^speziell/.test(value)) return 'special'
+  return undefined
+}
+
 export function normalizeLegacySpellNote(raw: RawFile): SpellFrontmatter {
   const { data } = raw
 
@@ -64,5 +93,15 @@ export function normalizeLegacySpellNote(raw: RawFile): SpellFrontmatter {
     ritual: data.Ritual === true,
     scalable: data.Skalierbar === true,
     spell_type: linkDisplay(data.Typ) || undefined,
+    mana_cost: manaCost(data),
+    attack_roll: typeof data.Angriffswurf === 'boolean' ? data.Angriffswurf : undefined,
+    actions: count(data.Aktionen ?? data.AP),
+    target_kind: targetKind(data.Ziel),
+    reaction: data.Reaktion === true || undefined,
+    ignores_armor: data.IgnoriertRüstung === true || undefined,
+    utility: data.Hilfszauber === true || undefined,
+    high_levels: text(data['Hohe Stufen'] ?? data.HoheStufen),
+    upcast: text(data.Upcast),
+    upcast_damage: text(data.UpcastSchaden),
   }
 }

@@ -47,7 +47,8 @@ describe('sample vault', () => {
     const elandra = character('Elandra Windrider')
     expect(elandra.currency).toEqual({ cp: 40, sp: 15, gp: 42 })
     expect(elandra._write?.endeavour_inventory?.path).toMatch(/Inventar Elandra\.md$/)
-    expect(elandra._write?.spell_slots?.['1']?.path).toMatch(/Spell Sheet Elandra\.md$/)
+    expect(elandra.spellcasting?.mana).toEqual({ current: 9, max: 12 })
+    expect(elandra._write?.mana_current).toMatchObject({ path: expect.stringMatching(/Spell Sheet Elandra\.md$/), keyPath: ['spellcasting', 'mana', 'current'] })
     expect(elandra.spells_known?.every((link) => resolveSpellLink(index, link))).toBe(true)
   })
 

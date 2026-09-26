@@ -9,6 +9,7 @@ import { spellAttackBonus } from '../../../vault/deriveStats'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
+import { ManaVessel } from '../../spells/components/ManaVessel'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
 
 export function AttacksSpellcasting({
@@ -52,6 +53,13 @@ export function AttacksSpellcasting({
           )}
         </StatPlate>
       </div>
+
+      {character.spellcasting.mana && (
+        <div className="mb-3">
+          <div className="mb-1 text-xs font-medium uppercase tracking-wider text-fg-muted">{t('stats.mana')}</div>
+          <ManaVessel mana={character.spellcasting.mana} characterPath={characterPath} writeTarget={character._write?.mana_current} />
+        </div>
+      )}
 
       {character.spellcasting.slots && (
         <div className="mb-3">

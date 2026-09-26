@@ -114,13 +114,14 @@ function Portrait({ character: c }: { character: CharacterFrontmatter }) {
   )
 }
 
-/** Resilience/HP bars plus the temp-HP and exhaustion line — same colours and ward as the sheet. */
+/** Resilience/HP (and mana, for casters with a pool) bars plus the temp-HP and exhaustion line — same colours and ward as the sheet. */
 function LifeForce({ character: c }: { character: CharacterFrontmatter }) {
   const t = useT()
   const temp = c.hp.temp ?? 0
   const resilience = resiliencePool(c)
   const exhaustion = exhaustionLevel(c)
   const exhaustionMax = maxExhaustion(c)
+  const mana = c.spellcasting?.mana
 
   return (
     <div className="space-y-1.5">
@@ -142,6 +143,21 @@ function LifeForce({ character: c }: { character: CharacterFrontmatter }) {
         fillClass={`bg-linear-to-r ${hpFillClass(percentOf(c.hp.current, c.hp.max))}`}
         warded={temp > 0}
       />
+      {mana && (
+        <MiniBar
+          icon={
+            <svg aria-hidden viewBox="0 0 16 16" className="mana-caption size-3.5">
+              <circle cx="8" cy="8.5" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M3.1 9.1q2.4-1.2 4.9 0t4.9 0A4.9 4.9 0 0 1 3.1 9.1Z" fill="currentColor" />
+            </svg>
+          }
+          label={t('stats.mana')}
+          current={mana.current}
+          max={mana.max}
+          fillClass="mana-fill"
+          warded={false}
+        />
+      )}
       {(temp > 0 || exhaustion > 0) && (
         <div className="flex items-center justify-between gap-2 text-[0.7rem]">
           {temp > 0 ? (

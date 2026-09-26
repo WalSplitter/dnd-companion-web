@@ -144,6 +144,12 @@ export interface SpellSlotInfo {
 export interface SpellcastingInfo {
   ability: AbilityKey
   slots?: Record<string, SpellSlotInfo>
+  /** Endeavour rules: one mana pool instead of per-grade slots. Spells cost `mana_cost` from it, rests
+   * refill it (`Feldrast` half, `Sichere Rast` all). A character normally has either this or `slots`. */
+  mana?: { current: number; max: number }
+  /** Nimble: the highest spell tier the character has unlocked (a Mage unlocks one every two levels,
+   * tier 1 at level 2). Caps upcasting. Absent = the highest tier among the known spells. */
+  max_tier?: number
 }
 
 export interface Currency {
@@ -178,6 +184,8 @@ export interface CharacterWriteTargets {
   exhaustion?: FieldWriteTarget
   /** Keyed by spell grade (same keys as `spellcasting.slots`). */
   spell_slots?: Record<string, FieldWriteTarget>
+  /** `spellcasting.mana.current`, on whichever file owns `spellcasting`. */
+  mana_current?: FieldWriteTarget
   /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
   /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
@@ -374,6 +382,8 @@ export interface SpellDamageScaling {
   dice: string
 }
 
+export type SpellTargetKind = 'single' | 'aoe' | 'self' | 'special'
+
 export interface SpellFrontmatter {
   type: 'spell'
   name: string
@@ -393,6 +403,29 @@ export interface SpellFrontmatter {
   ritual?: boolean
   scalable?: boolean
   spell_type?: string
+  /** Mana the spell costs to cast. Absent = its tier (Nimble: "a spell's mana cost equals its tier",
+   * cantrips and utility spells are free). Only used when the character has a mana pool. */
+  mana_cost?: number
+  /** Action points (AP) the casting takes, e.g. 2 for "2 Actions". */
+  actions?: number
+  /** Nimble's target line: single target, area of effect, the caster, or something special. */
+  target_kind?: SpellTargetKind
+  /** Cast as a reaction (Nimble "Reaction: When attacked …"). */
+  reaction?: boolean
+  /** The damage ignores armor (in Endeavour armor reduces incoming damage, see `Rüstungsklasse`). */
+  ignores_armor?: boolean
+  /** Nimble utility spell: no tier, no mana, listed apart from the combat spells. */
+  utility?: boolean
+  /** Cantrip scaling as written, e.g. "+1d12 alle 5 Stufen". The rolled dice come from `damage_scaling`. */
+  high_levels?: string
+  /** What casting at a higher tier adds, as written, e.g. "+1d12 Schaden, +1 Schattendiener". */
+  upcast?: string
+  /** The rollable part of `upcast`, added once per tier above the spell's own, e.g. "+1d12" or "+10".
+   * May use KEY/LVL like `damage`. */
+  upcast_damage?: string
+  /** Whether the caster makes a spell attack roll. Absent = guessed: damage without a save means an
+   * attack. `false` marks spells that always hit (e.g. Magisches Geschoss). */
+  attack_roll?: boolean
 }
 
 export type VaultFrontmatter = CharacterFrontmatter | ItemFrontmatter | SpellFrontmatter

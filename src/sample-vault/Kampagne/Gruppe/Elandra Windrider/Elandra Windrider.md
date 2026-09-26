@@ -10,7 +10,7 @@ backstory: |
 
   Seit sie sich der Gruppe angeschlossen hat, füllt sich ihr Zauberbuch mit Randnotizen über jede
   Formel, die im Feld anders wirkte als auf dem Papier. Ihr Kampfstab trägt die Brandspuren eines
-  [[Feuerpfeil]]s, der ein wenig zu früh gezündet hat.
+  [[Flammenpfeil]]s, der ein wenig zu früh gezündet hat.
 class:
   - name: Arkanist
     level: 3
