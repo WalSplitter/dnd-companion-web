@@ -1,0 +1,560 @@
+/* ───────────────────────── Start page & vault navigation ─────────────────────────
+ * Everything is tinted from the theme tokens (trim/primary/accent), so the start page matches all
+ * eight themes. Motion lives behind `prefers-reduced-motion: no-preference`; without it the page is
+ * fully static but otherwise identical. */
+
+@property --portal-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Arcane sigil (hero, loading veil, nav home crumb). */
+.arcane-sigil .sigil-spin,
+.arcane-sigil .sigil-spin-reverse,
+.arcane-sigil .sigil-die,
+.arcane-sigil .sigil-pulse {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+.arcane-sigil .sigil-die {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-trim) 55%, transparent));
+}
+
+/* Embers drifting up behind the start page. */
+.start-embers {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.start-ember {
+  position: absolute;
+  bottom: -12px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  opacity: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-trim) 70%, white), var(--color-trim) 45%, transparent 72%);
+  box-shadow: 0 0 10px 1px color-mix(in srgb, var(--color-trim) 55%, transparent);
+}
+
+.start-aura {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-trim) 30%, transparent), transparent 68%);
+  transform: scale(1.8);
+  filter: blur(8px);
+}
+
+/* Gilded title with a slow sheen travelling across it. */
+.start-title {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-fg) 0%,
+    var(--color-fg) 35%,
+    var(--color-trim) 45%,
+    color-mix(in srgb, var(--color-trim) 45%, white) 50%,
+    var(--color-trim) 55%,
+    var(--color-fg) 65%,
+    var(--color-fg) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-trim) 30%, transparent));
+}
+
+.start-gem {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 70%, transparent);
+}
+
+/* Portal cards: 1px gradient rim, tilt toward the pointer, spotlight under it, spinning rim on hover. */
+.portal-card {
+  --portal: var(--color-trim);
+  position: relative;
+  display: block;
+  border-radius: 1.1rem;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--portal) 55%, transparent),
+    color-mix(in srgb, var(--portal) 10%, transparent) 45%,
+    color-mix(in srgb, var(--portal) 35%, transparent)
+  );
+  box-shadow: 0 14px 34px -22px rgb(0 0 0 / 0.7);
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+  transition:
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 300ms ease;
+}
+button.portal-card {
+  cursor: pointer;
+  font: inherit;
+}
+button.portal-card:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.portal-card:hover,
+.portal-card:focus-within,
+button.portal-card:focus-visible {
+  --lift: -5px;
+  box-shadow:
+    0 26px 50px -26px color-mix(in srgb, var(--portal) 60%, transparent),
+    0 14px 34px -22px rgb(0 0 0 / 0.7);
+}
+button.portal-card:focus-visible {
+  outline: 2px solid var(--portal);
+  outline-offset: 3px;
+}
+.portal-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--portal-angle),
+    transparent 0 62%,
+    var(--portal) 80%,
+    color-mix(in srgb, var(--portal) 40%, white) 84%,
+    transparent 96%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.portal-card:hover::before,
+.portal-card:focus-within::before,
+button.portal-card:focus-visible::before {
+  opacity: 1;
+}
+.portal-card-inner {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(1.1rem - 1px);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--portal) 7%, var(--color-surface)), var(--color-surface) 55%);
+}
+.portal-card-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(460px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--portal) 16%, transparent), transparent 60%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.portal-card:hover .portal-card-inner::before {
+  opacity: 1;
+}
+.portal-card-inner > * {
+  position: relative;
+}
+
+.portal-emblem {
+  color: var(--portal);
+  border: 1px solid color-mix(in srgb, var(--portal) 40%, transparent);
+  background:
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--portal) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--portal) 6%, var(--color-surface-2));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 24px -8px color-mix(in srgb, var(--portal) 70%, transparent);
+}
+
+/* The chest lid lifts and sparks rise when its card is hovered (or a folder is dragged over the page). */
+.chest-lid {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  transition: transform 450ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.chest-glow {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.portal-card:hover .chest-lid,
+.drop-frame .chest-lid {
+  transform: rotate(-16deg) translateY(-1px);
+}
+.portal-card:hover .chest-glow,
+.drop-frame .chest-glow {
+  opacity: 1;
+}
+.chest-keyhole {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.sample-hero {
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 8px 20px -8px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  transition: transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sample-hero + .sample-hero {
+  margin-left: -0.75rem;
+}
+.portal-card:hover .sample-hero:nth-child(1) {
+  transform: rotate(-8deg) translateX(-4px);
+}
+.portal-card:hover .sample-hero:nth-child(2) {
+  transform: rotate(7deg) translateX(6px) translateY(-3px);
+}
+
+.recent-medallion {
+  box-shadow: 0 0 0 2px var(--color-surface);
+  transition: transform 250ms ease;
+}
+.recent-medallion:hover {
+  z-index: 1;
+  transform: translateY(-3px) scale(1.08);
+}
+.recent-live {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 25%, transparent);
+}
+
+.current-vault {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-success) 8%, transparent), transparent 40%),
+    color-mix(in srgb, var(--color-surface) 80%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.feature-icon {
+  box-shadow: 0 0 16px -6px color-mix(in srgb, var(--color-trim) 70%, transparent);
+}
+
+.start-cta {
+  position: relative;
+  overflow: hidden;
+}
+.start-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.45) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+
+/* Drop veil & loading veil. */
+.drop-veil,
+.vault-loading {
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(10px);
+}
+.drop-frame {
+  color: var(--color-primary);
+  border: 2px dashed color-mix(in srgb, var(--color-primary) 70%, transparent);
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 65%);
+}
+.drop-frame svg {
+  width: 5rem;
+  height: 5rem;
+}
+.vault-loading-sigil {
+  filter: drop-shadow(0 0 30px color-mix(in srgb, var(--color-trim) 45%, transparent));
+}
+.vault-loading-bar {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-trim) 60%, transparent), var(--color-trim), color-mix(in srgb, var(--color-trim) 50%, white));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 70%, transparent);
+  transition: width 200ms ease;
+}
+.vault-loading-bar.is-indeterminate {
+  width: 35%;
+}
+
+/* Breadcrumb bar. */
+.vault-nav {
+  position: relative;
+  z-index: 5;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-trim) 7%, transparent), transparent 50%),
+    color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px -18px rgb(0 0 0 / 0.7);
+}
+.vault-nav-home .sigil-spin,
+.vault-nav-home .sigil-spin-reverse {
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.vault-nav-crumb:hover .vault-nav-home .sigil-spin {
+  transform: rotate(90deg);
+}
+.vault-nav-crumb:hover .vault-nav-home .sigil-spin-reverse {
+  transform: rotate(-90deg);
+}
+.vault-nav-menu {
+  border: 1px solid color-mix(in srgb, var(--color-trim) 30%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 20px 40px -16px rgb(0 0 0 / 0.7),
+    0 0 0 1px rgb(0 0 0 / 0.2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .arcane-sigil .sigil-spin {
+    animation: sigil-spin 60s linear infinite;
+  }
+  .arcane-sigil .sigil-spin-reverse {
+    animation: sigil-spin 42s linear infinite reverse;
+  }
+  .arcane-sigil .sigil-pulse {
+    animation: sigil-pulse 4s ease-in-out infinite;
+  }
+  .arcane-sigil .sigil-die {
+    animation: sigil-float 6s ease-in-out infinite;
+  }
+  .vault-loading-sigil .sigil-spin {
+    animation-duration: 8s;
+  }
+  .vault-loading-sigil .sigil-spin-reverse {
+    animation-duration: 5s;
+  }
+  /* The nav's tiny sigil only turns on hover (see above). */
+  .vault-nav-home .sigil-spin,
+  .vault-nav-home .sigil-spin-reverse,
+  .vault-nav-home .sigil-die {
+    animation: none;
+  }
+
+  .start-ember {
+    animation: ember-rise linear infinite;
+  }
+  .start-aura {
+    animation: aura-breathe 6s ease-in-out infinite;
+  }
+  .start-title {
+    animation: title-sheen 9s ease-in-out infinite;
+  }
+  .start-gem {
+    animation: gem-glint 3.5s ease-in-out infinite;
+  }
+
+  .rise-in {
+    animation: rise-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+  /* Opacity only: a transform here would trap the sheet's `position: fixed` overlays. */
+  .page-enter {
+    animation: page-enter 380ms ease-out both;
+  }
+  .vault-nav-enter {
+    animation: crumb-enter 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .vault-nav-menu {
+    animation: menu-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    transform-origin: top left;
+  }
+
+  .portal-card:hover::before,
+  .portal-card:focus-within::before,
+  button.portal-card:focus-visible::before {
+    animation: portal-spin 3.2s linear infinite;
+  }
+  .portal-float {
+    animation: sigil-float 5s ease-in-out infinite;
+  }
+  .portal-card:hover .start-cta::after,
+  .start-cta:hover::after {
+    animation: cta-shine 1.1s ease-out;
+  }
+  .sample-hero {
+    animation: hero-bob 5s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * -1.6s);
+  }
+  .recent-live {
+    animation: live-pulse 2.2s ease-in-out infinite;
+  }
+  .recent-ghost {
+    animation: ghost-shimmer 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 0.3s);
+  }
+  .drop-frame {
+    animation: drop-breathe 1.6s ease-in-out infinite;
+  }
+  .drop-veil {
+    animation: page-enter 160ms ease-out both;
+  }
+  .vault-loading {
+    animation: page-enter 250ms ease-out both;
+  }
+  .vault-loading-bar.is-indeterminate {
+    animation: bar-sweep 1.3s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-embers {
+    display: none;
+  }
+}
+
+@keyframes sigil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sigil-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes sigil-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(1);
+  }
+  12% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), -100vh) scale(0.4);
+  }
+}
+@keyframes aura-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(2);
+  }
+}
+@keyframes title-sheen {
+  0%,
+  15% {
+    background-position: 100% 0;
+  }
+  60%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+@keyframes gem-glint {
+  0%,
+  100% {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--color-trim) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--color-trim) 90%, transparent);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes crumb-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes portal-spin {
+  to {
+    --portal-angle: 360deg;
+  }
+}
+@keyframes cta-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+@keyframes hero-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-success) 0%, transparent);
+  }
+}
+@keyframes ghost-shimmer {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes drop-breathe {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+  50% {
+    border-color: var(--color-primary);
+  }
+}
+@keyframes bar-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

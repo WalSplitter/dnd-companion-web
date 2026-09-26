@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { isFileSystemAccessSupported } from './vaultLoader'
@@ -8,19 +9,17 @@ export function VaultLoaderControls() {
   const status = useVaultStore((s) => s.status)
   const source = useVaultStore((s) => s.source)
   const vaultName = useVaultStore((s) => s.vaultName)
-  const reconnectName = useVaultStore((s) => s.reconnectName)
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
   const editPermission = useVaultStore((s) => s.editPermission)
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
   const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
-  const restoreLastVault = useVaultStore((s) => s.restoreLastVault)
-  const reconnectVault = useVaultStore((s) => s.reconnectVault)
   const requestEditPermission = useVaultStore((s) => s.requestEditPermission)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    void restoreLastVault()
-  }, [restoreLastVault])
+  const navigate = useNavigate()
+  // A newly opened vault has different characters — start over at its list.
+  const openedAt = (ok: boolean) => {
+    if (ok) navigate('/characters')
+  }
 
   const supportsPicker = isFileSystemAccessSupported()
 
@@ -41,19 +40,8 @@ export function VaultLoaderControls() {
         </span>
       )}
 
-      {reconnectName && (
-        <button
-          type="button"
-          onClick={() => void reconnectVault()}
-          title={t('vaultLoader.reconnect', { name: reconnectName })}
-          className="max-w-[12rem] shrink-0 truncate rounded-md border border-trim/40 px-3 py-1.5 text-sm font-medium text-trim hover:bg-trim/10"
-        >
-          {t('vaultLoader.reconnect', { name: reconnectName })}
-        </button>
-      )}
-
       {supportsPicker ? (
-        <button type="button" onClick={() => void loadFromDirectoryPicker()} className="rpg-button shrink-0 whitespace-nowrap">
+        <button type="button" onClick={() => void loadFromDirectoryPicker().then(openedAt)} className="rpg-button shrink-0 whitespace-nowrap">
           {t('vaultLoader.openVaultFolder')}
         </button>
       ) : (
@@ -69,7 +57,7 @@ export function VaultLoaderControls() {
             multiple
             hidden
             onChange={(e) => {
-              if (e.target.files) void loadFromFileList(e.target.files)
+              if (e.target.files) void loadFromFileList(e.target.files).then(openedAt)
             }}
           />
         </>

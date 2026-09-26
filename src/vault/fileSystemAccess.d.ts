@@ -17,6 +17,11 @@ interface FileSystemDirectoryHandle extends FileSystemHandle {
   requestPermission(options?: { mode?: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>
 }
 
+interface DataTransferItem {
+  /** Chromium: the dropped file or folder as a File System Access handle. */
+  getAsFileSystemHandle?(): Promise<FileSystemFileHandle | FileSystemDirectoryHandle | null>
+}
+
 interface Window {
   showDirectoryPicker?(options?: { mode?: 'read' | 'readwrite' }): Promise<FileSystemDirectoryHandle>
 }

@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { lazy } from 'react'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
 import { TooltipLayer } from './components/TooltipLayer'
@@ -9,6 +9,8 @@ import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { RulesetBadge } from './vault/RulesetBadge'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
 import { CharacterListPage } from './routes/CharacterListPage'
+import { StartPage } from './routes/StartPage'
+import { VaultLayout } from './routes/VaultLayout'
 import { useVaultStore } from './store/vaultStore'
 
 // The sheet (with inventory, spells, markdown rendering) is the heavy part — load it on first visit only.
@@ -18,6 +20,10 @@ function App() {
   const t = useT()
   const isLoading = useVaultStore((s) => s.status === 'loading')
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
+  // The start page brings its own vault controls; the header's only matter once a vault is open.
+  const vaultOpen = useVaultStore((s) => s.source !== 'none')
+  const onStartPage = useLocation().pathname === '/'
+  const showVaultControls = vaultOpen && !onStartPage
   const percent = loadingProgress && loadingProgress.total > 0 ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
 
   return (
@@ -34,9 +40,13 @@ function App() {
             {t('app.brand')}
           </Link>
           <div className="flex shrink-0 items-center justify-end gap-2.5">
-            <RulesetBadge />
-            <VaultLoaderControls />
-            <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
+            {showVaultControls && (
+              <>
+                <RulesetBadge />
+                <VaultLoaderControls />
+                <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
+              </>
+            )}
             <LanguageSwitcher />
             <ThemeSwitcher />
           </div>
@@ -52,12 +62,14 @@ function App() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-4 pt-6">
-        <Suspense fallback={null}>
-          <Routes>
-            <Route path="/" element={<CharacterListPage />} />
+        <Routes>
+          <Route path="/" element={<StartPage />} />
+          <Route element={<VaultLayout />}>
+            <Route path="/characters" element={<CharacterListPage />} />
             <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
-          </Routes>
-        </Suspense>
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       <AppFooter />

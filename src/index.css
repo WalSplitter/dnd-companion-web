@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './theme/tokens.css';
+@import './theme/startPage.css';
 @import '@fontsource/cinzel/500.css';
 @import '@fontsource/cinzel/700.css';
 

@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
-import { detectRuleset, type RulesetDetectionResult } from '../vault/detectRuleset'
+import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
 import { buildVault } from '../vault/parseFrontmatter'
-import { clearVaultHandle, loadVaultHandle, saveVaultHandle } from '../vault/handleStore'
+import { forgetRecentVault, listRecentVaults, rememberRecentVault, updateRecentVault, type RecentVault } from '../vault/handleStore'
 import {
   isFileSystemAccessSupported,
   readVaultFromDirectoryHandle,
@@ -16,8 +16,9 @@ import { writeCurrencyBlock, writeEndeavourInventory, writeFieldValue } from '..
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 
-export type VaultSource = 'sample' | 'user'
-type VaultStatus = 'loading' | 'loaded' | 'error'
+/** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
+export type VaultSource = 'none' | 'sample' | 'user'
+type VaultStatus = 'idle' | 'loading' | 'loaded' | 'error'
 /** 'unavailable': no file handles to write through (sample vault, or the <input webkitdirectory>
  * fallback for browsers without the File System Access API) — fields stay read-only. */
 export type EditPermission = 'unavailable' | 'not-requested' | 'granted' | 'denied'
@@ -26,8 +27,11 @@ interface VaultState {
   status: VaultStatus
   source: VaultSource
   vaultName: string | null
-  /** Set when a previously used vault folder was found on disk but needs a user gesture to re-grant read access. */
-  reconnectName: string | null
+  /** The `recents` entry of the open folder (null for the sample vault / the file-list fallback). */
+  recentId: string | null
+  /** Previously opened vault folders, newest first — the start page's "continue" cards. */
+  recents: RecentVault[]
+  recentsLoaded: boolean
   /** Files read so far / total markdown files found, while `status === 'loading'` from a real folder. */
   loadingProgress: { done: number; total: number } | null
   vault: Vault
@@ -41,11 +45,22 @@ interface VaultState {
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
   loadSampleVault: () => void
-  loadFromDirectoryPicker: () => Promise<void>
-  loadFromFileList: (fileList: FileList) => Promise<void>
-  restoreLastVault: () => Promise<void>
-  reconnectVault: () => Promise<void>
-  forgetVault: () => Promise<void>
+  /** The load actions resolve `true` once the new vault is showing (false: cancelled, failed or superseded). */
+  loadFromDirectoryPicker: () => Promise<boolean>
+  /** Opens a folder handle obtained some other way (dragged onto the start page). */
+  loadFromDirectoryHandle: (handle: FileSystemDirectoryHandle) => Promise<boolean>
+  loadFromFileList: (fileList: FileList) => Promise<boolean>
+  refreshRecents: () => Promise<void>
+  /**
+   * Reopens a remembered folder. Asks the browser to re-grant read access, so it must run from a
+   * user gesture — unless `silent`, which only succeeds when access is still granted (deep-link boot).
+   */
+  openRecentVault: (id: string, options?: { silent?: boolean }) => Promise<boolean>
+  forgetRecentVault: (id: string) => Promise<void>
+  /** Remembers the sheet last looked at in the open folder's recents entry. */
+  noteCharacterVisit: (name: string) => void
+  /** Drops the open vault and returns to the empty "nothing opened" state. */
+  closeVault: () => void
   /** Requests `readwrite` permission on the vault folder — must be called from a direct user gesture. */
   requestEditPermission: () => Promise<void>
   /**
@@ -108,42 +123,109 @@ function mapCharacter(vault: Vault, characterPath: string, mutate: (character: C
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
 const NO_WRITE_ACCESS = { rootHandle: null, fileHandles: null, editPermission: 'unavailable' } as const
 
-/** The bundled demo vault as a complete store state — parsed once, reused on every switch back to it. */
-const SAMPLE_STATE = (() => {
-  const vault = buildVault(sampleVaultFiles, sampleVaultImages)
+const NO_FILES: VaultSourceFile[] = []
+
+/** Nothing opened: the store's initial state, so a returning visitor never sees the sample flash by. */
+const EMPTY_STATE = (() => {
+  const vault = buildVault(NO_FILES)
   return {
-    status: 'loaded',
-    source: 'sample',
+    status: 'idle',
+    source: 'none',
     vaultName: null,
-    reconnectName: null,
+    recentId: null,
     loadingProgress: null,
     vault,
     index: buildVaultIndex(vault),
-    ruleset: detectRuleset(sampleVaultFiles),
+    ruleset: detectRuleset(NO_FILES),
     error: null,
     ...NO_WRITE_ACCESS,
     writeError: null,
   } satisfies Partial<VaultState>
 })()
 
+function buildSampleState() {
+  const vault = buildVault(sampleVaultFiles, sampleVaultImages)
+  return {
+    ...EMPTY_STATE,
+    status: 'loaded',
+    source: 'sample',
+    vault,
+    index: buildVaultIndex(vault),
+    ruleset: detectRuleset(sampleVaultFiles),
+  } satisfies Partial<VaultState>
+}
+
+/** The bundled demo vault as a complete store state — parsed on first use, reused on every switch back to it. */
+let sampleState: ReturnType<typeof buildSampleState> | null = null
+
+/** How many character names a recents entry keeps for its preview medallions. */
+const RECENT_PREVIEW_NAMES = 6
+
+/** Bumped by every load; a load whose number is no longer current was superseded and must not apply. */
+let loadSeq = 0
+
 export const useVaultStore = create<VaultState>((set, get) => {
+  /** Common failure path of the loaders: a cancelled picker is not an error, and a failed load
+   * leaves whatever vault was showing before in place. */
+  function loadFailed(source: string, err: unknown) {
+    const fallback = get().source === 'none' ? 'idle' : 'loaded'
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      set({ status: fallback, error: null, loadingProgress: null })
+      return
+    }
+    console.error(`[${source}] failed:`, err)
+    set({ status: get().source === 'none' ? 'error' : 'loaded', error: errorMessage(err), loadingProgress: null })
+    reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source, error: err })
+  }
+
+  /** Remembers a freshly opened folder for the start page (best effort — no IndexedDB, no recents). */
+  async function remember(handle: FileSystemDirectoryHandle, vault: Vault, ruleset: RulesetId) {
+    try {
+      const names = vault.characters.map((c) => c.frontmatter.name)
+      const id = await rememberRecentVault(handle, { ruleset, characterCount: names.length, characters: names.slice(0, RECENT_PREVIEW_NAMES) })
+      if (get().rootHandle === handle) set({ recentId: id })
+      await get().refreshRecents()
+    } catch (err) {
+      console.error('[vault] remembering the folder failed:', err)
+    }
+  }
+
   /** Reads a vault folder (reporting progress) and makes it the active vault, ready for a later edit-permission request. */
-  async function loadFromHandle(handle: FileSystemDirectoryHandle) {
-    const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) =>
-      set({ loadingProgress: { done, total } }),
-    )
-    set({
-      status: 'loaded',
-      source: 'user',
-      vaultName: handle.name,
-      reconnectName: null,
-      loadingProgress: null,
-      rootHandle: handle,
-      fileHandles,
-      editPermission: 'not-requested',
-      writeError: null,
-      ...applyVault(files, imageAssets),
-    })
+  async function loadFromHandle(handle: FileSystemDirectoryHandle, source: string): Promise<boolean> {
+    const seq = ++loadSeq
+    set({ status: 'loading', error: null, loadingProgress: null })
+    try {
+      const { files, imageAssets, fileHandles } = await readVaultFromDirectoryHandle(handle, (done, total) => {
+        if (seq === loadSeq) set({ loadingProgress: { done, total } })
+      })
+      if (seq !== loadSeq) return false
+      const loaded = applyVault(files, imageAssets)
+      set({
+        status: 'loaded',
+        source: 'user',
+        vaultName: handle.name,
+        recentId: null,
+        loadingProgress: null,
+        rootHandle: handle,
+        fileHandles,
+        editPermission: 'not-requested',
+        writeError: null,
+        ...loaded,
+      })
+      void remember(handle, loaded.vault, loaded.ruleset.ruleset)
+      return true
+    } catch (err) {
+      if (seq === loadSeq) loadFailed(source, err)
+      return false
+    }
+  }
+
+  /** Makes sure read access to a stored/dropped folder is granted — prompting unless `silent`. */
+  async function ensureReadAccess(handle: FileSystemDirectoryHandle, silent = false): Promise<boolean> {
+    if ((await handle.queryPermission({ mode: 'read' })) === 'granted') return true
+    if (silent) return false
+    if ((await handle.requestPermission({ mode: 'read' })) === 'granted') return true
+    throw new Error('Permission to read the vault folder was denied.')
   }
 
   /**
@@ -181,100 +263,95 @@ export const useVaultStore = create<VaultState>((set, get) => {
   }
 
   return {
-    ...SAMPLE_STATE,
+    ...EMPTY_STATE,
+    recents: [],
+    recentsLoaded: false,
 
     loadSampleVault: () => {
+      loadSeq++
       revokeActiveImageAssets()
-      set(SAMPLE_STATE)
-      void clearVaultHandle()
+      sampleState ??= buildSampleState()
+      set(sampleState)
     },
 
     loadFromDirectoryPicker: async () => {
-      set({ status: 'loading', error: null, loadingProgress: null })
+      let handle: FileSystemDirectoryHandle
       try {
-        const handle = await showVaultDirectoryPicker()
-        await loadFromHandle(handle)
-        void saveVaultHandle(handle)
+        handle = await showVaultDirectoryPicker()
       } catch (err) {
-        console.error('[vault] loadFromDirectoryPicker failed:', err)
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          set({ status: 'loaded', error: null, loadingProgress: null })
-          return
-        }
-        set({ status: 'error', error: errorMessage(err), loadingProgress: null })
-        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromDirectoryPicker', error: err })
+        loadFailed('vault.loadFromDirectoryPicker', err)
+        return false
       }
+      return loadFromHandle(handle, 'vault.loadFromDirectoryPicker')
+    },
+
+    loadFromDirectoryHandle: async (handle) => {
+      try {
+        await ensureReadAccess(handle)
+      } catch (err) {
+        loadFailed('vault.loadFromDirectoryHandle', err)
+        return false
+      }
+      return loadFromHandle(handle, 'vault.loadFromDirectoryHandle')
     },
 
     loadFromFileList: async (fileList: FileList) => {
+      const seq = ++loadSeq
       set({ status: 'loading', error: null, loadingProgress: null })
       try {
         const { files, imageAssets } = await readVaultFromFileList(fileList)
+        if (seq !== loadSeq) return false
         set({
           status: 'loaded',
           source: 'user',
           vaultName: files[0]?.path.split('/')[0] ?? null,
-          reconnectName: null,
+          recentId: null,
+          loadingProgress: null,
           ...NO_WRITE_ACCESS,
           writeError: null,
           ...applyVault(files, imageAssets),
         })
+        return true
       } catch (err) {
-        console.error('[vault] loadFromFileList failed:', err)
-        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.loadFromFileList', error: err })
-        set({ status: 'error', error: errorMessage(err) })
+        if (seq === loadSeq) loadFailed('vault.loadFromFileList', err)
+        return false
       }
     },
 
-    /** Called once on app start: reconnects silently if permission is still granted, otherwise offers a manual reconnect. */
-    restoreLastVault: async () => {
-      if (!isFileSystemAccessSupported()) return
-      const handle = await loadVaultHandle()
-      if (!handle) return
-
-      const permission = await handle.queryPermission({ mode: 'read' }).catch(() => 'denied' as const)
-      if (permission === 'granted') {
-        try {
-          set({ status: 'loading', error: null, loadingProgress: null })
-          await loadFromHandle(handle)
-          return
-        } catch (err) {
-          console.error('[vault] restoreLastVault failed:', err)
-          set({ status: 'loaded', loadingProgress: null })
-          // fall through to offering a manual reconnect
-        }
-      }
-      set({ reconnectName: handle.name })
+    refreshRecents: async () => {
+      set({ recents: isFileSystemAccessSupported() ? await listRecentVaults() : [], recentsLoaded: true })
     },
 
-    /** Re-grants access to the last used vault folder. Must run from a user gesture (browser requirement). */
-    reconnectVault: async () => {
-      const handle = await loadVaultHandle()
-      if (!handle) {
-        set({ reconnectName: null })
-        return
-      }
-      set({ status: 'loading', error: null, loadingProgress: null })
+    openRecentVault: async (id, options) => {
+      if (!get().recentsLoaded) await get().refreshRecents()
+      const recent = get().recents.find((r) => r.id === id)
+      if (!recent) return false
       try {
-        const permission = await handle.requestPermission({ mode: 'read' })
-        if (permission !== 'granted') {
-          const message = 'Permission to read the vault folder was denied.'
-          set({ status: 'loaded', error: message, loadingProgress: null })
-          reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: message })
-          return
-        }
-        await loadFromHandle(handle)
+        if (!(await ensureReadAccess(recent.handle, options?.silent))) return false
       } catch (err) {
-        reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source: 'vault.reconnectVault', error: err })
-        set({ status: 'error', error: errorMessage(err), loadingProgress: null })
+        loadFailed('vault.openRecentVault', err)
+        return false
       }
+      return loadFromHandle(recent.handle, 'vault.openRecentVault')
     },
 
-    forgetVault: async () => {
-      await clearVaultHandle()
-      set({ reconnectName: null })
-      if (get().source !== 'user') return
-      get().loadSampleVault()
+    forgetRecentVault: async (id) => {
+      await forgetRecentVault(id).catch(() => {})
+      if (get().recentId === id) set({ recentId: null })
+      await get().refreshRecents()
+    },
+
+    noteCharacterVisit: (name) => {
+      const { recentId, recents } = get()
+      if (!recentId || recents.find((r) => r.id === recentId)?.lastCharacter === name) return
+      set({ recents: recents.map((r) => (r.id === recentId ? { ...r, lastCharacter: name } : r)) })
+      void updateRecentVault(recentId, { lastCharacter: name }).catch(() => {})
+    },
+
+    closeVault: () => {
+      loadSeq++
+      revokeActiveImageAssets()
+      set(EMPTY_STATE)
     },
 
     requestEditPermission: async () => {

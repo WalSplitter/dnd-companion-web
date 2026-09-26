@@ -31,6 +31,25 @@ function setup(handle: FileSystemFileHandle) {
 const hpOf = (name: string) => (useVaultStore.getState().vault.characters.find((c) => c.frontmatter.name === name)!.frontmatter as unknown as { hp: number }).hp
 const bump = (c: CharacterFrontmatter) => ({ ...c, hp: 9 }) as unknown as CharacterFrontmatter
 
+describe('vaultStore vault lifecycle', () => {
+  it('starts with nothing opened, so the sample vault never flashes by before the last vault loads', () => {
+    const initial = useVaultStore.getInitialState()
+    expect(initial.source).toBe('none')
+    expect(initial.status).toBe('idle')
+    expect(initial.vault.characters).toHaveLength(0)
+  })
+
+  it('opens the sample vault on request and closes back to the empty state', () => {
+    useVaultStore.getState().loadSampleVault()
+    expect(useVaultStore.getState().source).toBe('sample')
+    expect(useVaultStore.getState().vault.characters.length).toBeGreaterThan(0)
+
+    useVaultStore.getState().closeVault()
+    expect(useVaultStore.getState().source).toBe('none')
+    expect(useVaultStore.getState().vault.characters).toHaveLength(0)
+  })
+})
+
 describe('vaultStore.updateCharacterField', () => {
   beforeEach(() => {
     useErrorLogStore.getState().clear()

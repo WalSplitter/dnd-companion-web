@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { CharacterCard } from '../features/character-list/CharacterCard'
 import { useT } from '../i18n/useI18n'
@@ -23,8 +24,13 @@ export function CharacterListPage() {
         <span className="text-sm text-fg-muted">{characters.length}</span>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {characters.map((c) => (
-          <Link key={c.path} to={`/characters/${encodeURIComponent(c.frontmatter.name)}`} className="block">
+        {characters.map((c, i) => (
+          <Link
+            key={c.path}
+            to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
+            className="rise-in block"
+            style={{ '--i': i } as CSSProperties}
+          >
             <CharacterCard character={c.frontmatter} />
           </Link>
         ))}
