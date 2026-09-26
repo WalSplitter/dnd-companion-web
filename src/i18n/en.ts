@@ -7,6 +7,10 @@
 export const en = {
   // App chrome
   'app.brand': 'D&D Companion',
+  'app.createdBy': 'Crafted by',
+  'app.sourceCode': 'Source on GitHub',
+  'app.sponsor': 'Sponsor me',
+  'app.sponsorHint': 'Support WalSplitter via GitHub Sponsors',
   'vaultLoader.label': 'Vault:',
   'vaultLoader.sampleData': 'Sample data',
   'vaultLoader.loadingEllipsis': 'Loading…',

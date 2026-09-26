@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
 import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
@@ -20,7 +21,7 @@ function App() {
   const percent = loadingProgress && loadingProgress.total > 0 ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
 
   return (
-    <div className="min-h-full">
+    <div className="flex min-h-full flex-col">
       <ThemeEffect />
       <ErrorToaster />
       <TooltipLayer />
@@ -50,7 +51,7 @@ function App() {
         )}
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<CharacterListPage />} />
@@ -58,6 +59,8 @@ function App() {
           </Routes>
         </Suspense>
       </main>
+
+      <AppFooter />
     </div>
   )
 }

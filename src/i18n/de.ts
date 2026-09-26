@@ -4,6 +4,10 @@ import type { en } from './en'
  * this at compile time: a missing or extra key is a type error). */
 export const de = {
   'app.brand': 'D&D Companion',
+  'app.createdBy': 'Erstellt von',
+  'app.sourceCode': 'Quellcode auf GitHub',
+  'app.sponsor': 'Unterstütze mich',
+  'app.sponsorHint': 'WalSplitter über GitHub Sponsors unterstützen',
   'vaultLoader.label': 'Vault:',
   'vaultLoader.sampleData': 'Beispieldaten',
   'vaultLoader.loadingEllipsis': 'Lädt…',
