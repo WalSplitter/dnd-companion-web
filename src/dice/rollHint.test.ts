@@ -14,10 +14,22 @@ describe('d20RollHint', () => {
       'Athletik: W20 -9. Grundwert +1, Erschöpfung −10. Klicken zum Würfeln · Shift = Vorteil · Alt = Nachteil',
     )
   })
+
+  it('puts a note on what the roll is for before the keys', () => {
+    expect(d20RollHint(t, 'Kurzschwert Angriff', 2, 2, 'Trifft bei Ergebnis ≥ Ausweichwert des Ziels')).toBe(
+      'Kurzschwert Angriff: W20 +0. Grundwert +2, Erschöpfung −2. Trifft bei Ergebnis ≥ Ausweichwert des Ziels. Klicken zum Würfeln · Shift = Vorteil · Alt = Nachteil',
+    )
+  })
 })
 
 describe('damageRollHint', () => {
   it('names the formula and the Shift key', () => {
     expect(damageRollHint(t, 'Kurzschwert Schaden', '1d6+2')).toBe('Kurzschwert Schaden: 1d6+2. Klicken zum Würfeln · Shift = Kritisch')
+  })
+
+  it('puts a note on when the damage is rolled before the key', () => {
+    expect(damageRollHint(t, 'Kurzschwert Schaden', '1d6+2', 'Nach einem Treffer würfeln')).toBe(
+      'Kurzschwert Schaden: 1d6+2. Nach einem Treffer würfeln. Klicken zum Würfeln · Shift = Kritisch',
+    )
   })
 })

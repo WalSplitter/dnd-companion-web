@@ -21,11 +21,14 @@ export function D20RollButton({
   modifier,
   className,
   title,
+  note,
   children,
 }: {
   label: string
   modifier: number
   className?: string
+  /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
+  note?: string
   /** Tooltip; defaults to `d20RollHint` (what is rolled, the exhaustion breakdown, the Shift/Alt
    * keys). `false` renders none, for a button whose container already explains the roll. */
   title?: string | false
@@ -44,7 +47,7 @@ export function D20RollButton({
     setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
   }
 
-  const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty))
+  const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note))
 
   return (
     <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={fullTitle}>
@@ -59,13 +62,19 @@ export function DamageRollButton({
   dice,
   bonus = 0,
   damageType,
+  note,
   className,
+  children,
 }: {
   label: string
   dice: string
   bonus?: number
   damageType?: string
+  /** One sentence for the tooltip on when and how the damage is rolled. */
+  note?: string
   className?: string
+  /** Button content — defaults to the formula (e.g. `1d6+2`). */
+  children?: React.ReactNode
 }) {
   const t = useT()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
@@ -84,9 +93,8 @@ export function DamageRollButton({
   }
 
   return (
-    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={damageRollHint(t, label, `${dice}${bonus ? formatModifier(bonus) : ''}`)}>
-      {dice}
-      {bonus ? formatModifier(bonus) : ''}
+    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={damageRollHint(t, label, `${dice}${bonus ? formatModifier(bonus) : ''}`, note)}>
+      {children ?? `${dice}${bonus ? formatModifier(bonus) : ''}`}
     </RollButtonShell>
   )
 }
