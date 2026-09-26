@@ -22,7 +22,7 @@ const INTENTIONALLY_UNRESOLVED = /^(embed |.*schaden$)/i
 describe('sample vault', () => {
   it('parses as an Endeavour vault with two characters', () => {
     expect(vault.characters.map((c) => c.frontmatter.name).sort()).toEqual(['Borin Eisenfaust', 'Elandra Windrider'])
-    expect(detectRuleset(sampleVaultFiles).ruleset).toBe('custom')
+    expect(detectRuleset(sampleVaultFiles).ruleset).toBe('endeavour')
   })
 
   it('derives pools, primary attributes and evasion from the class and armor notes', () => {

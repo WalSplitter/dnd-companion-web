@@ -3,7 +3,7 @@ import { hasTag, tagList } from './frontmatterFields'
 import { parseRawFile } from './rawFile'
 import type { VaultSourceFile } from './types'
 
-export type RulesetId = 'dnd5e' | 'dnd5e_2024' | 'nimble' | 'custom' | 'unknown'
+export type RulesetId = 'dnd5e' | 'dnd5e_2024' | 'nimble' | 'endeavour' | 'custom' | 'unknown'
 
 export interface RulesetDetectionResult {
   ruleset: RulesetId
@@ -20,18 +20,19 @@ function isDmPrivatePath(path: string): boolean {
 }
 
 /** The vault retagged its rules from `Regeln/Nimble` to `Regeln/Endeavour`; both still count. */
-const RULE_TAGS = ['Regeln/Endeavour', 'Regeln/Nimble', 'Nimble']
+const ENDEAVOUR_TAG = 'Regeln/Endeavour'
+const RULE_TAGS = [ENDEAVOUR_TAG, 'Regeln/Nimble', 'Nimble']
 
 /**
  * Best-effort, evidence-based heuristic — no supported vault format has an explicit `ruleset:`
- * marker. Treat the result as a hint, not a fact. In particular: a vault that mixes D&D-flavored
- * character fields with `Regeln/Endeavour` tags is expected to come back as `'custom'` — that's the
- * DM's actual, deliberate design (see `docs/inventory-vault-alignment.md`), not an edge case to
- * special-case away.
+ * marker. Treat the result as a hint, not a fact. A `Regeln/Endeavour` tag names the DM's own ruleset
+ * (Nimble mixed with D&D-flavored character fields, see `docs/inventory-vault-alignment.md`), so it
+ * wins as `'endeavour'`. With only the older Nimble tags, that same mix still comes back as `'custom'`.
  */
 export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult {
   const evidence: string[] = []
   let nimble = false
+  let endeavour = false
   let legacyDnd = false
   let nativeSchema = false
 
@@ -45,6 +46,10 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
       nimble = true
       evidence.push(`tags: ${ruleTag}`)
     }
+    if (!endeavour && hasTag(tags, ENDEAVOUR_TAG)) {
+      endeavour = true
+      if (ruleTag !== ENDEAVOUR_TAG) evidence.push(`tags: ${ENDEAVOUR_TAG}`)
+    }
     if (!nativeSchema && data.type === 'character') {
       nativeSchema = true
       evidence.push('type: character (own schema, modeled on 5e 2024 rules)')
@@ -55,6 +60,7 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
     }
   }
 
+  if (endeavour) return { ruleset: 'endeavour', evidence }
   if (nimble && (legacyDnd || nativeSchema)) return { ruleset: 'custom', evidence }
   if (nimble) return { ruleset: 'nimble', evidence }
   if (nativeSchema) return { ruleset: 'dnd5e_2024', evidence }

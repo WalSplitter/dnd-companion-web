@@ -25,9 +25,9 @@ Hintergrund: { Name: Ar'go }
     expect(detectRuleset([file("Characters/Ar'go.md", content)]).ruleset).toBe('dnd5e')
   })
 
-  it('detects a Regeln/Endeavour tag as nimble', () => {
+  it('detects a Regeln/Endeavour tag as endeavour', () => {
     const result = detectRuleset([file('Regeln/Inventar.md', '---\ntags: [Regeln/Endeavour/Inventar]\n---\n')])
-    expect(result.ruleset).toBe('nimble')
+    expect(result.ruleset).toBe('endeavour')
     expect(result.evidence).toContain('tags: Regeln/Endeavour')
   })
 
@@ -45,6 +45,12 @@ Hintergrund: { Name: Ar'go }
 `
     const rule = '---\ntags: [Regeln/Nimble]\n---\n'
     expect(detectRuleset([file("Characters/Ar'go.md", character), file('Regeln/Inventar.md', rule)]).ruleset).toBe('custom')
+  })
+
+  it('keeps endeavour when Regeln/Endeavour tags come with D&D-style character fields', () => {
+    const character = '---\ntype: character\nname: Elandra\n---\n'
+    const rule = '---\ntags: [Regeln/Endeavour]\n---\n'
+    expect(detectRuleset([file('Characters/Elandra.md', character), file('Regeln/Inventar.md', rule)]).ruleset).toBe('endeavour')
   })
 
   it('ignores DM-private paths (segments starting with "_")', () => {

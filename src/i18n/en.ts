@@ -26,6 +26,7 @@ export const en = {
   'ruleset.dnd5e': 'D&D 5e',
   'ruleset.dnd5e_2024': 'D&D 5e (2024)',
   'ruleset.nimble': 'Nimble',
+  'ruleset.endeavour': 'Endeavour',
   'ruleset.custom': 'Custom',
   'ruleset.unknown': 'Unknown',
 
