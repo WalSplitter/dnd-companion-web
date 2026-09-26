@@ -9,7 +9,22 @@ server, no database, no account, no cloud sync. Your notes never leave your mach
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
 
+<table>
+  <tr>
+    <td><img src="docs/screenshots/start-page-dark.png" alt="D&D Companion start page in the dark theme" /></td>
+    <td><img src="docs/screenshots/start-page-light.png" alt="D&D Companion start page in the light theme" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Start page — dark theme</sub></td>
+    <td align="center"><sub>Start page — light theme</sub></td>
+  </tr>
+</table>
+
 ## Features
+
+- **Start page that picks up where you left off.** Reopen one of your recent vault folders (straight
+  to the last character you looked at), open a new one via the picker or by dropping it on the page,
+  or explore the bundled sample vault.
 
 - **Reads your vault directly.** Frontmatter and `[[Wikilinks]]` are parsed in the browser; items,
   spells and features resolve through hover/click previews just like in Obsidian.
@@ -27,6 +42,8 @@ server, no database, no account, no cloud sync. Your notes never leave your mach
 - **Dice roller.** Click any attack, damage or hit-die value (`1d8`, `2d6+3`, `1W6`) to roll it.
 - **Spells and resources.** Slot tracker, known-spell list, class resource pools, luck points and
   exhaustion.
+- **Easy navigation.** A breadcrumb bar leads back to the character list and the start page; on a
+  sheet it switches or steps between characters.
 - **Themes and languages.** Eight colour themes; English and German UI.
 - **Fast and light.** The sheet is code-split and loaded on first visit; the whole app is a static
   bundle.
@@ -42,8 +59,8 @@ npm install
 npm run dev
 ```
 
-Open the printed `http://localhost:5173` URL. A bundled sample vault loads automatically, so there is
-something to look at right away: a small German "Endeavour" player vault with two characters (an
+Open the printed `http://localhost:5173` URL. The start page offers a bundled sample vault
+(**Explore the sample vault**), so there is something to look at right away: a small German "Endeavour" player vault with two characters (an
 Arkanistin with a spell sheet, a Krieger with exhaustion and temporary HP), their slot-grid
 inventories, portraits and class notes, plus the rule and item notes they link to. It lives in
 [`src/sample-vault/`](src/sample-vault) and mirrors a real player vault's layout
@@ -51,7 +68,9 @@ inventories, portraits and class notes, plus the rule and item notes they link t
 
 ### Using your own vault
 
-1. Click **Open vault folder…** in the header and pick your vault's root folder.
+1. On the start page, click **Choose folder…** (or drop your vault folder anywhere on the page) and
+   pick your vault's root folder. Once a vault is open, **Open vault…** in the header switches to
+   another one.
 2. Click **Enable editing** if you want changes written back to your notes (the browser asks for
    permission once).
 
@@ -59,7 +78,7 @@ Your vault is only ever read, and only written when you have enabled editing.
 
 | Browser | Behaviour |
 | --- | --- |
-| Chrome, Edge, Opera | File System Access API: the folder is remembered across restarts, with a one-click **Reconnect** if the browser drops permission. Editing supported. |
+| Chrome, Edge, Opera | File System Access API: the last five folders are remembered under **Continue your journey** on the start page and reopen with one click (the browser may ask to re-grant access). Links to a character reopen the last vault automatically while access is still granted. Drag & drop and editing supported. |
 | Firefox, Safari | Falls back to a `<input webkitdirectory>` picker that must be re-selected each session. **Read-only.** |
 
 ## Scripts
@@ -173,14 +192,14 @@ src/
 │   │              derived stats, ruleset detection
 │   ├── adapters/  one detect()/normalize() pair per format (native, legacy, Endeavour items)
 │   └── writeback/ surgical YAML patching, so edits keep the note's formatting
-├── store/        zustand stores: vault (load, optimistic edits + rollback) and error log
+├── store/        zustand stores: vault (load, recent folders, optimistic edits + rollback) and error log
 ├── features/     character-list, character-sheet, inventory (slot grid), spells
 ├── components/   shared UI building blocks
 ├── dice/         dice notation parser and roll button
 ├── i18n/         English / German dictionaries
 ├── theme/        theme tokens and switcher
-├── routes/       thin page components (character list, character sheet)
-└── sample-vault/ bundled demo vault (notes + portraits), shown when no folder is open
+├── routes/       start page, vault layout (breadcrumbs, deep-link restore), character list and sheet
+└── sample-vault/ bundled demo vault (notes + portraits), opened from the start page
 ```
 
 Every format goes through the same pipeline: `buildVault()` in `src/vault/parseFrontmatter.ts`
