@@ -48,9 +48,20 @@ server, no database, no account, no cloud sync. Your notes never leave your mach
 - **Fast and light.** The sheet is code-split and loaded on first visit; the whole app is a static
   bundle.
 
+## Use it online
+
+The latest version of `main` is hosted on GitHub Pages — nothing to install:
+
+**<https://walsplitter.github.io/dnd-companion-web/>**
+
+Open it in Chrome or Edge and pick your vault folder. The app is only *served* from GitHub; your vault
+is read directly from your disk in the browser and never uploaded. Every push to `main` redeploys it
+([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), so a reload picks up the newest
+version.
+
 ## Getting started
 
-Requires [Node.js](https://nodejs.org) 20+.
+Only needed if you want to work on the app or run it locally. Requires [Node.js](https://nodejs.org) 20+.
 
 ```bash
 git clone https://github.com/WalSplitter/dnd-companion-web.git
@@ -65,6 +76,21 @@ Arkanistin with a spell sheet, a Krieger with exhaustion and temporary HP), thei
 inventories, portraits and class notes, plus the rule and item notes they link to. It lives in
 [`src/sample-vault/`](src/sample-vault) and mirrors a real player vault's layout
 (`Kampagne/Gruppe/<Name>/`, `Gegenstände/`, `Regeln/`).
+
+### Running the production build
+
+For regular use (e.g. at the table) rather than development, build once and serve the static bundle:
+
+```bash
+npm install
+npm run build
+npm run preview
+```
+
+Then open `http://localhost:4173`. The build is faster than the dev server but does not reload on code
+changes; rerun the commands after pulling updates. Any static file server works for `dist/` as long
+as it falls back to `index.html` for unknown paths (the app uses client-side routing), e.g.
+`npx serve -s dist`. Opening `dist/index.html` directly from disk does not work.
 
 ### Using your own vault
 

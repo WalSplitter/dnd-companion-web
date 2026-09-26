@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
+  base: process.env.BASE_PATH ?? '/',
   build: {
     rollupOptions: {
       output: {
