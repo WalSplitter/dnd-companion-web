@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../components/ExhaustedValue'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
@@ -19,7 +19,9 @@ import {
   totalCharacterLevel,
 } from '../../vault/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../vault/types'
+import { ExhaustionGlyph } from '../character-sheet/components/VitalPools'
 import { characterFate, hpFillClass, maxExhaustion, movementHint, percentOf, resiliencePool } from '../character-sheet/vitals'
+import { CrystalGradient, SlotCrystal } from '../spells/components/SpellSlotTracker'
 
 /** How many of a character's best skills the card lists. */
 const TOP_SKILL_COUNT = 3
@@ -152,10 +154,15 @@ function LifeForce({ character: c }: { character: CharacterFrontmatter }) {
           {exhaustion > 0 && (
             <span className="flex items-center gap-1 font-semibold text-danger" title={`${t('stats.exhaustion')}: ${exhaustion}/${exhaustionMax}`}>
               {t('stats.exhaustion')}
-              <span className="flex gap-0.5">
-                {Array.from({ length: exhaustionMax }, (_, i) => (
-                  <span key={i} className={`size-1.5 rounded-full ${i < exhaustion ? 'bg-danger shadow-[0_0_4px_var(--color-danger)]' : 'bg-fg-muted/25'}`} />
-                ))}
+              <span className="flex">
+                {Array.from({ length: exhaustionMax }, (_, i) => {
+                  const skull = i === exhaustionMax - 1
+                  return (
+                    <span key={i} className={`exh-token size-3.5 ${i < exhaustion ? 'is-filled' : ''} ${skull ? 'is-skull' : ''}`}>
+                      <ExhaustionGlyph skull={skull} />
+                    </span>
+                  )
+                })}
               </span>
             </span>
           )}
@@ -232,10 +239,12 @@ function Highlights({ character: c }: { character: CharacterFrontmatter }) {
   const t = useT()
   const skills = topSkills(c)
   const slots = Object.entries(c.spellcasting?.slots ?? {})
+  const gradientId = useId()
   if (skills.length === 0 && slots.length === 0) return null
 
   return (
     <div className="mt-auto flex flex-wrap items-center gap-1.5 border-t border-trim/15 pt-2.5">
+      {slots.length > 0 && <CrystalGradient id={gradientId} />}
       {skills.map(({ key, bonus }) => (
         <span key={key} title={t('characterList.topSkills')} className="rounded-full border border-trim/30 bg-trim/[0.07] px-2 py-0.5 text-[0.68rem] text-fg">
           {t(`skill.${key}`)} <D20Modifier value={bonus} className="font-num font-bold text-trim" />
@@ -248,10 +257,15 @@ function Highlights({ character: c }: { character: CharacterFrontmatter }) {
           className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[0.62rem] text-fg-muted"
         >
           {t('short.spellGrade', { grade: grade.replace(/\D/g, '') || grade })}
-          <span className="flex gap-0.5">
-            {Array.from({ length: slot.max }, (_, i) => (
-              <span key={i} className={`size-1.5 rounded-full ${i < slot.max - slot.used ? 'bg-trim' : 'border border-trim/40'}`} />
-            ))}
+          <span className="flex">
+            {Array.from({ length: slot.max }, (_, i) => {
+              const charged = i < slot.max - slot.used
+              return (
+                <span key={i} className={`spell-slot-gem !size-3.5 !p-0 ${charged ? 'is-charged' : 'is-spent'}`}>
+                  <SlotCrystal charged={charged} gradientId={gradientId} />
+                </span>
+              )
+            })}
           </span>
         </span>
       ))}

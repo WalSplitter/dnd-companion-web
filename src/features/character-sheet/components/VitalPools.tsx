@@ -40,7 +40,7 @@ export function StepButton({
 }
 
 /** A blood drop, or for the last level (death) a skull. */
-function ExhaustionGlyph({ skull }: { skull: boolean }) {
+export function ExhaustionGlyph({ skull }: { skull: boolean }) {
   return skull ? (
     <svg viewBox="0 0 24 24" className="size-full" aria-hidden>
       <path
