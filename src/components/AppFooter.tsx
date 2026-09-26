@@ -4,7 +4,7 @@ const AUTHOR_URL = 'https://github.com/WalSplitter'
 const REPO_URL = 'https://github.com/WalSplitter/dnd-companion-web'
 const SPONSOR_URL = 'https://github.com/sponsors/WalSplitter'
 
-const PILL = 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors'
+const PILL = 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 transition-colors'
 
 /** GitHub's mark, drawn in the current text colour. */
 function GitHubMark() {
@@ -34,13 +34,13 @@ function HeartMark() {
 export function AppFooter() {
   const t = useT()
   return (
-    <footer className="mx-auto w-full max-w-6xl px-4 pb-5 pt-8">
-      <div className="flex items-center gap-3" aria-hidden>
+    <footer className="relative mx-auto w-full max-w-6xl px-4 py-2.5">
+      <div className="absolute inset-x-4 top-0 flex -translate-y-1/2 items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/30" />
         <span className="size-1.5 rotate-45 border border-trim/50 bg-trim/15" />
         <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/30" />
       </div>
-      <div className="mt-3 flex flex-col items-center justify-between gap-2 text-xs text-fg-muted sm:flex-row">
+      <div className="flex flex-col items-center justify-between gap-2 text-xs text-fg-muted sm:flex-row">
         <p>
           <span className="font-display font-semibold tracking-wide text-fg/80">{t('app.brand')}</span>
           <span className="mx-2 text-trim/40" aria-hidden>

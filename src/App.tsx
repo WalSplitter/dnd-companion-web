@@ -51,7 +51,7 @@ function App() {
         )}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-4 pt-6">
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<CharacterListPage />} />
