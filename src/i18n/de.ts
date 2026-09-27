@@ -42,6 +42,14 @@ export const de = {
   'theme.red': 'Rot',
   'theme.green': 'Grün',
   'theme.blue': 'Blau',
+  'theme.necromancer': 'Nekromant',
+  'theme.halloween': 'Halloween',
+  'theme.shadowmaster': 'Schattenmeister',
+  'theme.unicorn': 'Einhorn',
+  'theme.christmas': 'Weihnachten',
+  'theme.summer': 'Sommer',
+  'theme.spring': 'Frühling',
+  'theme.effects': 'Animierte Effekte der Themenwelten',
 
   'language.ariaLabel': 'Sprache',
 
@@ -176,8 +184,8 @@ export const de = {
   'start.featureWriteBody': 'TP, Zustände und Plätze landen direkt in deinem Markdown.',
   'start.featureObsidianTitle': 'Obsidian-nativ',
   'start.featureObsidianBody': 'Wikilinks, Frontmatter und Einbettungen funktionieren einfach.',
-  'start.featureThemesTitle': 'Acht Themes',
-  'start.featureThemesBody': 'Von Pergament-Hell bis Arkan-Lila.',
+  'start.featureThemesTitle': 'Themes für jede Stimmung',
+  'start.featureThemesBody': 'Von Pergament-Hell bis zur Halloween-Nacht.',
 
   'nav.ariaLabel': 'Navigation',
   'nav.start': 'Start',

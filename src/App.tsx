@@ -5,6 +5,7 @@ import { ErrorToaster } from './components/ErrorToaster'
 import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
+import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
 import { CharacterListPage } from './routes/CharacterListPage'
@@ -28,6 +29,7 @@ function App() {
   return (
     <div className="flex min-h-full flex-col">
       <ThemeEffect />
+      <AmbientLayer />
       <ErrorToaster />
       <TooltipLayer />
       <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/90 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] backdrop-blur">

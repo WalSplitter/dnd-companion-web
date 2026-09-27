@@ -47,6 +47,14 @@ export const en = {
   'theme.red': 'Red',
   'theme.green': 'Green',
   'theme.blue': 'Blue',
+  'theme.necromancer': 'Necromancer',
+  'theme.halloween': 'Halloween',
+  'theme.shadowmaster': 'Shadow Master',
+  'theme.unicorn': 'Unicorn',
+  'theme.christmas': 'Christmas',
+  'theme.summer': 'Summer',
+  'theme.spring': 'Spring',
+  'theme.effects': 'Animated effects of topic themes',
 
   // Language switcher
   'language.ariaLabel': 'Language',
@@ -184,8 +192,8 @@ export const en = {
   'start.featureWriteBody': 'HP, conditions and slots land right in your Markdown.',
   'start.featureObsidianTitle': 'Obsidian-native',
   'start.featureObsidianBody': 'Wikilinks, frontmatter and embeds just work.',
-  'start.featureThemesTitle': 'Eight themes',
-  'start.featureThemesBody': 'From parchment light to arcane purple.',
+  'start.featureThemesTitle': 'Themes for every mood',
+  'start.featureThemesBody': 'From parchment light to a Halloween night.',
 
   'nav.ariaLabel': 'Navigation',
   'nav.start': 'Start',
