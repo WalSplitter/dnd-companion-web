@@ -404,6 +404,16 @@ export function StartPage() {
           </div>
         </section>
 
+        {!isFileSystemAccessSupported() && (
+          <p
+            role="note"
+            className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
+            style={{ '--i': 3 } as CSSProperties}
+          >
+            {t('start.readOnlyBrowser')}
+          </p>
+        )}
+
         {redirectedFrom && source === 'none' && (
           <p className="rise-in mx-auto mb-5 w-fit rounded-full border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm text-warning">
             {t('start.reconnectNotice')}

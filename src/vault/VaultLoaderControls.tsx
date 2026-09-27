@@ -63,6 +63,16 @@ export function VaultLoaderControls() {
         </>
       )}
 
+      {/* A user vault without file handles came through the <input webkitdirectory> fallback — say why editing is missing. */}
+      {source === 'user' && editPermission === 'unavailable' && (
+        <span
+          title={t('vaultLoader.readOnlyTooltip')}
+          className="shrink-0 cursor-help whitespace-nowrap rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning"
+        >
+          {t('vaultLoader.readOnly')}
+        </span>
+      )}
+
       {source === 'user' && editPermission !== 'unavailable' && (
         <button
           type="button"

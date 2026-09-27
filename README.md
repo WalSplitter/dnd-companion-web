@@ -54,7 +54,8 @@ The latest version of `main` is hosted on GitHub Pages — nothing to install:
 
 **<https://walsplitter.github.io/dnd-companion-web/>**
 
-Open it in Chrome or Edge and pick your vault folder. The app is only *served* from GitHub; your vault
+Open it in Chrome or Edge (editing needs a Chromium-based browser, see
+[Browser support](#browser-support)) and pick your vault folder. The app is only *served* from GitHub; your vault
 is read directly from your disk in the browser and never uploaded. Every push to `main` redeploys it
 ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), so a reload picks up the newest
 version.
@@ -100,12 +101,32 @@ as it falls back to `index.html` for unknown paths (the app uses client-side rou
 2. Click **Enable editing** if you want changes written back to your notes (the browser asks for
    permission once).
 
-Your vault is only ever read, and only written when you have enabled editing.
+Your vault is only ever read, and only written when you have enabled editing. Editing needs a
+Chromium-based browser, see [Browser support](#browser-support).
 
-| Browser | Behaviour |
-| --- | --- |
-| Chrome, Edge, Opera | File System Access API: the last five folders are remembered under **Continue your journey** on the start page and reopen with one click (the browser may ask to re-grant access). Links to a character reopen the last vault automatically while access is still granted. Drag & drop and editing supported. |
-| Firefox, Safari | Falls back to a `<input webkitdirectory>` picker that must be re-selected each session. **Read-only.** |
+## Browser support
+
+Writing changes back to your notes relies on the
+[File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
+(`showDirectoryPicker()`, `FileSystemFileHandle.createWritable()`), which only Chromium-based
+browsers implement. Other browsers can open a vault, but only read-only.
+
+| Feature | Chrome, Edge, Opera | Firefox, Safari |
+| --- | :---: | :---: |
+| Open a vault and view characters | ✅ | ✅ |
+| Edit (HP, slots, conditions, inventory, …) and save to the vault | ✅ | ❌ |
+| Recent vaults on the start page, reopen with one click | ✅ | ❌ |
+| Drop a vault folder onto the start page | ✅ | ❌ |
+
+- **Chromium-based browsers** use the File System Access API: the last five folders are remembered
+  under **Continue your journey** on the start page and reopen with one click (the browser may ask
+  to re-grant access). Links to a character reopen the last vault automatically while access is
+  still granted.
+- **Firefox and Safari** fall back to an `<input webkitdirectory>` picker that must be re-selected
+  each session. The files are only readable through it, so there is no way to write changes back.
+  The start page shows a notice, and the header marks an opened vault as **Read-only**.
+- **Brave** is Chromium-based but disables the API by default; enable it under
+  `brave://flags/#file-system-access-api` to edit.
 
 ## Scripts
 

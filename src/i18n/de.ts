@@ -19,6 +19,9 @@ export const de = {
   'vaultLoader.editingEnabled': '🔓 Bearbeitung an',
   'vaultLoader.editingDeniedRetry': '🔒 Verweigert — erneut',
   'vaultLoader.enableEditing': '🔒 Bearbeiten',
+  'vaultLoader.readOnly': '🔒 Nur lesen',
+  'vaultLoader.readOnlyTooltip':
+    'Dieser Browser kann keine Dateien schreiben (keine File System Access API), Änderungen werden daher nicht im Vault gespeichert. Zum Bearbeiten einen Chromium-basierten Browser wie Chrome oder Edge verwenden.',
 
   'ruleset.badgeLabel': 'Regelwerk',
   'ruleset.tooltipHeuristic': 'Bestmögliche Einschätzung anhand des Vault-Inhalts — keine Garantie.',
@@ -82,6 +85,7 @@ export const de = {
   'start.toCharacters': 'Zu den Charakteren',
   'start.closeVault': 'Vault schließen',
   'start.reconnectNotice': 'Öffne einen Vault, um diesem Link zu folgen.',
+  'start.readOnlyBrowser': 'Bearbeiten ist in diesem Browser nicht möglich – Vaults werden nur gelesen. Um Änderungen zu speichern, bitte einen Chromium-basierten Browser wie Chrome oder Edge verwenden.',
   'start.loadingTitle': 'Der Vault öffnet sich…',
   'start.loadingFiles': '{{done}} von {{total}} Notizen',
   'start.featureLocalTitle': 'Lokal & privat',

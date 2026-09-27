@@ -22,6 +22,9 @@ export const en = {
   'vaultLoader.editingEnabled': '🔓 Editing on',
   'vaultLoader.editingDeniedRetry': '🔒 Denied — retry',
   'vaultLoader.enableEditing': '🔒 Edit mode',
+  'vaultLoader.readOnly': '🔒 Read-only',
+  'vaultLoader.readOnlyTooltip':
+    'This browser cannot write files (no File System Access API), so changes are not saved to the vault. Use a Chromium-based browser such as Chrome or Edge to edit.',
 
   // Ruleset detection badge
   'ruleset.badgeLabel': 'Ruleset',
@@ -89,6 +92,7 @@ export const en = {
   'start.toCharacters': 'To the characters',
   'start.closeVault': 'Close vault',
   'start.reconnectNotice': 'Open a vault to follow that link.',
+  'start.readOnlyBrowser': 'Editing is not possible in this browser — vaults open read-only. To save changes, use a Chromium-based browser such as Chrome or Edge.',
   'start.loadingTitle': 'The vault is opening…',
   'start.loadingFiles': '{{done}} of {{total}} notes',
   'start.featureLocalTitle': 'Local & private',
