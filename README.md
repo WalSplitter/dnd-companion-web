@@ -28,7 +28,7 @@ server, no database, no account, no cloud sync. Your notes never leave your mach
 
 - **Reads your vault directly.** Frontmatter and `[[Wikilinks]]` are parsed in the browser; items,
   spells and features resolve through hover/click previews just like in Obsidian.
-- **Writes back, safely.** With one click of *Enable editing*, HP, spell slots, ability scores,
+- **Writes back, safely.** With one click of *Edit mode*, HP, spell slots, ability scores,
   conditions, coin purse and inventory changes are patched into the exact YAML key they came from —
   formatting and comments in your notes are preserved. A failed write is rolled back and shown in an
   error log with a retry button.
@@ -98,11 +98,14 @@ as it falls back to `index.html` for unknown paths (the app uses client-side rou
 1. On the start page, click **Choose folder…** (or drop your vault folder anywhere on the page) and
    pick your vault's root folder. Once a vault is open, **Open vault…** in the header switches to
    another one.
-2. Click **Enable editing** if you want changes written back to your notes (the browser asks for
-   permission once).
+2. Click **🔒 Edit mode** in the header if you want changes written back to your notes (the browser
+   asks for permission once).
 
 Your vault is only ever read, and only written when you have enabled editing. Editing needs a
 Chromium-based browser, see [Browser support](#browser-support).
+
+Step-by-step guides for players and DMs (setting up a vault, the Endeavour rules in the app,
+troubleshooting) are in the [wiki](https://github.com/WalSplitter/dnd-companion-web/wiki).
 
 ## Browser support
 
@@ -266,12 +269,20 @@ oxlint.
 
 ## Roadmap
 
-- Native-schema inventory lists (`inventory.equipped` / `carried` wikilinks) only write back quantity
-  and weight of inline items; adding and removing entries is not yet supported.
-- Death saves are display-only (no click-to-toggle).
-- The Endeavour combat math (Ausweichwert, Initiative, Zauber-SG) isn't wired up yet; those numbers
-  still come from the D&D-shaped bridge fields.
-- PWA / offline packaging (`vite-plugin-pwa`).
+Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues):
+
+- [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
+  and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
+- [#10](https://github.com/WalSplitter/dnd-companion-web/issues/10) Make death saves clickable
+  (currently display-only).
+- [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
+  inventory entries (only quantity and weight of inline items are written back today).
+- [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA
+  (`vite-plugin-pwa`).
+- [#7](https://github.com/WalSplitter/dnd-companion-web/issues/7) Firefox/Safari: export changes as a
+  download or ZIP, since those browsers cannot write to the vault.
+- [#8](https://github.com/WalSplitter/dnd-companion-web/issues/8) Load a vault straight from a GitHub
+  repository, optionally with write-back.
 
 ## License
 
