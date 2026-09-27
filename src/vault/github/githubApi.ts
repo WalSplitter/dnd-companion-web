@@ -223,6 +223,45 @@ export async function fetchLogin(token: string): Promise<string> {
   return (await getJson<{ login: string }>(token, '/user')).login
 }
 
+/** A repository the token can see, for the open dialog's suggestions. */
+export interface GitHubRepoSummary {
+  fullName: string
+  defaultBranch: string
+}
+
+/**
+ * Repositories the token reaches, most recently pushed first — for a fine-grained token just the ones
+ * it was granted. One page of 100 is plenty for picking one; anything else can still be typed.
+ */
+export async function listRepos(token: string): Promise<GitHubRepoSummary[]> {
+  const repos = await getJson<{ full_name: string; default_branch: string }[]>(token, '/user/repos?per_page=100&sort=pushed')
+  return repos.map((r) => ({ fullName: r.full_name, defaultBranch: r.default_branch }))
+}
+
+/** The repository's branch names (first 100). */
+export async function listBranches(token: string, ref: GitHubVaultRef): Promise<string[]> {
+  const branches = await getJson<{ name: string }[]>(token, `${repoPath(ref)}/branches?per_page=100`)
+  return branches.map((b) => b.name)
+}
+
+export interface GitHubFolder {
+  path: string
+  /** Holds an `.obsidian` folder — almost certainly a vault root. */
+  isVault: boolean
+}
+
+/**
+ * Folders of the branch (empty: default branch) that could be a vault root, likeliest first: those
+ * holding an `.obsidian` folder, then everything up to `maxDepth` levels deep, alphabetically.
+ */
+export async function listVaultFolders(token: string, ref: GitHubVaultRef, branch: string, maxDepth = 2): Promise<GitHubFolder[]> {
+  const tree = await getJson<{ tree: GitHubTreeEntry[] }>(token, `${repoPath(ref)}/git/trees/${encodeURIComponent(branch || 'HEAD')}?recursive=1`)
+  const dirs = tree.tree.filter((e) => e.type === 'tree').map((e) => e.path)
+  const vaults = dirs.filter((d) => d.endsWith('/.obsidian')).map((d) => d.slice(0, -'/.obsidian'.length))
+  const others = dirs.filter((d) => !d.split('/').some((seg) => seg.startsWith('.')) && d.split('/').length <= maxDepth && !vaults.includes(d)).sort()
+  return [...vaults.map((path) => ({ path, isVault: true })), ...others.map((path) => ({ path, isVault: false }))]
+}
+
 /** Whether the token's account may push to the repository (a read-only *token* only shows on the first write). */
 export async function fetchCanPush(token: string, ref: GitHubVaultRef): Promise<boolean> {
   const repo = await getJson<{ permissions?: { push?: boolean } }>(token, repoPath(ref), { fresh: true })

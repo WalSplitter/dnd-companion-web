@@ -10,6 +10,9 @@ const MARGIN = 8
 interface Tip {
   text: string
   rect: DOMRect
+  /** Where the tooltip is rendered: an open modal <dialog> sits in the browser's top layer, above
+   * anything in `body` whatever its z-index — so a tip for something inside one goes into it. */
+  host: Element
 }
 
 interface Position {
@@ -117,7 +120,7 @@ export function TooltipLayer() {
       timer = window.setTimeout(() => {
         if (anchor !== inner || !inner.isConnected) return
         if (!inner.hasAttribute('aria-describedby')) inner.setAttribute('aria-describedby', id)
-        setTip({ text: inner.dataset.tip ?? '', rect: inner.getBoundingClientRect() })
+        setTip({ text: inner.dataset.tip ?? '', rect: inner.getBoundingClientRect(), host: inner.closest('dialog[open]') ?? document.body })
       }, delay)
     }
 
@@ -203,6 +206,6 @@ export function TooltipLayer() {
       ))}
       <span aria-hidden className="app-tooltip-arrow" style={{ left: position?.arrowX ?? 0 }} />
     </div>,
-    document.body,
+    tip.host,
   )
 }

@@ -1,9 +1,6 @@
-import { useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { SyncSegment } from './github/SyncSegment'
-import { isFileSystemAccessSupported } from './vaultLoader'
 
 const ICON = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
 
@@ -49,7 +46,7 @@ function EditPill() {
   const tooltip = fromGitHub
     ? t(granted ? 'github.editTooltipGranted' : denied ? 'github.editTooltipDenied' : 'github.editTooltipNotGranted')
     : t(granted ? 'vaultLoader.enableEditingTooltipGranted' : 'vaultLoader.enableEditingTooltipNotGranted')
-  const label = t(granted ? 'vaultLoader.editingEnabled' : denied ? 'vaultLoader.editingDeniedRetry' : 'vaultLoader.enableEditing')
+  const label = t(granted ? 'vaultLoader.editingEnabled' : denied ? 'vaultLoader.editingDeniedRetry' : 'vaultLoader.enableEditingTitle')
   // Queued edits (e.g. restored from a closed tab) still show while editing is off.
   const showSync = fromGitHub && (granted || (syncState !== undefined && syncState !== 'synced'))
 
@@ -70,7 +67,7 @@ function EditPill() {
         }`}
       >
         <LockIcon open={granted} />
-        {!granted && <span className="whitespace-nowrap">{t('vaultLoader.enableEditing')}</span>}
+        {!granted && <span className="hidden whitespace-nowrap sm:inline">{t('vaultLoader.enableEditing')}</span>}
       </button>
       {showSync && <SyncSegment className="border-l border-inherit" />}
     </div>
@@ -86,16 +83,6 @@ export function VaultLoaderControls() {
   const editPermission = useVaultStore((s) => s.editPermission)
   const fromGitHub = useVaultStore((s) => s.github !== null)
   const ruleset = useVaultStore((s) => s.ruleset)
-  const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
-  const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const navigate = useNavigate()
-  // A newly opened vault has different characters — start over at its list.
-  const openedAt = (ok: boolean) => {
-    if (ok) navigate('/characters')
-  }
-
-  const supportsPicker = isFileSystemAccessSupported()
 
   return (
     <div className="flex flex-nowrap items-center gap-2">
@@ -118,29 +105,6 @@ export function VaultLoaderControls() {
             ? t('vaultLoader.loadingProgress', { done: loadingProgress.done, total: loadingProgress.total })
             : t('vaultLoader.loadingEllipsis')}
         </span>
-      )}
-
-      {supportsPicker ? (
-        <button type="button" onClick={() => void loadFromDirectoryPicker().then(openedAt)} className="rpg-button shrink-0 whitespace-nowrap">
-          {t('vaultLoader.openVaultFolder')}
-        </button>
-      ) : (
-        <>
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="rpg-button shrink-0 whitespace-nowrap">
-            {t('vaultLoader.openVaultFolder')}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
-            webkitdirectory=""
-            multiple
-            hidden
-            onChange={(e) => {
-              if (e.target.files) void loadFromFileList(e.target.files).then(openedAt)
-            }}
-          />
-        </>
       )}
 
       {/* A user vault without file handles came through the <input webkitdirectory> fallback — say why editing is missing. */}

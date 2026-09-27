@@ -20,7 +20,7 @@ No server · no database · no account.
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
 
-[Features](#features) · [Quick start](#quick-start) · [Opening your vault](#opening-your-vault) ·
+[Features](#features) · [Themes](#themes) · [Quick start](#quick-start) · [Opening your vault](#opening-your-vault) ·
 [Syncing with GitHub](#syncing-with-github) · [Browser support](#browser-support) ·
 [Vault formats](#vault-formats) · [Development](#development) · [Roadmap](#roadmap)
 
@@ -28,16 +28,9 @@ No server · no database · no account.
 
 <br>
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/start-page-dark.png" alt="D&D Companion start page in the dark theme" /></td>
-    <td><img src="docs/screenshots/start-page-light.png" alt="D&D Companion start page in the light theme" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Start page — dark theme</sub></td>
-    <td align="center"><sub>Start page — light theme</sub></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/media/themes-showcase.webp" width="900" alt="The D&D Companion start page cycling through the dark, light, Shadow Master, Halloween, Unicorn, Spring and Summer themes" />
+</p>
 
 ## Features
 
@@ -81,12 +74,52 @@ Failed writes are rolled back.
 
 **Easy navigation.** Breadcrumbs to the list and start page; step between characters.
 
-**Themes and languages.** Eight colour themes; English and German.
+**Themes and languages.** Eight colour themes and seven animated [topic themes](#themes); English
+and German.
 
 **Fast and light.** A static bundle; the sheet loads on first visit.
 
 </td>
 </tr>
+</table>
+
+## Themes
+
+Pick a theme from the swatch button in the header. Besides eight colour palettes there are seven
+**topic themes** that bring their own backdrop, panel ornaments and a subtle ambient animation:
+drifting souls, bats, snow, falling petals. The sparkle button next to them switches the animation
+off; it also stays off for anyone who has *reduce motion* set in their system.
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/media/theme-dark.webp" alt="Dark theme" /></td>
+    <td width="25%"><img src="docs/media/theme-light.webp" alt="Light theme" /></td>
+    <td width="25%"><img src="docs/media/theme-shadowmaster.webp" alt="Shadow Master theme with drifting shadow veils" /></td>
+    <td width="25%"><img src="docs/media/theme-halloween.webp" alt="Halloween theme with a full moon and bats" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Dark</sub></td>
+    <td align="center"><sub>Light</sub></td>
+    <td align="center"><sub>👁 Shadow Master</sub></td>
+    <td align="center"><sub>🎃 Halloween</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/theme-unicorn.webp" alt="Unicorn theme with twinkling rainbow sparkles" /></td>
+    <td><img src="docs/media/theme-spring.webp" alt="Spring theme with falling cherry blossom petals" /></td>
+    <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
+    <td valign="middle">
+
+**Also:** Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer and 🎄
+Christmas.
+
+</td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🦄 Unicorn</sub></td>
+    <td align="center"><sub>🌸 Spring</sub></td>
+    <td align="center"><sub>☀️ Summer</sub></td>
+    <td></td>
+  </tr>
 </table>
 
 ## Quick start
@@ -454,7 +487,7 @@ src/
 ├── components/   shared UI building blocks
 ├── dice/         dice notation parser and roll button
 ├── i18n/         English / German dictionaries
-├── theme/        theme tokens and switcher
+├── theme/        theme tokens, topic themes and switcher
 ├── routes/       start page, vault layout (breadcrumbs, deep-link restore), character list and sheet
 └── sample-vault/ bundled demo vault (notes + portraits), opened from the start page
 ```

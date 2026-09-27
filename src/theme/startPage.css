@@ -564,6 +564,12 @@ button.portal-card:focus-visible::before {
 .github-dialog {
   position: fixed;
   max-height: calc(100dvh - 2rem);
+  /* The form scrolls, not the dialog: on the dialog, the corner brackets' 1px overhang counts as
+     overflow and shows scrollbars even when everything fits. */
+  overflow: visible;
+}
+.github-dialog > form {
+  max-height: calc(100dvh - 2rem);
   overflow-y: auto;
 }
 .github-dialog::backdrop {
