@@ -3,7 +3,20 @@ import { reportError } from './errorLogStore'
 import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
 import { buildVault } from '../vault/parseFrontmatter'
-import { forgetRecentVault, listRecentVaults, rememberRecentVault, updateRecentVault, type RecentVault } from '../vault/handleStore'
+import { openBlobCache } from '../vault/github/blobCache'
+import { GitHubError, gitHubVaultKey, gitHubVaultName, type GitHubErrorKind, type GitHubVaultRef } from '../vault/github/githubApi'
+import { GitHubSync, type SyncStatus } from '../vault/github/githubSync'
+import { readVaultFromGitHub } from '../vault/github/githubVaultLoader'
+import {
+  forgetRecentVault,
+  listRecentVaults,
+  loadPendingEdits,
+  rememberRecentVault,
+  savePendingEdits,
+  updateRecentVault,
+  type RecentVault,
+  type RecentVaultSource,
+} from '../vault/handleStore'
 import {
   isFileSystemAccessSupported,
   readVaultFromDirectoryHandle,
@@ -12,23 +25,29 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { writeCurrencyBlock, writeEndeavourInventory, writeFieldValue } from '../vault/writeback/persist'
+import { currencyBlockPatch, endeavourInventoryPatch, fieldPatch, folderWriter, type VaultWriter } from '../vault/writeback/persist'
+import type { TranslationKey } from '../i18n/useI18n'
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
 export type VaultSource = 'none' | 'sample' | 'user'
 type VaultStatus = 'idle' | 'loading' | 'loaded' | 'error'
-/** 'unavailable': no file handles to write through (sample vault, or the <input webkitdirectory>
- * fallback for browsers without the File System Access API) — fields stay read-only. */
+/** 'unavailable': nothing to write through (sample vault, or the <input webkitdirectory> fallback for
+ * browsers without the File System Access API) — fields stay read-only. For a GitHub vault, 'granted'
+ * means the account may push to the repository. */
 export type EditPermission = 'unavailable' | 'not-requested' | 'granted' | 'denied'
 
 interface VaultState {
   status: VaultStatus
   source: VaultSource
   vaultName: string | null
-  /** The `recents` entry of the open folder (null for the sample vault / the file-list fallback). */
+  /** The `recents` entry of the open vault (null for the sample vault / the file-list fallback). */
   recentId: string | null
+  /** Where the open vault was read from, when that is a GitHub repository. */
+  github: GitHubVaultRef | null
+  /** Why the last GitHub load failed — the start page explains it next to the form. */
+  githubError: GitHubErrorKind | null
   /** Previously opened vault folders, newest first — the start page's "continue" cards. */
   recents: RecentVault[]
   recentsLoaded: boolean
@@ -40,7 +59,10 @@ interface VaultState {
   ruleset: RulesetDetectionResult
   error: string | null
   rootHandle: FileSystemDirectoryHandle | null
-  fileHandles: Map<string, FileSystemFileHandle> | null
+  /** Where edits go: the folder's files, or commits to the GitHub repository. Null when read-only. */
+  writer: VaultWriter | null
+  /** Progress of queued edits towards the GitHub repository (null for any other vault). */
+  sync: SyncStatus | null
   editPermission: EditPermission
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
@@ -50,19 +72,30 @@ interface VaultState {
   /** Opens a folder handle obtained some other way (dragged onto the start page). */
   loadFromDirectoryHandle: (handle: FileSystemDirectoryHandle) => Promise<boolean>
   loadFromFileList: (fileList: FileList) => Promise<boolean>
+  /** Reads a vault out of a GitHub repository (read-only) and remembers it, token included, for the start page. */
+  loadFromGitHub: (ref: GitHubVaultRef, token: string) => Promise<boolean>
   refreshRecents: () => Promise<void>
   /**
-   * Reopens a remembered folder. Asks the browser to re-grant read access, so it must run from a
-   * user gesture — unless `silent`, which only succeeds when access is still granted (deep-link boot).
+   * Reopens a remembered vault. For a folder this asks the browser to re-grant read access, so it must
+   * run from a user gesture — unless `silent`, which only succeeds when access is still granted
+   * (deep-link boot). A GitHub vault just loads again with its stored token.
    */
   openRecentVault: (id: string, options?: { silent?: boolean }) => Promise<boolean>
   forgetRecentVault: (id: string) => Promise<void>
-  /** Remembers the sheet last looked at in the open folder's recents entry. */
+  /** Remembers the sheet last looked at in the open vault's recents entry. */
   noteCharacterVisit: (name: string) => void
   /** Drops the open vault and returns to the empty "nothing opened" state. */
   closeVault: () => void
-  /** Requests `readwrite` permission on the vault folder — must be called from a direct user gesture. */
+  /** Requests `readwrite` permission on the vault folder — must be called from a direct user gesture.
+   * For a GitHub vault, checks that the account may push to the repository. */
   requestEditPermission: () => Promise<void>
+  /** Commits the GitHub vault's queued edits now instead of after the quiet period. */
+  syncNow: () => Promise<void>
+  /**
+   * Settles a sync conflict: 'mine' overwrites the repository's values with this browser's, 'theirs'
+   * drops this browser's conflicting edits and reloads the vault from the repository.
+   */
+  resolveSyncConflicts: (choice: 'mine' | 'theirs') => Promise<void>
   /**
    * Applies an optimistic local edit to one character's frontmatter and writes it back to the exact
    * vault file/key `target` points at (see `writeback/`). Rolled back with `writeError` set if the
@@ -103,6 +136,18 @@ function revokeActiveImageAssets() {
   activeImageAssets = null
 }
 
+// The GitHub vault's write-back queue, if one is open. Replaced along with the vault: the old one
+// commits what it still holds (or keeps it persisted for the next visit) and stops its timers.
+let activeSync: GitHubSync | null = null
+
+function replaceSync(next: GitHubSync | null) {
+  if (activeSync && activeSync !== next) {
+    void activeSync.flush()
+    activeSync.dispose()
+  }
+  activeSync = next
+}
+
 function applyVault(files: VaultSourceFile[], imageAssets?: ImageAssets) {
   revokeActiveImageAssets()
   activeImageAssets = imageAssets ?? null
@@ -115,15 +160,40 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
+/** Names the character an edit belongs to, for the GitHub commit message. */
+function characterContext(vault: Vault, characterPath: string) {
+  return { character: vault.characters.find((c) => c.path === characterPath)?.frontmatter.name }
+}
+
 /** Returns `vault` with `mutate` applied to one character's frontmatter. */
 function mapCharacter(vault: Vault, characterPath: string, mutate: (character: CharacterFrontmatter) => CharacterFrontmatter): Vault {
   return { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) }
 }
 
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
-const NO_WRITE_ACCESS = { rootHandle: null, fileHandles: null, editPermission: 'unavailable' } as const
+const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable' } as const
+
+/** What each GitHub failure means for the user, shown in the error log. */
+const GITHUB_ERROR_HINTS: Record<GitHubErrorKind, TranslationKey> = {
+  unauthorized: 'github.error.unauthorized',
+  'write-forbidden': 'github.error.write-forbidden',
+  'not-fast-forward': 'github.error.not-fast-forward',
+  forbidden: 'github.error.forbidden',
+  'rate-limited': 'github.error.rate-limited',
+  'repo-not-found': 'github.error.repo-not-found',
+  'branch-not-found': 'github.error.branch-not-found',
+  'subpath-not-found': 'github.error.subpath-not-found',
+  'too-large': 'github.error.too-large',
+  network: 'github.error.network',
+  other: 'github.error.other',
+}
 
 const NO_FILES: VaultSourceFile[] = []
+
+/** The error-log hint for a GitHub failure — what it means and what to do. */
+function githubHint(err: unknown): TranslationKey {
+  return err instanceof GitHubError ? GITHUB_ERROR_HINTS[err.kind] : 'github.sync.failedHint'
+}
 
 /** Nothing opened: the store's initial state, so a returning visitor never sees the sample flash by. */
 const EMPTY_STATE = (() => {
@@ -133,6 +203,8 @@ const EMPTY_STATE = (() => {
     source: 'none',
     vaultName: null,
     recentId: null,
+    github: null,
+    githubError: null,
     loadingProgress: null,
     vault,
     index: buildVaultIndex(vault),
@@ -165,6 +237,23 @@ const RECENT_PREVIEW_NAMES = 6
 let loadSeq = 0
 
 export const useVaultStore = create<VaultState>((set, get) => {
+  /** Mirrors the GitHub queue's status into the store, and logs a failed sync once (with a retry). */
+  function syncStatusChanged(status: SyncStatus) {
+    const previous = get().sync
+    set({ sync: status })
+    if (status.state === 'error' && previous?.state !== 'error') {
+      console.error('[vault.githubSync] failed:', status.error)
+      reportError({
+        titleKey: 'github.sync.failed',
+        hintKey: githubHint(status.error),
+        source: 'vault.githubSync',
+        error: status.error,
+        context: { pendingEdits: status.count },
+        action: { labelKey: 'errorLog.retry', run: () => void get().syncNow() },
+      })
+    }
+  }
+
   /** Common failure path of the loaders: a cancelled picker is not an error, and a failed load
    * leaves whatever vault was showing before in place. */
   function loadFailed(source: string, err: unknown) {
@@ -174,16 +263,17 @@ export const useVaultStore = create<VaultState>((set, get) => {
       return
     }
     console.error(`[${source}] failed:`, err)
-    set({ status: get().source === 'none' ? 'error' : 'loaded', error: errorMessage(err), loadingProgress: null })
-    reportError({ titleKey: 'errorLog.loadFailed', hintKey: 'errorLog.hint.loadFailed', source, error: err })
+    const githubError = err instanceof GitHubError ? err.kind : null
+    set({ status: get().source === 'none' ? 'error' : 'loaded', error: errorMessage(err), githubError, loadingProgress: null })
+    reportError({ titleKey: 'errorLog.loadFailed', hintKey: githubError ? githubHint(err) : 'errorLog.hint.loadFailed', source, error: err })
   }
 
-  /** Remembers a freshly opened folder for the start page (best effort — no IndexedDB, no recents). */
-  async function remember(handle: FileSystemDirectoryHandle, vault: Vault, ruleset: RulesetId) {
+  /** Remembers a freshly opened vault for the start page (best effort — no IndexedDB, no recents). */
+  async function remember(source: RecentVaultSource, vault: Vault, ruleset: RulesetId, isStillOpen: () => boolean) {
     try {
       const names = vault.characters.map((c) => c.frontmatter.name)
-      const id = await rememberRecentVault(handle, { ruleset, characterCount: names.length, characters: names.slice(0, RECENT_PREVIEW_NAMES) })
-      if (get().rootHandle === handle) set({ recentId: id })
+      const id = await rememberRecentVault(source, { ruleset, characterCount: names.length, characters: names.slice(0, RECENT_PREVIEW_NAMES) })
+      if (isStillOpen()) set({ recentId: id })
       await get().refreshRecents()
     } catch (err) {
       console.error('[vault] remembering the folder failed:', err)
@@ -205,14 +295,17 @@ export const useVaultStore = create<VaultState>((set, get) => {
         source: 'user',
         vaultName: handle.name,
         recentId: null,
+        github: null,
         loadingProgress: null,
         rootHandle: handle,
-        fileHandles,
+        writer: folderWriter(fileHandles),
+        sync: null,
         editPermission: 'not-requested',
         writeError: null,
         ...loaded,
       })
-      void remember(handle, loaded.vault, loaded.ruleset.ruleset)
+      replaceSync(null)
+      void remember({ kind: 'folder', handle }, loaded.vault, loaded.ruleset.ruleset, () => get().rootHandle === handle)
       return true
     } catch (err) {
       if (seq === loadSeq) loadFailed(source, err)
@@ -269,6 +362,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
     loadSampleVault: () => {
       loadSeq++
+      replaceSync(null)
       revokeActiveImageAssets()
       sampleState ??= buildSampleState()
       set(sampleState)
@@ -301,11 +395,13 @@ export const useVaultStore = create<VaultState>((set, get) => {
       try {
         const { files, imageAssets } = await readVaultFromFileList(fileList)
         if (seq !== loadSeq) return false
+        replaceSync(null)
         set({
           status: 'loaded',
           source: 'user',
           vaultName: files[0]?.path.split('/')[0] ?? null,
           recentId: null,
+          github: null,
           loadingProgress: null,
           ...NO_WRITE_ACCESS,
           writeError: null,
@@ -318,14 +414,75 @@ export const useVaultStore = create<VaultState>((set, get) => {
       }
     },
 
+    loadFromGitHub: async (ref, token) => {
+      const seq = ++loadSeq
+      set({ status: 'loading', error: null, githubError: null, loadingProgress: null })
+      try {
+        const cache = await openBlobCache()
+        const { files, imageAssets, snapshot } = await readVaultFromGitHub(token, ref, {
+          cache,
+          onProgress: (done, total) => {
+            if (seq === loadSeq) set({ loadingProgress: { done, total } })
+          },
+        })
+        if (seq !== loadSeq) return false
+        // Remember the branch that was actually read, so "default branch" can't silently switch later.
+        const github = { ...ref, branch: snapshot.branch }
+        // Edits from an earlier visit that never reached the repository are shown, and committed, again.
+        const restored = await loadPendingEdits(github)
+        if (seq !== loadSeq) return false
+
+        const sync: GitHubSync = new GitHubSync({
+          token,
+          ref: github,
+          commitSha: snapshot.commitSha,
+          contents: new Map(files.map((f) => [f.path, f.content])),
+          restored,
+          persist: (edits) => savePendingEdits(github, edits),
+          onStatus: (status) => {
+            if (activeSync === sync) syncStatusChanged(status)
+          },
+        })
+        const localFiles = restored.length > 0 ? files.map((f) => ({ ...f, content: sync.localContent(f.path) ?? f.content })) : files
+        const loaded = applyVault(localFiles, imageAssets)
+        // Reloading the same repository (e.g. after a conflict) keeps edit mode on.
+        const current = get()
+        const stillEditing = current.github !== null && gitHubVaultKey(current.github) === gitHubVaultKey(github) && current.editPermission === 'granted'
+        replaceSync(sync)
+        set({
+          status: 'loaded',
+          source: 'user',
+          vaultName: gitHubVaultName(github),
+          recentId: null,
+          github,
+          loadingProgress: null,
+          rootHandle: null,
+          writer: sync,
+          sync: sync.status,
+          editPermission: stillEditing ? 'granted' : 'not-requested',
+          writeError: null,
+          ...loaded,
+        })
+        sync.start()
+        void remember({ kind: 'github', github, token }, loaded.vault, loaded.ruleset.ruleset, () => get().github === github)
+        return true
+      } catch (err) {
+        if (seq === loadSeq) loadFailed('vault.loadFromGitHub', err)
+        return false
+      }
+    },
+
     refreshRecents: async () => {
-      set({ recents: isFileSystemAccessSupported() ? await listRecentVaults() : [], recentsLoaded: true })
+      // Folder handles can only be reopened where the File System Access API exists; GitHub vaults anywhere.
+      const recents = await listRecentVaults()
+      set({ recents: isFileSystemAccessSupported() ? recents : recents.filter((r) => r.kind === 'github'), recentsLoaded: true })
     },
 
     openRecentVault: async (id, options) => {
       if (!get().recentsLoaded) await get().refreshRecents()
       const recent = get().recents.find((r) => r.id === id)
       if (!recent) return false
+      if (recent.kind === 'github') return get().loadFromGitHub(recent.github, recent.token)
       try {
         if (!(await ensureReadAccess(recent.handle, options?.silent))) return false
       } catch (err) {
@@ -350,11 +507,23 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
     closeVault: () => {
       loadSeq++
+      replaceSync(null)
       revokeActiveImageAssets()
       set(EMPTY_STATE)
     },
 
     requestEditPermission: async () => {
+      const sync = activeSync
+      if (sync && get().writer === sync) {
+        try {
+          set({ editPermission: (await sync.canPush()) ? 'granted' : 'denied' })
+        } catch (err) {
+          console.error('[vault] checking push access failed:', err)
+          set({ editPermission: 'denied' })
+          reportError({ titleKey: 'github.sync.permissionFailed', hintKey: githubHint(err), source: 'vault.requestEditPermission', error: err })
+        }
+        return
+      }
       const { rootHandle } = get()
       if (!rootHandle) return
       try {
@@ -366,14 +535,24 @@ export const useVaultStore = create<VaultState>((set, get) => {
       }
     },
 
+    syncNow: async () => {
+      await activeSync?.flush()
+    },
+
+    resolveSyncConflicts: async (choice) => {
+      const sync = activeSync
+      if (!sync) return
+      await sync.resolveConflicts(choice)
+      if (choice === 'theirs') await get().loadFromGitHub(sync.source.ref, sync.source.token)
+    },
+
     updateCharacterField: async (characterPath, target, logicalValue, mutate) => {
       if (!target) return
-      const { fileHandles, editPermission } = get()
-      if (editPermission !== 'granted' || !fileHandles) return
-      const fileHandle = fileHandles.get(target.path)
-      if (!fileHandle) return
+      const { writer, editPermission } = get()
+      if (editPermission !== 'granted' || !writer?.canWrite(target.path)) return
 
-      await editCharacter(characterPath, mutate, () => writeFieldValue(fileHandle, target, logicalValue), {
+      const context = characterContext(get().vault, characterPath)
+      await editCharacter(characterPath, mutate, () => writer.write(target.path, fieldPatch(target, logicalValue), context), {
         source: 'vault.updateCharacterField',
         context: { characterPath, target, value: logicalValue },
         retry: () => void get().updateCharacterField(characterPath, target, logicalValue, mutate),
@@ -381,15 +560,15 @@ export const useVaultStore = create<VaultState>((set, get) => {
     },
 
     setEndeavourInventory: async (characterPath, containers) => {
-      const { vault, fileHandles, editPermission } = get()
+      const { vault, writer, editPermission } = get()
       const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.endeavour_inventory
-      const fileHandle = editPermission === 'granted' && target ? fileHandles?.get(target.path) : undefined
+      const canWrite = editPermission === 'granted' && target !== undefined && writer?.canWrite(target.path)
 
       await editCharacter(
         characterPath,
         (c) => ({ ...c, endeavour_inventory: { containers } }),
         // Local-only (no write) when editing isn't permitted or the field has no file to go to.
-        fileHandle ? () => writeEndeavourInventory(fileHandle, containers) : null,
+        canWrite && writer && target ? () => writer.write(target.path, endeavourInventoryPatch(containers), characterContext(vault, characterPath)) : null,
         {
           source: 'vault.setEndeavourInventory',
           context: { characterPath, writePath: target?.path, containers },
@@ -399,24 +578,22 @@ export const useVaultStore = create<VaultState>((set, get) => {
     },
 
     setCurrency: async (characterPath, currency) => {
-      const { vault, fileHandles, editPermission } = get()
-      if (editPermission !== 'granted' || !fileHandles) return
+      const { vault, writer, editPermission } = get()
+      if (editPermission !== 'granted' || !writer) return
       const character = vault.characters.find((c) => c.path === characterPath)?.frontmatter
       const targets = character?._write
       if (!character || !targets) return
       const previous = character.currency ?? {}
+      const context = characterContext(vault, characterPath)
 
       async function write() {
+        if (!writer) return
         if (targets?.currency_block) {
-          const handle = fileHandles?.get(targets.currency_block.path)
-          if (!handle) throw new Error(`no file handle for ${targets.currency_block.path}`)
-          await writeCurrencyBlock(handle, currency)
+          await writer.write(targets.currency_block.path, currencyBlockPatch(currency), context)
         } else if (targets?.currency) {
           for (const [coin, target] of Object.entries(targets.currency) as [keyof Currency, FieldWriteTarget][]) {
             if ((currency[coin] ?? 0) === (previous[coin] ?? 0)) continue
-            const handle = fileHandles?.get(target.path)
-            if (!handle) throw new Error(`no file handle for ${target.path}`)
-            await writeFieldValue(handle, target, currency[coin] ?? 0)
+            await writer.write(target.path, fieldPatch(target, currency[coin] ?? 0), context)
           }
         }
       }

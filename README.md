@@ -1,13 +1,32 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+  <img src="docs/logo-light.svg" alt="" width="130">
+</picture>
+
 # D&D Companion
 
-**A local-first D&D character sheet that lives inside your Obsidian vault.**
-Point it at a folder, and your characters, items and spells turn into an interactive sheet — no
-server, no database, no account, no cloud sync. Your notes never leave your machine.
+**A D&D character sheet that lives inside your Obsidian vault.**
+
+Point it at your vault, a folder on your device or your group's GitHub repository,<br>
+and your characters, items and spells turn into an interactive sheet.<br>
+No server · no database · no account.
+
+[![Open the app](https://img.shields.io/badge/Open_the_app-walsplitter.github.io-d4af5f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://walsplitter.github.io/dnd-companion-web/)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
+
+[Features](#features) · [Quick start](#quick-start) · [Opening your vault](#opening-your-vault) ·
+[Syncing with GitHub](#syncing-with-github) · [Browser support](#browser-support) ·
+[Vault formats](#vault-formats) · [Development](#development) · [Roadmap](#roadmap)
+
+</div>
+
+<br>
 
 <table>
   <tr>
@@ -22,132 +41,267 @@ server, no database, no account, no cloud sync. Your notes never leave your mach
 
 ## Features
 
-- **Start page that picks up where you left off.** Reopen one of your recent vault folders (straight
-  to the last character you looked at), open a new one via the picker or by dropping it on the page,
-  or explore the bundled sample vault.
+<table>
+<tr>
+<th width="33%">🎲 On the sheet</th>
+<th width="33%">📜 With your vault</th>
+<th width="33%">🏰 Around it</th>
+</tr>
+<tr>
+<td valign="top">
 
-- **Reads your vault directly.** Frontmatter and `[[Wikilinks]]` are parsed in the browser; items,
-  spells and features resolve through hover/click previews just like in Obsidian.
-- **Writes back, safely.** With one click of *Edit mode*, HP, spell slots, ability scores,
-  conditions, coin purse and inventory changes are patched into the exact YAML key they came from —
-  formatting and comments in your notes are preserved. A failed write is rolled back and shown in an
-  error log with a retry button.
-- **Three vault formats in one app.** A native schema, a from-scratch "Endeavour"/Nimble ruleset with a
-  slot-grid inventory, and an adapter for an older German-language sheet format (see
-  [Vault formats](#vault-formats)).
-- **Slot-grid inventory.** Drag items between backpacks and belt pouches, search the vault for gear,
-  track charges on consumables, or add a temporary item that has no vault page yet.
-- **Derived stats, never duplicated.** Modifiers, saves, skills, passive perception and spell DC /
-  attack bonus are computed from raw values.
-- **Dice roller.** Click any attack, damage or hit-die value (`1d8`, `2d6+3`, `1W6`) to roll it.
-- **Spells and resources.** Slot tracker, known-spell list, class resource pools, luck points and
-  exhaustion.
-- **Easy navigation.** A breadcrumb bar leads back to the character list and the start page; on a
-  sheet it switches or steps between characters.
-- **Themes and languages.** Eight colour themes; English and German UI.
-- **Fast and light.** The sheet is code-split and loaded on first visit; the whole app is a static
-  bundle.
+**Derived stats.** Modifiers, saves, skills, passive perception and spell DC are computed, never
+duplicated.
 
-## Use it online
+**Dice roller.** Click any value like `1d8`, `2d6+3` or `1W6` to roll it.
 
-The latest version of `main` is hosted on GitHub Pages — nothing to install:
+**Spells and resources.** Slots, known spells, class pools, luck points and exhaustion.
 
-**<https://walsplitter.github.io/dnd-companion-web/>**
+**Slot-grid inventory.** Drag items between backpacks and pouches, track charges, add temporary
+items.
 
-Open it in Chrome or Edge (editing needs a Chromium-based browser, see
-[Browser support](#browser-support)) and pick your vault folder. The app is only *served* from GitHub; your vault
-is read directly from your disk in the browser and never uploaded. Every push to `main` redeploys it
-([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)), so a reload picks up the newest
-version.
+</td>
+<td valign="top">
 
-## Getting started
+**Reads it directly.** Frontmatter and `[[Wikilinks]]`, with hover previews like in Obsidian.
 
-Only needed if you want to work on the app or run it locally. Requires [Node.js](https://nodejs.org) 20+.
+**Writes back, safely.** Edits are patched into the exact YAML key; formatting and comments stay.
+Failed writes are rolled back.
 
-```bash
-git clone https://github.com/WalSplitter/dnd-companion-web.git
-cd dnd-companion-web
-npm install
-npm run dev
+**Straight from GitHub.** On any device, phones included, saved as tidy
+[commits](#syncing-with-github).
+
+**Three formats.** Native, "Endeavour"/Nimble and an older German sheet
+([details](#vault-formats)).
+
+</td>
+<td valign="top">
+
+**Picks up where you left off.** Reopen a recent vault straight at the last character.
+
+**Easy navigation.** Breadcrumbs to the list and start page; step between characters.
+
+**Themes and languages.** Eight colour themes; English and German.
+
+**Fast and light.** A static bundle; the sheet loads on first visit.
+
+</td>
+</tr>
+</table>
+
+## Quick start
+
+**Open <https://walsplitter.github.io/dnd-companion-web/>.** There is nothing to install. Then pick
+one of the three cards on the start page:
+
+1. **Explore the sample vault** to look around without a vault of your own.
+2. **Choose folder…** for a vault [on your device](#from-a-folder-on-your-device).
+3. **Open from a repository** for a vault [on GitHub](#from-a-github-repository).
+
+> [!TIP]
+> The sample is a small German "Endeavour" player vault: an Arkanistin with a spell sheet and a
+> Krieger with exhaustion and temporary HP, with inventories, portraits, class, rule and item notes
+> ([`src/sample-vault/`](src/sample-vault)).
+
+The app is only *served* from GitHub Pages; your vault is read in the browser and not uploaded
+anywhere. Every push to `main` redeploys it ([`deploy.yml`](.github/workflows/deploy.yml)).
+Step-by-step guides for players and DMs are in the
+[wiki](https://github.com/WalSplitter/dnd-companion-web/wiki).
+
+## Opening your vault
+
+| | 📁 From a folder | ☁️ From GitHub |
+| --- | --- | --- |
+| **Where the vault is** | a folder on your device | a GitHub repository |
+| **Devices** | desktop | any, phones and tablets included |
+| **Saving changes** | straight into the files (Chrome, Edge) | as commits under your account (any browser) |
+| **You need** | nothing | a GitHub account and an access token |
+
+### From a folder on your device
+
+1. Click **Choose folder…**, or drop the vault folder anywhere on the start page.
+2. To save changes, click **Edit** (the lock) in the header. The browser asks for permission once.
+
+The vault is only read, and only written while editing is on. Saving to a folder needs Chrome or
+Edge ([why](#browser-support)).
+
+### From a GitHub repository
+
+Click **Open from a repository** and fill in:
+
+| Field | What to enter |
+| --- | --- |
+| **Repository** | `owner/repo`, or paste its GitHub URL. A `…/tree/<branch>/<folder>` URL fills in the next two fields. |
+| **Branch** | optional; the default branch if left empty |
+| **Vault folder** | optional; the vault's folder inside the repository, e.g. `Endeavour_PlayerVault` |
+| **Access token** | see [For each player](#for-each-player-create-an-access-token) |
+
+The vault then appears on the start page with a **GitHub** badge and reopens without the token,
+until the token expires. Set it up once per browser and device.
+
+## Syncing with GitHub
+
+A group that keeps its vault in a GitHub repository can use it straight from there. Every player
+opens it in their browser and saves their changes back as commits
+([#8](https://github.com/WalSplitter/dnd-companion-web/issues/8)).
+
+```mermaid
+flowchart LR
+  A["✏️ Edit on the sheet"] --> B["📥 Collected in the browser"]
+  B -->|"5 min after the last edit,<br>leaving the page or a click"| C["📦 One commit"]
+  C --> D[("GitHub repository")]
+  D -->|"next load"| E["👥 Everyone else"]
 ```
 
-Open the printed `http://localhost:5173` URL. The start page offers a bundled sample vault
-(**Explore the sample vault**), so there is something to look at right away: a small German "Endeavour" player vault with two characters (an
-Arkanistin with a spell sheet, a Krieger with exhaustion and temporary HP), their slot-grid
-inventories, portraits and class notes, plus the rule and item notes they link to. It lives in
-[`src/sample-vault/`](src/sample-vault) and mirrors a real player vault's layout
-(`Kampagne/Gruppe/<Name>/`, `Gegenstände/`, `Regeln/`).
+### For the repository owner (usually the DM)
 
-### Running the production build
+1. **Put the vault in a GitHub repository.** Public or private. A *public* repository can be read by
+   anyone, with or without the app.
+2. **Add every player who should save changes as a collaborator:** **Settings → Collaborators → Add
+   people**, with write access. Players who only *read* a public repository need no access.
+3. **Let the app commit to the branch.** It pushes straight to the branch, not through pull
+   requests. Keep rules that require pull requests or reviews off that branch, or give the players
+   their own branch.
 
-For regular use (e.g. at the table) rather than development, build once and serve the static bundle:
+> [!TIP]
+> **Move the repository into a GitHub organization** (free). GitHub does not let fine-grained tokens
+> *write* to a repository in someone else's personal account. In an organization, players can use a
+> fine-grained token limited to just this repository. Under the organization's **Settings →
+> Personal access tokens**, allow fine-grained tokens, and approve the players' tokens if approval is
+> required.
 
-```bash
-npm install
-npm run build
-npm run preview
+### For each player: create an access token
+
+Every player creates **their own** token. Commits then show who changed what, and a token can be
+revoked without locking anyone else out. **Never share a token.**
+
+| The repository is in … | To read only | To read and save |
+| --- | --- | --- |
+| your own account or an organization you belong to | fine-grained, **Contents: Read-only** | fine-grained, **Contents: Read and write** |
+| someone else's personal account (you are a collaborator) | public: any token; private: classic, `repo` | classic, `public_repo` (public) or `repo` (private) |
+
+<details>
+<summary><b>Create a fine-grained token</b> (recommended)</summary>
+<br>
+
+GitHub → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate
+new token** ([direct link](https://github.com/settings/personal-access-tokens/new)):
+
+- **Resource owner:** the account or organization that owns the vault repository.
+- **Expiration:** a date, e.g. the end of the campaign season.
+- **Repository access:** **Only select repositories** → the vault repository.
+- **Permissions → Add permissions → Contents:** **Read and write** (or **Read-only**). GitHub adds
+  **Metadata: Read-only** by itself. Nothing else is needed.
+
+</details>
+
+<details>
+<summary><b>Create a classic token</b> (repository in someone else's personal account)</summary>
+<br>
+
+Same place, **Tokens (classic) → Generate new token (classic)**. Tick only `public_repo` (public
+repository) or `repo` (private) and set an expiration.
+
+> [!WARNING]
+> A classic token can push to *every* repository you have write access to, your own included. Keep
+> its expiry short and use it only for this app.
+
+</details>
+
+> [!NOTE]
+> Why a token even for a public repository? Without one, GitHub allows only 60 requests an hour, and
+> loading a vault takes one per note. Any token lifts that, even one with no permissions.
+
+### Saving changes
+
+Switch on **Edit** (the lock in the header). This also checks that your account may push. Edits
+show up at once and are collected; everything collected goes into **one commit** under your
+account:
+
+- ⏱️ about **5 minutes after your last change** (each change restarts the wait),
+- 🚪 when you leave the page or switch to another app,
+- ☁️ or when you click the cloud counter in the header.
+
+Rapid clicks never turn into a stream of commits, and a value changed back needs no commit at all.
+If the tab closes first, the unsaved edits stay in the browser and go out on the next visit.
+
+The **cloud** next to the lock shows where things stand:
+
+| Cloud shows | Meaning |
+| --- | --- |
+| ✓ check mark | everything is saved |
+| ↑ arrow and a number | unsaved changes; click to save now |
+| ⟳ spinning | saving |
+| red | saving failed; click to retry, the tooltip says why |
+| orange | conflict, see below |
+
+**When teammates edit too.** Each commit builds on the branch as it is *now*: the edited notes are
+re-read and only the keys you changed are patched in, so whatever others pushed meanwhile is kept.
+If someone changed the *same* value, nothing is saved. A dialog shows both values, and you pick
+whose win.
+
+<details>
+<summary><b>What the commits look like</b></summary>
+<br>
+
+Conventional Commits with the character as scope, naming the player and the app:
+
+```
+chore(dummy-charakter): update hp and mana
+
+Dummy Charakter:
+- hp.current: 14 → 13
+- spellcasting.mana.current: 9 → 7
+
+Edited-by: @WalSplitter
+Via: D&D Companion <https://github.com/WalSplitter/dnd-companion-web>
 ```
 
-Then open `http://localhost:4173`. The build is faster than the dev server but does not reload on code
-changes; rerun the commands after pulling updates. Any static file server works for `dist/` as long
-as it falls back to `index.html` for unknown paths (the app uses client-side routing), e.g.
-`npx serve -s dist`. Opening `dist/index.html` directly from disk does not work.
+</details>
 
-### Using your own vault
+### Privacy and security
 
-1. On the start page, click **Choose folder…** (or drop your vault folder anywhere on the page) and
-   pick your vault's root folder. Once a vault is open, **Open vault…** in the header switches to
-   another one.
-2. Click **🔒 Edit mode** in the header if you want changes written back to your notes (the browser
-   asks for permission once).
+> [!IMPORTANT]
+> The token is stored **in this browser only** (IndexedDB) and sent **only** to `api.github.com`,
+> which the app talks to directly. There is no server in between.
 
-Your vault is only ever read, and only written when you have enabled editing. Editing needs a
-Chromium-based browser, see [Browser support](#browser-support).
-
-Step-by-step guides for players and DMs (setting up a vault, the Endeavour rules in the app,
-troubleshooting) are in the [wiki](https://github.com/WalSplitter/dnd-companion-web/wiki).
+- Notes and images are cached in the browser by content hash, so the next visit only downloads what
+  changed.
+- **Remove from list** on the start page forgets the repository and its token. Revoke a token on
+  GitHub when you no longer need it.
 
 ## Browser support
 
-Writing changes back to your notes relies on the
-[File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
-(`showDirectoryPicker()`, `FileSystemFileHandle.createWritable()`), which only Chromium-based
-browsers implement. Other browsers can open a vault, but only read-only.
-
 | Feature | Chrome, Edge, Opera | Firefox, Safari |
 | --- | :---: | :---: |
-| Open a vault and view characters | ✅ | ✅ |
-| Edit (HP, slots, conditions, inventory, …) and save to the vault | ✅ | ❌ |
-| Recent vaults on the start page, reopen with one click | ✅ | ❌ |
+| Open a vault folder and view characters | ✅ | ✅ |
+| Save changes to a vault folder | ✅ | ❌ |
+| Recent folders on the start page | ✅ | ❌ |
 | Drop a vault folder onto the start page | ✅ | ❌ |
+| **Open a vault from GitHub and save changes** | ✅ | ✅ |
 
-- **Chromium-based browsers** use the File System Access API: the last five folders are remembered
-  under **Continue your journey** on the start page and reopen with one click (the browser may ask
-  to re-grant access). Links to a character reopen the last vault automatically while access is
-  still granted.
-- **Firefox and Safari** fall back to an `<input webkitdirectory>` picker that must be re-selected
-  each session. The files are only readable through it, so there is no way to write changes back.
-  The start page shows a notice, and the header marks an opened vault as **Read-only**.
-- **Brave** is Chromium-based but disables the API by default; enable it under
-  `brave://flags/#file-system-access-api` to edit.
+Saving to a folder needs the
+[File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), which
+only Chromium-based browsers have.
 
-## Scripts
+- **Chrome, Edge, Opera** remember the last five vaults and reopen them with one click (the browser
+  may ask to re-grant folder access). Links to a character reopen the last vault automatically.
+- **Firefox and Safari** open folders read-only, through a picker that must be used again each
+  session. The header marks such a vault **Read-only**. Vaults from GitHub work fully.
 
-```bash
-npm run dev         # start the dev server
-npm run build       # type-check + production build
-npm run preview     # serve the production build
-npm run test        # vitest (once)
-npm run test:watch  # vitest in watch mode
-npm run lint        # oxlint
-```
+> [!NOTE]
+> **Brave** is Chromium-based but turns the API off by default. Enable it under
+> `brave://flags/#file-system-access-api` to save to folders.
 
 ## Vault formats
 
-The app recognises several character-file shapes; they can all live in the same vault. A best-effort
-ruleset badge in the header (`src/vault/detectRuleset.ts`) shows which one(s) it detected.
+The app recognises several character-file shapes, and they can all live in the same vault. The
+detected ruleset (a best guess, `src/vault/detectRuleset.ts`) is shown on the start page and in the
+tooltip of the vault name in the header.
 
-### 1. Native schema (`type: character` / `item` / `spell`)
+<details>
+<summary><b>1. Native schema</b> (<code>type: character</code> / <code>item</code> / <code>spell</code>)</summary>
+<br>
 
 The app's own frontmatter format (full shape in `src/vault/types.ts`). Items and spells are separate
 notes, referenced from a character via `[[Wikilinks]]`:
@@ -187,42 +341,51 @@ feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
 `endeavour_inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
 character's own file: they are also read from separate notes that link back via
 `Charakter: "[[<character file name>]]"` (see `resolveLinkedFields()` in
-[`nativeCharacter.ts`](src/vault/adapters/nativeCharacter.ts)). A field set directly on the character's file always takes priority.
+[`nativeCharacter.ts`](src/vault/adapters/nativeCharacter.ts)). A field set directly on the
+character's file always takes priority.
 
-### 2. "Endeavour": a from-scratch Nimble ruleset
+</details>
+
+<details>
+<summary><b>2. "Endeavour"</b>: a from-scratch Nimble ruleset</summary>
+<br>
 
 Uses the native `type: character` marker but a genuinely different underlying ruleset, layered on
 additively:
 
 - **Items** ([`endeavourItem.ts`](src/vault/adapters/endeavourItem.ts)) are detected by tag
-  (`Gegenstand/Waffe|Rüstung|Schild|Magischer_Gegenstand|Behälter|Ausrüstung`, bare `Werkzeug`) and kept
-  in their own `Vault.endeavourItems` collection, because the tag scheme overlaps with the legacy
-  adapter's weapon/armour detection.
+  (`Gegenstand/Waffe|Rüstung|Schild|Magischer_Gegenstand|Behälter|Ausrüstung`, bare `Werkzeug`) and
+  kept in their own `Vault.endeavourItems` collection, because the tag scheme overlaps with the
+  legacy adapter's weapon/armour detection.
 - **Slot-grid inventory** (`character.endeavour_inventory`,
   [`EndeavourInventoryGrid.tsx`](src/features/inventory/components/EndeavourInventoryGrid.tsx)):
   containers have a `Plaetze` capacity; items cost one or more slots and are placed as tiles.
   Container contents are written back to the owning file.
-- **Attributes and skills** (`nimble_attributes` / `nimble_skills`): eight attributes valued −5…+5 and
-  used directly as the roll modifier, with the 18 skills reassigned to the attribute that governs them.
-  The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
+- **Attributes and skills** (`nimble_attributes` / `nimble_skills`): eight attributes valued −5…+5
+  and used directly as the roll modifier, with the 18 skills reassigned to the attribute that governs
+  them. The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
   `abilities` / `proficiency_bonus` stay populated as an internal bridge for AC, initiative and spell
   DC math, which is not yet ported to the real Nimble formulas.
 - **Armor and evasion**: `armor: "[[Kettenhemd]]"` (or `Rüstung:`) links the worn armor note; its
-  "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never read from the
-  character file itself.
+  "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never
+  read from the character file itself.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
   Max TP/RP are `level × (class + subclass + attribute bonus)`, with `TP_pro_Stufe` / `RP_pro_Stufe`
   read from notes named like the class and subclass, and KO (TP) / half EN rounded down (RP) as the
   attribute bonus. Without a class note declaring them, the sheet's own `hp.max` / `resilience.max`
   are used.
 
-### 3. Legacy adapter (older German-language vault)
+</details>
+
+<details>
+<summary><b>3. Legacy adapter</b>: an older German-language vault</summary>
+<br>
 
 An older vault predating this app uses a different schema with no `type:` marker (nested
-`Attribute` / `Rettungswürfe` / `Fertigkeiten` objects, Dataview-flavoured formulas, items in markdown
-tables inside a linked `Inventar <Name>.md`). The app detects it structurally and normalises it on the
-fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in the source
-vault is modified except through explicit edits.
+`Attribute` / `Rettungswürfe` / `Fertigkeiten` objects, Dataview-flavoured formulas, items in
+markdown tables inside a linked `Inventar <Name>.md`). The app detects it structurally and normalises
+it on the fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in
+the source vault is modified except through explicit edits.
 
 This adapter is best-effort, not full fidelity:
 
@@ -230,19 +393,63 @@ This adapter is best-effort, not full fidelity:
 - Feature descriptions use the first summary line of the linked feature note.
 - Armor class is `Natürliche_Rüstung + Zusätzliche_Rüstung + DEX modifier` when present, otherwise
   `10 + DEX modifier`; equipped-armour item stats are not cross-referenced.
-- Inventory and currency come from a sibling file whose `Charakter` field links back to the character.
+- Inventory and currency come from a sibling file whose `Charakter` field links back to the
+  character.
 - Spellcasting is read from the character file or a linked spell sheet, whichever carries
   `Zauber` / `Zauberplätze`.
 
-## Architecture
+</details>
+
+## Development
+
+Requires [Node.js](https://nodejs.org) 20+.
+
+```bash
+git clone https://github.com/WalSplitter/dnd-companion-web.git
+cd dnd-companion-web
+npm install
+npm run dev              # http://localhost:5173
+npm run dev -- --host    # also reachable from a phone in the same network
+```
+
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | start the dev server |
+| `npm run build` | type-check and build for production |
+| `npm run preview` | serve the production build |
+| `npm run test` / `test:watch` | run the tests (Vitest), once or on every change |
+| `npm run lint` | lint (oxlint) |
+
+<details>
+<summary><b>Production build and self-hosting</b></summary>
+<br>
+
+For regular use at the table rather than development, build once and serve the static bundle:
+
+```bash
+npm run build
+npm run preview    # http://localhost:4173
+```
+
+The build does not reload on code changes; rerun the commands after pulling updates. Any static file
+server works for `dist/` as long as it falls back to `index.html` for unknown paths (the app uses
+client-side routing), e.g. `npx serve -s dist`. Opening `dist/index.html` directly from disk does not
+work.
+
+</details>
+
+<details>
+<summary><b>Architecture</b></summary>
+<br>
 
 ```
 src/
 ├── vault/        parsing pipeline: raw frontmatter -> adapters -> normalised Vault, wikilink index,
 │   │              derived stats, ruleset detection
 │   ├── adapters/  one detect()/normalize() pair per format (native, legacy, Endeavour items)
+│   ├── github/    GitHub repository as a vault source: REST client, loader, blob cache, commit sync
 │   └── writeback/ surgical YAML patching, so edits keep the note's formatting
-├── store/        zustand stores: vault (load, recent folders, optimistic edits + rollback) and error log
+├── store/        zustand stores: vault (load, recent vaults, optimistic edits + rollback) and error log
 ├── features/     character-list, character-sheet, inventory (slot grid), spells
 ├── components/   shared UI building blocks
 ├── dice/         dice notation parser and roll button
@@ -258,11 +465,17 @@ share the defensive field readers in `src/vault/frontmatterFields.ts` and the pu
 helpers in `src/vault/wikilinkSyntax.ts`. The rest of the app (derived stats, sheet UI, inventory,
 spells) is format-agnostic.
 
-**Adding another format:** add a `detect()` + `normalize()` pair under `src/vault/adapters/` that maps
-the new shape onto `CharacterFrontmatter` (or its own parallel collection if merging would change
-behaviour for an already supported vault) and wire it into `buildVault()`. The original analysis
-behind the Endeavour support lives in
+Edits go through one `VaultWriter` interface (`src/vault/writeback/persist.ts`): a local folder
+writes files through their handles, a GitHub vault queues the edits and commits them
+(`src/vault/github/githubSync.ts`).
+
+**Adding another format:** add a `detect()` + `normalize()` pair under `src/vault/adapters/` that
+maps the new shape onto `CharacterFrontmatter` (or its own parallel collection if merging would
+change behaviour for an already supported vault) and wire it into `buildVault()`. The original
+analysis behind the Endeavour support lives in
 [`docs/inventory-vault-alignment.md`](docs/inventory-vault-alignment.md).
+
+</details>
 
 **Tech stack:** React 19, TypeScript, Vite, Tailwind CSS 4, React Router, zustand, js-yaml, Vitest,
 oxlint.
@@ -271,6 +484,8 @@ oxlint.
 
 Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues):
 
+- [#7](https://github.com/WalSplitter/dnd-companion-web/issues/7) Firefox/Safari: export changes as a
+  download or ZIP, since those browsers cannot write to a vault folder.
 - [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
   and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
 - [#10](https://github.com/WalSplitter/dnd-companion-web/issues/10) Make death saves clickable
@@ -278,11 +493,7 @@ Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-co
 - [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
   inventory entries (only quantity and weight of inline items are written back today).
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA
-  (`vite-plugin-pwa`).
-- [#7](https://github.com/WalSplitter/dnd-companion-web/issues/7) Firefox/Safari: export changes as a
-  download or ZIP, since those browsers cannot write to the vault.
-- [#8](https://github.com/WalSplitter/dnd-companion-web/issues/8) Load a vault straight from a GitHub
-  repository, optionally with write-back.
+  (`vite-plugin-pwa`), including the last vault opened from GitHub.
 
 ## License
 

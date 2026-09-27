@@ -6,7 +6,6 @@ import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
-import { RulesetBadge } from './vault/RulesetBadge'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
 import { CharacterListPage } from './routes/CharacterListPage'
 import { StartPage } from './routes/StartPage'
@@ -42,7 +41,6 @@ function App() {
           <div className="flex shrink-0 items-center justify-end gap-2.5">
             {showVaultControls && (
               <>
-                <RulesetBadge />
                 <VaultLoaderControls />
                 <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
               </>
