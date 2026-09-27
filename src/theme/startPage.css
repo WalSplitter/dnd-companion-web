@@ -558,3 +558,15 @@ button.portal-card:focus-visible::before {
     transform: translateX(300%);
   }
 }
+
+/* "Open from GitHub" modal. `.rpg-panel` makes it `position: relative`, which would undo the
+   top-layer centering a modal <dialog> gets from the browser. */
+.github-dialog {
+  position: fixed;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+.github-dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(3px);
+}

@@ -6,7 +6,7 @@ export type ImageAssets = Map<string, string>
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.avif']
 
-function isImageFile(name: string): boolean {
+export function isImageFile(name: string): boolean {
   const lower = name.toLowerCase()
   return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))
 }
@@ -24,7 +24,7 @@ function isIgnoredDirName(name: string): boolean {
   return name.startsWith('.')
 }
 
-function isIgnoredPath(path: string): boolean {
+export function isIgnoredPath(path: string): boolean {
   return path.split('/').some((segment) => isIgnoredDirName(segment))
 }
 

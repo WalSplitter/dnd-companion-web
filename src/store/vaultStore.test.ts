@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterFrontmatter, Vault } from '../vault/types'
+import { folderWriter } from '../vault/writeback/persist'
 import { useErrorLogStore } from './errorLogStore'
 import { useVaultStore } from './vaultStore'
 
@@ -22,7 +23,7 @@ function fakeHandle(content: string, failOnWrite = false) {
 function setup(handle: FileSystemFileHandle) {
   useVaultStore.setState({
     vault: { characters: [character('A', 1), character('B', 1)] } as unknown as Vault,
-    fileHandles: new Map([['A.md', handle]]),
+    writer: folderWriter(new Map([['A.md', handle]])),
     editPermission: 'granted',
     writeError: null,
   })

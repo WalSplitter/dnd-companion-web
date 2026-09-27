@@ -6,6 +6,9 @@ import { formatRelativeTime } from '../i18n/relativeTime'
 import { useI18n, type TranslateFn } from '../i18n/useI18n'
 import { sampleVaultImages } from '../sample-vault'
 import { useVaultStore } from '../store/vaultStore'
+import type { GitHubErrorKind, GitHubVaultRef } from '../vault/github/githubApi'
+import { GitHubVaultDialog } from '../vault/github/GitHubVaultDialog'
+import { EMPTY_GITHUB_FORM, gitHubFormValues, type GitHubFormValues } from '../vault/github/githubForm'
 import type { RecentVault } from '../vault/handleStore'
 import { isFileSystemAccessSupported } from '../vault/vaultLoader'
 
@@ -138,6 +141,28 @@ function ChestIcon() {
   )
 }
 
+function RepoIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="portal-float size-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+      <path d="M15 15v18M33 21c0 9-18 6-18 12" />
+      <circle cx="15" cy="11" r="4" fill="color-mix(in srgb, currentColor 18%, transparent)" />
+      <circle cx="15" cy="37" r="4" fill="color-mix(in srgb, currentColor 18%, transparent)" />
+      <circle cx="33" cy="17" r="4" fill="currentColor" />
+    </svg>
+  )
+}
+
+/** Marks a recents entry that was opened from a GitHub repository (hover: which one). */
+function GitHubBadge({ recent, t }: { recent: RecentVault; t: TranslateFn }) {
+  if (recent.kind !== 'github') return null
+  const { owner, repo, branch, subpath } = recent.github
+  return (
+    <span className="shrink-0 rounded-full border border-fg-muted/35 px-2 py-0.5 text-[0.65rem] font-semibold text-fg-muted" title={`${owner}/${repo}@${branch}${subpath ? ` · ${subpath}` : ''}`}>
+      {t('github.sourceBadge')}
+    </span>
+  )
+}
+
 function Medallion({ name, index, image }: { name: string; index: number; image?: string }) {
   return (
     <span
@@ -153,6 +178,7 @@ function Medallion({ name, index, image }: { name: string; index: number; image?
 function RecentMeta({ recent, t, lang }: { recent: RecentVault; t: TranslateFn; lang: 'en' | 'de' }) {
   return (
     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-fg-muted">
+      <GitHubBadge recent={recent} t={t} />
       {recent.ruleset && recent.ruleset !== 'unknown' && (
         <span className="rounded-full border border-trim/35 bg-trim/10 px-2 py-0.5 font-semibold text-trim">{t(`ruleset.${recent.ruleset}`)}</span>
       )}
@@ -217,7 +243,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
               </button>
             )}
           </div>
-          <p className="mt-2 text-[0.7rem] text-fg-muted/80">{t('start.permissionHint')}</p>
+          {latest.kind === 'folder' && <p className="mt-2 text-[0.7rem] text-fg-muted/80">{t('start.permissionHint')}</p>}
 
           {older.length > 0 && (
             <div className="mt-5 border-t border-trim/15 pt-4">
@@ -232,6 +258,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
                     >
                       <span aria-hidden className="size-1.5 shrink-0 rotate-45 border border-trim/60 transition group-hover/row:bg-trim" />
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{r.name}</span>
+                      <GitHubBadge recent={r} t={t} />
                       <span className="shrink-0 text-xs text-fg-muted">{formatRelativeTime(r.openedAt, lang)}</span>
                     </button>
                     <button
@@ -302,11 +329,14 @@ export function StartPage() {
   const loadFromDirectoryPicker = useVaultStore((s) => s.loadFromDirectoryPicker)
   const loadFromDirectoryHandle = useVaultStore((s) => s.loadFromDirectoryHandle)
   const loadFromFileList = useVaultStore((s) => s.loadFromFileList)
+  const loadFromGitHub = useVaultStore((s) => s.loadFromGitHub)
   const loadSampleVault = useVaultStore((s) => s.loadSampleVault)
   const closeVault = useVaultStore((s) => s.closeVault)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [dropError, setDropError] = useState<string | null>(null)
+  /** The "open from GitHub" form, when showing — with why the last attempt with these values failed. */
+  const [githubForm, setGithubForm] = useState<{ values: GitHubFormValues; error: GitHubErrorKind | null } | null>(null)
   const samplePortraits = useMemo(() => [...sampleVaultImages.values()], [])
 
   useEffect(() => {
@@ -317,7 +347,21 @@ export function StartPage() {
     if (ok) navigate(target)
   }
 
-  const openRecent = async (recent: RecentVault, target?: string) => openedAt(await openRecentVault(recent.id), target ?? redirectedFrom)
+  /** Reopens `values` in the form after a failed GitHub load, explaining what went wrong (e.g. an expired token). */
+  const retryGitHub = (values: GitHubFormValues) => setGithubForm({ values, error: useVaultStore.getState().githubError })
+
+  const openRecent = async (recent: RecentVault, target?: string) => {
+    const ok = await openRecentVault(recent.id)
+    if (!ok && recent.kind === 'github') retryGitHub(gitHubFormValues(recent.github, recent.token))
+    else openedAt(ok, target ?? redirectedFrom)
+  }
+
+  const openGitHub = async (ref: GitHubVaultRef, token: string) => {
+    // Closed while loading, so the loading screen shows; reopened with the same values if it fails.
+    setGithubForm(null)
+    if (await loadFromGitHub(ref, token)) openedAt(true)
+    else retryGitHub(gitHubFormValues(ref, token))
+  }
 
   const openFolder = async () => {
     if (isFileSystemAccessSupported()) openedAt(await loadFromDirectoryPicker())
@@ -376,6 +420,29 @@ export function StartPage() {
   }, [loadFromDirectoryHandle, navigate, t])
 
   const loading = status === 'loading'
+
+  const githubCard = (
+    <div className="rise-in md:col-span-2" style={{ '--i': 7 } as CSSProperties}>
+      <PortalCard
+        accent="var(--color-success)"
+        onActivate={() => setGithubForm({ values: EMPTY_GITHUB_FORM, error: null })}
+        disabled={loading}
+        className="h-full w-full text-left"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 sm:[&>.portal-emblem]:mb-0">
+          <Emblem>
+            <RepoIcon />
+          </Emblem>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-success">{t('github.cardEyebrow')}</p>
+            <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('github.cardBody')}</p>
+          </div>
+          <span className="rpg-button start-cta mt-6 inline-block self-start sm:mt-0 sm:self-center">{t('github.cardAction')}</span>
+        </div>
+      </PortalCard>
+    </div>
+  )
 
   return (
     <div className="relative">
@@ -444,9 +511,11 @@ export function StartPage() {
 
         {/* Portals */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div className="rise-in md:col-span-2 lg:col-span-1" style={{ '--i': 4 } as CSSProperties}>
+          <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
             <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
           </div>
+
+          {!isFileSystemAccessSupported() && githubCard}
 
           <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
             <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
@@ -508,6 +577,8 @@ export function StartPage() {
               </div>
             </PortalCard>
           </div>
+
+          {isFileSystemAccessSupported() && githubCard}
         </div>
 
         {/* Features */}
@@ -567,6 +638,15 @@ export function StartPage() {
             <p className="font-display text-2xl font-bold tracking-wide text-fg">{t('start.dropOverlay')}</p>
           </div>
         </div>
+      )}
+
+      {githubForm && (
+        <GitHubVaultDialog
+          initial={githubForm.values}
+          error={githubForm.error}
+          onCancel={() => setGithubForm(null)}
+          onSubmit={(ref, token) => void openGitHub(ref, token)}
+        />
       )}
 
       {loading && <VaultLoadingScreen />}
