@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type KeyboardEvent } from 'react'
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type KeyboardEvent, type Ref } from 'react'
 
 export interface ComboboxOption {
   value: string
+  /** What the list shows and filters by, when that isn't the value itself. */
+  label?: string
   /** Small tag after the value, e.g. why this option is suggested first. */
   badge?: string
 }
@@ -35,8 +37,10 @@ export function Combobox({
   className = '',
   onBlur,
   onKeyDown,
+  ref,
   ...inputProps
 }: InputProps & {
+  ref?: Ref<HTMLInputElement>
   id: string
   value: string
   onChange: (value: string) => void
@@ -50,9 +54,10 @@ export function Combobox({
   const [filter, setFilter] = useState('')
   const [active, setActive] = useState(-1)
   const [position, setPosition] = useState<CSSProperties>({})
+  useImperativeHandle(ref, () => inputRef.current!, [])
 
   const needle = filter.trim().toLowerCase()
-  const shown = needle ? options.filter((o) => o.value.toLowerCase().includes(needle)) : options
+  const shown = needle ? options.filter((o) => (o.label ?? o.value).toLowerCase().includes(needle)) : options
   const expanded = open && shown.length > 0
   const listId = `${id}-listbox`
 
@@ -175,7 +180,7 @@ export function Combobox({
                 option.value === value ? 'font-semibold text-trim' : ''
               }`}
             >
-              <span className="min-w-0 flex-1 truncate">{option.value}</span>
+              <span className="min-w-0 flex-1 truncate">{option.label ?? option.value}</span>
               {option.badge && (
                 <span className="shrink-0 rounded-full border border-trim/35 bg-trim/10 px-1.5 py-px text-[0.65rem] font-medium text-trim">{option.badge}</span>
               )}

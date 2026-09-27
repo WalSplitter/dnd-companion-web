@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Combobox } from '../../components/Combobox'
+import { Combobox, type ComboboxOption } from '../../components/Combobox'
 import { useT } from '../../i18n/useI18n'
 import {
   fetchLogin,
@@ -12,10 +12,76 @@ import {
   type GitHubRepoSummary,
   type GitHubVaultRef,
 } from './githubApi'
+import { listRecentVaults } from '../handleStore'
 import type { GitHubFormValues } from './githubForm'
 
-const NEW_TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new'
-const NEW_CLASSIC_TOKEN_URL = 'https://github.com/settings/tokens/new'
+/** Token names must be unique per account — the date keeps a second token from clashing with the first. */
+function tokenName(): string {
+  return `D&D Companion ${new Date().toISOString().slice(0, 10)}`
+}
+
+/** GitHub's "new fine-grained token" page with name, permission and expiry filled in — only the repository is left to pick. */
+function newTokenUrl(description: string): string {
+  const params = new URLSearchParams({ name: tokenName(), description, expires_in: '90', contents: 'write' })
+  return `https://github.com/settings/personal-access-tokens/new?${params}`
+}
+
+/** GitHub's "new classic token" page with the `repo` scope ticked. */
+function newClassicTokenUrl(): string {
+  return `https://github.com/settings/tokens/new?${new URLSearchParams({ scopes: 'repo', description: tokenName() })}`
+}
+
+/** Plain text masked by CSS where the browser can, so no password manager pops up; a password field elsewhere. */
+const CAN_MASK = typeof CSS !== 'undefined' && CSS.supports('-webkit-text-security', 'disc')
+
+/** Tokens of the GitHub vaults this browser remembers, to reuse for another repository. Each shows its
+ * vault and the token's last characters — never the token itself. */
+function useSavedTokens(): ComboboxOption[] {
+  const [saved, setSaved] = useState<ComboboxOption[]>([])
+  useEffect(() => {
+    let cancelled = false
+    listRecentVaults().then(
+      (recents) => {
+        if (cancelled) return
+        const byToken = new Map<string, ComboboxOption>()
+        for (const r of recents) {
+          if (r.kind !== 'github' || byToken.has(r.token)) continue
+          byToken.set(r.token, { value: r.token, label: `${r.name} · ${r.github.owner}/${r.github.repo}`, badge: `…${r.token.slice(-4)}` })
+        }
+        setSaved([...byToken.values()])
+      },
+      () => {},
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return saved
+}
+
+const ICON = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
+
+function EyeIcon({ crossed }: { crossed: boolean }) {
+  return (
+    <svg {...ICON} className="size-4">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+      {crossed && <path d="m3 3 18 18" />}
+    </svg>
+  )
+}
+
+function PasteIcon() {
+  return (
+    <svg {...ICON} className="size-4">
+      <rect x="8" y="3" width="8" height="4" rx="1" />
+      <path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" />
+    </svg>
+  )
+}
+
+const FIELD_BUTTON =
+  'flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-trim/28 bg-surface-2 px-2.5 text-xs font-medium text-fg-muted transition hover:border-trim/60 hover:text-trim'
 
 function Field({ id, label, action, hint, children }: { id: string; label: string; action?: ReactNode; hint?: ReactNode; children: ReactNode }) {
   return (
@@ -162,12 +228,12 @@ function TokenGuide() {
   )
   return (
     <div className="mt-6 divide-y divide-trim/15 rounded-md border border-trim/20 bg-trim/5 text-[0.7rem] leading-relaxed">
-      <TokenCase summary={t('github.tokenOwnSummary')} intro={<>{t('github.tokenOwnIntro')} {link(NEW_TOKEN_URL)}</>}>
+      <TokenCase summary={t('github.tokenOwnSummary')} intro={<>{t('github.tokenOwnIntro')} {link(newTokenUrl(t('github.tokenDescription')))}</>}>
         <TokenStep n={1} setting="Repository access" choice={t('github.tokenOwnRepo')} />
         <TokenStep n={2} setting="Permissions · Contents" choice={t('github.tokenOwnPermission')} />
         <TokenStep n={3} setting="Expiration" choice={t('github.tokenOwnExpiry')} />
       </TokenCase>
-      <TokenCase summary={t('github.tokenOtherSummary')} intro={<>{t('github.tokenOtherIntro')} {link(NEW_CLASSIC_TOKEN_URL)}</>}>
+      <TokenCase summary={t('github.tokenOtherSummary')} intro={<>{t('github.tokenOtherIntro')} {link(newClassicTokenUrl())}</>}>
         <TokenStep n={1} setting="Select scopes" choice={t('github.tokenOtherScope')} />
         <TokenStep n={2} setting="Expiration" choice={t('github.tokenOtherExpiry')} />
       </TokenCase>
@@ -199,6 +265,23 @@ export function GitHubVaultDialog({
   const [values, setValues] = useState(initial)
   const [formError, setFormError] = useState<string | null>(null)
   const suggestions = useGitHubSuggestions(values)
+  const savedTokens = useSavedTokens()
+  const [showToken, setShowToken] = useState(false)
+  const [pasteFailed, setPasteFailed] = useState(false)
+  const tokenInputRef = useRef<HTMLInputElement>(null)
+  const canPaste = typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function'
+
+  async function pasteToken() {
+    setPasteFailed(false)
+    try {
+      const text = (await navigator.clipboard.readText()).trim()
+      if (text) setValue('token')(text)
+    } catch {
+      // Refused (or nothing readable) — the field is focused, so the usual paste gesture is one step away.
+      setPasteFailed(true)
+      tokenInputRef.current?.focus()
+    }
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -206,7 +289,6 @@ export function GitHubVaultDialog({
   }, [])
 
   const setValue = (key: keyof GitHubFormValues) => (value: string) => setValues((v) => ({ ...v, [key]: value }))
-  const set = (key: keyof GitHubFormValues) => (e: { target: { value: string } }) => setValue(key)(e.target.value)
 
   // A pasted URL (`…/tree/<branch>/<folder>` fills in the branch and folder fields too) is cut down to
   // owner/repo straight away, so the suggestions for that repository can load.
@@ -246,25 +328,55 @@ export function GitHubVaultDialog({
           id={`${id}-token`}
           label={t('github.tokenLabel')}
           action={
-            <a href={NEW_TOKEN_URL} target="_blank" rel="noreferrer" className="whitespace-nowrap text-xs text-trim underline-offset-2 hover:underline">
+            <a href={newTokenUrl(t('github.tokenDescription'))} target="_blank" rel="noreferrer" className="whitespace-nowrap text-xs text-trim underline-offset-2 hover:underline">
               {t('github.tokenCreate')} ↗
             </a>
           }
         >
-          <input
-            id={`${id}-token`}
-            className="rpg-input font-mono"
-            type="password"
-            value={values.token}
-            onChange={set('token')}
-            placeholder="github_pat_…"
-            autoComplete="off"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            required
-            autoFocus={!initial.token}
-          />
+          <div className="flex items-stretch gap-2">
+            <div className="min-w-0 flex-1">
+              <Combobox
+                ref={tokenInputRef}
+                id={`${id}-token`}
+                className={`font-mono ${CAN_MASK && !showToken ? 'text-masked' : ''}`}
+                type={CAN_MASK || showToken ? 'text' : 'password'}
+                value={values.token}
+                onChange={(token) => {
+                  setPasteFailed(false)
+                  setValue('token')(token)
+                }}
+                options={savedTokens}
+                placeholder={t('github.tokenPlaceholder')}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                autoFocus={!initial.token}
+                // Keep password-manager extensions from offering to fill or save it.
+                data-1p-ignore=""
+                data-lpignore="true"
+                data-bwignore=""
+                data-form-type="other"
+              />
+            </div>
+            {canPaste && (
+              <button type="button" onClick={() => void pasteToken()} className={FIELD_BUTTON} title={t('github.tokenPaste')}>
+                <PasteIcon />
+                <span>{t('github.tokenPaste')}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowToken((v) => !v)}
+              className={FIELD_BUTTON}
+              aria-pressed={showToken}
+              aria-label={t(showToken ? 'github.tokenHide' : 'github.tokenShow')}
+              title={t(showToken ? 'github.tokenHide' : 'github.tokenShow')}
+            >
+              <EyeIcon crossed={showToken} />
+            </button>
+          </div>
+          {pasteFailed && <p className="mt-1.5 text-xs text-warning">{t('github.tokenPasteFailed')}</p>}
           <TokenStatus check={suggestions.check} />
           {suggestions.check.state !== 'ok' && <TokenGuide />}
         </Field>

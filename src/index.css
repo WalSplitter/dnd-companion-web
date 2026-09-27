@@ -268,6 +268,12 @@ body {
       0 0 0 2px color-mix(in srgb, var(--color-trim) 30%, transparent);
   }
 
+  /* Hides a secret in a plain text field — unlike type="password", that doesn't summon the browser's
+     password manager (whose popup can't be themed). */
+  .text-masked {
+    -webkit-text-security: disc;
+  }
+
   /* Suggestion list under a <Combobox> field — a small floating panel in the field's style. */
   .combobox-list {
     border: 1px solid color-mix(in srgb, var(--color-trim) 40%, var(--color-border));
