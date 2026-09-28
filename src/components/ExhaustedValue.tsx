@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useD20Penalty } from '../dice/d20Penalty'
 import { useT } from '../i18n/useI18n'
-import { formatModifier, spellSaveDC, spellSaveDCPenalty } from '../vault/deriveStats'
+import { exhaustionStaticPenalty, formatModifier, passivePerception, spellSaveDC } from '../vault/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
 import { useExhaustedSync } from './exhaustedSync'
 
@@ -44,12 +44,25 @@ export function D20Modifier({ value, className = '', hint = true }: { value: num
 export function SpellSaveDCValue({ character, className = '' }: { character: CharacterFrontmatter; className?: string }) {
   const t = useT()
   const dc = spellSaveDC(character)
-  const penalty = spellSaveDCPenalty(character)
+  const penalty = exhaustionStaticPenalty(character)
   if (dc === undefined) return <span className={className}>—</span>
   if (penalty <= 0) return <span className={className}>{dc}</span>
   return (
     <ExhaustedValue className={className} hint={t('exhaustion.dcHint', { base: dc + penalty, n: penalty, total: dc })}>
       {dc}
+    </ExhaustedValue>
+  )
+}
+
+/** Passive Perception (already lowered by exhaustion, see `passivePerception`), marked when it is. */
+export function PassivePerceptionValue({ character, className = '' }: { character: CharacterFrontmatter; className?: string }) {
+  const t = useT()
+  const value = passivePerception(character)
+  const penalty = exhaustionStaticPenalty(character)
+  if (penalty <= 0) return <span className={className}>{value}</span>
+  return (
+    <ExhaustedValue className={className} hint={t('exhaustion.passiveHint', { base: value + penalty, n: penalty, total: value })}>
+      {value}
     </ExhaustedValue>
   )
 }

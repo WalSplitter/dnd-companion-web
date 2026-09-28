@@ -40,8 +40,11 @@ export function initiativeBonus(character: CharacterFrontmatter): number {
   return abilityModifier(character.abilities.dex)
 }
 
+/** Passive Perception, already lowered by `exhaustionStaticPenalty`. Nimble characters use rule
+ * `Wahrnehmung#Passive Wahrnehmung` (10 + IN + skill), D&D ones 10 + the perception skill bonus. */
 export function passivePerception(character: CharacterFrontmatter): number {
-  return 10 + skillBonus(character, 'perception')
+  if (!character.nimble_attributes) return 10 + skillBonus(character, 'perception')
+  return 10 + nimbleSkillBonus(character, 'perception') - exhaustionStaticPenalty(character)
 }
 
 /** Exhaustion levels (rule `Erschöpfung`), never negative. */
@@ -56,17 +59,19 @@ export function exhaustionD20Penalty(character: CharacterFrontmatter): number {
   return 2 * exhaustionLevel(character)
 }
 
-/** How much exhaustion lowers the spell save DC: twice the level for Nimble characters (rule
- * `Erschöpfung#Beeinträchtigte W20-Prüfungen`), nothing in D&D, which has no such rule. */
-export function spellSaveDCPenalty(character: CharacterFrontmatter): number {
+/** How much exhaustion lowers values that stand in for a d20 test without being rolled — the spell
+ * save DC and passive checks: twice the level for Nimble characters (rule
+ * `Erschöpfung#Beeinträchtigte W20-Prüfungen`, confirmed by the DM in #5), nothing in D&D, which
+ * has no such rule. */
+export function exhaustionStaticPenalty(character: CharacterFrontmatter): number {
   return character.nimble_attributes ? exhaustionD20Penalty(character) : 0
 }
 
-/** Spell save DC, already lowered by `spellSaveDCPenalty`. */
+/** Spell save DC, already lowered by `exhaustionStaticPenalty`. */
 export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
   const ability = character.spellcasting?.ability
   if (!ability) return undefined
-  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - spellSaveDCPenalty(character)
+  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - exhaustionStaticPenalty(character)
 }
 
 export function spellAttackBonus(character: CharacterFrontmatter): number | undefined {

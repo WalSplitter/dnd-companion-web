@@ -461,6 +461,7 @@ export const de = {
   'exhaustion.modifierHint': 'Grundwert {{base}}, Erschöpfung −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}}-Wurf: W20 {{total}}. Attribut {{base}}, Erschöpfung −{{n}}. {{hint}}',
   'exhaustion.dcHint': 'Zauber-SG {{base}}, Erschöpfung −{{n}} → {{total}}',
+  'exhaustion.passiveHint': 'Passive Wahrnehmung {{base}}, Erschöpfung −{{n}} → {{total}}',
   'roll.hitDie': 'Trefferwürfel',
 
   'wikilink.character': 'Charakter',

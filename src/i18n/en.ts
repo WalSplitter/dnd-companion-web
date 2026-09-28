@@ -482,6 +482,7 @@ export const en = {
   'exhaustion.modifierHint': 'Base {{base}}, exhaustion −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}} check: d20 {{total}}. Attribute {{base}}, exhaustion −{{n}}. {{hint}}',
   'exhaustion.dcHint': 'Spell save DC {{base}}, exhaustion −{{n}} → {{total}}',
+  'exhaustion.passiveHint': 'Passive Perception {{base}}, exhaustion −{{n}} → {{total}}',
   'roll.hitDie': 'Hit Die',
 
   // Wikilink popover

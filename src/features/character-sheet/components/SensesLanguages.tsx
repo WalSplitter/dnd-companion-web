@@ -1,6 +1,6 @@
 import { Card } from '../../../components/Card'
+import { PassivePerceptionValue } from '../../../components/ExhaustedValue'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { passivePerception } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function SensesLanguages({ character }: { character: CharacterFrontmatter }) {
@@ -13,7 +13,9 @@ export function SensesLanguages({ character }: { character: CharacterFrontmatter
       <dl className="space-y-2.5 text-sm">
         <div className="flex items-center justify-between">
           <dt className="text-fg-muted">{t('stats.passivePerception')}</dt>
-          <dd className="rpg-plate min-w-9 px-2 py-0.5 text-center font-num text-fg">{passivePerception(character)}</dd>
+          <dd className="rpg-plate min-w-9 px-2 py-0.5 text-center font-num text-fg">
+            <PassivePerceptionValue character={character} />
+          </dd>
         </div>
         {senseEntries.map(([key, value]) => (
           <div key={key} className="flex items-center justify-between">
