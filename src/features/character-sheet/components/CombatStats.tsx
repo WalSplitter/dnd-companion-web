@@ -15,7 +15,7 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
 
   return (
     <div className="flex shrink-0 flex-col items-center">
-      <div className="relative h-[4.6rem] w-16 drop-shadow-[0_0_14px_color-mix(in_srgb,var(--color-trim)_45%,transparent)]">
+      <div className="relative h-[4.6rem] w-16">
         <svg viewBox="0 0 100 116" className="absolute inset-0 size-full" aria-hidden>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -62,8 +62,8 @@ export function Evasion({ value, character }: { value: number; character: Charac
       <div className="relative h-12 w-[4.5rem]">
         <svg viewBox="0 0 120 80" className="absolute inset-0 size-full" aria-hidden>
           <g className="evasion-streaks" stroke="var(--color-trim)" strokeLinecap="round" fill="none">
-            <path d="M6 30h18M2 40h24M8 50h16" strokeWidth="2" opacity="0.55" />
-            <path d="M96 30h18M94 40h24M96 50h16" strokeWidth="2" opacity="0.55" />
+            <path d="M6 30h18M2 40h24M8 50h16" strokeWidth="2" opacity="0.3" />
+            <path d="M96 30h18M94 40h24M96 50h16" strokeWidth="2" opacity="0.3" />
           </g>
           <path
             d="M60 3 97 40 60 77 23 40Z"

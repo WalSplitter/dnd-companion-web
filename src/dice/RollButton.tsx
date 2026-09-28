@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
 import { formatModifier } from '../vault/deriveStats'
+import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
 import { d20RollHint, damageRollHint } from './rollHint'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
@@ -35,26 +36,35 @@ export function D20RollButton({
   /** Tooltip; defaults to `d20RollHint` (what is rolled, the exhaustion breakdown, the Shift/Alt
    * keys). `false` renders none, for a button whose container already explains the roll. */
   title?: string | false
-  /** Button content — defaults to a die icon; pass e.g. the formatted modifier to make a stat
-   * tile's own number the clickable roll trigger instead of adding a separate icon next to it. */
+  /** Button content — defaults to a d20 (`D20Icon`, tumbling on each roll; then
+   * `className` only needs layout); pass e.g. the formatted modifier to make a stat tile's own
+   * number the clickable roll trigger instead of adding a separate icon next to it. */
   children?: React.ReactNode
 }) {
   const t = useT()
   const penalty = useD20Penalty()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
+  const [rolls, setRolls] = useState(0)
 
   function roll(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : defaultMode
+    setRolls((n) => n + 1)
     setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
   }
 
   const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note))
 
   return (
-    <RollButtonShell outcome={outcome} onClose={() => setOutcome(null)} onClick={roll} className={className} title={fullTitle}>
-      {children ?? '🎲'}
+    <RollButtonShell
+      outcome={outcome}
+      onClose={() => setOutcome(null)}
+      onClick={roll}
+      className={children ? className : `d20-button ${className ?? ''}`}
+      title={fullTitle}
+    >
+      {children ?? <D20Icon key={rolls} rolling={rolls > 0} />}
     </RollButtonShell>
   )
 }

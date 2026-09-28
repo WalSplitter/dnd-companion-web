@@ -32,11 +32,7 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
   },
   dragon: {
     particles: 26,
-    sprites: [
-      { kind: 'glint', count: 9 },
-      { kind: 'dragon-eye', count: 1 },
-    ],
-    flybys: { kinds: ['dragon'], gap: [20, 50] },
+    sprites: [{ kind: 'glint', count: 9 }],
   },
   unicorn: {
     particles: 22,

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { DragonEye } from './DragonEye'
 import { ShadowFiend } from './ShadowFiend'
 import { WatchingSkull } from './WatchingSkull'
 
@@ -277,31 +276,6 @@ const santa = (
   </svg>
 )
 
-/** A dragon's silhouette flying to the right, wings beating, ember light along its edges. */
-const dragon = (
-  <svg
-    viewBox="0 0 240 120"
-    fill="#120906"
-    stroke="var(--color-primary)"
-    strokeOpacity="0.5"
-    strokeWidth="1.2"
-    strokeLinejoin="round"
-  >
-    <g className="dragon-wing dragon-wing-far" opacity="0.75">
-      <path d="M118 60C110 44 96 30 78 20 96 24 112 26 124 22 122 34 126 46 134 56Z" />
-    </g>
-    <path d="M46 62C28 58 16 62 6 72L1 69 3 80 11 75C19 69 31 67 48 68Z" />
-    <path d="M40 64C70 55 110 55 140 59 160 61 176 57 190 49L204 43C212 39 222 41 228 45L237 50 226 52 214 55C204 59 192 65 180 69 160 75 130 77 100 75 80 73 60 70 40 64Z" />
-    <path d="M214 44l9-12-2 12ZM206 46l5-10 1 9Z" />
-    <path d="M110 73l-7 12 9-3ZM152 71l-3 12 8-5Z" />
-    <circle cx="222" cy="46" r="1.6" fill="#fbbf24" stroke="none" className="dragon-glow" />
-    <g className="dragon-wing dragon-wing-near">
-      <path d="M126 60C120 40 110 20 94 3 112 10 132 14 152 11 147 20 150 28 157 34 152 41 147 50 143 58Z" />
-      <path d="M126 58l-20-40M134 56l-4-36M140 56l10-38" fill="none" strokeOpacity="0.35" />
-    </g>
-  </svg>
-)
-
 /** A four-pointed glint twinkling on the gold. */
 const glint = (
   <svg viewBox="0 0 24 24">
@@ -315,9 +289,7 @@ export const AMBIENT_ART = {
   android,
   'crescent-ship': crescentShip,
   'watching-skull': <WatchingSkull />,
-  dragon,
   glint,
-  'dragon-eye': <DragonEye />,
   'shadow-eyes': shadowEyes,
   'shadow-fiend': <ShadowFiend />,
   'shadow-hand': shadowHand,

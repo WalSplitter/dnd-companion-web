@@ -25,12 +25,12 @@ function NimbleSkillRow({ character, skill }: { character: CharacterFrontmatter;
   return (
     <li
       title={breakdown}
-      className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${trained > 0 ? 'bg-trim/[0.06]' : ''}`}
+      className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10"
     >
       <D20Modifier value={bonus} className={`w-8 text-right font-num ${trained > 0 ? 'text-trim' : 'text-fg'}`} />
       <span className={trained > 0 ? 'text-fg' : 'text-fg-muted'}>{label}</span>
       {trained > 0 && (
-        <span className="rounded-full border border-trim/35 bg-trim/10 px-1.5 text-[0.65rem] font-semibold leading-4 text-trim">
+        <span className="font-num text-[0.7rem] text-trim/70">
           +{trained}
         </span>
       )}
@@ -59,7 +59,7 @@ export function Skills({ character }: { character: CharacterFrontmatter }) {
               return (
                 <li
                   key={key}
-                  className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${level === 'none' ? '' : 'bg-trim/[0.06]'}`}
+                  className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10"
                 >
                   <ProficiencyDot level={level} />
                   <D20Modifier value={bonus} className={`w-8 text-right font-num ${level === 'none' ? 'text-fg' : 'text-trim'}`} />
