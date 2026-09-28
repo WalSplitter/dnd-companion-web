@@ -2,11 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type ComponentType } from
 import { createPortal } from 'react-dom'
 import { useT, type TranslationKey } from '../i18n/useI18n'
 import { isTopicTheme, THEMES, TOPIC_THEMES, useThemeStore, type ThemeEntry, type TopicThemeName } from './themeStore'
-import { BlossomIcon, EyeIcon, FirTreeIcon, HornIcon, PumpkinIcon, SkullIcon, SparklesIcon, SunIcon, type IconProps } from './topicIcons'
+import { BlossomIcon, DragonIcon, EyeIcon, FirTreeIcon, HornIcon, PumpkinIcon, SkullIcon, SparklesIcon, SunIcon, type IconProps } from './topicIcons'
 
 const TOPIC_ICONS: Record<TopicThemeName, ComponentType<IconProps>> = {
   necromancer: SkullIcon,
   shadowmaster: EyeIcon,
+  dragon: DragonIcon,
   unicorn: HornIcon,
   halloween: PumpkinIcon,
   christmas: FirTreeIcon,

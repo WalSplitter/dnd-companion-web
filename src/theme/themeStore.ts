@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type ColorThemeName = 'light' | 'dark' | 'fluent' | 'purple' | 'orange' | 'red' | 'green' | 'blue'
+export type ColorThemeName = 'light' | 'dark' | 'parchment' | 'fluent' | 'purple' | 'orange' | 'red' | 'green' | 'blue'
 /** Topic themes go beyond a palette: a backdrop motif, themed panel corners and ambient particles
  * (see `topics.css` and `AmbientLayer`). */
-export type TopicThemeName = 'necromancer' | 'shadowmaster' | 'unicorn' | 'halloween' | 'christmas' | 'summer' | 'spring'
+export type TopicThemeName = 'necromancer' | 'shadowmaster' | 'dragon' | 'unicorn' | 'halloween' | 'christmas' | 'summer' | 'spring'
 export type ThemeName = ColorThemeName | TopicThemeName
 
 export interface ThemeEntry<K extends ThemeName = ThemeName> {
@@ -19,6 +19,7 @@ export const THEMES: ThemeEntry<ColorThemeName>[] = [
   // the other themes keep their accent color since that's already a distinctive enough swatch.
   { key: 'light', label: 'Light', swatch: '#ffffff', swatchBorder: '#000000' },
   { key: 'dark', label: 'Dark', swatch: '#000000', swatchBorder: '#ffffff' },
+  { key: 'parchment', label: 'Parchment', swatch: '#e9d8b0', swatchBorder: '#8a6224' },
   { key: 'fluent', label: 'Fluent', swatch: '#38bdf8' },
   { key: 'purple', label: 'Purple', swatch: '#a855f7' },
   { key: 'orange', label: 'Orange', swatch: '#f97316' },
@@ -31,6 +32,7 @@ export const THEMES: ThemeEntry<ColorThemeName>[] = [
 export const TOPIC_THEMES: ThemeEntry<TopicThemeName>[] = [
   { key: 'necromancer', label: 'Necromancer', swatch: '#52f08a' },
   { key: 'shadowmaster', label: 'Shadow Master', swatch: '#8b7cf6' },
+  { key: 'dragon', label: 'Dragon Hoard', swatch: '#f25c1f' },
   { key: 'unicorn', label: 'Unicorn', swatch: '#e879f9' },
   { key: 'halloween', label: 'Halloween', swatch: '#f97316' },
   { key: 'christmas', label: 'Christmas', swatch: '#dc2626' },

@@ -109,8 +109,8 @@ off; it also stays off for anyone who has *reduce motion* set in their system.
     <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
     <td valign="middle">
 
-**Also:** Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer and 🎄
-Christmas.
+**Also:** Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer,
+🐉 Dragon Hoard and 🎄 Christmas.
 
 </td>
   </tr>

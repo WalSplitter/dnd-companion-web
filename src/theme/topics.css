@@ -636,6 +636,168 @@
   }
 }
 
+/* ---------- Dragon Hoard: ember and gold in the dark, a watching eye, a dragon passing ---------- */
+
+[data-theme='dragon'] {
+  --color-bg: #0d0806;
+  --color-surface: #170e0a;
+  --color-surface-2: #1f130d;
+  --color-border: #3d2417;
+  --color-fg: #f6e7d6;
+  --color-fg-muted: #bf9a7f;
+  --color-primary: #f25c1f;
+  --color-primary-fg: #140a06;
+  --color-accent: #fbbf24;
+  --color-danger: #ef4444;
+  --color-success: #84cc16;
+  --color-trim: #e0a93b;
+  --color-warning: #facc15;
+  --topic-corner-size: 1.9rem;
+  /* Dragon scales along both arms, a cut gem in the bend. */
+  --topic-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M10 6a3 3 0 0 1 6 0a3 3 0 0 1 6 0a3 3 0 0 1 6 0'/%3E%3Cpath d='M6 10a3 3 0 0 0 0 6a3 3 0 0 0 0 6a3 3 0 0 0 0 6'/%3E%3C/g%3E%3Cpath fill='white' d='M6 1L11 6L6 11L1 6Z'/%3E%3C/svg%3E");
+}
+
+/* Fire glow rising from a hoard of gold along the bottom, smoke-dark above. */
+[data-theme='dragon'] body {
+  background-image:
+    radial-gradient(ellipse 90% 30% at 50% 108%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 70%),
+    url('./art/hoard.svg'),
+    radial-gradient(ellipse 50% 40% at 0% 100%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 70%),
+    radial-gradient(ellipse 120% 95% at 50% 45%, transparent 55%, rgb(0 0 0 / 0.55));
+  background-size: auto, auto clamp(70px, 13vh, 130px), auto, auto;
+  background-position: 0 0, center bottom, 0 0, 0 0;
+  background-repeat: no-repeat, repeat-x, no-repeat, no-repeat;
+}
+
+/* Embers: sparks flickering up from the fire, swaying on the heat. */
+[data-theme='dragon'] .ambient-particle {
+  bottom: -1rem;
+  left: calc(var(--r1) * 100%);
+  width: calc(2px + var(--r2) * 4px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: #ffd08a;
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--color-primary) 75%, transparent);
+  opacity: 0;
+  animation:
+    ember-rise calc(9s + var(--r2) * 9s) linear calc(var(--r3) * -18s) infinite,
+    ember-flicker calc(0.2s + var(--r1) * 0.3s) steps(2) infinite;
+}
+@keyframes ember-rise {
+  0% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  40% {
+    translate: calc(var(--r3) * 50px - 25px) -38vh;
+  }
+  70% {
+    translate: calc(var(--r1) * -40px + 20px) -70vh;
+    opacity: 0.6;
+  }
+  100% {
+    translate: calc(var(--r2) * 60px - 30px) -100vh;
+    opacity: 0;
+  }
+}
+@keyframes ember-flicker {
+  to {
+    scale: 0.6;
+  }
+}
+
+/* Glints: light catching on the gold now and then. */
+[data-theme='dragon'] .ambient-glint {
+  bottom: calc(var(--r1) * 9vh + 1vh);
+  left: calc(var(--r3) * 98%);
+  width: calc(8px + var(--r2) * 10px);
+  color: #fff3c4;
+  filter: drop-shadow(0 0 4px #fbbf24);
+  opacity: 0;
+  animation: sparkle-twinkle calc(3s + var(--r2) * 4s) ease-in-out calc(var(--r1) * -7s) infinite;
+}
+
+/* The eye: a dragon glaring out of the dark at the right edge; its pupil follows the pointer
+ * (see DragonEye.tsx), and now and then it blinks slowly. */
+[data-theme='dragon'] .ambient-dragon-eye {
+  right: clamp(8px, 2vw, 40px);
+  top: 42%;
+  width: clamp(80px, 9vw, 140px);
+  opacity: 0.85;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--color-primary) 45%, transparent));
+}
+.dragon-eye-iris {
+  transition: transform 0.5s ease-out;
+}
+.dragon-eye-slit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: slit-breathe 5s ease-in-out infinite alternate;
+}
+.dragon-eye-lid {
+  transform-origin: 0 0;
+  scale: 1 0;
+  animation: dragon-blink 9s ease-in-out infinite;
+}
+@keyframes slit-breathe {
+  to {
+    scale: 1.6 1;
+  }
+}
+@keyframes dragon-blink {
+  0%,
+  88%,
+  100% {
+    scale: 1 0;
+  }
+  92%,
+  93% {
+    scale: 1 1;
+  }
+}
+
+/* Flyby: a dragon's silhouette crossing the sky, wings beating. */
+[data-theme='dragon'] .ambient-dragon {
+  --flyby-time: 22s;
+  top: calc(6% + var(--fy) * 30%);
+  width: clamp(200px, 26vw, 340px);
+  opacity: 0.7;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--color-primary) 35%, transparent));
+}
+[data-theme='dragon'] .ambient-dragon .ambient-flyby-art {
+  animation: dragon-glide 2.4s ease-in-out infinite alternate;
+}
+.dragon-wing {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: wing-beat 1.2s ease-in-out infinite alternate;
+}
+.dragon-wing-far {
+  animation-delay: -0.15s;
+}
+.dragon-glow {
+  animation: glow-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes wing-beat {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(-0.55);
+  }
+}
+@keyframes dragon-glide {
+  from {
+    transform: translateY(-10px);
+  }
+  to {
+    transform: translateY(10px);
+  }
+}
+
 /* ---------- Unicorn: pastel rainbow on pearl white, twinkling stardust ---------- */
 
 [data-theme='unicorn'] {

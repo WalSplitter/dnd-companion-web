@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { usePointerGaze } from './usePointerGaze'
 
 /** Socket centres in the skull's viewBox, and how far (in viewBox units) the glowing pupils roam. */
 const EYES: [number, number][] = [
@@ -13,51 +13,7 @@ const PUPIL_REACH = 8
  * its placement and the occasional jaw chatter live in `topics.css`.
  */
 export function WatchingSkull() {
-  const svgRef = useRef<SVGSVGElement>(null)
-  const pupils = useRef<(SVGGElement | null)[]>([])
-
-  useEffect(() => {
-    let pointer: { x: number; y: number } | null = null
-    let frame = 0
-    const aim = () => {
-      frame = 0
-      const svg = svgRef.current
-      if (!svg) return
-      const box = svg.getBoundingClientRect()
-      const scale = box.width / 200
-      // Without a pointer (touch) it stares at the middle of the page — at you.
-      const target = pointer ?? {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-      }
-      EYES.forEach(([cx, cy], i) => {
-        const dx = target.x - (box.left + cx * scale)
-        const dy = target.y - (box.top + cy * scale)
-        const dist = Math.hypot(dx, dy) || 1
-        const reach = Math.min(1, dist / 200) * PUPIL_REACH
-        const pupil = pupils.current[i]
-        if (pupil)
-          pupil.style.transform = `translate(${((dx / dist) * reach).toFixed(1)}px, ${((dy / dist) * reach).toFixed(1)}px)`
-      })
-      const tilt = Math.max(-1, Math.min(1, (target.y - (box.top + box.height / 2)) / window.innerHeight)) * 3
-      svg.style.transform = `rotate(${(-tilt).toFixed(1)}deg)`
-    }
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(aim)
-    }
-    const onMove = (e: PointerEvent) => {
-      pointer = { x: e.clientX, y: e.clientY }
-      schedule()
-    }
-    window.addEventListener('pointermove', onMove, { passive: true })
-    window.addEventListener('resize', schedule)
-    schedule()
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('resize', schedule)
-      cancelAnimationFrame(frame)
-    }
-  }, [])
+  const { svgRef, pupils } = usePointerGaze({ eyes: EYES, viewBoxWidth: 200, reach: PUPIL_REACH, tilt: 3 })
 
   return (
     <svg ref={svgRef} viewBox="0 0 200 260" className="watching-skull">
