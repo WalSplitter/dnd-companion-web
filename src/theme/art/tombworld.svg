@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 170">
+  <defs>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#52f08a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#52f08a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- energy beam rising from the great pyramid's capstone -->
+  <path d="M236 40h8l6-40h-20z" fill="url(#beam)"/>
+  <g fill="#0b1011" stroke="#3b4b49" stroke-opacity="0.8" stroke-width="1.2" stroke-linejoin="round">
+    <!-- monolith -->
+    <path d="M28 162v-44l6-6h28l6 6v44z"/>
+    <!-- great pyramid -->
+    <path d="M100 162L240 40l140 122z"/>
+    <!-- pylons with arc tops -->
+    <path d="M444 162V92l6-10 6 10v70z"/>
+    <path d="M438 88q12-24 24 0" fill="none" stroke-width="2"/>
+    <path d="M514 162v-52l5-8 5 8v52z"/>
+    <path d="M509 106q10-18 20 0" fill="none" stroke-width="1.8"/>
+    <!-- small pyramid -->
+    <path d="M590 162l80-70 80 70z"/>
+    <!-- far pylon -->
+    <path d="M772 162v-60l5-8 5 8v60z"/>
+    <path d="M767 98q10-18 20 0" fill="none" stroke-width="1.8"/>
+    <!-- ground -->
+    <path d="M0 162h800v8H0z"/>
+  </g>
+  <!-- step lines of the great pyramid -->
+  <path d="M206 70h68M171 100h138M137 130h206M630 127h80" fill="none" stroke="#3b4b49" stroke-width="1"/>
+  <!-- glowing seams, lights and doors -->
+  <g fill="none" stroke="#52f08a" stroke-linecap="square">
+    <path d="M240 54v70" stroke-width="1.6" stroke-opacity="0.7"/>
+    <path d="M228 134h24v28M228 134v28" stroke-width="1.4" stroke-opacity="0.8"/>
+    <path d="M670 104v34M662 146h16v16M662 146v16" stroke-width="1.2" stroke-opacity="0.6"/>
+    <path d="M36 124h24M36 132h16M36 140h20M48 148h12" stroke-width="1.2" stroke-opacity="0.55"/>
+    <path d="M0 162.5h800" stroke-width="1" stroke-opacity="0.3"/>
+  </g>
+  <g fill="#52f08a">
+    <path d="M240 40l9 8h-18z"/>
+    <path d="M670 92l6 5h-12z" opacity="0.8"/>
+    <circle cx="450" cy="104" r="1.8"/>
+    <circle cx="450" cy="122" r="1.8" opacity="0.7"/>
+    <circle cx="450" cy="140" r="1.8" opacity="0.5"/>
+    <circle cx="519" cy="120" r="1.5" opacity="0.8"/>
+    <circle cx="519" cy="138" r="1.5" opacity="0.5"/>
+    <circle cx="777" cy="114" r="1.5" opacity="0.8"/>
+    <circle cx="450" cy="80" r="2.2"/>
+    <circle cx="519" cy="100" r="1.8"/>
+    <circle cx="777" cy="92" r="1.8"/>
+  </g>
+</svg>

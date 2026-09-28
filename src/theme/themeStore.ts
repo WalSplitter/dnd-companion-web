@@ -29,7 +29,7 @@ export const THEMES: ThemeEntry<ColorThemeName>[] = [
 
 /** Shown as icons (tinted with `swatch`) in the switcher's second row. */
 export const TOPIC_THEMES: ThemeEntry<TopicThemeName>[] = [
-  { key: 'necromancer', label: 'Necromancer', swatch: '#8fdc5a' },
+  { key: 'necromancer', label: 'Necromancer', swatch: '#52f08a' },
   { key: 'shadowmaster', label: 'Shadow Master', swatch: '#8b7cf6' },
   { key: 'unicorn', label: 'Unicorn', swatch: '#e879f9' },
   { key: 'halloween', label: 'Halloween', swatch: '#f97316' },
