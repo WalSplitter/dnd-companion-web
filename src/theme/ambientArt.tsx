@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { DragonEye } from './DragonEye'
+import { ShadowFiend } from './ShadowFiend'
 import { WatchingSkull } from './WatchingSkull'
 
 /* Drawn figures of the topic themes' ambient layer (see `AmbientLayer`). Motion, size and most
@@ -90,43 +91,6 @@ const crescentShip = (
   </svg>
 )
 
-/** A hooded wraith gliding to the right, reaching out with clawed fingers. */
-function wraithShade(): ReactNode {
-  const fade = 'wraith-fade'
-  return (
-    <svg viewBox="0 0 130 150">
-      <defs>
-        <linearGradient id={fade} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#000" />
-          <stop offset="0.6" stopColor="#000" stopOpacity="0.9" />
-          <stop offset="1" stopColor="#000" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g className="shade-cloak">
-        <path
-          fill={`url(#${fade})`}
-          stroke="var(--rim)"
-          strokeWidth="1.4"
-          d="M60 8C42 8 34 24 34 40c0 20-6 40-14 60-4 12-10 22-16 34l14-8 8 10 10-12 10 14 10-14 10 14 10-14 10 12 12-12 12 8c-8-16-16-32-20-50-4-20-2-36-2-46C86 20 76 8 60 8Z"
-        />
-        <path d="M84 50q16 4 24 16l-8 6q-8-8-18-8Z" fill="#000" stroke="var(--rim)" strokeWidth="1.2" />
-        <path
-          d="M103 63q8-6 14-4M104 67q9-2 14 2M103 71q7 2 10 8"
-          stroke="var(--rim)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <ellipse cx="60" cy="36" rx="14" ry="16" fill="#000" />
-        <g className="shade-eyes" fill="var(--eye)">
-          <ellipse cx="54" cy="36" rx="2.8" ry="1.7" />
-          <ellipse cx="66" cy="36" rx="2.8" ry="1.7" />
-        </g>
-      </g>
-    </svg>
-  )
-}
-
 /** Two glowing eyes with slit pupils, opening in the dark. */
 const shadowEyes = (
   <svg viewBox="0 0 44 14">
@@ -137,28 +101,6 @@ const shadowEyes = (
     <g className="eyes-pupils" fill="#050308">
       <ellipse cx="10" cy="7" rx="1.2" ry="3.6" />
       <ellipse cx="34" cy="7" rx="1.2" ry="3.6" />
-    </g>
-  </svg>
-)
-
-/** A shadow tentacle rising from the bottom edge, suckers along its inner side. */
-const tentacle = (
-  <svg viewBox="0 0 60 300" preserveAspectRatio="none">
-    <path
-      fill="#010003"
-      stroke="var(--color-primary)"
-      strokeOpacity="0.45"
-      strokeWidth="1.6"
-      vectorEffect="non-scaling-stroke"
-      d="M6 300C10 240 30 210 26 160 22 110 4 90 14 50 20 26 34 14 42 4 36 20 30 34 28 52c-4 38 14 60 16 108 2 54-14 86 8 140Z"
-    />
-    <g fill="none" stroke="var(--color-primary)" strokeOpacity="0.35" strokeWidth="1.2" vectorEffect="non-scaling-stroke">
-      <circle cx="37" cy="250" r="3.2" />
-      <circle cx="39" cy="205" r="2.8" />
-      <circle cx="36" cy="160" r="2.5" />
-      <circle cx="30" cy="115" r="2.2" />
-      <circle cx="27" cy="75" r="1.8" />
-      <circle cx="30" cy="42" r="1.4" />
     </g>
   </svg>
 )
@@ -376,9 +318,8 @@ export const AMBIENT_ART = {
   dragon,
   glint,
   'dragon-eye': <DragonEye />,
-  wraith: wraithShade(),
   'shadow-eyes': shadowEyes,
-  tentacle,
+  'shadow-fiend': <ShadowFiend />,
   'shadow-hand': shadowHand,
   unicorn,
   heart,

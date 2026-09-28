@@ -351,18 +351,7 @@
   }
 }
 
-/* The shadow master's wraith: hovering, cloak fluttering, eyes aglow. */
-.ambient-wraith .ambient-flyby-art {
-  animation: shade-hover 4s ease-in-out infinite alternate;
-}
-.shade-cloak {
-  transform-box: fill-box;
-  transform-origin: 50% 0;
-  animation: cloak-flutter 1.4s ease-in-out infinite alternate;
-}
-.shade-eyes {
-  animation: glow-pulse 1.2s ease-in-out infinite alternate;
-}
+/* Shared by the crescent ship: a slow hover. */
 @keyframes shade-hover {
   from {
     transform: translateY(-18px);
@@ -371,15 +360,6 @@
     transform: translateY(18px);
   }
 }
-@keyframes cloak-flutter {
-  from {
-    transform: skewX(-4deg);
-  }
-  to {
-    transform: skewX(3deg);
-  }
-}
-
 /* ---------- Halloween: pumpkin orange on midnight violet, a moon and bats ---------- */
 
 [data-theme='halloween'] {
@@ -561,42 +541,52 @@
   }
 }
 
-/* Tentacles: shadow tendrils rising from below, swaying. */
-[data-theme='shadowmaster'] .ambient-tentacle {
-  bottom: -3vh;
-  left: calc(var(--i) / (var(--n) - 1) * 100% - 1.5rem);
-  width: calc(34px + var(--r2) * 30px);
-  height: calc(22vh + var(--r1) * 24vh);
+/* The fiend: a shadow creature looming out of the fog in the bottom-right corner, breathing,
+ * its arms slowly reaching; its eyes follow the pointer (see ShadowFiend.tsx). */
+[data-theme='shadowmaster'] .ambient-shadow-fiend {
+  right: calc(-1 * clamp(20px, 4vw, 60px));
+  bottom: -8vh;
+  width: min(62vh, 520px, 70vw);
+  opacity: 0.9;
   transform-origin: 50% 100%;
-  animation: tentacle-sway calc(6s + var(--r3) * 5s) ease-in-out calc(var(--r2) * -10s) infinite alternate;
+  animation: fiend-breathe 7s ease-in-out infinite alternate;
 }
-[data-theme='shadowmaster'] .ambient-tentacle > svg {
-  height: 100%;
+.shadow-fiend-fog {
+  animation: glow-pulse 6s ease-in-out infinite alternate;
 }
-[data-theme='shadowmaster'] .ambient-tentacle:nth-child(even) > svg {
-  scale: -1 1;
+.shadow-fiend-arm-l,
+.shadow-fiend-arm-r {
+  transform-box: fill-box;
+  animation: fiend-reach 6s ease-in-out infinite alternate;
 }
-@keyframes tentacle-sway {
+.shadow-fiend-arm-l {
+  transform-origin: 100% 0;
+}
+.shadow-fiend-arm-r {
+  transform-origin: 0 100%;
+  animation-delay: -3s;
+}
+.shadow-fiend-eye {
+  transition: transform 0.4s ease-out;
+}
+@keyframes fiend-breathe {
   from {
-    transform: rotate(-6deg) skewX(5deg);
+    transform: scale(1) translateY(0);
   }
   to {
-    transform: rotate(5deg) skewX(-5deg);
+    transform: scale(1.03) translateY(-1.5%);
+  }
+}
+@keyframes fiend-reach {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(5deg);
   }
 }
 
-/* Flyby: a wraith gliding past ... */
-[data-theme='shadowmaster'] .ambient-wraith {
-  --flyby-time: 24s;
-  --rim: color-mix(in srgb, var(--color-primary) 65%, transparent);
-  --eye: #e9d5ff;
-  top: calc(8% + var(--fy) * 50%);
-  width: clamp(100px, 14vw, 170px);
-  opacity: 0.85;
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 35%, transparent));
-}
-
-/* ... or a clawed shadow arm reaching in from the edge, groping, and pulling back. */
+/* Flyby: a clawed shadow arm reaching in from the edge, groping, and pulling back. */
 .ambient-flyby.ambient-shadow-hand,
 .ambient-flyby.ambient-shadow-hand.is-rtl {
   top: calc(12% + var(--fy) * 66%);

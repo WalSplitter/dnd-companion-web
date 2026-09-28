@@ -26,9 +26,9 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
     particles: 7,
     sprites: [
       { kind: 'shadow-eyes', count: 9 },
-      { kind: 'tentacle', count: 6 },
+      { kind: 'shadow-fiend', count: 1 },
     ],
-    flybys: { kinds: ['wraith', 'shadow-hand'], gap: [15, 40] },
+    flybys: { kinds: ['shadow-hand'], gap: [20, 50] },
   },
   dragon: {
     particles: 26,
