@@ -58,22 +58,8 @@ senses:
   darkvision: 18 m
 languages: [Gemeinsprache, Elfisch, Drakonisch]
 attacks:
-  - name: Kampfstab
-    kind: melee
-    attack_bonus: 2
-    damage_dice: 1d6
-    damage_bonus: 2
-    damage_type: Wuchtschaden
-    range: 1,5 m
-    properties: [Parade, Finesse]
-  - name: Dolch
-    kind: thrown
-    attack_bonus: 2
-    damage_dice: 1d4
-    damage_bonus: 2
-    damage_type: Stichschaden
-    range: 3/6/12 m
-    properties: [Wurfwaffe, Leicht, Finesse]
+  - "[[Kampfstab]]"
+  - "[[Dolch]]"
 features:
   - name: Arkane Erholung
     source: Arkanist 1

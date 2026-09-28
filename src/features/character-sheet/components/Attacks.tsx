@@ -31,6 +31,14 @@ export function Attacks({ character }: { character: CharacterFrontmatter }) {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="font-display font-bold tracking-wide text-fg">{attack.name}</span>
               <span className="rounded-sm bg-trim/15 px-1.5 py-px text-[0.65rem] font-medium uppercase tracking-wider text-trim">{t(KIND_KEY[attack.kind])}</span>
+              {attack.attribute && (
+                <span
+                  title={t('attack.attributeHint', { attribute: t(`nimbleAttribute.${attack.attribute}`) })}
+                  className="cursor-help rounded-sm border border-trim/30 px-1.5 py-px text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted"
+                >
+                  {attack.attribute}
+                </span>
+              )}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
               <span className="text-xs text-fg-muted">

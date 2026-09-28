@@ -220,6 +220,9 @@ export type WeaponKind = 'melee' | 'ranged' | 'thrown'
 export interface WeaponAttack {
   name: string
   kind: WeaponKind
+  /** Nimble: the attribute behind attack and damage bonus, set when the attack was derived from a
+   * weapon note (see `resolveWeaponAttacks` in `adapters/weaponAttacks.ts`). */
+  attribute?: NimbleAttributeKey
   attack_bonus: number
   damage_dice: string
   damage_bonus: number
@@ -309,6 +312,8 @@ export interface CharacterFrontmatter {
   conditions?: ConditionsInfo
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]
+  /** Own schema: written-out attacks, or — for Nimble characters — `"[[Waffe]]"` links to weapon notes,
+   * resolved into full attacks by `resolveWeaponAttacks` (`adapters/weaponAttacks.ts`). */
   attacks?: WeaponAttack[]
   /** Persistence metadata (not display data) for write-back — see `writeback/`. Absent for a field
    * means it's read-only: no known single vault location to patch. */

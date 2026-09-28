@@ -249,6 +249,7 @@ export const de = {
   'cards.conditions': 'Zustände',
   'cards.attacksSpellcasting': 'Angriffe & Zauberwirken',
   'cards.attacks': 'Angriffe',
+  'attack.attributeHint': 'Angriff und Schaden mit {{attribute}}',
   'cards.about': 'Über',
   'cards.sensesLanguages': 'Sinne & Sprachen',
   'cards.featuresTraits': 'Merkmale & Eigenschaften',

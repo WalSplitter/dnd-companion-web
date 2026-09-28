@@ -409,6 +409,10 @@ additively:
   rounded down. `BasisTP` / `BasisRP` are read from the note named like the class (a subclass note's
   own values add on top). Without a class note declaring them, the sheet's own `hp.max` /
   `resilience.max` are used.
+- **Weapon attacks**: `attacks: ["[[Kampfstab]]", "[[Dolch]]"]` links weapon notes; damage, damage
+  type, range and properties come from the note, the bonus from the attributes (melee and thrown ST,
+  ranged GE, `Finesse` the higher of ST/GE). A note with both a melee and a ranged profile yields two
+  attacks ("Dolch" and "Dolch (Wurf)"). Written-out attack objects still work for attacks without a note.
 - **Class notes**: besides the pools, the note named like the class supplies `Kernattribute`
   (highlighted as core attributes), `Rettungswürfe.Vorteil` / `.Nachteil` (those saves are marked and
   rolled with advantage/disadvantage by default) and `Übung.Waffen` / `.Rüstungen` (listed on the

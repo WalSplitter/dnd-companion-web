@@ -43,6 +43,17 @@ describe('sample vault', () => {
     expect(movementSquares(borin)).toBe(4)
   })
 
+  it('builds attacks from the linked weapon notes, with the bonus from ST or (Finesse) GE', () => {
+    const elandra = character('Elandra Windrider')
+    expect(elandra.attacks?.map((a) => [a.name, a.kind, a.attribute, a.attack_bonus, a.damage_dice, a.range])).toEqual([
+      ['Kampfstab', 'melee', 'ge', 2, '1d6', '1,5 m'],
+      ['Dolch', 'melee', 'ge', 2, '1d4', '1,5 m'],
+      ['Dolch (Wurf)', 'thrown', 'ge', 2, '1d4', '3/6/12 m'],
+    ])
+    const borin = character('Borin Eisenfaust')
+    expect(borin.attacks?.[0]).toMatchObject({ name: 'Langschwert', attribute: 'st', attack_bonus: 3, damage_bonus: 3, damage_type: 'Hiebschaden/Stichschaden' })
+  })
+
   it('pulls inventory, currency and spells in from the linked sheets, with write targets', () => {
     const elandra = character('Elandra Windrider')
     expect(elandra.currency).toEqual({ cp: 40, sp: 15, gp: 42 })

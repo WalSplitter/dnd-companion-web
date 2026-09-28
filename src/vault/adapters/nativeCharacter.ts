@@ -6,6 +6,7 @@ import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget, Nim
 import type { ImageAssets } from '../vaultLoader'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
+import { resolveWeaponAttacks } from './weaponAttacks'
 
 /**
  * The app's own `type: character` schema (see `types.ts`), including the additive "Endeavour"/Nimble
@@ -262,6 +263,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
     nimble_save_modes: resolveClassSaveModes(notes),
     nimble_class_proficiencies: resolveClassProficiencies(notes),
+    attacks: resolveWeaponAttacks(raw.data.attacks, character, files),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }

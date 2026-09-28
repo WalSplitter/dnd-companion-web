@@ -263,6 +263,45 @@ Rettungswürfe:
       expect(vault.characters[0].frontmatter.resilience?.max).toBe(6)
     })
 
+    describe('weapon attacks', () => {
+      const bow = {
+        path: 'Gegenstände/Waffen/Waffen/Kurzbogen.md',
+        content:
+          '---\ntags: [Gegenstand/Waffe/Fernkampfwaffe]\nSchadenFern: 1d6\nSchadensartFern: "[[Stichschaden]]"\nRange1: 3(2)\nRange2: 24(16)\nRange3: 96(64)\nEigenschaftenFern: ["[[Zweihändig]]"]\n---\n',
+      }
+      const axe = {
+        path: 'Gegenstände/Waffen/Waffen/Axt.md',
+        content: '---\ntags: [Gegenstand/Waffe/Nahkampfwaffe]\nReichweite: 1,5(1)\nSchaden: 1d6\nSchadensart: "[[Hiebschaden]]"\n---\n',
+      }
+      const rapier = {
+        path: 'Gegenstände/Waffen/Waffen/Rapier.md',
+        content: '---\ntags: [Gegenstand/Waffe/Nahkampfwaffe]\nReichweite: 1,5(1)\nSchaden: 1d8\nEigenschaften: ["[[Finesse]]"]\n---\n',
+      }
+      /** The Nimble test character with the given `attacks:` list and ST/GE values. */
+      const attacksOf = (list: string, st = 0, ge = 0) => {
+        const sheet = nimbleCharacter(`attacks: ${list}\n`)
+        const content = sheet.content.replace('st: 0, bw: 4, ko: 2, ge: 0', `st: ${st}, bw: 4, ko: 2, ge: ${ge}`)
+        return buildVault([{ ...sheet, content }, bow, axe, rapier]).characters[0].frontmatter.attacks
+      }
+
+      it('reads a linked weapon note, ST for melee and GE for ranged weapons', () => {
+        expect(attacksOf('["[[Axt]]", "[[Kurzbogen]]"]', 2, 1)).toEqual([
+          { name: 'Axt', kind: 'melee', attribute: 'st', attack_bonus: 2, damage_dice: '1d6', damage_bonus: 2, damage_type: 'Hiebschaden', range: '1,5 m', properties: [] },
+          { name: 'Kurzbogen', kind: 'ranged', attribute: 'ge', attack_bonus: 1, damage_dice: '1d6', damage_bonus: 1, damage_type: 'Stichschaden', range: '3/24/96 m', properties: ['Zweihändig'] },
+        ])
+      })
+
+      it('uses the higher of ST and GE for a Finesse weapon', () => {
+        expect(attacksOf('["[[Rapier]]"]', 1, 3)?.[0]).toMatchObject({ attribute: 'ge', attack_bonus: 3, damage_bonus: 3 })
+        expect(attacksOf('["[[Rapier]]"]', 2, 1)?.[0]).toMatchObject({ attribute: 'st', attack_bonus: 2, damage_bonus: 2 })
+      })
+
+      it('keeps written-out attacks and drops links to missing notes', () => {
+        const attacks = attacksOf('[{ name: Klauen, kind: melee, attack_bonus: 1, damage_dice: 1d4, damage_bonus: 1, range: 1,5 m }, "[[Gibtsnicht]]"]')
+        expect(attacks?.map((a) => a.name)).toEqual(['Klauen'])
+      })
+    })
+
     it('reads core attributes, save advantage/disadvantage and training from the class note', () => {
       const vault = buildVault([asClass('  - name: Arkanist\n    level: 1\n'), arkanistNote])
       const c = vault.characters[0].frontmatter

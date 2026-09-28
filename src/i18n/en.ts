@@ -262,6 +262,7 @@ export const en = {
   'cards.conditions': 'Conditions',
   'cards.attacksSpellcasting': 'Attacks & Spellcasting',
   'cards.attacks': 'Attacks',
+  'attack.attributeHint': 'Attack and damage use {{attribute}}',
   'cards.about': 'About',
   'cards.sensesLanguages': 'Senses & Languages',
   'cards.featuresTraits': 'Features & Traits',
