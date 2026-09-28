@@ -531,8 +531,6 @@ Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-co
   download or ZIP, since those browsers cannot write to a vault folder.
 - [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
   and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
-- [#10](https://github.com/WalSplitter/dnd-companion-web/issues/10) Make death saves clickable
-  (currently display-only).
 - [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
   inventory entries (only quantity and weight of inline items are written back today).
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA

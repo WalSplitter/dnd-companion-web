@@ -75,8 +75,7 @@ const SEVERITY: Record<Fate, number> = { alive: 0, down: 1, dead: 2 }
  * Easter egg for 0 HP: while the character is down the world loses its colour behind a pulsing
  * blood-red vignette, and the moment HP *drop* to 0 it rains blood with a "you have fallen" title.
  * Reaching the last exhaustion level (death, by the vault rules) plays it again as "you have died"
- * and deepens the vignette. Death saves themselves are the DM's business, so the sheet doesn't
- * track them.
+ * and deepens the vignette. Endeavour has no death saves, so the sheet doesn't track them.
  */
 export function FallenOverlay({ fate, characterPath }: { fate: Fate; characterPath: string }) {
   const [prev, setPrev] = useState({ fate, characterPath })
