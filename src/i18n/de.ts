@@ -215,8 +215,7 @@ export const de = {
   'nimbleAttribute.vs': 'Verstand',
   'nimbleAttribute.pr': 'Präsenz',
   'nimbleAttribute.en': 'Entschlossenheit',
-  'attribute.primary': 'Primär',
-  'attribute.secondary': 'Sekundär',
+  'attribute.coreHint': 'Kernattribut deiner Klasse',
 
   'skill.acrobatics': 'Akrobatik',
   'skill.animal_handling': 'Mit Tieren umgehen',

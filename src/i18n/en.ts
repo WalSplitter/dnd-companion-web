@@ -226,8 +226,7 @@ export const en = {
   'nimbleAttribute.vs': 'Mind',
   'nimbleAttribute.pr': 'Presence',
   'nimbleAttribute.en': 'Resolve',
-  'attribute.primary': 'Primary',
-  'attribute.secondary': 'Secondary',
+  'attribute.coreHint': 'Core attribute of your class',
 
   // Skills
   'skill.acrobatics': 'Acrobatics',

@@ -942,67 +942,151 @@ button.exh-token:hover {
   }
 }
 
-/* Blood-drop seal hanging off an exhausted attribute medallion, holding the actual roll value. It
- * swells right before the drips fall, in the shared exhaustion cycle. */
-/* Sits on the medallion's lower right rim, high enough to clear the caption plate hanging over the
- * medallion's bottom edge — otherwise the plate paints over the roll value. */
-.exhausted-seal {
+/* A class's core attribute: a comet of trim light circling just outside the medallion's outer ring,
+ * and a four-pointed star crest set into the top of its rim that twinkles now and then. */
+.core-halo {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--color-trim) 15%, transparent) 60deg,
+    color-mix(in srgb, var(--color-trim) 85%, #fff) 118deg,
+    transparent 122deg,
+    transparent 180deg,
+    color-mix(in srgb, var(--color-trim) 10%, transparent) 240deg,
+    color-mix(in srgb, var(--color-trim) 60%, transparent) 298deg,
+    transparent 302deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-trim) 80%, transparent));
+}
+.core-crest {
   position: absolute;
   z-index: 1;
-  right: -1rem;
-  bottom: 0.5rem;
-  display: grid;
-  width: 2.1rem;
-  height: 2.6rem;
-  place-items: center;
+  top: -0.7rem;
+  left: 50%;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-left: -0.65rem;
   pointer-events: none;
-  transform-origin: 50% 0;
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.65)) drop-shadow(0 0 6px rgb(200 0 0 / 0.55));
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.45)) drop-shadow(0 0 5px color-mix(in srgb, var(--color-trim) 85%, transparent));
 }
-.exhausted-seal svg {
-  position: absolute;
-  inset: 0;
+.core-crest svg {
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
-.exhausted-seal-body {
-  fill: #9a0e15;
-  stroke: #e0454b;
-  stroke-width: 1.1;
+.core-crest-star {
+  fill: var(--color-trim);
+  stroke: var(--color-surface);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
-.exhausted-seal-shine {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.45);
-  stroke-width: 1.2;
-  stroke-linecap: round;
+.core-crest-glint {
+  fill: color-mix(in srgb, var(--color-trim) 30%, #fff);
 }
-.exhausted-seal-value {
+@media (prefers-reduced-motion: no-preference) {
+  .core-halo {
+    animation: core-halo-spin 9s linear infinite;
+  }
+  .core-crest svg {
+    animation: core-crest-twinkle 5s ease-in-out infinite;
+  }
+}
+@keyframes core-halo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes core-crest-twinkle {
+  0%,
+  70%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  80% {
+    transform: scale(1.3) rotate(45deg);
+    filter: brightness(1.35);
+  }
+  90% {
+    transform: scale(0.95) rotate(90deg);
+  }
+}
+
+/* Blood pooling inside an exhausted attribute medallion, like a potion vial filling from below: a
+ * gently rolling surface, rising a little with every exhaustion level (`--pool-level`, 1–6), with the
+ * actual roll value floating in it. Everything stays inside the medallion — no drop spilling onto the
+ * neighbors. */
+.rpg-medallion.is-exhausted {
   position: relative;
-  margin-top: 0.8rem;
+  overflow: hidden;
+}
+.exhausted-pool {
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(22% + var(--pool-level, 1) * 1.5%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: linear-gradient(180deg, #c0141e, #6a070c 90%);
+  box-shadow: inset 0 6px 8px -6px rgb(255 190 190 / 0.35);
+}
+/* Two offset waves (a lighter one behind) ride the surface; they scroll in opposite directions. */
+.exhausted-pool::before,
+.exhausted-pool::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 5px;
+  margin-bottom: -1px;
+  background-repeat: repeat-x;
+  background-size: 22px 5px;
+}
+.exhausted-pool::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 8 20 4T40 4V8H0Z' fill='%23e0454b'/%3E%3C/svg%3E");
+  opacity: 0.55;
+  background-position: 11px 0;
+}
+.exhausted-pool::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0Z' fill='%23c0141e'/%3E%3C/svg%3E");
+}
+.exhausted-pool-value {
+  position: relative;
+  margin-top: 1px;
   font-family: var(--font-numeric);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1;
   color: #fff3ef;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.75);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .exhausted-seal {
-    animation: exhausted-seal 4s ease-in-out var(--exhausted-sync, 0s) infinite;
+  .exhausted-pool::after {
+    animation: exhausted-wave 2.6s linear infinite;
+  }
+  .exhausted-pool::before {
+    animation: exhausted-wave-back 3.8s linear infinite;
   }
 }
-@keyframes exhausted-seal {
-  0%,
-  50%,
-  100% {
-    transform: scale(1);
+@keyframes exhausted-wave {
+  to {
+    background-position: 22px 0;
   }
-  68% {
-    transform: scale(1.07, 1.1);
+}
+@keyframes exhausted-wave-back {
+  from {
+    background-position: 33px 0;
   }
-  84% {
-    transform: scale(0.97, 0.95);
+  to {
+    background-position: 11px 0;
   }
 }
 
