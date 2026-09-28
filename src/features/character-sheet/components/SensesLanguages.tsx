@@ -27,6 +27,18 @@ export function SensesLanguages({ character }: { character: CharacterFrontmatter
             <dd className="mt-1 text-fg">{character.languages.join(', ')}</dd>
           </div>
         )}
+        {character.nimble_class_proficiencies?.weapons.length ? (
+          <div className="border-t border-trim/20 pt-2.5">
+            <dt className="text-fg-muted">{t('stats.weaponTraining')}</dt>
+            <dd className="mt-1 text-fg">{character.nimble_class_proficiencies.weapons.join(', ')}</dd>
+          </div>
+        ) : null}
+        {character.nimble_class_proficiencies?.armor.length ? (
+          <div className="border-t border-trim/20 pt-2.5">
+            <dt className="text-fg-muted">{t('stats.armorTraining')}</dt>
+            <dd className="mt-1 text-fg">{character.nimble_class_proficiencies.armor.join(', ')}</dd>
+          </div>
+        ) : null}
         {character.tool_proficiencies && character.tool_proficiencies.length > 0 && (
           <div className="border-t border-trim/20 pt-2.5">
             <dt className="text-fg-muted">{t('stats.tools')}</dt>

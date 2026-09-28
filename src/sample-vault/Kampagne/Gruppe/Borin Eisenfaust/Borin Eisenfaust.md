@@ -46,11 +46,11 @@ armor: "[[Schuppenpanzer]]"
 speed: 7,5 m
 hp:
   current: 21
-  max: 36
+  max: 30
   temp: 4
 resilience:
   current: 5
-  max: 16
+  max: 10
 senses:
   darkvision: 18 m
 languages: [Gemeinsprache, Zwergisch]
@@ -119,7 +119,7 @@ conditions:
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | **Wert** | **+3** | +3 | **+2** | 0 | +1 | −1 | −1 | +1 |
 
-Primärattribute des [[Krieger]]s: **Stärke** und **Konstitution**.
+Kernattribute des [[Krieger]]s: **Stärke** und **Konstitution**.
 
 ## 🗡️ Fertigkeiten
 

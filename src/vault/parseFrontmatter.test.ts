@@ -118,10 +118,16 @@ describe('buildVault', () => {
     expect(vault.characters[0].frontmatter.portrait_url).toBeUndefined()
   })
 
-  it('takes primary attributes from the class note, accepting keys, abbreviations and full names', () => {
-    const classNote = { path: 'Klassen/Fighter.md', content: '---\nPrimärattribute: [ST, ko, Geschick, Unsinn]\n---\n' }
+  it('takes core attributes from the class note, accepting wikilinks, keys, abbreviations and full names', () => {
+    const classNote = { path: 'Klassen/Fighter.md', content: '---\nKernattribute: ["[[Stärke]]", ko, Geschick, Unsinn]\n---\n' }
     const vault = buildVault([characterFile, classNote])
     expect(vault.characters[0].frontmatter.nimble_primary_attributes).toEqual(['st', 'ko', 'ge'])
+  })
+
+  it('still accepts the older Primärattribute field', () => {
+    const classNote = { path: 'Klassen/Fighter.md', content: '---\nPrimärattribute: [VS, En]\n---\n' }
+    const vault = buildVault([characterFile, classNote])
+    expect(vault.characters[0].frontmatter.nimble_primary_attributes).toEqual(['vs', 'en'])
   })
 
   it('leaves primary attributes unset when no class note declares any', () => {
@@ -156,8 +162,57 @@ hit_dice: { die: d8, total: 3 }
 ${extra}---
 `,
     })
-    const classNote = { path: 'Klassen/Prüfling.md', content: '---\nTP_pro_Stufe: 4\nRP_pro_Stufe: 2\n---\n' }
-    const subclassNote = { path: 'Klassen/Wächter.md', content: '---\nTP_pro_Stufe: 1\n---\n' }
+    const classNote = { path: 'Klassen/Prüfling/Prüfling.md', content: '---\nBasisTP: 4\nBasisRP: 2\n---\n' }
+    const subclassNote = { path: 'Klassen/Wächter.md', content: '---\nBasisTP: 1\n---\n' }
+    // Shaped like the DM's real class notes (`Klassen/<Klasse>/<Klasse>.md`).
+    const arkanistNote = {
+      path: 'Klassen/Arkanist/Arkanist.md',
+      content: `---
+tags:
+  - Regeln/Endeavour/Charakter/Klasse
+BasisTP: 2
+BasisRP: 0
+Kernattribute:
+  - "[[Verstand]]"
+  - "[[Entschlossenheit]]"
+Übung:
+  Waffen:
+    - "[[Einfache Waffen]]"
+  Rüstungen:
+    - keine
+Rettungswürfe:
+  Vorteil:
+    - "[[Verstandsrettungswürfe|VS-Rettungswürfe]]"
+    - "[[Entschlossenheitsrettungswürfe|EN-Rettungswürfe]]"
+  Nachteil:
+    - "[[Stärkerettungswürfe|ST-Rettungswürfe]]"
+    - "[[Konstitutionsrettungswürfe|KO-Rettungswürfe]]"
+---
+`,
+    }
+    const taktikerNote = {
+      path: 'Klassen/Taktiker/Taktiker.md',
+      content: `---
+BasisTP: 2
+BasisRP: 2
+Übung:
+  Waffen:
+    - "[[Einfache Waffen]]"
+    - "[[Kriegswaffen]]"
+  Rüstungen:
+    - "[[Schwere Rüstung]]"
+Rettungswürfe:
+  Vorteil:
+    - "[[Stärkerettungswürfe|ST-Rettungswürfe]]"
+  Nachteil:
+    - "[[Verstandsrettungswürfe|VS-Rettungswürfe]]"
+---
+`,
+    }
+    const asClass = (classYaml: string) => {
+      const file = nimbleCharacter()
+      return { ...file, content: file.content.replace('  - name: Prüfling\n    level: 3\n    subclass: Wächter\n', classYaml) }
+    }
     const chainShirt = {
       path: 'Gegenstände/Rüstung/Kettenhemd.md',
       content: '---\ntags: [Gegenstand/Rüstung/Mittel]\nRK: 3\nBW_cap: 2\n---\n',
@@ -185,12 +240,42 @@ ${extra}---
       expect(vault.characters[0].frontmatter._write?.hit_dice_remaining).toBeUndefined()
     })
 
-    it('derives max TP/RP per level from class + subclass + attribute bonus', () => {
+    it('derives max TP/RP from BasisTP/BasisRP + subclass + attribute bonus, with level 1 counted twice', () => {
       const vault = buildVault([nimbleCharacter(), classNote, subclassNote])
       const { hp, resilience } = vault.characters[0].frontmatter
-      // TP: 3 × (4 class + 1 subclass + 2 KO); RP: 3 × (2 class + 0 subclass + floor(3 EN / 2))
-      expect(hp).toEqual({ current: 5, max: 21 })
-      expect(resilience).toEqual({ current: 4, max: 9 })
+      // TP: (3 + 1) × (4 class + 1 subclass + 2 KO); RP: (3 + 1) × (2 class + 0 subclass + floor(3 EN / 2))
+      expect(hp).toEqual({ current: 5, max: 28 })
+      expect(resilience).toEqual({ current: 4, max: 12 })
+    })
+
+    it('counts a level-1 character as (BasisTP + KO) × 2', () => {
+      const vault = buildVault([asClass('  - name: Arkanist\n    level: 1\n'), arkanistNote])
+      const { hp, resilience } = vault.characters[0].frontmatter
+      // TP: (2 + 2 KO) × 2; RP: (0 + floor(3 EN / 2)) × 2
+      expect(hp.max).toBe(8)
+      expect(resilience?.max).toBe(2)
+    })
+
+    it('doubles level 1 only for the first listed class of a multiclass character', () => {
+      const vault = buildVault([asClass('  - name: Arkanist\n    level: 2\n  - name: Taktiker\n    level: 1\n'), arkanistNote, taktikerNote])
+      // TP: 3 × (2 + 2) + 1 × (2 + 2); RP: 3 × (0 + 1) + 1 × (2 + 1)
+      expect(vault.characters[0].frontmatter.hp.max).toBe(16)
+      expect(vault.characters[0].frontmatter.resilience?.max).toBe(6)
+    })
+
+    it('reads core attributes, save advantage/disadvantage and training from the class note', () => {
+      const vault = buildVault([asClass('  - name: Arkanist\n    level: 1\n'), arkanistNote])
+      const c = vault.characters[0].frontmatter
+      expect(c.nimble_primary_attributes).toEqual(['vs', 'en'])
+      expect(c.nimble_save_modes).toEqual({ vs: 'advantage', en: 'advantage', st: 'disadvantage', ko: 'disadvantage' })
+      expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen'], armor: [] })
+    })
+
+    it('cancels a save that one class grants advantage and another disadvantage, and merges training', () => {
+      const vault = buildVault([asClass('  - name: Arkanist\n    level: 2\n  - name: Taktiker\n    level: 1\n'), arkanistNote, taktikerNote])
+      const c = vault.characters[0].frontmatter
+      expect(c.nimble_save_modes).toEqual({ en: 'advantage', ko: 'disadvantage' })
+      expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen', 'Kriegswaffen'], armor: ['Schwere Rüstung'] })
     })
 
     it("keeps the sheet's own max when the class note declares no per-level values", () => {

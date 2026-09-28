@@ -254,7 +254,7 @@ export interface CharacterFrontmatter {
    * BW part of the evasion value. Absent = no armor, or armor without a cap. */
   bw_cap?: number
   /** D&D-style hit dice. Absent for Nimble characters — that ruleset has none; HP/RP per level come
-   * from the class notes instead (see `resolveLevelPools` in `parseFrontmatter.ts`). */
+   * from the class notes' `BasisTP`/`BasisRP` instead (see `resolveLevelPools` in `adapters/nativeCharacter.ts`). */
   hit_dice?: { die: string; total: number; used?: number }
   senses?: { darkvision?: string; blindsight?: string; tremorsense?: string; truesight?: string }
   languages?: string[]
@@ -282,10 +282,16 @@ export interface CharacterFrontmatter {
    */
   nimble_attributes?: Record<NimbleAttributeKey, number>
   nimble_skills?: Partial<Record<SkillKey, number>>
-  /** Derived, not read from the character file: the union of `Primärattribute` declared on the notes
+  /** Derived, not read from the character file: the union of `Kernattribute` declared on the notes
    * named like the character's classes (see `resolveClassPrimaryAttributes`). Every other attribute
    * counts as secondary. Absent when no class note declares any — the UI then shows no distinction. */
   nimble_primary_attributes?: NimbleAttributeKey[]
+  /** Derived from the class notes' `Rettungswürfe.Vorteil`/`.Nachteil`: saves the class rolls with
+   * advantage or disadvantage by default (see `resolveClassSaveModes`). Absent = none declared. */
+  nimble_save_modes?: Partial<Record<NimbleAttributeKey, 'advantage' | 'disadvantage'>>
+  /** Derived from the class notes' `Übung.Waffen`/`.Rüstungen`: display names of the weapon and armor
+   * groups the character is trained with. Absent when no class note declares any. */
+  nimble_class_proficiencies?: { weapons: string[]; armor: string[] }
   /** Own-schema input field: a `"[[Name.jpg]]"` wikilink to a portrait attachment, resolved into
    * `portrait_url` below by `buildVault` (`parseFrontmatter.ts`). Not itself read by the UI. */
   portrait?: string

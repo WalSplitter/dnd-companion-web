@@ -22,11 +22,14 @@ export function D20RollButton({
   className,
   title,
   note,
+  mode: defaultMode = 'normal',
   children,
 }: {
   label: string
   modifier: number
   className?: string
+  /** Mode a plain click rolls with (e.g. a class's save advantage); Shift/Alt still force advantage/disadvantage. */
+  mode?: RollMode
   /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
   note?: string
   /** Tooltip; defaults to `d20RollHint` (what is rolled, the exhaustion breakdown, the Shift/Alt
@@ -43,7 +46,7 @@ export function D20RollButton({
   function roll(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : 'normal'
+    const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : defaultMode
     setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
   }
 

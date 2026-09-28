@@ -134,7 +134,8 @@ one of the three cards on the start page:
 > [!TIP]
 > The sample is a small German "Endeavour" player vault: an Arkanistin with a spell sheet and a
 > Krieger with exhaustion and temporary HP, with inventories, portraits, class, rule and item notes
-> ([`src/sample-vault/`](src/sample-vault)).
+> ([`src/sample-vault/`](src/sample-vault)). Editing is always on there so every control can be tried,
+> but nothing is saved: a reload or the **Reset** button next to the "Demo" badge restores it.
 
 The app is only *served* from GitHub Pages; your vault is read in the browser and not uploaded
 anywhere. Every push to `main` redeploys it ([`deploy.yml`](.github/workflows/deploy.yml)).
@@ -403,10 +404,15 @@ additively:
   "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never
   read from the character file itself.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
-  Max TP/RP are `level × (class + subclass + attribute bonus)`, with `TP_pro_Stufe` / `RP_pro_Stufe`
-  read from notes named like the class and subclass, and KO (TP) / half EN rounded down (RP) as the
-  attribute bonus. Without a class note declaring them, the sheet's own `hp.max` / `resilience.max`
-  are used.
+  Following the DM's class notes, level 1 grants `(BasisTP + KO) × 2` TP and every further level
+  `BasisTP + KO`, so max TP is `(level + 1) × (BasisTP + KO)`; RP likewise with `BasisRP` and half EN
+  rounded down. `BasisTP` / `BasisRP` are read from the note named like the class (a subclass note's
+  own values add on top). Without a class note declaring them, the sheet's own `hp.max` /
+  `resilience.max` are used.
+- **Class notes**: besides the pools, the note named like the class supplies `Kernattribute`
+  (highlighted as core attributes), `Rettungswürfe.Vorteil` / `.Nachteil` (those saves are marked and
+  rolled with advantage/disadvantage by default) and `Übung.Waffen` / `.Rüstungen` (listed on the
+  Senses & Languages card).
 
 </details>
 

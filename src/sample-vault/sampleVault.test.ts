@@ -27,15 +27,15 @@ describe('sample vault', () => {
 
   it('derives pools, primary attributes and evasion from the class and armor notes', () => {
     const elandra = character('Elandra Windrider')
-    expect(elandra.hp.max).toBe(18)
-    expect(elandra.resilience?.max).toBe(12)
+    expect(elandra.hp.max).toBe(12)
+    expect(elandra.resilience?.max).toBe(4)
     expect(elandra.nimble_primary_attributes).toEqual(['vs', 'en'])
     expect(evasionValue(elandra)).toBe(11)
     expect(movementSquares(elandra)).toBe(6)
 
     const borin = character('Borin Eisenfaust')
-    expect(borin.hp.max).toBe(36)
-    expect(borin.resilience?.max).toBe(16)
+    expect(borin.hp.max).toBe(30)
+    expect(borin.resilience?.max).toBe(10)
     expect(borin.nimble_primary_attributes).toEqual(['st', 'ko'])
     expect(borin.bw_cap).toBe(2)
     expect(evasionValue(borin)).toBe(12)

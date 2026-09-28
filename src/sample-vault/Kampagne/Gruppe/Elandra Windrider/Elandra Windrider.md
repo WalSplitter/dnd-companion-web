@@ -48,12 +48,12 @@ armor_class: 2
 armor: "[[Lederrüstung]]"
 speed: 9 m
 hp:
-  current: 13
-  max: 18
-  temp: 0
-resilience:
   current: 9
   max: 12
+  temp: 0
+resilience:
+  current: 3
+  max: 4
 senses:
   darkvision: 18 m
 languages: [Gemeinsprache, Elfisch, Drakonisch]
@@ -121,7 +121,7 @@ conditions:
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | **Wert** | −1 | +1 | +1 | +2 | +1 | **+3** | 0 | **+2** |
 
-Primärattribute des [[Arkanist]]en: **Verstand** und **Entschlossenheit**.
+Kernattribute des [[Arkanist]]en: **Verstand** und **Entschlossenheit**.
 
 ## 🗡️ Fertigkeiten
 

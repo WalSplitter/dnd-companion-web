@@ -24,6 +24,10 @@ export const en = {
   'vaultLoader.enableEditing': 'Edit',
   'vaultLoader.enableEditingTitle': 'Switch on editing',
   'vaultLoader.readOnly': '🔒 Read-only',
+  'vaultLoader.demo': 'Demo',
+  'vaultLoader.demoTooltip': 'Sample data: try anything — edits are not saved anywhere and are gone on reload',
+  'vaultLoader.resetSample': 'Reset',
+  'vaultLoader.resetSampleTooltip': 'Discard your edits and restore the sample data',
   'vaultLoader.readOnlyTooltip':
     'This browser cannot write files (no File System Access API), so changes are not saved to the vault. Use a Chromium-based browser such as Chrome or Edge to edit.',
 
@@ -297,6 +301,8 @@ export const en = {
   'stats.passivePerception': 'Passive Perception',
   'stats.languages': 'Languages',
   'stats.tools': 'Tools',
+  'stats.weaponTraining': 'Weapons',
+  'stats.armorTraining': 'Armor',
   'stats.level': 'Level',
   'senses.darkvision': 'Darkvision',
   'senses.blindsight': 'Blindsight',
@@ -469,6 +475,7 @@ export const en = {
   'roll.penaltyBreakdown': 'Base {{base}}, exhaustion −{{n}}',
   'roll.mode.advantage': 'advantage',
   'roll.mode.disadvantage': 'disadvantage',
+  'roll.classMode': 'Your class rolls this with {{mode}} (click); Shift/Alt override it',
   'roll.exhaustionShort': 'exhaustion',
   'exhaustion.modifierHint': 'Base {{base}}, exhaustion −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}} check: d20 {{total}}. Attribute {{base}}, exhaustion −{{n}}. {{hint}}',

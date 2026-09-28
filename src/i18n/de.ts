@@ -21,6 +21,10 @@ export const de = {
   'vaultLoader.enableEditing': 'Bearbeiten',
   'vaultLoader.enableEditingTitle': 'Bearbeiten einschalten',
   'vaultLoader.readOnly': '🔒 Nur lesen',
+  'vaultLoader.demo': 'Demo',
+  'vaultLoader.demoTooltip': 'Beispieldaten: Probier alles aus – Änderungen werden nirgends gespeichert und sind nach dem Neuladen weg',
+  'vaultLoader.resetSample': 'Zurücksetzen',
+  'vaultLoader.resetSampleTooltip': 'Deine Änderungen verwerfen und die Beispieldaten wiederherstellen',
   'vaultLoader.readOnlyTooltip':
     'Dieser Browser kann keine Dateien schreiben (keine File System Access API), Änderungen werden daher nicht im Vault gespeichert. Zum Bearbeiten einen Chromium-basierten Browser wie Chrome oder Edge verwenden.',
 
@@ -283,6 +287,8 @@ export const de = {
   'stats.passivePerception': 'Passive Wahrnehmung',
   'stats.languages': 'Sprachen',
   'stats.tools': 'Werkzeuge',
+  'stats.weaponTraining': 'Waffen',
+  'stats.armorTraining': 'Rüstungen',
   'stats.level': 'Stufe',
   'senses.darkvision': 'Dunkelsicht',
   'senses.blindsight': 'Blindsicht',
@@ -448,6 +454,7 @@ export const de = {
   'roll.penaltyBreakdown': 'Grundwert {{base}}, Erschöpfung −{{n}}',
   'roll.mode.advantage': 'Vorteil',
   'roll.mode.disadvantage': 'Nachteil',
+  'roll.classMode': 'Deine Klasse würfelt diesen Wurf mit {{mode}} (Klick); Shift/Alt überschreiben das',
   'roll.exhaustionShort': 'Erschöpfung',
   'exhaustion.modifierHint': 'Grundwert {{base}}, Erschöpfung −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}}-Wurf: W20 {{total}}. Attribut {{base}}, Erschöpfung −{{n}}. {{hint}}',

@@ -8,7 +8,9 @@ import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '..
 import { ProficiencyDot } from './ProficiencyDot'
 
 /** Nimble saving throws have no proficiency system at all — every save is just `W20 + Attributswert`
- * for whichever of the six save-backed attributes applies (see `NIMBLE_SAVE_ATTRIBUTES`). */
+ * for whichever of the six save-backed attributes applies (see `NIMBLE_SAVE_ATTRIBUTES`). The class
+ * instead grants advantage on two saves and disadvantage on two others (`nimble_save_modes`), which a
+ * plain click rolls with. */
 function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   return (
@@ -16,13 +18,27 @@ function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter
       {NIMBLE_SAVE_ATTRIBUTES.map((key) => {
         const label = t(`nimbleAttribute.${key}`)
         const bonus = nimbleAttributeValue(character, key)
+        const mode = character.nimble_save_modes?.[key]
+        const modeLabel = mode ? t(`roll.mode.${mode}`) : undefined
         return (
-          <li key={key} className="flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10">
+          <li
+            key={key}
+            className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${mode === 'advantage' ? 'bg-trim/[0.06]' : ''}`}
+          >
             <D20Modifier value={bonus} className="w-8 text-right font-num text-fg" />
-            <span className="text-fg-muted">{label}</span>
+            <span className={mode === 'advantage' ? 'text-fg' : 'text-fg-muted'}>{label}</span>
+            {mode && modeLabel && (
+              <span
+                className={`rounded px-1 text-[10px] font-semibold uppercase tracking-wide ${mode === 'advantage' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'}`}
+              >
+                {modeLabel}
+              </span>
+            )}
             <D20RollButton
               label={t('roll.saveSuffix', { label })}
               modifier={bonus}
+              mode={mode}
+              note={modeLabel ? t('roll.classMode', { mode: modeLabel }) : undefined}
               className="ml-auto rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim"
             />
           </li>

@@ -49,6 +49,22 @@ describe('vaultStore vault lifecycle', () => {
     expect(useVaultStore.getState().source).toBe('none')
     expect(useVaultStore.getState().vault.characters).toHaveLength(0)
   })
+
+  it('lets the sample vault be edited in memory only, and restores it when opened again', async () => {
+    useVaultStore.getState().loadSampleVault()
+    expect(useVaultStore.getState().editPermission).toBe('granted')
+    const { path, frontmatter } = useVaultStore.getState().vault.characters.find((c) => c.frontmatter.name === 'Borin Eisenfaust')!
+    const original = frontmatter.hp.current
+
+    await useVaultStore.getState().updateCharacterField(path, frontmatter._write?.hp_current, 1, (c) => ({ ...c, hp: { ...c.hp, current: 1 } }))
+    const borin = () => useVaultStore.getState().vault.characters.find((c) => c.path === path)!.frontmatter
+    expect(borin().hp.current).toBe(1)
+    expect(useVaultStore.getState().writeError).toBeNull()
+
+    useVaultStore.getState().loadSampleVault()
+    expect(borin().hp.current).toBe(original)
+    useVaultStore.getState().closeVault()
+  })
 })
 
 describe('vaultStore.updateCharacterField', () => {
