@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
-import { spellAttackBonus, spellSaveDC, spellSaveDCPenalty } from '../../../vault/deriveStats'
+import { spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../vault/deriveStats'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter, type SpellFrontmatter, type SpellTargetKind, type VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
@@ -49,7 +49,7 @@ export function SpellList({
   )
   const hasMana = Boolean(character.spellcasting?.mana)
   const dc = spellSaveDC(character)
-  const dcPenalty = spellSaveDCPenalty(character)
+  const dcPenalty = exhaustionStaticPenalty(character)
   const attack = spellAttackBonus(character)
   // Nimble sheets name saves by their own attributes (BW, not DEX).
   const saveLabel = (ability: SpellFrontmatter['save_ability']) =>

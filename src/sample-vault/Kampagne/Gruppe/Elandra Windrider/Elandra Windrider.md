@@ -48,32 +48,18 @@ armor_class: 2
 armor: "[[Lederrüstung]]"
 speed: 9 m
 hp:
-  current: 13
-  max: 18
-  temp: 0
-resilience:
   current: 9
   max: 12
+  temp: 0
+resilience:
+  current: 3
+  max: 4
 senses:
   darkvision: 18 m
 languages: [Gemeinsprache, Elfisch, Drakonisch]
 attacks:
-  - name: Kampfstab
-    kind: melee
-    attack_bonus: 2
-    damage_dice: 1d6
-    damage_bonus: 2
-    damage_type: Wuchtschaden
-    range: 1,5 m
-    properties: [Parade, Finesse]
-  - name: Dolch
-    kind: thrown
-    attack_bonus: 2
-    damage_dice: 1d4
-    damage_bonus: 2
-    damage_type: Stichschaden
-    range: 3/6/12 m
-    properties: [Wurfwaffe, Leicht, Finesse]
+  - "[[Kampfstab]]"
+  - "[[Dolch]]"
 features:
   - name: Arkane Erholung
     source: Arkanist 1
@@ -121,7 +107,7 @@ conditions:
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | **Wert** | −1 | +1 | +1 | +2 | +1 | **+3** | 0 | **+2** |
 
-Primärattribute des [[Arkanist]]en: **Verstand** und **Entschlossenheit**.
+Kernattribute des [[Arkanist]]en: **Verstand** und **Entschlossenheit**.
 
 ## 🗡️ Fertigkeiten
 

@@ -27,20 +27,31 @@ describe('sample vault', () => {
 
   it('derives pools, primary attributes and evasion from the class and armor notes', () => {
     const elandra = character('Elandra Windrider')
-    expect(elandra.hp.max).toBe(18)
-    expect(elandra.resilience?.max).toBe(12)
+    expect(elandra.hp.max).toBe(12)
+    expect(elandra.resilience?.max).toBe(4)
     expect(elandra.nimble_primary_attributes).toEqual(['vs', 'en'])
     expect(evasionValue(elandra)).toBe(11)
     expect(movementSquares(elandra)).toBe(6)
 
     const borin = character('Borin Eisenfaust')
-    expect(borin.hp.max).toBe(36)
-    expect(borin.resilience?.max).toBe(16)
+    expect(borin.hp.max).toBe(30)
+    expect(borin.resilience?.max).toBe(10)
     expect(borin.nimble_primary_attributes).toEqual(['st', 'ko'])
     expect(borin.bw_cap).toBe(2)
     expect(evasionValue(borin)).toBe(12)
     // 7.5 m = 5 squares, minus 1 for exhaustion level 1.
     expect(movementSquares(borin)).toBe(4)
+  })
+
+  it('builds attacks from the linked weapon notes, with the bonus from ST or (Finesse) GE', () => {
+    const elandra = character('Elandra Windrider')
+    expect(elandra.attacks?.map((a) => [a.name, a.kind, a.attribute, a.attack_bonus, a.damage_dice, a.range])).toEqual([
+      ['Kampfstab', 'melee', 'ge', 2, '1d6', '1,5 m'],
+      ['Dolch', 'melee', 'ge', 2, '1d4', '1,5 m'],
+      ['Dolch (Wurf)', 'thrown', 'ge', 2, '1d4', '3/6/12 m'],
+    ])
+    const borin = character('Borin Eisenfaust')
+    expect(borin.attacks?.[0]).toMatchObject({ name: 'Langschwert', attribute: 'st', attack_bonus: 3, damage_bonus: 3, damage_type: 'Hiebschaden/Stichschaden' })
   })
 
   it('pulls inventory, currency and spells in from the linked sheets, with write targets', () => {

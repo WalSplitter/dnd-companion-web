@@ -8,7 +8,9 @@ import { ABILITIES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '..
 import { ProficiencyDot } from './ProficiencyDot'
 
 /** Nimble saving throws have no proficiency system at all — every save is just `W20 + Attributswert`
- * for whichever of the six save-backed attributes applies (see `NIMBLE_SAVE_ATTRIBUTES`). */
+ * for whichever of the six save-backed attributes applies (see `NIMBLE_SAVE_ATTRIBUTES`). The class
+ * instead grants advantage on two saves and disadvantage on two others (`nimble_save_modes`), which a
+ * plain click rolls with. */
 function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   return (
@@ -16,15 +18,25 @@ function NimbleSavingThrowsList({ character }: { character: CharacterFrontmatter
       {NIMBLE_SAVE_ATTRIBUTES.map((key) => {
         const label = t(`nimbleAttribute.${key}`)
         const bonus = nimbleAttributeValue(character, key)
+        const mode = character.nimble_save_modes?.[key]
+        const modeLabel = mode ? t(`roll.mode.${mode}`) : undefined
         return (
-          <li key={key} className="flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10">
+          <li key={key} className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10">
             <D20Modifier value={bonus} className="w-8 text-right font-num text-fg" />
-            <span className="text-fg-muted">{label}</span>
-            <D20RollButton
-              label={t('roll.saveSuffix', { label })}
-              modifier={bonus}
-              className="ml-auto rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim"
-            />
+            <span className="text-fg">{label}</span>
+            <span className="ml-auto flex items-center gap-2">
+              {mode && modeLabel && (
+                <span className={`text-[0.65rem] font-semibold uppercase tracking-wider ${mode === 'advantage' ? 'text-success' : 'text-danger'}`}>
+                  {modeLabel}
+                </span>
+              )}
+              <D20RollButton
+                label={t('roll.saveSuffix', { label })}
+                modifier={bonus}
+                mode={mode}
+                note={modeLabel ? t('roll.classMode', { mode: modeLabel }) : undefined}
+              />
+            </span>
           </li>
         )
       })}
@@ -57,7 +69,7 @@ export function SavingThrows({ character, characterPath }: { character: Characte
           return (
             <li
               key={key}
-              className={`flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10 ${proficient ? 'bg-trim/[0.06]' : ''}`}
+              className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10"
             >
               {canEdit && target ? (
                 <button
@@ -81,11 +93,9 @@ export function SavingThrows({ character, characterPath }: { character: Characte
               )}
               <D20Modifier value={bonus} className={`w-8 text-right font-num ${proficient ? 'text-trim' : 'text-fg'}`} />
               <span className={proficient ? 'text-fg' : 'text-fg-muted'}>{label}</span>
-              <D20RollButton
-                label={t('roll.saveSuffix', { label })}
-                modifier={bonus}
-                className="ml-auto rounded-md border border-trim/30 bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-fg-muted transition hover:border-trim hover:text-trim"
-              />
+              <span className="ml-auto flex items-center">
+                <D20RollButton label={t('roll.saveSuffix', { label })} modifier={bonus} />
+              </span>
             </li>
           )
         })}

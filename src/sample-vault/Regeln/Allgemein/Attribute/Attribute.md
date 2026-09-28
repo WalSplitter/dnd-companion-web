@@ -13,4 +13,4 @@ W20 + Attributswert. Der Wert wird direkt als Modifikator verwendet.
 Ein Attribut liegt immer zwischen −5 und +5.
 
 ## Primär- und Sekundärattribute
-Jede Klasse legt ihre Primärattribute fest (Feld `Primärattribute` in der Klassennotiz). Alle übrigen Attribute gelten als sekundär.
+Jede Klasse legt ihre Kernattribute fest (Feld `Kernattribute` in der Klassennotiz). Alle übrigen Attribute gelten als sekundär.

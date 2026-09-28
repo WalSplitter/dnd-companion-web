@@ -88,7 +88,7 @@ export function CharacterSheet({
               <Skills character={character} />
               <div className="space-y-4">
                 <Attacks character={character} />
-                {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} index={index} />}
+                {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <Conditions character={character} characterPath={characterPath} />
                 <FeaturesTraits character={character} />
                 <About body={body} />

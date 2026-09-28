@@ -191,6 +191,13 @@ describe('exhaustion (rule Erschöpfung)', () => {
     expect(spellSaveDC(nimbleExhausted)).toBe(8)
   })
 
+  it('lowers Passive Perception by twice the level for Nimble characters only', () => {
+    expect(passivePerception(exhausted)).toBe(14)
+    const trained = { ...nimbleExhausted, nimble_attributes: { ...nimbleExhausted.nimble_attributes, in: 2 }, nimble_skills: { perception: 3 } }
+    expect(passivePerception({ ...trained, conditions: undefined })).toBe(15) // 10 + 2 IN + 3
+    expect(passivePerception(trained)).toBe(9)
+  })
+
   it('costs one square (1.5 m) of movement per level, never below 0', () => {
     expect(movementSquares(character)).toBe(6)
     expect(movementSquares(exhausted)).toBe(3)

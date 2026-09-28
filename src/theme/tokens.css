@@ -33,6 +33,31 @@
   --color-warning: #f59e0b;
 }
 
+[data-theme='parchment'] {
+  --color-bg: #ecdfc2;
+  --color-surface: #f7eed8;
+  --color-surface-2: #eadbb8;
+  --color-border: #d2bb8c;
+  --color-fg: #2b1d10;
+  --color-fg-muted: #6e5a42;
+  --color-primary: #8b1e1e;
+  --color-primary-fg: #fbf3e0;
+  --color-accent: #245d6b;
+  --color-danger: #a61b1b;
+  --color-success: #3f6d21;
+  --color-trim: #8a6224;
+  --color-warning: #9a5b0b;
+}
+
+/* Parchment: paper grain, a few old stains and edges darkened as if singed by candlelight. */
+[data-theme='parchment'] body {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .3 0 0 0 0 .14 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 30% 22% at 12% 20%, rgb(150 105 45 / 0.12), transparent 70%),
+    radial-gradient(ellipse 26% 20% at 88% 72%, rgb(150 105 45 / 0.1), transparent 70%),
+    radial-gradient(ellipse 120% 100% at 50% 45%, transparent 55%, rgb(110 70 25 / 0.35));
+}
+
 [data-theme='fluent'] {
   --color-bg: #eaf1fb;
   --color-surface: #f7fafe;

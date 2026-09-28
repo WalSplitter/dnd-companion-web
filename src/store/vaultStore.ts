@@ -25,7 +25,7 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { currencyBlockPatch, endeavourInventoryPatch, fieldPatch, folderWriter, type VaultWriter } from '../vault/writeback/persist'
+import { currencyBlockPatch, endeavourInventoryPatch, fieldPatch, folderWriter, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
@@ -33,8 +33,9 @@ import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
 export type VaultSource = 'none' | 'sample' | 'user'
 type VaultStatus = 'idle' | 'loading' | 'loaded' | 'error'
-/** 'unavailable': nothing to write through (sample vault, or the <input webkitdirectory> fallback for
- * browsers without the File System Access API) — fields stay read-only. For a GitHub vault, 'granted'
+/** 'unavailable': nothing to write through (the <input webkitdirectory> fallback for browsers
+ * without the File System Access API) — fields stay read-only. The sample vault is always 'granted',
+ * but its writer stores nothing (see `sandboxWriter`). For a GitHub vault, 'granted'
  * means the account may push to the repository. */
 export type EditPermission = 'unavailable' | 'not-requested' | 'granted' | 'denied'
 
@@ -66,6 +67,7 @@ interface VaultState {
   editPermission: EditPermission
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
+  /** Opens the bundled sample vault — always in its original state, so this also discards any demo edits. */
   loadSampleVault: () => void
   /** The load actions resolve `true` once the new vault is showing (false: cancelled, failed or superseded). */
   loadFromDirectoryPicker: () => Promise<boolean>
@@ -215,6 +217,8 @@ const EMPTY_STATE = (() => {
   } satisfies Partial<VaultState>
 })()
 
+/** Editable so visitors can try every control, but through `sandboxWriter`: edits change only the
+ * in-memory vault and are gone on reload or the next `loadSampleVault`. */
 function buildSampleState() {
   const vault = buildVault(sampleVaultFiles, sampleVaultImages)
   return {
@@ -224,10 +228,13 @@ function buildSampleState() {
     vault,
     index: buildVaultIndex(vault),
     ruleset: detectRuleset(sampleVaultFiles),
+    writer: sandboxWriter,
+    editPermission: 'granted',
   } satisfies Partial<VaultState>
 }
 
-/** The bundled demo vault as a complete store state — parsed on first use, reused on every switch back to it. */
+/** The bundled demo vault as a complete store state — parsed on first use, reused on every switch back
+ * to it. Edits replace the store's `vault`, never this one, so it stays the pristine original. */
 let sampleState: ReturnType<typeof buildSampleState> | null = null
 
 /** How many character names a recents entry keeps for its preview medallions. */
@@ -607,7 +614,13 @@ export const useVaultStore = create<VaultState>((set, get) => {
   }
 })
 
-/** Whether vault edits are currently written back to disk (the user granted `readwrite` access). */
+/** Whether the sample vault is open and differs from its original state (a demo edit was made). */
+export function useSampleVaultEdited(): boolean {
+  return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
+}
+
+/** Whether vault edits are currently written back to disk (the user granted `readwrite` access), or —
+ * for the sample vault — applied in memory only. */
 export function useCanEdit(): boolean {
   return useVaultStore((s) => s.editPermission === 'granted')
 }

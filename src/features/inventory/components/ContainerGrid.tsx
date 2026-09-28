@@ -68,7 +68,7 @@ export function ContainerGrid({
         const raw = e.dataTransfer.getData('text/plain')
         if (raw) onDropPayload(raw)
       }}
-      className={`rpg-panel transition-shadow ${compact ? 'p-2' : 'p-3'} ${dragOver ? 'shadow-[0_0_0_2px_var(--color-trim),0_0_22px_-2px_var(--color-trim)]' : ''}`}
+      className={`rpg-panel transition-shadow ${compact ? 'topic-corners-sm p-2' : 'p-3'} ${dragOver ? 'shadow-[0_0_0_2px_var(--color-trim),0_0_22px_-2px_var(--color-trim)]' : ''}`}
     >
       {compact ? (
         <div className="mb-1.5 break-words font-display text-[0.65rem] font-bold uppercase leading-tight tracking-wider text-trim" title={label}>

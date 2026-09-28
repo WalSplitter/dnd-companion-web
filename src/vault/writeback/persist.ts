@@ -114,6 +114,12 @@ export interface WriteContext {
   character?: string
 }
 
+/** Accepts every edit and stores none — for the bundled sample vault, whose edits live only in memory. */
+export const sandboxWriter: VaultWriter = {
+  canWrite: () => true,
+  write: () => Promise.resolve(),
+}
+
 /** Writes through the File System Access handles collected while reading a local vault folder. */
 export function folderWriter(fileHandles: Map<string, FileSystemFileHandle>): VaultWriter {
   return {

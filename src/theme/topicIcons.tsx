@@ -30,6 +30,16 @@ export function SkullIcon(props: IconProps) {
   )
 }
 
+export function DragonIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 15c2-4.5 6-7 10.5-7L17 4l.5 4 4 1-3 2.5c.8 2.2.2 4.5-1.8 6H9.5L7 20l-1-3.5C4 16.5 3 16 3 15z" />
+      <circle cx="14.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
+      <path d="M8 14.5c2 .4 4 .3 6-.5" />
+    </Icon>
+  )
+}
+
 export function PumpkinIcon(props: IconProps) {
   return (
     <Icon {...props}>

@@ -46,31 +46,17 @@ armor: "[[Schuppenpanzer]]"
 speed: 7,5 m
 hp:
   current: 21
-  max: 36
+  max: 30
   temp: 4
 resilience:
   current: 5
-  max: 16
+  max: 10
 senses:
   darkvision: 18 m
 languages: [Gemeinsprache, Zwergisch]
 attacks:
-  - name: Langschwert
-    kind: melee
-    attack_bonus: 3
-    damage_dice: 1d8
-    damage_bonus: 3
-    damage_type: Hieb-/Stichschaden
-    range: 1,5 m
-    properties: [Finesse, Parade, Vielseitig]
-  - name: Wurfmesser
-    kind: thrown
-    attack_bonus: 3
-    damage_dice: 1d4
-    damage_bonus: 3
-    damage_type: Stichschaden
-    range: 3/6/12 m
-    properties: [Wurfwaffe, Leicht, Finesse, Kritisch]
+  - "[[Langschwert]]"
+  - "[[Wurfmesser]]"
 features:
   - name: Zweiter Atem
     source: Krieger 1
@@ -119,7 +105,7 @@ conditions:
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | **Wert** | **+3** | +3 | **+2** | 0 | +1 | −1 | −1 | +1 |
 
-Primärattribute des [[Krieger]]s: **Stärke** und **Konstitution**.
+Kernattribute des [[Krieger]]s: **Stärke** und **Konstitution**.
 
 ## 🗡️ Fertigkeiten
 

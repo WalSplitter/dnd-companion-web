@@ -4,8 +4,9 @@ import { findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from '../types'
 import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../vaultLoader'
-import { linkFile } from '../wikilinkSyntax'
+import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
+import { resolveWeaponAttacks } from './weaponAttacks'
 
 /**
  * The app's own `type: character` schema (see `types.ts`), including the additive "Endeavour"/Nimble
@@ -103,23 +104,89 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
   }
 }
 
+/** The class notes (e.g. `Klassen/Arkanist/Arkanist.md`, tagged `Regeln/Endeavour/Charakter/Klasse`)
+ * named like the character's classes, in the character's class order. */
+function classNotes(classes: unknown, files: RawFile[]): RawFile[] {
+  if (!Array.isArray(classes)) return []
+  return classes.flatMap((c) => {
+    const note = isRecord(c) && typeof c.name === 'string' ? findRawFileByName(files, c.name) : undefined
+    return note ? [note] : []
+  })
+}
+
 /**
- * Primary attributes are fixed per class: a note named like the class (e.g. `Prüfling.md`) lists them
- * as `Primärattribute: [St, Ko]` (keys, abbreviations or full names). A multiclass character gets the
- * union of all its classes'. `undefined` when no class note declares any.
+ * Core attributes are fixed per class: the class note lists them as `Kernattribute: ["[[Stärke]]",
+ * "[[Instinkt]]"]` (or the older `Primärattribute: [St, Ko]`; wikilinks, keys, abbreviations or full
+ * names). A multiclass character gets the union of all its classes'. `undefined` when no class note
+ * declares any.
  */
-function resolveClassPrimaryAttributes(classes: unknown, files: RawFile[]): NimbleAttributeKey[] | undefined {
-  if (!Array.isArray(classes)) return undefined
-  const names = new Set(classes.map((c) => (isRecord(c) && typeof c.name === 'string' ? c.name.trim().toLowerCase() : '')).filter(Boolean))
+function resolveClassPrimaryAttributes(notes: RawFile[]): NimbleAttributeKey[] | undefined {
   const primary = new Set<NimbleAttributeKey>()
-  for (const f of files) {
-    if (!names.has(f.name.trim().toLowerCase()) || !Array.isArray(f.data.Primärattribute)) continue
-    for (const raw of f.data.Primärattribute) {
-      const key = parseNimbleAttributeKey(raw)
+  for (const note of notes) {
+    const list = note.data.Kernattribute ?? note.data.Primärattribute
+    if (!Array.isArray(list)) continue
+    for (const raw of list) {
+      const key = parseNimbleAttributeKey(linkFile(raw))
       if (key) primary.add(key)
     }
   }
   return primary.size > 0 ? NIMBLE_ATTRIBUTES.map(({ key }) => key).filter((key) => primary.has(key)) : undefined
+}
+
+/** `"[[Verstandsrettungswürfe|VS-Rettungswürfe]]"` -> `vs`: the link target minus its "(s)rettungswürfe"
+ * suffix, else the alias's `VS-` abbreviation. */
+function parseSaveAttribute(raw: unknown): NimbleAttributeKey | undefined {
+  const strip = (name: string) => name.replace(/-?rettungsw(ü|ue)rfe?$/i, '')
+  const target = strip(linkFile(raw))
+  return parseNimbleAttributeKey(target) ?? parseNimbleAttributeKey(target.replace(/s$/i, '')) ?? parseNimbleAttributeKey(strip(linkDisplay(raw)))
+}
+
+/**
+ * Class saving throws (`Rettungswürfe: { Vorteil: [...], Nachteil: [...] }` on the class note) are
+ * rolled with advantage/disadvantage. When a multiclass character gets both for the same save they
+ * cancel out, like any other advantage/disadvantage pair. `undefined` when no class note declares any.
+ */
+function resolveClassSaveModes(notes: RawFile[]): CharacterFrontmatter['nimble_save_modes'] {
+  const advantage = new Set<NimbleAttributeKey>()
+  const disadvantage = new Set<NimbleAttributeKey>()
+  for (const note of notes) {
+    const saves = note.data.Rettungswürfe
+    if (!isRecord(saves)) continue
+    for (const [list, into] of [
+      [saves.Vorteil, advantage],
+      [saves.Nachteil, disadvantage],
+    ] as const) {
+      if (!Array.isArray(list)) continue
+      for (const raw of list) {
+        const key = parseSaveAttribute(raw)
+        if (key) into.add(key)
+      }
+    }
+  }
+  const modes: NonNullable<CharacterFrontmatter['nimble_save_modes']> = {}
+  for (const key of advantage) if (!disadvantage.has(key)) modes[key] = 'advantage'
+  for (const key of disadvantage) if (!advantage.has(key)) modes[key] = 'disadvantage'
+  return Object.keys(modes).length > 0 ? modes : undefined
+}
+
+/** Display names of the class notes' `Übung.Waffen`/`Übung.Rüstungen` links, merged across classes;
+ * a literal `keine` ("none") is dropped. `undefined` when no class note declares any. */
+function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['nimble_class_proficiencies'] {
+  const collect = (field: 'Waffen' | 'Rüstungen') => {
+    const names = new Set<string>()
+    for (const note of notes) {
+      const list = isRecord(note.data.Übung) ? note.data.Übung[field] : undefined
+      if (!Array.isArray(list)) continue
+      for (const raw of list) {
+        const name = linkDisplay(raw)
+        if (name && name.toLowerCase() !== 'keine') names.add(name)
+      }
+    }
+    return [...names]
+  }
+  const weapons = collect('Waffen')
+  const armor = collect('Rüstungen')
+  return weapons.length > 0 || armor.length > 0 ? { weapons, armor } : undefined
 }
 
 /** The worn armor's wikilink: `armor:`, or `Rüstung:` as on the old sheet (`Verteidigung.Rüstung`). */
@@ -143,16 +210,18 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
 }
 
 /**
- * Nimble has no hit dice: each level grants the class's `TP_pro_Stufe`/`RP_pro_Stufe` (declared on the
- * note named like the class, e.g. `Prüfling.md`), plus the subclass note's own value if it has one,
- * plus the attribute bonus — KO for TP (`Konstitution`), half EN rounded down for RP
- * (`Entschlossenheit`). Both rules also apply retroactively, so the max is always recomputed from
- * the current attributes. A pool stays undefined (the sheet's own `max` is kept) when any class note
- * lacks its per-level value.
+ * Nimble has no hit dice. Per the class notes (`embed Klasse`): at level 1 a class grants
+ * `(BasisTP + KO) × 2` TP and every level up `BasisTP + KO`, i.e. `(level + 1) × (BasisTP + KO)` in
+ * total; RP likewise with `BasisRP` and half EN rounded down (`Entschlossenheit`). Both rules also
+ * apply retroactively, so the max is always recomputed from the current attributes. For a multiclass
+ * character only the first listed (starting) class gets the doubled level 1. A subclass note's own
+ * `BasisTP`/`BasisRP`, if it has one, adds to its class's per-level value. A pool stays undefined (the
+ * sheet's own `max` is kept) when any class note lacks its base value.
  *
- * TODO: provisional until the DM ships class notes and further rule updates — revisit (1) the field
- * names/location `TP_pro_Stufe`/`RP_pro_Stufe` on class/subclass notes, (2) the subclass bonus counting
- * for every level of that class (even before the subclass is picked), (3) no per-level minimum.
+ * TODO: provisional until the DM ships subclass notes and multiclass rules — revisit (1) the subclass
+ * bonus counting for every level of that class (even before the subclass is picked), (2) no per-level
+ * minimum (a negative KO can make a level's gain negative; only the total is clamped at 0) and (3) the
+ * doubled level 1 going to the first listed class only.
  */
 function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: number; resilience?: number } {
   if (!character.nimble_attributes || !Array.isArray(character.class) || character.class.length === 0) return {}
@@ -160,16 +229,17 @@ function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): {
 
   const total = (pool: 'hp' | 'resilience', field: string): number | undefined => {
     let sum = 0
-    for (const c of character.class) {
+    for (const [i, c] of character.class.entries()) {
       const classValue = numberFrom(files, c.name, field)
-      if (classValue === undefined || typeof c.level !== 'number') return undefined
+      if (classValue === undefined || typeof c.level !== 'number' || c.level < 1) return undefined
       const subclassValue = c.subclass ? (numberFrom(files, c.subclass, field) ?? 0) : 0
-      sum += c.level * (classValue + subclassValue + perLevelBonus[pool])
+      const levels = i === 0 ? c.level + 1 : c.level
+      sum += levels * (classValue + subclassValue + perLevelBonus[pool])
     }
     return Math.max(0, sum)
   }
 
-  return { hp: total('hp', 'TP_pro_Stufe'), resilience: total('resilience', 'RP_pro_Stufe') }
+  return { hp: total('hp', 'BasisTP'), resilience: total('resilience', 'BasisRP') }
 }
 
 /** Normalizes a `type: character` note (already validated to carry a `name`). */
@@ -178,6 +248,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   const linked = resolveLinkedFields(raw, files)
   const armor = armorLink(raw.data)
   const pools = resolveLevelPools(character, files)
+  const notes = classNotes(raw.data.class, files)
   const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data), ...linked.writeTargets }
 
   return {
@@ -189,7 +260,10 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     hit_dice: character.nimble_attributes ? undefined : character.hit_dice,
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
     ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),
-    nimble_primary_attributes: resolveClassPrimaryAttributes(raw.data.class, files),
+    nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
+    nimble_save_modes: resolveClassSaveModes(notes),
+    nimble_class_proficiencies: resolveClassProficiencies(notes),
+    attacks: resolveWeaponAttacks(raw.data.attacks, character, files),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }

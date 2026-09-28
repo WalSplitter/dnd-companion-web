@@ -109,8 +109,8 @@ off; it also stays off for anyone who has *reduce motion* set in their system.
     <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
     <td valign="middle">
 
-**Also:** Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer and 🎄
-Christmas.
+**Also:** Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer,
+🐉 Dragon Hoard and 🎄 Christmas.
 
 </td>
   </tr>
@@ -134,7 +134,8 @@ one of the three cards on the start page:
 > [!TIP]
 > The sample is a small German "Endeavour" player vault: an Arkanistin with a spell sheet and a
 > Krieger with exhaustion and temporary HP, with inventories, portraits, class, rule and item notes
-> ([`src/sample-vault/`](src/sample-vault)).
+> ([`src/sample-vault/`](src/sample-vault)). Editing is always on there so every control can be tried,
+> but nothing is saved: a reload or the **Reset** button next to the "Demo" badge restores it.
 
 The app is only *served* from GitHub Pages; your vault is read in the browser and not uploaded
 anywhere. Every push to `main` redeploys it ([`deploy.yml`](.github/workflows/deploy.yml)).
@@ -403,10 +404,19 @@ additively:
   "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never
   read from the character file itself.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
-  Max TP/RP are `level × (class + subclass + attribute bonus)`, with `TP_pro_Stufe` / `RP_pro_Stufe`
-  read from notes named like the class and subclass, and KO (TP) / half EN rounded down (RP) as the
-  attribute bonus. Without a class note declaring them, the sheet's own `hp.max` / `resilience.max`
-  are used.
+  Following the DM's class notes, level 1 grants `(BasisTP + KO) × 2` TP and every further level
+  `BasisTP + KO`, so max TP is `(level + 1) × (BasisTP + KO)`; RP likewise with `BasisRP` and half EN
+  rounded down. `BasisTP` / `BasisRP` are read from the note named like the class (a subclass note's
+  own values add on top). Without a class note declaring them, the sheet's own `hp.max` /
+  `resilience.max` are used.
+- **Weapon attacks**: `attacks: ["[[Kampfstab]]", "[[Dolch]]"]` links weapon notes; damage, damage
+  type, range and properties come from the note, the bonus from the attributes (melee and thrown ST,
+  ranged GE, `Finesse` the higher of ST/GE). A note with both a melee and a ranged profile yields two
+  attacks ("Dolch" and "Dolch (Wurf)"). Written-out attack objects still work for attacks without a note.
+- **Class notes**: besides the pools, the note named like the class supplies `Kernattribute`
+  (highlighted as core attributes), `Rettungswürfe.Vorteil` / `.Nachteil` (those saves are marked and
+  rolled with advantage/disadvantage by default) and `Übung.Waffen` / `.Rüstungen` (listed on the
+  Senses & Languages card).
 
 </details>
 
@@ -521,8 +531,6 @@ Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-co
   download or ZIP, since those browsers cannot write to a vault folder.
 - [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
   and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
-- [#10](https://github.com/WalSplitter/dnd-companion-web/issues/10) Make death saves clickable
-  (currently display-only).
 - [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
   inventory entries (only quantity and weight of inline items are written back today).
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA

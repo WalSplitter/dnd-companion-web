@@ -1,5 +1,5 @@
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
+import { useSampleVaultEdited, useVaultStore } from '../store/vaultStore'
 import { SyncSegment } from './github/SyncSegment'
 
 const ICON = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
@@ -74,6 +74,46 @@ function EditPill() {
   )
 }
 
+function ResetIcon() {
+  return (
+    <svg {...ICON} className="size-[1.05rem]">
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  )
+}
+
+/**
+ * The sample vault's stand-in for `EditPill`: editing is always on there, but nothing is saved, so the
+ * pill says "Demo" and — once something was changed — offers to restore the original data.
+ */
+function DemoPill() {
+  const t = useT()
+  const edited = useSampleVaultEdited()
+  const loadSampleVault = useVaultStore((s) => s.loadSampleVault)
+
+  return (
+    <div className="flex shrink-0 items-stretch overflow-hidden rounded-full border border-warning/40 bg-warning/5 text-sm font-medium text-warning">
+      <span title={t('vaultLoader.demoTooltip')} className="flex cursor-help items-center gap-1.5 px-2.5 py-1.5">
+        <LockIcon open />
+        <span className="whitespace-nowrap">{t('vaultLoader.demo')}</span>
+      </span>
+      {edited && (
+        <button
+          type="button"
+          onClick={loadSampleVault}
+          title={t('vaultLoader.resetSampleTooltip')}
+          aria-label={t('vaultLoader.resetSample')}
+          className="flex items-center gap-1.5 border-l border-warning/40 px-2.5 py-1.5 transition hover:bg-warning/15"
+        >
+          <ResetIcon />
+          <span className="hidden whitespace-nowrap sm:inline">{t('vaultLoader.resetSample')}</span>
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function VaultLoaderControls() {
   const t = useT()
   const status = useVaultStore((s) => s.status)
@@ -118,6 +158,7 @@ export function VaultLoaderControls() {
       )}
 
       {source === 'user' && editPermission !== 'unavailable' && <EditPill />}
+      {source === 'sample' && <DemoPill />}
     </div>
   )
 }
