@@ -49,7 +49,7 @@ export const de = {
   'theme.blue': 'Blau',
   'theme.necromancer': 'Nekromant',
   'theme.halloween': 'Halloween',
-  'theme.shadowmaster': 'Schattenmeister',
+  'theme.pixelquest': 'Pixel-Abenteuer',
   'theme.dragon': 'Drachenhort',
   'theme.unicorn': 'Einhorn',
   'theme.christmas': 'Weihnachten',

@@ -22,13 +22,10 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
     ],
     flybys: { kinds: ['android', 'crescent-ship'], gap: [18, 45] },
   },
-  shadowmaster: {
-    particles: 7,
-    sprites: [
-      { kind: 'shadow-eyes', count: 9 },
-      { kind: 'shadow-fiend', count: 1 },
-    ],
-    flybys: { kinds: ['shadow-hand'], gap: [20, 50] },
+  pixelquest: {
+    particles: 16,
+    sprites: [{ kind: 'pixel-cloud', count: 5 }],
+    flybys: { kinds: ['pixel-dragon', 'pixel-knight'], gap: [15, 40] },
   },
   dragon: {
     particles: 26,

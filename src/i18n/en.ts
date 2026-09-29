@@ -54,7 +54,7 @@ export const en = {
   'theme.blue': 'Blue',
   'theme.necromancer': 'Necromancer',
   'theme.halloween': 'Halloween',
-  'theme.shadowmaster': 'Shadow Master',
+  'theme.pixelquest': 'Pixel Quest',
   'theme.dragon': 'Dragon Hoard',
   'theme.unicorn': 'Unicorn',
   'theme.christmas': 'Christmas',

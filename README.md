@@ -87,38 +87,33 @@ and German.
 
 Pick a theme from the swatch button in the header. Besides eight colour palettes there are seven
 **topic themes** that bring their own backdrop, panel ornaments and a subtle ambient animation:
-drifting souls, bats, snow, falling petals. The sparkle button next to them switches the animation
+drifting souls, bats, snow, falling petals, an 8-bit knight. The sparkle button next to them switches the animation
 off; it also stays off for anyone who has *reduce motion* set in their system.
 
 <table>
   <tr>
     <td width="25%"><img src="docs/media/theme-dark.webp" alt="Dark theme" /></td>
     <td width="25%"><img src="docs/media/theme-light.webp" alt="Light theme" /></td>
-    <td width="25%"><img src="docs/media/theme-shadowmaster.webp" alt="Shadow Master theme with drifting shadow veils" /></td>
+    <td width="25%"><img src="docs/media/theme-pixelquest.webp" alt="Pixel Quest theme with pixel type, console-RPG panels and drifting 8-bit storm clouds" /></td>
     <td width="25%"><img src="docs/media/theme-halloween.webp" alt="Halloween theme with a full moon and bats" /></td>
   </tr>
   <tr>
     <td align="center"><sub>Dark</sub></td>
     <td align="center"><sub>Light</sub></td>
-    <td align="center"><sub>👁 Shadow Master</sub></td>
+    <td align="center"><sub>🏰 Pixel Quest</sub></td>
     <td align="center"><sub>🎃 Halloween</sub></td>
   </tr>
   <tr>
     <td><img src="docs/media/theme-unicorn.webp" alt="Unicorn theme with twinkling rainbow sparkles" /></td>
     <td><img src="docs/media/theme-spring.webp" alt="Spring theme with falling cherry blossom petals" /></td>
     <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
-    <td valign="middle">
-
-**Also:** Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus 💀 Necromancer,
-🐉 Dragon Hoard and 🎄 Christmas.
-
-</td>
+    <td><img src="docs/media/theme-more.svg" alt="Ten more themes: the Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus the Necromancer, Dragon Hoard and Christmas topic themes" /></td>
   </tr>
   <tr>
     <td align="center"><sub>🦄 Unicorn</sub></td>
     <td align="center"><sub>🌸 Spring</sub></td>
     <td align="center"><sub>☀️ Summer</sub></td>
-    <td></td>
+    <td align="center"><sub>✨ …and ten more</sub></td>
   </tr>
 </table>
 

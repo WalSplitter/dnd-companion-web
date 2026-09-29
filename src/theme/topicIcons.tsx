@@ -50,11 +50,11 @@ export function PumpkinIcon(props: IconProps) {
   )
 }
 
-export function EyeIcon(props: IconProps) {
+export function CastleIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
-      <path d="M12 8.5c-1 1.2-1 5.8 0 7 1-1.2 1-5.8 0-7z" fill="currentColor" />
+      <path d="M3 21V5h2.5v2h2V5H10v6h4V5h2.5v2h2V5H21v16z" strokeLinejoin="miter" />
+      <path d="M10 21v-4a2 2 0 0 1 4 0v4" />
     </Icon>
   )
 }

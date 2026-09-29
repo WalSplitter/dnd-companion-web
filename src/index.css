@@ -4,6 +4,8 @@
 @import './theme/startPage.css';
 @import '@fontsource/cinzel/500.css';
 @import '@fontsource/cinzel/700.css';
+@import '@fontsource/pixelify-sans/400.css';
+@import '@fontsource/pixelify-sans/700.css';
 
 @theme inline {
   --color-bg: var(--color-bg);
