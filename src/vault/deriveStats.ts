@@ -102,7 +102,8 @@ export function spellcastingValue(character: CharacterFrontmatter): number | und
 }
 
 /** Spell save DC: 8 + spellcasting value (+ proficiency bonus in D&D; Nimble has none, #9), already
- * lowered by `exhaustionStaticPenalty`. */
+ * lowered by `exhaustionStaticPenalty`. Deliberately unclamped: the DM ruled in #5 that it has no
+ * minimum and may go negative — that is the caster's exhaustion at work. */
 export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
   const value = spellcastingValue(character)
   if (value === undefined) return undefined

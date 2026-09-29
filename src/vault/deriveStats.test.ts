@@ -221,6 +221,11 @@ describe('exhaustion (rule Erschöpfung)', () => {
     expect(spellSaveDC(nimbleExhausted)).toBe(2) // 8 + VS 0 − 6
   })
 
+  it('has no floor on the spell save DC, it may even go negative (#5)', () => {
+    const drained = { ...nimbleExhausted, conditions: { exhaustion: 6 } }
+    expect(spellSaveDC(drained)).toBe(-4) // 8 + VS 0 − 12
+  })
+
   it('lowers Passive Perception by twice the level for Nimble characters only', () => {
     expect(passivePerception(exhausted)).toBe(14)
     const trained = { ...nimbleExhausted, nimble_attributes: { ...nimbleExhausted.nimble_attributes, in: 2 }, nimble_skills: { perception: 3 } }
