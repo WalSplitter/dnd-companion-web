@@ -2,7 +2,7 @@ import { nimbleAttributeValue } from '../deriveStats'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from '../types'
-import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget, NimbleAttributeKey } from '../types'
+import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../vaultLoader'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
@@ -195,13 +195,63 @@ function armorLink(data: Record<string, unknown>): string | undefined {
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
-/** "Max BW" (`BW_cap`) of the armor note the character links as worn (vault rule
- * `Ausweichwert#Rüstung und Max BW`). Undefined when no armor is worn, the note is missing or isn't armor, or it has no cap. */
-function resolveArmorBwCap(link: string | undefined, files: RawFile[]): number | undefined {
+/**
+ * What the armor note the character links as worn contributes: its `RK` (rule `Rüstungsklasse`, the
+ * flat damage reduction; 0 without armor — shields only add theirs reactively via `Blocken`) and its
+ * "Max BW" `BW_cap` (rule `Ausweichwert#Rüstung und Max BW`, undefined = no cap). A missing note or
+ * one that isn't armor counts as no armor.
+ */
+function resolveArmor(link: string | undefined, files: RawFile[]): { armorClass: number; bwCap?: number } {
   const file = link ? findRawFileByName(files, linkFile(link)) : undefined
-  if (!file || !looksLikeEndeavourItem(file.data)) return undefined
-  const item = normalizeEndeavourItem(file)
-  return item.kind === 'armor' ? item.bw_cap : undefined
+  const item = file && looksLikeEndeavourItem(file.data) ? normalizeEndeavourItem(file) : undefined
+  return item?.kind === 'armor' ? { armorClass: item.rk ?? 0, bwCap: item.bw_cap } : { armorClass: 0 }
+}
+
+/** `Einsatz` of a `#Merkmal` note: `[[Aktion]]`/`[[Bonusaktion]]` → action, `[[Reaktion]]` → reaction,
+ * anything else (`Passiv`, absent) → passive — the same split as the vault's own sheet embeds. */
+function parseFeatureUsage(raw: unknown): FeatureUsage {
+  const name = linkFile(raw).trim().toLowerCase()
+  if (name === 'aktion' || name === 'bonusaktion') return 'action'
+  return name === 'reaktion' ? 'reaction' : 'passive'
+}
+
+/** A note's short description: its `Beschreibung` field, else the first prose paragraph of its body
+ * (skipping headings, embeds and code blocks). */
+function noteSummary(file: RawFile): string | undefined {
+  if (typeof file.data.Beschreibung === 'string' && file.data.Beschreibung.trim()) return file.data.Beschreibung.trim()
+  const paragraph = file.body
+    .replace(/```[\s\S]*?```/g, '')
+    .split(/\r?\n\s*\r?\n/)
+    .map((block) =>
+      block
+        .split(/\r?\n/)
+        .filter((line) => line.trim() && !/^\s*(#|!\[\[|---|>)/.test(line))
+        .join(' ')
+        .trim(),
+    )
+    .find(Boolean)
+  return paragraph || undefined
+}
+
+/**
+ * The character's features: `Merkmale:` (the vault's own sheet field) and/or `features:`. A
+ * `"[[Dunkelsicht]]"` link is resolved against its note (name, `Einsatz`, description); a link to a
+ * missing note is kept by name as a passive feature. Written-out entries pass through, their usage
+ * read from `usage` or `Einsatz`.
+ */
+function resolveFeatures(data: Record<string, unknown>, files: RawFile[]): CharacterFeature[] | undefined {
+  const entries = [data.Merkmale, data.features].flatMap((list) => (Array.isArray(list) ? list : []))
+  const features = entries.flatMap((entry): CharacterFeature[] => {
+    if (typeof entry === 'string' && entry.trim()) {
+      const note = findRawFileByName(files, linkFile(entry))
+      if (!note) return [{ name: linkDisplay(entry), usage: 'passive' }]
+      return [{ name: linkDisplay(entry), description: noteSummary(note), usage: parseFeatureUsage(note.data.Einsatz) }]
+    }
+    if (!isRecord(entry) || typeof entry.name !== 'string') return []
+    const usage = entry.usage === 'action' || entry.usage === 'reaction' ? entry.usage : parseFeatureUsage(entry.Einsatz)
+    return [{ ...(entry as unknown as CharacterFeature), usage }]
+  })
+  return features.length > 0 ? features : undefined
 }
 
 function numberFrom(files: RawFile[], noteName: string, field: string): number | undefined {
@@ -219,7 +269,8 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * sheet's own `max` is kept) when any class note lacks its base value.
  *
  * TODO: provisional until the DM ships subclass notes and multiclass rules — revisit (1) the subclass
- * bonus counting for every level of that class (even before the subclass is picked), (2) no per-level
+ * bonus (the DM hasn't decided whether subclasses affect TP/RP at all; today no subclass note carries
+ * `BasisTP`/`BasisRP`, so it adds 0) counting for every level of that class, (2) no per-level
  * minimum (a negative KO can make a level's gain negative; only the total is clamped at 0) and (3) the
  * doubled level 1 going to the first listed class only.
  */
@@ -247,6 +298,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   const character = raw.data as unknown as CharacterFrontmatter
   const linked = resolveLinkedFields(raw, files)
   const armor = armorLink(raw.data)
+  const worn = resolveArmor(armor, files)
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
   const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data), ...linked.writeTargets }
@@ -254,9 +306,15 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   return {
     ...character,
     ...linked.values,
+    // Endeavour sheets may leave out the D&D `abilities` entirely (nothing Nimble reads them, #9);
+    // neutral scores keep the D&D-only code paths safe.
+    abilities: isRecord(raw.data.abilities) ? character.abilities : { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     armor,
-    // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored.
-    bw_cap: resolveArmorBwCap(armor, files),
+    // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored, and so is
+    // a Nimble sheet's own `armor_class` (a leftover D&D bridge value).
+    bw_cap: worn.bwCap,
+    armor_class: character.nimble_attributes ? worn.armorClass : character.armor_class,
+    features: resolveFeatures(raw.data, files),
     hit_dice: character.nimble_attributes ? undefined : character.hit_dice,
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
     ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),

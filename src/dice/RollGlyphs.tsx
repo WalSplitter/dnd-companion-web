@@ -73,11 +73,14 @@ export function DmIcon() {
   )
 }
 
-/** Four-point star: the spell hits without any roll to see if it does. */
+/** Arrow stuck in the bullseye: the spell hits without any roll to see if it does. */
 export function AutoHitIcon() {
   return (
-    <svg viewBox="0 0 16 16" className="size-3 shrink-0 text-accent" aria-hidden>
-      <path fill="currentColor" d="M8 .8 9.6 6.4 15.2 8 9.6 9.6 8 15.2 6.4 9.6.8 8l5.6-1.6Z" />
+    <svg viewBox="0 0 16 16" className="size-3.5 shrink-0 text-accent" aria-hidden>
+      <circle cx="7" cy="9" r="5.8" fill="none" stroke="currentColor" strokeWidth="1.3" opacity="0.55" />
+      <circle cx="7" cy="9" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M7 9 14 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M11.6 1.6 12 4l2.4.4M13.4.6l.2 1.8 1.8.2" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -96,16 +99,18 @@ export function AreaIcon() {
 /** Thin chevron between two steps of a roll sequence. */
 export function StepArrow() {
   return (
-    <svg viewBox="0 0 8 12" className="mt-1.5 h-2.5 w-2 shrink-0 text-fg-muted/60" aria-hidden>
+    <svg viewBox="0 0 8 12" className="mt-[7px] h-2.5 w-2 shrink-0 text-fg-muted/60" aria-hidden>
       <path d="m2 2 4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
-/** A roll button with a tiny caption underneath, so attack and damage read apart at a glance. */
+/** A roll button with a tiny caption underneath, so attack and damage read apart at a glance. The
+ * button sits centred in a fixed-height row, so captions of neighbouring chips (which differ by a
+ * pixel or two in height) line up on one baseline; `StepArrow` is centred on that same row. */
 export function CaptionedRoll({ caption, children, className = 'text-fg-muted' }: { caption: string; children: ReactNode; className?: string }) {
   return (
-    <span className="flex flex-col items-center gap-0.5">
+    <span className="grid grid-rows-[1.5rem_auto] items-center justify-items-center gap-0.5">
       {children}
       <span className={`whitespace-nowrap text-[0.55rem] font-semibold uppercase leading-none tracking-wider ${className}`}>{caption}</span>
     </span>

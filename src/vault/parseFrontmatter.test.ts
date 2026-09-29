@@ -234,6 +234,41 @@ Rettungswürfe:
       expect(vault.characters[0].frontmatter.bw_cap).toBeUndefined()
     })
 
+    it("takes the armor class from the worn armor's RK, 0 without armor, ignoring the sheet's value", () => {
+      // The fixture's own `armor_class: 10` must not survive either way.
+      const worn = buildVault([nimbleCharacter('armor: "[[Kettenhemd]]"\n'), chainShirt])
+      expect(worn.characters[0].frontmatter.armor_class).toBe(3)
+      const unarmored = buildVault([nimbleCharacter(), chainShirt])
+      expect(unarmored.characters[0].frontmatter.armor_class).toBe(0)
+    })
+
+    it('loads a sheet without abilities or proficiency_bonus', () => {
+      const file = nimbleCharacter()
+      const content = file.content.replace(/abilities: .*\n/, '').replace(/proficiency_bonus: .*\n/, '')
+      const vault = buildVault([{ ...file, content }])
+      expect(vault.characters[0].frontmatter.abilities).toEqual({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 })
+      expect(vault.characters[0].frontmatter.proficiency_bonus).toBeUndefined()
+    })
+
+    it('resolves linked Merkmale into actions, reactions and passive features', () => {
+      const note = (name: string, einsatz: string, extra = '') => ({
+        path: `Merkmale/${name}.md`,
+        content: `---\ntags: [Merkmal]\n${einsatz}${extra}---\n# \`=this.file.name\`\nText zu ${name}.\n`,
+      })
+      const vault = buildVault([
+        nimbleCharacter('Merkmale:\n  - "[[Wuchtschlag]]"\n  - "[[Parieren]]"\n  - "[[Dunkelsicht]]"\n  - "[[Unbekannt]]"\n'),
+        note('Wuchtschlag', 'Einsatz: "[[Aktion]]"\n', 'Beschreibung: Ein harter Schlag.\n'),
+        note('Parieren', 'Einsatz: "[[Reaktion]]"\n'),
+        note('Dunkelsicht', 'Einsatz: Passiv\n'),
+      ])
+      expect(vault.characters[0].frontmatter.features).toEqual([
+        { name: 'Wuchtschlag', description: 'Ein harter Schlag.', usage: 'action' },
+        { name: 'Parieren', description: 'Text zu Parieren.', usage: 'reaction' },
+        { name: 'Dunkelsicht', description: 'Text zu Dunkelsicht.', usage: 'passive' },
+        { name: 'Unbekannt', usage: 'passive' },
+      ])
+    })
+
     it('drops hit dice and their write target', () => {
       const vault = buildVault([nimbleCharacter()])
       expect(vault.characters[0].frontmatter.hit_dice).toBeUndefined()

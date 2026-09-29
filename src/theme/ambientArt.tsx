@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { ShadowFiend } from './ShadowFiend'
 import { WatchingSkull } from './WatchingSkull'
 
 /* Drawn figures of the topic themes' ambient layer (see `AmbientLayer`). Motion, size and most
@@ -90,36 +89,156 @@ const crescentShip = (
   </svg>
 )
 
-/** Two glowing eyes with slit pupils, opening in the dark. */
-const shadowEyes = (
-  <svg viewBox="0 0 44 14">
-    <g fill="currentColor">
-      <path d="M2 7Q10 0 18 7Q10 12 2 7Z" />
-      <path d="M26 7Q34 0 42 7Q34 12 26 7Z" />
+/** Pixel art from rows of palette keys ('.' stays empty), one crisp path per colour. */
+function pixels(rows: string[], palette: Record<string, string>): ReactNode {
+  const runs: Record<string, string> = {}
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; ) {
+      const c = row[x]
+      let end = x + 1
+      while (row[end] === c) end++
+      if (c !== '.') runs[c] = (runs[c] ?? '') + `M${x} ${y}h${end - x}v1h${x - end}z`
+      x = end
+    }
+  })
+  return Object.entries(runs).map(([c, d]) => <path key={c} fill={palette[c]} d={d} />)
+}
+
+/** A dark storm cloud, its underside lit gold by the setting sun. */
+const pixelCloud = (
+  <svg viewBox="0 0 36 11" shapeRendering="crispEdges">
+    {pixels(
+      [
+        '..............cccc..................',
+        '..........cccccKKcc....cccc.........',
+        '.......cccKKKKKKKKccccKKKKcc........',
+        '.....ccKKKKKKKKKKKKKKKKKKKKKcc......',
+        '...ccKKKKKKKKKKKKKKKKKKKKKKKKKcccc..',
+        '..cKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKc.',
+        '.cKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKc',
+        '.gKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKgg',
+        '..ggKKKKKKKKKKKKKKKKKKKKKKKKKKKggg..',
+        '....gggyyggKKKKKKKKKKKKgggyygg......',
+        '.........ggggggggggggggg............',
+      ],
+      { K: '#34322a', c: '#57543f', g: '#d9892f', y: '#ffd36b' },
+    )}
+  </svg>
+)
+
+const DRAGON = { O: '#1c0d08', R: '#b53a24', h: '#e0683c', E: '#ffe45c', y: '#e9b04a', d: '#7a2418' }
+
+/** A red dragon flying to the right, two frames of wing beat (`.pixel-frame-a/b`). */
+const pixelDragon = (
+  <svg viewBox="0 0 34 22" shapeRendering="crispEdges">
+    <g className="pixel-frame-a">
+      {pixels(
+        [
+          '..........O',
+          '..........OO',
+          '.........OdO',
+          '.........OddOO',
+          '........OddddOO',
+          '........OdddOddOO',
+          '.......OdddOdddddOO',
+          '.......OddOdddOddddO',
+          '......OddOdddOddddddO',
+          '......OdOdddOdddddddO',
+          '......OOdddOddddddddO',
+          '.......OddOddddddddO',
+          '........OOddddddddO',
+          '..........OOOOOOOO',
+        ],
+        DRAGON,
+      )}
     </g>
-    <g className="eyes-pupils" fill="#050308">
-      <ellipse cx="10" cy="7" rx="1.2" ry="3.6" />
-      <ellipse cx="34" cy="7" rx="1.2" ry="3.6" />
+    {pixels(
+      [
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '..............................O',
+        '............................OOhO',
+        '...........................OhRRRO',
+        '...........................ORREROO',
+        '..........................ORRRRRRRO',
+        '......................OOOORRRRROOO',
+        '..................OOOORRRRRRRRO',
+        '.O.........OOOOOORRRRRRRRRRRO',
+        'ORO......OORRhhhhRRRRRRRRRO',
+        '.ORO..OOORRRRRRyyyyyyRRRRRO',
+        '..ORRRRRRRRRRyyyyyyyyyyRRO',
+        '...OOOOORRRRRRyyyyyyyyRRO',
+        '........ORRROOOOOOOOORRO',
+        '........OROO.......OORO',
+        '.......OOO.........OOO',
+      ],
+      DRAGON,
+    )}
+    <g className="pixel-frame-b">
+      {pixels(
+        [
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '..........OOOOOOOOO',
+          '..........OdddddddO',
+          '.........OddddddddO',
+          '........OdddddddOO',
+          '.......OddddddOO',
+          '......OdddOOO',
+          '.....OddOO',
+          '....OOO',
+          '...O',
+        ],
+        DRAGON,
+      )}
     </g>
   </svg>
 )
 
-/** A long clawed arm of shadow, reaching in from the left edge. */
-const shadowHand = (
-  <svg viewBox="0 0 220 90">
-    <g fill="#000" stroke="var(--color-primary)" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round">
-      <path d="M0 34Q60 30 116 38L118 56Q60 58 0 60Z" />
-      <path d="M110 36q12-4 18 4 2 10-4 18-8 2-14 0Z" />
-      <g className="hand-fingers">
-        <path d="M118 38q22-16 52-18l26-6-22 12q-28 4-50 18Z" />
-        <path d="M124 42q32-10 60-8l26-2-24 8q-30 2-60 8Z" />
-        <path d="M126 48q30 0 54 6l22 6h-24q-26-4-54-6Z" />
-        <path d="M122 54q22 8 40 18l16 12-20-6q-20-10-42-20Z" />
-      </g>
+const KNIGHT = { O: '#14120c', s: '#c3c6cc', S: '#7f838c', B: '#b53a24', Y: '#e8bd4d' }
+
+/** A little knight marching to the right, sword on the shoulder, two frames of steps. */
+const pixelKnight = (
+  <svg viewBox="0 0 14 17" shapeRendering="crispEdges">
+    {pixels(
+      [
+        '...........O',
+        '..........OsO',
+        '....OOOO..OsO',
+        '...OssssO.OsO',
+        '...OsOOOsOOsO',
+        '...OSsssO.OsO',
+        '..OOOOOOOOOYO',
+        '.OsBBBBBBsOOO',
+        '.OsBBYBBBssO',
+        '.OsBYYYBBsOO',
+        '.OSBBYBBBSO',
+        '.OOBBBBBBOO',
+        '..OSSSSSSO',
+        '..OOOOOOOO',
+      ],
+      KNIGHT,
+    )}
+    <g className="pixel-frame-a">
+      {pixels(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '..OsO..OsO', '..OSO...OSO', '.OOOO...OOOO'], KNIGHT)}
     </g>
-    <g fill="var(--color-accent)" opacity="0.8">
-      <circle cx="70" cy="46" r="1.6" />
-      <circle cx="84" cy="44" r="1.2" />
+    <g className="pixel-frame-b">
+      {pixels(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '...OsOOsO', '...OSOOSO', '..OOOOOOOO'], KNIGHT)}
     </g>
   </svg>
 )
@@ -290,9 +409,9 @@ export const AMBIENT_ART = {
   'crescent-ship': crescentShip,
   'watching-skull': <WatchingSkull />,
   glint,
-  'shadow-eyes': shadowEyes,
-  'shadow-fiend': <ShadowFiend />,
-  'shadow-hand': shadowHand,
+  'pixel-cloud': pixelCloud,
+  'pixel-dragon': pixelDragon,
+  'pixel-knight': pixelKnight,
   unicorn,
   heart,
   cloud,

@@ -32,15 +32,17 @@ function App() {
       <AmbientLayer />
       <ErrorToaster />
       <TooltipLayer />
-      <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/90 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 overflow-x-auto px-4 py-3">
+      {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
+      <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
           <Link
             to="/"
             className="shrink-0 font-display text-xl font-bold tracking-wide text-fg [text-shadow:0_0_16px_color-mix(in_srgb,var(--color-trim)_35%,transparent)]"
           >
-            {t('app.brand')}
+            <span className="sm:hidden">{t('app.brandShort')}</span>
+            <span className="hidden sm:inline">{t('app.brand')}</span>
           </Link>
-          <div className="flex shrink-0 items-center justify-end gap-2.5">
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-2.5">
             {showVaultControls && (
               <>
                 <VaultLoaderControls />

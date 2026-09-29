@@ -420,6 +420,8 @@ export function StartPage() {
   }, [loadFromDirectoryHandle, navigate, t])
 
   const loading = status === 'loading'
+  // With the "currently open" bar showing, the hero shrinks so the page still fits without scrolling.
+  const vaultOpen = source !== 'none' && !loading
 
   const githubCard = (
     <div className="rise-in md:col-span-2" style={{ '--i': 7 } as CSSProperties}>
@@ -450,12 +452,12 @@ export function StartPage() {
 
       <div className="relative z-[1]">
         {/* Hero */}
-        <section className="flex flex-col items-center pb-10 pt-4 text-center sm:pt-8">
+        <section className={`flex flex-col items-center text-center ${vaultOpen ? 'pb-6 pt-0 sm:pt-2' : 'pb-10 pt-4 sm:pt-8'}`}>
           <div className="rise-in relative" style={{ '--i': 0 } as CSSProperties}>
             <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
-            <ArcaneSigil className="size-36 sm:size-44" />
+            <ArcaneSigil className={vaultOpen ? 'size-24 sm:size-28' : 'size-36 sm:size-44'} />
           </div>
-          <p className="rise-in mt-6 text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim" style={{ '--i': 1 } as CSSProperties}>
+          <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim ${vaultOpen ? 'mt-4' : 'mt-6'}`} style={{ '--i': 1 } as CSSProperties}>
             {t('start.eyebrow')}
           </p>
           <h1 className="rise-in start-title mt-3 font-display text-4xl font-bold tracking-wide sm:text-6xl" style={{ '--i': 2 } as CSSProperties}>
@@ -464,11 +466,13 @@ export function StartPage() {
           <p className="rise-in mt-4 max-w-xl text-balance text-fg-muted" style={{ '--i': 3 } as CSSProperties}>
             {t('start.tagline')}
           </p>
-          <div className="rise-in mt-6 flex w-64 items-center gap-3" style={{ '--i': 3 } as CSSProperties} aria-hidden>
-            <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
-            <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
-            <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
-          </div>
+          {!vaultOpen && (
+            <div className="rise-in mt-6 flex w-64 items-center gap-3" style={{ '--i': 3 } as CSSProperties} aria-hidden>
+              <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
+              <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
+              <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
+            </div>
+          )}
         </section>
 
         {!isFileSystemAccessSupported() && (
@@ -487,7 +491,7 @@ export function StartPage() {
           </p>
         )}
 
-        {source !== 'none' && !loading && (
+        {vaultOpen && (
           <div className="rise-in current-vault mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-trim/30 px-5 py-3" style={{ '--i': 3 } as CSSProperties}>
             <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
             <div className="min-w-0 flex-1">

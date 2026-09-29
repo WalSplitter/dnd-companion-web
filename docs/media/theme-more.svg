@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" width="720" height="360">
+<style>
+  @keyframes rise { 0% { transform: translateY(0); opacity: 0 } 20% { opacity: .9 } 100% { transform: translateY(-78px); opacity: 0 } }
+  @keyframes fall { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translateY(96px); opacity: 0 } }
+  @keyframes glow { from { opacity: .55 } to { opacity: 1 } }
+  @keyframes hover { from { transform: translateY(0) } to { transform: translateY(-4px) } }
+  .p { animation-timing-function: linear; animation-iteration-count: infinite }
+  .g { animation: glow 1.8s ease-in-out infinite alternate }
+  .m { animation: hover 2.6s ease-in-out infinite alternate }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+</style>
+<defs>
+  <radialGradient id="halo" cx=".5" cy="0" r=".8"><stop offset="0" stop-color="#d4af5f" stop-opacity=".16"/><stop offset="1" stop-color="#d4af5f" stop-opacity="0"/></radialGradient>
+  <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<rect width="720" height="360" fill="#0f1115"/>
+<rect width="720" height="360" fill="url(#halo)"/>
+<g text-anchor="middle">
+  <text x="360" y="34" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="17" font-weight="700" letter-spacing="3" fill="#e7e9ee">…AND TEN MORE</text>
+  <text x="360" y="52" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="10" letter-spacing="2.5" fill="#9aa0ad">7 PALETTES · 3 TOPIC THEMES</text>
+</g>
+<g stroke="#d4af5f" stroke-opacity=".5"><path d="M176 29h62M482 29h62"/></g>
+<g fill="#d4af5f"><path d="M240 29l4-4 4 4-4 4z"/><path d="M472 29l4-4 4 4-4 4z"/></g>
+<g class="m" style="animation-delay:0.00s">
+  <rect x="22" y="66" width="88" height="110" rx="7" fill="#ecdfc2" stroke="#d2bb8c"/>
+  <path d="M29 66h74a7 7 0 0 1 7 7v7H22v-7a7 7 0 0 1 7-7z" fill="#f7eed8"/>
+  <rect x="29" y="71" width="20" height="4" rx="2" fill="#2b1d10" opacity=".8"/>
+  <circle cx="100" cy="73" r="2.6" fill="#8b1e1e"/>
+  <rect x="30" y="88" width="72" height="52" rx="4" fill="#f7eed8" stroke="#8a6224" stroke-opacity=".55"/>
+  <path d="M30 98v-6a4 4 0 0 1 4-4h6M102 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#8a6224" stroke-width="1.6"/>
+  <circle cx="44" cy="103" r="7" fill="none" stroke="#8a6224" stroke-width="1.4"/>
+  <rect x="55" y="98" width="36" height="4" rx="2" fill="#2b1d10" opacity=".85"/>
+  <rect x="55" y="105" width="24" height="3" rx="1.5" fill="#6e5a42"/>
+  <rect x="37" y="117" width="58" height="3" rx="1.5" fill="#6e5a42" opacity=".7"/>
+  <rect x="37" y="124" width="30" height="9" rx="2.5" fill="#8b1e1e"/>
+  <circle cx="88" cy="128.5" r="3" fill="#245d6b"/>
+  <text x="66" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#2b1d10">Parchment</text>
+</g>
+<g class="m" style="animation-delay:-0.37s">
+  <rect x="120" y="66" width="88" height="110" rx="7" fill="#eaf1fb" stroke="#c4d6ef"/>
+  <path d="M127 66h74a7 7 0 0 1 7 7v7H120v-7a7 7 0 0 1 7-7z" fill="#f7fafe"/>
+  <rect x="127" y="71" width="20" height="4" rx="2" fill="#0f2440" opacity=".8"/>
+  <circle cx="198" cy="73" r="2.6" fill="#38bdf8"/>
+  <rect x="128" y="88" width="72" height="52" rx="4" fill="#f7fafe" stroke="#2f7fc1" stroke-opacity=".55"/>
+  <path d="M128 98v-6a4 4 0 0 1 4-4h6M200 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#2f7fc1" stroke-width="1.6"/>
+  <circle cx="142" cy="103" r="7" fill="none" stroke="#2f7fc1" stroke-width="1.4"/>
+  <rect x="153" y="98" width="36" height="4" rx="2" fill="#0f2440" opacity=".85"/>
+  <rect x="153" y="105" width="24" height="3" rx="1.5" fill="#4c6079"/>
+  <rect x="135" y="117" width="58" height="3" rx="1.5" fill="#4c6079" opacity=".7"/>
+  <rect x="135" y="124" width="30" height="9" rx="2.5" fill="#38bdf8"/>
+  <circle cx="186" cy="128.5" r="3" fill="#7dd3fc"/>
+  <text x="164" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#0f2440">Fluent</text>
+</g>
+<g class="m" style="animation-delay:-0.74s">
+  <rect x="218" y="66" width="88" height="110" rx="7" fill="#140f22" stroke="#3c2f5c"/>
+  <path d="M225 66h74a7 7 0 0 1 7 7v7H218v-7a7 7 0 0 1 7-7z" fill="#1e1833"/>
+  <rect x="225" y="71" width="20" height="4" rx="2" fill="#ede9f7" opacity=".8"/>
+  <circle cx="296" cy="73" r="2.6" fill="#a855f7"/>
+  <rect x="226" y="88" width="72" height="52" rx="4" fill="#1e1833" stroke="#d9b3ff" stroke-opacity=".55"/>
+  <path d="M226 98v-6a4 4 0 0 1 4-4h6M298 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#d9b3ff" stroke-width="1.6"/>
+  <circle cx="240" cy="103" r="7" fill="none" stroke="#d9b3ff" stroke-width="1.4"/>
+  <rect x="251" y="98" width="36" height="4" rx="2" fill="#ede9f7" opacity=".85"/>
+  <rect x="251" y="105" width="24" height="3" rx="1.5" fill="#ab9fc7"/>
+  <rect x="233" y="117" width="58" height="3" rx="1.5" fill="#ab9fc7" opacity=".7"/>
+  <rect x="233" y="124" width="30" height="9" rx="2.5" fill="#a855f7"/>
+  <circle cx="284" cy="128.5" r="3" fill="#e879f9"/>
+  <text x="262" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#ede9f7">Purple</text>
+</g>
+<g class="m" style="animation-delay:-1.11s">
+  <rect x="316" y="66" width="88" height="110" rx="7" fill="#1c1410" stroke="#4a3324"/>
+  <path d="M323 66h74a7 7 0 0 1 7 7v7H316v-7a7 7 0 0 1 7-7z" fill="#241a14"/>
+  <rect x="323" y="71" width="20" height="4" rx="2" fill="#fbe9dd" opacity=".8"/>
+  <circle cx="394" cy="73" r="2.6" fill="#f97316"/>
+  <rect x="324" y="88" width="72" height="52" rx="4" fill="#241a14" stroke="#f4b45f" stroke-opacity=".55"/>
+  <path d="M324 98v-6a4 4 0 0 1 4-4h6M396 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#f4b45f" stroke-width="1.6"/>
+  <circle cx="338" cy="103" r="7" fill="none" stroke="#f4b45f" stroke-width="1.4"/>
+  <rect x="349" y="98" width="36" height="4" rx="2" fill="#fbe9dd" opacity=".85"/>
+  <rect x="349" y="105" width="24" height="3" rx="1.5" fill="#c9a084"/>
+  <rect x="331" y="117" width="58" height="3" rx="1.5" fill="#c9a084" opacity=".7"/>
+  <rect x="331" y="124" width="30" height="9" rx="2.5" fill="#f97316"/>
+  <circle cx="382" cy="128.5" r="3" fill="#fb923c"/>
+  <text x="360" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#fbe9dd">Orange</text>
+</g>
+<g class="m" style="animation-delay:-1.48s">
+  <rect x="414" y="66" width="88" height="110" rx="7" fill="#1c1013" stroke="#4a2429"/>
+  <path d="M421 66h74a7 7 0 0 1 7 7v7H414v-7a7 7 0 0 1 7-7z" fill="#241417"/>
+  <rect x="421" y="71" width="20" height="4" rx="2" fill="#fbe4e6" opacity=".8"/>
+  <circle cx="492" cy="73" r="2.6" fill="#ef4444"/>
+  <rect x="422" y="88" width="72" height="52" rx="4" fill="#241417" stroke="#e9c46a" stroke-opacity=".55"/>
+  <path d="M422 98v-6a4 4 0 0 1 4-4h6M494 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#e9c46a" stroke-width="1.6"/>
+  <circle cx="436" cy="103" r="7" fill="none" stroke="#e9c46a" stroke-width="1.4"/>
+  <rect x="447" y="98" width="36" height="4" rx="2" fill="#fbe4e6" opacity=".85"/>
+  <rect x="447" y="105" width="24" height="3" rx="1.5" fill="#c98d92"/>
+  <rect x="429" y="117" width="58" height="3" rx="1.5" fill="#c98d92" opacity=".7"/>
+  <rect x="429" y="124" width="30" height="9" rx="2.5" fill="#ef4444"/>
+  <circle cx="480" cy="128.5" r="3" fill="#fb7185"/>
+  <text x="458" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#fbe4e6">Red</text>
+</g>
+<g class="m" style="animation-delay:-1.85s">
+  <rect x="512" y="66" width="88" height="110" rx="7" fill="#0f1c12" stroke="#2c4a34"/>
+  <path d="M519 66h74a7 7 0 0 1 7 7v7H512v-7a7 7 0 0 1 7-7z" fill="#16241a"/>
+  <rect x="519" y="71" width="20" height="4" rx="2" fill="#e3fbe9" opacity=".8"/>
+  <circle cx="590" cy="73" r="2.6" fill="#22c55e"/>
+  <rect x="520" y="88" width="72" height="52" rx="4" fill="#16241a" stroke="#b8d67a" stroke-opacity=".55"/>
+  <path d="M520 98v-6a4 4 0 0 1 4-4h6M592 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#b8d67a" stroke-width="1.6"/>
+  <circle cx="534" cy="103" r="7" fill="none" stroke="#b8d67a" stroke-width="1.4"/>
+  <rect x="545" y="98" width="36" height="4" rx="2" fill="#e3fbe9" opacity=".85"/>
+  <rect x="545" y="105" width="24" height="3" rx="1.5" fill="#8fc9a0"/>
+  <rect x="527" y="117" width="58" height="3" rx="1.5" fill="#8fc9a0" opacity=".7"/>
+  <rect x="527" y="124" width="30" height="9" rx="2.5" fill="#22c55e"/>
+  <circle cx="578" cy="128.5" r="3" fill="#4ade80"/>
+  <text x="556" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#e3fbe9">Green</text>
+</g>
+<g class="m" style="animation-delay:-2.22s">
+  <rect x="610" y="66" width="88" height="110" rx="7" fill="#0f1420" stroke="#2c3a54"/>
+  <path d="M617 66h74a7 7 0 0 1 7 7v7H610v-7a7 7 0 0 1 7-7z" fill="#161d2c"/>
+  <rect x="617" y="71" width="20" height="4" rx="2" fill="#e3ecfb" opacity=".8"/>
+  <circle cx="688" cy="73" r="2.6" fill="#3b82f6"/>
+  <rect x="618" y="88" width="72" height="52" rx="4" fill="#161d2c" stroke="#8fc0ff" stroke-opacity=".55"/>
+  <path d="M618 98v-6a4 4 0 0 1 4-4h6M690 130v6a4 4 0 0 1-4 4h-6" fill="none" stroke="#8fc0ff" stroke-width="1.6"/>
+  <circle cx="632" cy="103" r="7" fill="none" stroke="#8fc0ff" stroke-width="1.4"/>
+  <rect x="643" y="98" width="36" height="4" rx="2" fill="#e3ecfb" opacity=".85"/>
+  <rect x="643" y="105" width="24" height="3" rx="1.5" fill="#8fa5c9"/>
+  <rect x="625" y="117" width="58" height="3" rx="1.5" fill="#8fa5c9" opacity=".7"/>
+  <rect x="625" y="124" width="30" height="9" rx="2.5" fill="#3b82f6"/>
+  <circle cx="676" cy="128.5" r="3" fill="#60a5fa"/>
+  <text x="654" y="162" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="10.5" font-weight="700" letter-spacing=".6" fill="#e3ecfb">Blue</text>
+</g>
+<clipPath id="clip0"><rect x="30" y="196" width="212" height="142" rx="9"/></clipPath>
+<g clip-path="url(#clip0)">
+  <rect x="30" y="196" width="212" height="142" fill="#070a0a"/>
+  <ellipse cx="136" cy="348" rx="148.39999999999998" ry="60" fill="#52f08a" opacity=".16" filter="url(#soft)"/>
+  <rect x="35.8" y="307.8" width="4.4" height="4.4" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:4.79s;animation-delay:-1.02s"/>
+  <rect x="216.8" y="317.2" width="3.8" height="3.8" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:5.80s;animation-delay:-0.49s"/>
+  <rect x="47.2" y="327.3" width="4.1" height="4.1" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:4.36s;animation-delay:-4.87s"/>
+  <rect x="145.7" y="322.0" width="3.3" height="3.3" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.65s;animation-delay:-0.10s"/>
+  <rect x="110.0" y="328.0" width="2.4" height="2.4" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:5.08s;animation-delay:-0.53s"/>
+  <rect x="125.4" y="319.2" width="3.1" height="3.1" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:5.39s;animation-delay:-0.47s"/>
+  <rect x="158.9" y="315.7" width="3.6" height="3.6" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.85s;animation-delay:-3.59s"/>
+  <rect x="69.5" y="320.3" width="2.0" height="2.0" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:4.54s;animation-delay:-1.45s"/>
+  <rect x="101.2" y="317.4" width="2.5" height="2.5" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.43s;animation-delay:-2.33s"/>
+  <rect x="142.1" y="302.5" width="3.3" height="3.3" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.34s;animation-delay:-1.97s"/>
+  <rect x="225.8" y="305.0" width="5.2" height="5.2" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.91s;animation-delay:-2.21s"/>
+  <rect x="196.8" y="325.6" width="4.3" height="4.3" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:3.35s;animation-delay:-3.04s"/>
+  <rect x="71.6" y="314.7" width="2.9" height="2.9" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:5.44s;animation-delay:-1.04s"/>
+  <rect x="231.4" y="308.2" width="3.3" height="3.3" fill="#7dffb0" class="p" style="animation-name:rise;animation-duration:4.66s;animation-delay:-0.17s"/>
+</g>
+<rect x="30.5" y="196.5" width="211" height="141" rx="9" fill="none" stroke="#aebcb8" stroke-opacity=".45"/>
+<path d="M31 214v-8a9 9 0 0 1 9-9h8M241 320v8a9 9 0 0 1-9 9h-8" fill="none" stroke="#aebcb8" stroke-width="2"/>
+<g transform="translate(116 218) scale(1.667)" fill="none" stroke="#52f08a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" color="#52f08a" class="g" style="animation-delay:0s">
+  <g filter="url(#soft)" opacity=".8"><path d="M12 3a7 7 0 0 0-7 7c0 2.4 1.2 4.1 2.5 5v2.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V15c1.3-.9 2.5-2.6 2.5-5a7 7 0 0 0-7-7z"/><circle cx="9.3" cy="10.8" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.7" cy="10.8" r="1.5" fill="currentColor" stroke="none"/><path d="M10.5 18.5v2.5M13.5 18.5v2.5"/></g><path d="M12 3a7 7 0 0 0-7 7c0 2.4 1.2 4.1 2.5 5v2.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V15c1.3-.9 2.5-2.6 2.5-5a7 7 0 0 0-7-7z"/><circle cx="9.3" cy="10.8" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.7" cy="10.8" r="1.5" fill="currentColor" stroke="none"/><path d="M10.5 18.5v2.5M13.5 18.5v2.5"/>
+</g>
+<text x="136" y="294" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="15" font-weight="700" letter-spacing="1.2" fill="#e2ebe8">Necromancer</text>
+<text x="136" y="312" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="10" fill="#8a9a96">tomb world awakening</text>
+<clipPath id="clip1"><rect x="254" y="196" width="212" height="142" rx="9"/></clipPath>
+<g clip-path="url(#clip1)">
+  <rect x="254" y="196" width="212" height="142" fill="#0d0806"/>
+  <ellipse cx="360" cy="348" rx="148.39999999999998" ry="60" fill="#f25c1f" opacity=".16" filter="url(#soft)"/>
+  <circle cx="321.2" cy="319.0" r="1.6" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.45s;animation-delay:-1.25s"/>
+  <circle cx="284.7" cy="307.6" r="1.8" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.42s;animation-delay:-3.85s"/>
+  <circle cx="421.2" cy="308.8" r="1.3" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:4.59s;animation-delay:-0.28s"/>
+  <circle cx="370.6" cy="331.4" r="1.0" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.21s;animation-delay:-0.19s"/>
+  <circle cx="341.3" cy="314.9" r="1.3" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.34s;animation-delay:-3.00s"/>
+  <circle cx="433.1" cy="307.5" r="2.0" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.25s;animation-delay:-2.74s"/>
+  <circle cx="355.0" cy="327.7" r="1.2" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.78s;animation-delay:-2.81s"/>
+  <circle cx="306.1" cy="307.8" r="2.1" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.44s;animation-delay:-5.50s"/>
+  <circle cx="322.6" cy="307.3" r="1.3" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.17s;animation-delay:-2.41s"/>
+  <circle cx="296.3" cy="326.1" r="1.1" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:4.47s;animation-delay:-5.97s"/>
+  <circle cx="295.3" cy="318.8" r="2.2" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.79s;animation-delay:-1.61s"/>
+  <circle cx="278.1" cy="308.8" r="1.7" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:5.80s;animation-delay:-4.58s"/>
+  <circle cx="420.9" cy="308.9" r="1.1" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.24s;animation-delay:-5.84s"/>
+  <circle cx="265.3" cy="306.0" r="1.4" fill="#ffd08a" class="p" style="animation-name:rise;animation-duration:3.50s;animation-delay:-0.64s"/>
+</g>
+<rect x="254.5" y="196.5" width="211" height="141" rx="9" fill="none" stroke="#e0a93b" stroke-opacity=".45"/>
+<path d="M255 214v-8a9 9 0 0 1 9-9h8M465 320v8a9 9 0 0 1-9 9h-8" fill="none" stroke="#e0a93b" stroke-width="2"/>
+<g transform="translate(340 218) scale(1.667)" fill="none" stroke="#f25c1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" color="#f25c1f" class="g" style="animation-delay:-0.6s">
+  <g filter="url(#soft)" opacity=".8"><path d="M3 15c2-4.5 6-7 10.5-7L17 4l.5 4 4 1-3 2.5c.8 2.2.2 4.5-1.8 6H9.5L7 20l-1-3.5C4 16.5 3 16 3 15z"/><circle cx="14.5" cy="11.5" r="1" fill="currentColor" stroke="none"/><path d="M8 14.5c2 .4 4 .3 6-.5"/></g><path d="M3 15c2-4.5 6-7 10.5-7L17 4l.5 4 4 1-3 2.5c.8 2.2.2 4.5-1.8 6H9.5L7 20l-1-3.5C4 16.5 3 16 3 15z"/><circle cx="14.5" cy="11.5" r="1" fill="currentColor" stroke="none"/><path d="M8 14.5c2 .4 4 .3 6-.5"/>
+</g>
+<text x="360" y="294" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="15" font-weight="700" letter-spacing="1.2" fill="#f6e7d6">Dragon Hoard</text>
+<text x="360" y="312" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="10" fill="#bf9a7f">embers over the gold</text>
+<clipPath id="clip2"><rect x="478" y="196" width="212" height="142" rx="9"/></clipPath>
+<g clip-path="url(#clip2)">
+  <rect x="478" y="196" width="212" height="142" fill="#0c1612"/>
+  <ellipse cx="584" cy="348" rx="148.39999999999998" ry="60" fill="#e3b95c" opacity=".16" filter="url(#soft)"/>
+  <circle cx="537.8" cy="192.0" r="1.4" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:4.32s;animation-delay:-5.45s"/>
+  <circle cx="668.9" cy="192.0" r="2.2" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.32s;animation-delay:-3.30s"/>
+  <circle cx="501.5" cy="192.0" r="2.6" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.31s;animation-delay:-0.46s"/>
+  <circle cx="518.4" cy="192.0" r="1.2" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.60s;animation-delay:-3.09s"/>
+  <circle cx="583.5" cy="192.0" r="1.0" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:3.25s;animation-delay:-1.07s"/>
+  <circle cx="661.1" cy="192.0" r="2.2" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.17s;animation-delay:-2.72s"/>
+  <circle cx="553.4" cy="192.0" r="1.5" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.50s;animation-delay:-4.35s"/>
+  <circle cx="598.2" cy="192.0" r="1.3" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.79s;animation-delay:-4.48s"/>
+  <circle cx="626.5" cy="192.0" r="2.5" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:4.80s;animation-delay:-3.02s"/>
+  <circle cx="671.2" cy="192.0" r="1.4" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:4.44s;animation-delay:-4.04s"/>
+  <circle cx="526.8" cy="192.0" r="1.7" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.72s;animation-delay:-0.13s"/>
+  <circle cx="611.7" cy="192.0" r="2.3" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:3.05s;animation-delay:-4.33s"/>
+  <circle cx="495.2" cy="192.0" r="2.2" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:3.24s;animation-delay:-5.17s"/>
+  <circle cx="492.2" cy="192.0" r="1.0" fill="#ffffff" class="p" style="animation-name:fall;animation-duration:5.13s;animation-delay:-4.80s"/>
+</g>
+<rect x="478.5" y="196.5" width="211" height="141" rx="9" fill="none" stroke="#e3b95c" stroke-opacity=".45"/>
+<path d="M479 214v-8a9 9 0 0 1 9-9h8M689 320v8a9 9 0 0 1-9 9h-8" fill="none" stroke="#e3b95c" stroke-width="2"/>
+<g transform="translate(564 218) scale(1.667)" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" color="#dc2626" class="g" style="animation-delay:-1.2s">
+  <g filter="url(#soft)" opacity=".8"><path d="M12 3l5 6h-3l4 5h-3l4 5H5l4-5H6l4-5H7z"/><path d="M12 19v2.5"/></g><path d="M12 3l5 6h-3l4 5h-3l4 5H5l4-5H6l4-5H7z"/><path d="M12 19v2.5"/>
+</g>
+<text x="584" y="294" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Palatino Linotype', Georgia, serif" font-size="15" font-weight="700" letter-spacing="1.2" fill="#f4efe6">Christmas</text>
+<text x="584" y="312" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="10" fill="#a7b5a8">snow and a passing sleigh</text>
+</svg>

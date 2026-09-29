@@ -63,7 +63,7 @@ export function CharacterSheet({
             <HitPoints character={character} characterPath={characterPath} stats={<CombatStats character={character} />} />
           </section>
 
-          <div role="tablist" className="flex gap-1 border-b border-trim/25">
+          <div role="tablist" className="flex gap-1 whitespace-nowrap border-b border-trim/25">
             {tabs.map((entry) => (
               <button
                 key={entry.key}
@@ -90,11 +90,13 @@ export function CharacterSheet({
                 <Attacks character={character} />
                 {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <Conditions character={character} characterPath={characterPath} />
-                <FeaturesTraits character={character} />
+                {!character.nimble_attributes && <FeaturesTraits character={character} />}
                 <About body={body} />
               </div>
             </div>
           )}
+          {/* Nimble features get their own full-width section, split into actions/reactions/passive. */}
+          {tab === 'sheet' && character.nimble_attributes && <FeaturesTraits character={character} />}
 
           {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
           {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}

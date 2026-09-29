@@ -1,4 +1,4 @@
-/* Topic themes: a palette (like tokens.css) plus a backdrop motif on `body`, themed `.rpg-panel`
+/* Topic themes: a palette (like tokens.css) plus a backdrop motif on `body::before`, themed `.rpg-panel`
  * corners and ambient particles (AmbientLayer). `ThemeEffect` sets `data-theme-kind="topic"` on
  * <html> for them, which swaps the gilded corner brackets for the theme's `--topic-corner` mask.
  * Corners and motifs are tinted from the tokens, so they follow the palette. Unlayered on purpose,
@@ -118,7 +118,7 @@
 
 /* A tomb world along the bottom (pyramids, pylons, a capstone beam) in gauss-green haze, faint
  * scan lines over everything, darkened edges. */
-[data-theme='necromancer'] body {
+[data-theme='necromancer'] body::before {
   background-image:
     radial-gradient(ellipse 70% 30% at 20% 104%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%),
     radial-gradient(ellipse 70% 28% at 82% 106%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 70%),
@@ -382,7 +382,7 @@
 }
 
 /* Full moon top right, a pumpkin-lit horizon, violet haze. */
-[data-theme='halloween'] body {
+[data-theme='halloween'] body::before {
   background-image:
     radial-gradient(
       circle at 88% 11%,
@@ -430,199 +430,296 @@
   }
 }
 
-/* ---------- Shadow Master: near-black violet, cold silver, drifting shadow veils ---------- */
+/* ---------- Pixel Quest: an 8-bit castle at sunset, pixel type, blocky bevelled chrome ---------- */
 
-[data-theme='shadowmaster'] {
-  --color-bg: #07060b;
-  --color-surface: #0f0d16;
-  --color-surface-2: #15121f;
-  --color-border: #262136;
-  --color-fg: #dcd8e8;
-  --color-fg-muted: #8a84a0;
-  --color-primary: #8b7cf6;
-  --color-primary-fg: #07060b;
-  --color-accent: #a5b4fc;
-  --color-danger: #f87171;
-  --color-success: #4ade80;
-  --color-trim: #b8bccb;
-  --color-warning: #f59e0b;
-  --topic-corner-size: 1.9rem;
-  /* Smoke tendrils curling out of the corner. */
-  --topic-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='white' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M2 2C9 3 10 9 16 10S26 8 31 12'/%3E%3Cpath d='M2 2C3 9 9 10 10 16S8 26 12 31'/%3E%3Cpath d='M2 2C7 6 12 6 15 3.5M2 2C6 7 6 12 3.5 15' stroke-width='1'/%3E%3Cpath d='M2 0L4 2L2 4L0 2Z' fill='white' stroke='none'/%3E%3C/svg%3E");
+[data-theme='pixelquest'] {
+  --color-bg: #15130d;
+  --color-surface: #221f17;
+  --color-surface-2: #2d291e;
+  --color-border: #4b4631;
+  --color-fg: #f4e8c8;
+  --color-fg-muted: #b3a77f;
+  --color-primary: #e8742a;
+  --color-primary-fg: #1a1208;
+  --color-accent: #8fcf3c;
+  --color-danger: #e5482c;
+  --color-success: #8fcf3c;
+  --color-trim: #e0b54c;
+  --color-warning: #f2b632;
+  --pixel-ink: #0b0906;
+  --pixel-font: 'Pixelify Sans', ui-monospace, 'Cascadia Mono', monospace;
+  --font-display: var(--pixel-font);
+  --font-numeric: var(--pixel-font);
+  --font-sans: var(--pixel-font);
+  --topic-corner-size: 1.25rem;
+  /* A blocky bracket with a notch and a gem pixel, drawn on a 16px grid. */
+  --topic-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath fill='white' d='M0 0h12v3H3v9H0zM5 5h3v3H5zM13 0h2v2h-2zM0 13h2v2H0z'/%3E%3C/svg%3E");
 }
 
-/* A single cold light from above, everything else swallowed by darkness. */
-[data-theme='shadowmaster'] body {
+/* The castle on its hill in front of a banded, dithered sunset; a pine forest along the bottom. */
+[data-theme='pixelquest'] body::before {
   background-image:
-    radial-gradient(ellipse 45% 55% at 50% -14%, color-mix(in srgb, var(--color-trim) 10%, transparent), transparent 70%),
-    radial-gradient(ellipse 40% 35% at 100% 100%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 70%),
-    radial-gradient(ellipse 130% 100% at 50% 40%, transparent 45%, rgb(0 0 0 / 0.65));
+    url('./art/pixelforest.svg'),
+    url('./art/pixelcastle.svg'),
+    repeating-conic-gradient(rgb(0 0 0 / 0.16) 0 25%, transparent 0 50%),
+    radial-gradient(
+      ellipse 80% 58% at 74% 104%,
+      color-mix(in srgb, #f5b93a 42%, transparent) 0 16%,
+      color-mix(in srgb, #e8742a 34%, transparent) 16% 29%,
+      color-mix(in srgb, #9c3f1e 28%, transparent) 29% 42%,
+      color-mix(in srgb, #4d2a22 22%, transparent) 42% 56%,
+      transparent 56%
+    ),
+    linear-gradient(#100e0a 0 18%, #14110c 18% 38%, #19140e 38% 58%, #1f1810 58% 78%, #261b10 78%);
+  background-size:
+    auto clamp(64px, 11vh, 120px),
+    auto min(40vh, 44vw, 360px),
+    4px 4px,
+    auto,
+    auto;
+  background-position:
+    center bottom,
+    right 3vw bottom clamp(20px, 4.5vh, 48px),
+    0 0,
+    0 0,
+    0 0;
+  background-repeat: repeat-x, no-repeat, repeat, no-repeat, no-repeat;
 }
 
-/* Veils: large blurred violet shadows slowly drifting and dissolving. */
-[data-theme='shadowmaster'] .ambient-particle {
-  top: calc(var(--r1) * 90% - 10%);
-  left: calc(var(--r3) * 100% - 15%);
-  width: calc(220px + var(--r2) * 220px);
-  aspect-ratio: 1.6;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent);
-  filter: blur(18px);
-  opacity: 0;
-  animation: shadow-drift calc(26s + var(--r2) * 20s) ease-in-out calc(var(--r3) * -40s) infinite;
+/* Pixel type everywhere, including the display and number faces. */
+[data-theme='pixelquest'] body,
+[data-theme='pixelquest'] .font-display,
+[data-theme='pixelquest'] .font-num,
+[data-theme='pixelquest'] .rpg-tab,
+[data-theme='pixelquest'] .rpg-button {
+  font-family: var(--pixel-font);
 }
-@keyframes shadow-drift {
-  0% {
-    transform: translate(0, 0) scale(0.9);
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(calc(var(--r1) * 30vw - 15vw), calc(var(--r2) * 16vh - 8vh)) scale(1.15);
-    opacity: 0;
-  }
+[data-theme='pixelquest'] .font-display {
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 0.55);
+}
+[data-theme='pixelquest'] ::selection {
+  background: var(--color-trim);
+  color: var(--pixel-ink);
 }
 
-/* Eyes: shadow things opening their glowing eyes in the dark, blinking, looking around. */
-[data-theme='shadowmaster'] .ambient-shadow-eyes {
-  top: calc(4% + var(--r1) * 86%);
-  left: calc(var(--r3) * 94%);
-  width: calc(24px + var(--r2) * 30px);
-  color: #c4b5fd;
-  filter: drop-shadow(0 0 5px currentColor);
-  opacity: 0;
-  animation: eyes-open calc(9s + var(--r2) * 9s) ease-in-out calc(var(--r1) * -18s) infinite;
+/* No rounded corners in 8 bits (`:root` lifts it over the start page's own radii); portraits get
+ * chunky pixels too. */
+:root[data-theme='pixelquest'] *,
+:root[data-theme='pixelquest'] *::before,
+:root[data-theme='pixelquest'] *::after,
+:root[data-theme='pixelquest'] ::-webkit-scrollbar-thumb {
+  border-radius: 0;
 }
-[data-theme='shadowmaster'] .ambient-shadow-eyes:nth-child(3n) {
-  color: #f87171;
+[data-theme='pixelquest'] img {
+  image-rendering: pixelated;
 }
-[data-theme='shadowmaster'] .ambient-shadow-eyes:nth-child(4n + 1) {
-  color: #fde047;
-}
-.eyes-pupils {
-  animation: eyes-look 2.6s ease-in-out infinite alternate;
-}
-@keyframes eyes-open {
-  0%,
-  46% {
-    opacity: 0;
-    scale: 1 0;
-  }
-  52%,
-  64% {
-    opacity: 0.85;
-    scale: 1 1;
-  }
-  66% {
-    scale: 1 0.1;
-  }
-  68%,
-  86% {
-    opacity: 0.85;
-    scale: 1 1;
-  }
-  92%,
-  100% {
-    opacity: 0;
-    scale: 1 0;
-  }
-}
-@keyframes eyes-look {
-  from {
-    transform: translateX(-2.5px);
-  }
-  to {
-    transform: translateX(2.5px);
-  }
+[data-theme='pixelquest'] ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-trim) 55%, transparent);
 }
 
-/* The fiend: a shadow creature looming out of the fog in the bottom-right corner, breathing,
- * its arms slowly reaching; its eyes follow the pointer (see ShadowFiend.tsx). */
-[data-theme='shadowmaster'] .ambient-shadow-fiend {
-  right: calc(-1 * clamp(20px, 4vw, 60px));
-  bottom: -8vh;
-  width: min(62vh, 520px, 70vw);
-  opacity: 0.9;
-  transform-origin: 50% 100%;
-  animation: fiend-breathe 7s ease-in-out infinite alternate;
+/* Windows like an old console RPG: ink outline, a gold inner rule, a hard drop shadow. */
+[data-theme='pixelquest'] .rpg-panel {
+  border: 2px solid var(--pixel-ink);
+  background: var(--color-surface);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--color-trim) 70%, var(--color-surface)),
+    inset 0 0 0 4px var(--pixel-ink),
+    4px 4px 0 rgb(0 0 0 / 0.55);
 }
-.shadow-fiend-fog {
-  animation: glow-pulse 6s ease-in-out infinite alternate;
+[data-theme='pixelquest'] .rpg-panel::before,
+[data-theme='pixelquest'] .rpg-panel::after {
+  opacity: 0.95;
 }
-.shadow-fiend-arm-l,
-.shadow-fiend-arm-r {
-  transform-box: fill-box;
-  animation: fiend-reach 6s ease-in-out infinite alternate;
-}
-.shadow-fiend-arm-l {
-  transform-origin: 100% 0;
-}
-.shadow-fiend-arm-r {
-  transform-origin: 0 100%;
-  animation-delay: -3s;
-}
-.shadow-fiend-eye {
-  transition: transform 0.4s ease-out;
-}
-@keyframes fiend-breathe {
-  from {
-    transform: scale(1) translateY(0);
-  }
-  to {
-    transform: scale(1.03) translateY(-1.5%);
-  }
-}
-@keyframes fiend-reach {
-  from {
-    transform: rotate(-4deg);
-  }
-  to {
-    transform: rotate(5deg);
-  }
+[data-theme='pixelquest'] .combobox-list {
+  border: 2px solid var(--pixel-ink);
+  background: var(--color-surface);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--color-trim) 70%, var(--color-surface)),
+    4px 4px 0 rgb(0 0 0 / 0.55);
 }
 
-/* Flyby: a clawed shadow arm reaching in from the edge, groping, and pulling back. */
-.ambient-flyby.ambient-shadow-hand,
-.ambient-flyby.ambient-shadow-hand.is-rtl {
-  top: calc(12% + var(--fy) * 66%);
-  width: clamp(200px, 30vw, 380px);
-  animation: hand-reach 9s ease-in-out forwards;
+/* Start page portals: the same window frame, lifting on hover. */
+[data-theme='pixelquest'] .portal-card {
+  padding: 2px;
+  background: var(--pixel-ink);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.55);
 }
-.ambient-flyby.ambient-shadow-hand.is-rtl {
-  left: auto;
-  right: 0;
+[data-theme='pixelquest'] .portal-card:hover,
+[data-theme='pixelquest'] .portal-card:focus-within {
+  box-shadow: 4px 9px 0 rgb(0 0 0 / 0.55);
 }
-.hand-fingers {
-  transform-box: fill-box;
-  transform-origin: 0 50%;
-  animation: finger-grope 1.3s ease-in-out infinite alternate;
+[data-theme='pixelquest'] .portal-card-inner {
+  background: var(--color-surface);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--portal) 75%, var(--color-surface)),
+    inset 0 0 0 4px var(--pixel-ink);
 }
-@keyframes hand-reach {
-  0%,
-  100% {
-    translate: calc(var(--dir) * -100%) 0;
+
+/* Bevelled blocks: light top-left edge, dark bottom-right edge. */
+[data-theme='pixelquest'] .rpg-plate {
+  border: 2px solid var(--pixel-ink);
+  background: var(--color-surface-2);
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--color-trim) 30%, var(--color-surface-2)),
+    inset -2px -2px 0 color-mix(in srgb, black 40%, var(--color-surface-2));
+}
+[data-theme='pixelquest'] .rpg-medallion,
+[data-theme='pixelquest'] .rpg-medallion-muted {
+  border: 2px solid var(--pixel-ink);
+  background: var(--color-surface-2);
+  box-shadow:
+    inset 0 0 0 2px var(--color-trim),
+    inset 3px 3px 0 2px color-mix(in srgb, var(--color-trim) 30%, var(--color-surface-2)),
+    3px 3px 0 rgb(0 0 0 / 0.55);
+}
+[data-theme='pixelquest'] .rpg-medallion-muted {
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--color-trim) 35%, var(--color-border)),
+    3px 3px 0 rgb(0 0 0 / 0.55);
+}
+[data-theme='pixelquest'] .rpg-medallion-roll:hover .rpg-medallion,
+[data-theme='pixelquest'] .rpg-medallion-roll:focus-visible .rpg-medallion {
+  background: color-mix(in srgb, var(--color-trim) 16%, var(--color-surface-2));
+  box-shadow:
+    inset 0 0 0 2px var(--color-trim),
+    0 0 0 2px var(--color-trim),
+    3px 3px 0 2px rgb(0 0 0 / 0.55);
+}
+[data-theme='pixelquest'] .rpg-slot {
+  border: 2px dashed color-mix(in srgb, var(--color-trim) 40%, transparent);
+  box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.35);
+}
+[data-theme='pixelquest'] .rpg-input {
+  border: 2px solid var(--pixel-ink);
+  background: color-mix(in srgb, black 30%, var(--color-surface));
+  box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.45);
+}
+[data-theme='pixelquest'] .rpg-input:focus {
+  border-color: var(--color-trim);
+  box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.45);
+}
+[data-theme='pixelquest'] .rpg-button {
+  border: 2px solid var(--pixel-ink);
+  background: var(--color-primary);
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, white 35%, var(--color-primary)),
+    inset -2px -2px 0 color-mix(in srgb, black 35%, var(--color-primary)),
+    3px 3px 0 rgb(0 0 0 / 0.55);
+  transition: none;
+}
+[data-theme='pixelquest'] .rpg-button:active:not(:disabled) {
+  translate: 2px 2px;
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, black 35%, var(--color-primary)),
+    1px 1px 0 rgb(0 0 0 / 0.55);
+}
+
+/* Menu tabs: a solid underline and a blinking cursor arrow in front of the active one. */
+[data-theme='pixelquest'] .rpg-tab[aria-selected='true'] {
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+}
+[data-theme='pixelquest'] .rpg-tab[aria-selected='true']::after {
+  height: 3px;
+  background: var(--color-trim);
+  box-shadow: none;
+}
+[data-theme='pixelquest'] .rpg-tab[aria-selected='true']::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.2rem;
+  width: 0.4rem;
+  height: 0.6rem;
+  translate: 0 -50%;
+  background: var(--color-trim);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme='pixelquest'] .rpg-tab[aria-selected='true']::before {
+    animation: pixel-blink 1s steps(1) infinite;
   }
-  35% {
-    translate: calc(var(--dir) * -32%) 0;
-  }
+}
+@keyframes pixel-blink {
   50% {
-    translate: calc(var(--dir) * -36%) 0;
-  }
-  65% {
-    translate: calc(var(--dir) * -28%) 0;
+    opacity: 0;
   }
 }
-@keyframes finger-grope {
+
+/* Two-frame sprite animation (wing beats, steps): the frames take turns. */
+.pixel-frame-a,
+.pixel-frame-b {
+  animation: pixel-blink 0.5s steps(1) infinite;
+}
+.pixel-frame-b {
+  animation-delay: -0.25s;
+}
+
+/* Fireflies: single glowing pixels hopping about over the meadow, blinking. */
+[data-theme='pixelquest'] .ambient-particle {
+  bottom: calc(3vh + var(--r1) * 32vh);
+  left: calc(var(--r3) * 100%);
+  width: 4px;
+  aspect-ratio: 1;
+  background: #ffe066;
+  box-shadow: 0 0 0 3px rgb(245 193 74 / 0.3);
+  animation:
+    firefly-wander calc(8s + var(--r2) * 8s) steps(20) calc(var(--r1) * -16s) infinite alternate,
+    pixel-blink calc(1.4s + var(--r3) * 2s) steps(1) infinite;
+}
+[data-theme='pixelquest'] .ambient-particle:nth-child(3n) {
+  width: 6px;
+}
+@keyframes firefly-wander {
+  50% {
+    translate: calc(var(--r3) * 60px - 30px) -7vh;
+  }
+  100% {
+    translate: calc(var(--r1) * 90px - 45px) -13vh;
+  }
+}
+
+/* Storm clouds: dark and gold-rimmed, hopping across the sky pixel by pixel. */
+[data-theme='pixelquest'] .ambient-pixel-cloud {
+  top: calc(var(--r1) * 28%);
+  left: 0;
+  width: calc(130px + var(--r2) * 150px);
+  opacity: 0.6;
+  animation: pixel-cloud-drift calc(100s + var(--r2) * 70s) steps(400) calc(var(--r3) * -170s) infinite;
+}
+@keyframes pixel-cloud-drift {
   from {
-    transform: rotate(-5deg);
+    translate: -100% 0;
   }
   to {
-    transform: rotate(7deg) scale(0.94, 1.08);
+    translate: 100vw 0;
+  }
+}
+
+/* Flybys move in coarse steps, like an old game. A dragon beats its wings across the sky ... */
+[data-theme='pixelquest'] .ambient-pixel-dragon {
+  --flyby-time: 16s;
+  top: calc(5% + var(--fy) * 26%);
+  width: clamp(96px, 11vw, 150px);
+  animation-timing-function: steps(160);
+  filter: drop-shadow(4px 4px 0 rgb(0 0 0 / 0.3));
+}
+[data-theme='pixelquest'] .ambient-pixel-dragon .ambient-flyby-art {
+  animation: pixel-bob 1s steps(2) infinite alternate;
+}
+/* ... or a knight marches along the forest's edge. */
+[data-theme='pixelquest'] .ambient-pixel-knight {
+  --flyby-time: 30s;
+  bottom: clamp(4px, 1.6vh, 16px);
+  width: clamp(34px, 4.4vh, 46px);
+  animation-timing-function: steps(240);
+  filter: drop-shadow(3px 3px 0 rgb(0 0 0 / 0.35));
+}
+[data-theme='pixelquest'] .ambient-pixel-knight .ambient-flyby-art {
+  animation: pixel-bob 0.25s steps(1) infinite alternate;
+}
+@keyframes pixel-bob {
+  to {
+    transform: translateY(-6%);
   }
 }
 
@@ -648,7 +745,7 @@
 }
 
 /* Fire glow rising from a hoard of gold along the bottom, smoke-dark above. */
-[data-theme='dragon'] body {
+[data-theme='dragon'] body::before {
   background-image:
     radial-gradient(ellipse 90% 30% at 50% 108%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 70%),
     url('./art/hoard.svg'),
@@ -732,7 +829,7 @@
 }
 
 /* A pastel rainbow rising bottom left, soft pastel clouds in all four corners. */
-[data-theme='unicorn'] body {
+[data-theme='unicorn'] body::before {
   background-image:
     radial-gradient(
       circle at 4% 108%,
@@ -929,7 +1026,7 @@
 }
 
 /* Warm hearth glow from below, cold winter sky above. */
-[data-theme='christmas'] body {
+[data-theme='christmas'] body::before {
   background-image:
     radial-gradient(ellipse 80% 30% at 50% 108%, color-mix(in srgb, var(--color-trim) 16%, transparent), transparent 70%),
     radial-gradient(ellipse 60% 40% at 50% -10%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%),
@@ -1033,7 +1130,7 @@
 }
 
 /* The sun top right, a turquoise sea shimmering along the bottom. */
-[data-theme='summer'] body {
+[data-theme='summer'] body::before {
   background-image:
     radial-gradient(
       circle at 90% 6%,
@@ -1095,7 +1192,7 @@
 }
 
 /* Blossom haze top left, fresh meadow green along the bottom. */
-[data-theme='spring'] body {
+[data-theme='spring'] body::before {
   background-image:
     radial-gradient(ellipse 55% 40% at 0% 0%, color-mix(in srgb, #f9a8d4 40%, transparent), transparent 70%),
     radial-gradient(ellipse 45% 35% at 100% 5%, color-mix(in srgb, #fbcfe8 45%, transparent), transparent 70%),

@@ -4,6 +4,8 @@
 @import './theme/startPage.css';
 @import '@fontsource/cinzel/500.css';
 @import '@fontsource/cinzel/700.css';
+@import '@fontsource/pixelify-sans/400.css';
+@import '@fontsource/pixelify-sans/700.css';
 
 @theme inline {
   --color-bg: var(--color-bg);
@@ -31,17 +33,36 @@ body,
   height: 100%;
 }
 
+/* Nothing may widen the page sideways (a swipe would reveal a cut-off strip on phones). `clip`
+ * rather than `hidden`, so no scroll container is created and the sticky header keeps working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--color-bg);
-  background-image:
-    radial-gradient(ellipse 80% 40% at 50% -5%, color-mix(in srgb, var(--color-trim) 12%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 70%);
-  background-attachment: fixed;
   color: var(--color-fg);
   font-family: var(--font-sans);
   transition:
     background-color 150ms ease,
     color 150ms ease;
+}
+
+/* The theme backdrop (every theme sets its `background-image` here) sits on its own fixed layer
+ * instead of `background-attachment: fixed` on body: mobile browsers repaint a fixed body
+ * background on every scroll frame, which made the page lag behind the finger. A fixed layer is
+ * composited once and just stays put. Same z-index as `.ambient-layer`, which follows it in the
+ * DOM and so draws on top. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%, color-mix(in srgb, var(--color-trim) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 70%);
 }
 
 * {
@@ -233,6 +254,14 @@ body {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--color-trim), transparent);
     box-shadow: 0 0 10px var(--color-trim);
+  }
+  /* Phones: all tabs must fit one row, so tighter padding and tracking. */
+  @media (width < 40rem) {
+    .rpg-tab {
+      padding-inline: 0.6rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+    }
   }
 
   /* Recessed socket: an inventory slot, empty or waiting for a drop. */

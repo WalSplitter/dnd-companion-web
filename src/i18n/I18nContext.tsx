@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DICTIONARIES, I18nContext, interpolate, type I18nContextValue, type Lang } from './useI18n'
 
 const STORAGE_KEY = 'dnd-companion-lang'
@@ -24,6 +24,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       // Non-fatal — the choice just won't persist across reloads.
     }
   }, [])
+
+  // Keeps <html lang> in step so the browser hyphenates (and screen readers pronounce) in that language.
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
 
   const value = useMemo<I18nContextValue>(() => {
     const dict = DICTIONARIES[lang]

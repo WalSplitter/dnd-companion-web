@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'
 export type ColorThemeName = 'light' | 'dark' | 'parchment' | 'fluent' | 'purple' | 'orange' | 'red' | 'green' | 'blue'
 /** Topic themes go beyond a palette: a backdrop motif, themed panel corners and ambient particles
  * (see `topics.css` and `AmbientLayer`). */
-export type TopicThemeName = 'necromancer' | 'shadowmaster' | 'dragon' | 'unicorn' | 'halloween' | 'christmas' | 'summer' | 'spring'
+export type TopicThemeName = 'necromancer' | 'pixelquest' | 'dragon' | 'unicorn' | 'halloween' | 'christmas' | 'summer' | 'spring'
 export type ThemeName = ColorThemeName | TopicThemeName
 
 export interface ThemeEntry<K extends ThemeName = ThemeName> {
@@ -31,7 +31,7 @@ export const THEMES: ThemeEntry<ColorThemeName>[] = [
 /** Shown as icons (tinted with `swatch`) in the switcher's second row. */
 export const TOPIC_THEMES: ThemeEntry<TopicThemeName>[] = [
   { key: 'necromancer', label: 'Necromancer', swatch: '#52f08a' },
-  { key: 'shadowmaster', label: 'Shadow Master', swatch: '#8b7cf6' },
+  { key: 'pixelquest', label: 'Pixel Quest', swatch: '#e8742a' },
   { key: 'dragon', label: 'Dragon Hoard', swatch: '#f25c1f' },
   { key: 'unicorn', label: 'Unicorn', swatch: '#e879f9' },
   { key: 'halloween', label: 'Halloween', swatch: '#f97316' },
@@ -60,6 +60,15 @@ export const useThemeStore = create<ThemeState>()(
       setTheme: (theme) => set({ theme }),
       setEffects: (effects) => set({ effects }),
     }),
-    { name: 'dnd-companion-theme' },
+    {
+      name: 'dnd-companion-theme',
+      version: 1,
+      // v1 replaced the Shadow Master theme with Pixel Quest.
+      migrate: (persisted, version) => {
+        const state = persisted as ThemeState
+        if (version < 1 && (state.theme as string) === 'shadowmaster') state.theme = 'pixelquest'
+        return state
+      },
+    },
   ),
 )

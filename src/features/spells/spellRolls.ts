@@ -1,6 +1,6 @@
 import { formatDiceExpression, parseDiceExpression } from '../../dice/notation'
-import { abilityModifier, nimbleAttributeValue, totalCharacterLevel } from '../../vault/deriveStats'
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter, type SpellFrontmatter } from '../../vault/types'
+import { spellcastingValue, totalCharacterLevel } from '../../vault/deriveStats'
+import type { CharacterFrontmatter, SpellFrontmatter } from '../../vault/types'
 
 /**
  * Who rolls what when a spell is cast:
@@ -37,11 +37,7 @@ export function isAreaSpell(fm: SpellFrontmatter): boolean {
  * (VS +3), otherwise the D&D ability modifier.
  */
 export function spellKeyValue(character: CharacterFrontmatter): number {
-  const ability = character.spellcasting?.ability
-  if (!ability) return 0
-  return character.nimble_attributes
-    ? nimbleAttributeValue(character, ABILITY_TO_NIMBLE_ATTRIBUTE[ability])
-    : abilityModifier(character.abilities[ability])
+  return spellcastingValue(character) ?? 0
 }
 
 /**
