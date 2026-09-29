@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT } from '../../../i18n/useI18n'
+import { equipSlotOf } from '../equipment'
 import { GRID_COLUMNS, type ContainerLayout } from '../grid'
 import { ItemTile } from './ItemTile'
 
@@ -33,6 +34,7 @@ export function ContainerGrid({
   selectedLinkIndex,
   onSelectTile,
   onRemoveTile,
+  onEquipTile,
   onDropPayload,
   canEdit,
 }: {
@@ -44,6 +46,8 @@ export function ContainerGrid({
   selectedLinkIndex: number | undefined
   onSelectTile: (linkIndex: number) => void
   onRemoveTile: (linkIndex: number) => void
+  /** Equips the tile's item; the grid offers it only for armor, shields and weapons, while editing is unlocked. */
+  onEquipTile?: (linkIndex: number) => void
   onDropPayload: (raw: string) => void
   /** Hides each tile's remove control and disables dragging it — a locked container still shows what's
    * inside (click to view details), it just can't be rearranged until editing is unlocked. */
@@ -89,6 +93,7 @@ export function ContainerGrid({
                 selected={selectedLinkIndex === tile.linkIndex}
                 onSelect={() => onSelectTile(tile.linkIndex)}
                 onRemove={() => onRemoveTile(tile.linkIndex)}
+                onEquip={onEquipTile && canEdit && !tile.custom && equipSlotOf(tile.item?.frontmatter) ? () => onEquipTile(tile.linkIndex) : undefined}
                 canEdit={canEdit}
               />
             )

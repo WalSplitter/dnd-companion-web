@@ -43,8 +43,18 @@ function isTemplateFile(raw: RawFile): boolean {
  * Adapters get the full list of parsed files, since characters pull data from linked notes.
  */
 export function buildVault(files: VaultSourceFile[], imageAssets?: ImageAssets): Vault {
+  return buildVaultFromRawFiles(parseVaultFiles(files), imageAssets)
+}
+
+/** Parses every markdown file's frontmatter — the input `buildVaultFromRawFiles` and the character
+ * adapters' lookups (e.g. `deriveEquipment`) work on. */
+export function parseVaultFiles(files: VaultSourceFile[]): RawFile[] {
+  return files.filter((f) => f.path.toLowerCase().endsWith('.md')).map(parseRawFile)
+}
+
+/** `buildVault` for already-parsed files, so a caller that keeps them doesn't parse twice. */
+export function buildVaultFromRawFiles(rawFiles: RawFile[], imageAssets?: ImageAssets): Vault {
   const vault: Vault = { characters: [], items: [], spells: [], notes: [], endeavourItems: [] }
-  const rawFiles = files.filter((f) => f.path.toLowerCase().endsWith('.md')).map(parseRawFile)
 
   for (const raw of rawFiles) {
     const { path, body, data } = raw

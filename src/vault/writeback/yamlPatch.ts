@@ -111,14 +111,8 @@ function patchFlowMapLine(lines: string[], keyPath: string[], value: number | bo
 }
 
 /** Locates the line holding `keyPath` (tracked by indentation, the same stack-based walk both
- * patchers need), throwing if the file doesn't look exactly like what it expects. */
-function findKeyLine(lines: string[], keyPath: string[]): number {
-  const line = findKeyLineOrNull(lines, keyPath)
-  if (line === null) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
-  return line
-}
-
-/** Like `findKeyLine`, but returns `null` for a key path that simply isn't there. */
+ * patchers need), or `null` for a key path that simply isn't there. Throws if the file doesn't look
+ * exactly like what it expects. */
 function findKeyLineOrNull(lines: string[], keyPath: string[]): number | null {
   const stack: { indent: number; key: string }[] = []
 
@@ -236,8 +230,12 @@ export function patchFrontmatterField(
  * key's own indent ends it. Re-dumping necessarily picks its own quote/list style for just this
  * subtree (`js-yaml`'s defaults, not necessarily matching the rest of the file's hand-authored
  * style) — everything outside the block is untouched.
+ *
+ * `createIfMissing` appends a missing top-level key at the end of the frontmatter (a character
+ * equipping its first shield has no `shield:` yet). An `undefined` value removes the key's block
+ * instead (taking the armor off deletes `armor:`), and is a no-op when the key isn't there.
  */
-export function patchFrontmatterBlock(content: string, keyPath: string[], value: unknown, flowLevel = -1): string {
+export function patchFrontmatterBlock(content: string, keyPath: string[], value: unknown, flowLevel = -1, createIfMissing = false): string {
   if (keyPath.length === 0) throw new YamlPatchError('empty key path')
 
   const match = FRONTMATTER_RE.exec(content)
@@ -246,7 +244,23 @@ export function patchFrontmatterBlock(content: string, keyPath: string[], value:
 
   const newline = yamlText.includes('\r\n') ? '\r\n' : '\n'
   const lines = yamlText.split(/\r?\n/)
-  const targetLine = findKeyLine(lines, keyPath)
+  const lastKey = keyPath[keyPath.length - 1]
+  const render = (indent: number) =>
+    dump({ [lastKey]: value }, { indent: 2, lineWidth: -1, flowLevel })
+      .replace(/\r?\n$/, '')
+      .split('\n')
+      .map((line) => (line ? ' '.repeat(indent) + line : line))
+      .join(newline)
+
+  const targetLine = findKeyLineOrNull(lines, keyPath)
+  if (targetLine === null) {
+    if (value === undefined) return content
+    if (!createIfMissing || keyPath.length !== 1) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+    let insertAt = lines.length
+    while (insertAt > 0 && lines[insertAt - 1].trim() === '') insertAt--
+    lines.splice(insertAt, 0, render(0))
+    return openDelim + lines.join(newline) + closeDelim + rest
+  }
 
   const keyMatch = KEY_LINE_RE.exec(lines[targetLine])!
   const keyIndent = keyMatch[1].length
@@ -262,15 +276,8 @@ export function patchFrontmatterBlock(content: string, keyPath: string[], value:
     }
   }
 
-  const lastKey = keyPath[keyPath.length - 1]
-  const dumped = dump({ [lastKey]: value }, { indent: 2, lineWidth: -1, flowLevel }).replace(/\r?\n$/, '')
-  const indentPrefix = ' '.repeat(keyIndent)
-  const replacement = dumped
-    .split('\n')
-    .map((line) => (line ? indentPrefix + line : line))
-    .join(newline)
-
-  lines.splice(targetLine, blockEnd - targetLine, replacement)
+  if (value === undefined) lines.splice(targetLine, blockEnd - targetLine)
+  else lines.splice(targetLine, blockEnd - targetLine, render(keyIndent))
 
   return openDelim + lines.join(newline) + closeDelim + rest
 }

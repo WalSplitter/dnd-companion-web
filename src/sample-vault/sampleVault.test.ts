@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { resolveEntry } from '../features/inventory/grid'
 import { detectRuleset } from '../vault/detectRuleset'
 import { evasionValue, movementSquares } from '../vault/deriveStats'
-import { buildVault } from '../vault/parseFrontmatter'
+import { equippedWeapons, equipNew } from '../features/inventory/equipment'
+import { deriveEquipment } from '../vault/adapters/nativeCharacter'
+import { buildVault, parseVaultFiles } from '../vault/parseFrontmatter'
 import { parseRawFile } from '../vault/rawFile'
 import { buildVaultIndex, resolveSpellLink, resolveWikilink } from '../vault/wikilinks'
 import { sampleVaultFiles, sampleVaultImages } from '.'
@@ -52,6 +54,32 @@ describe('sample vault', () => {
     ])
     const borin = character('Borin Eisenfaust')
     expect(borin.attacks?.[0]).toMatchObject({ name: 'Langschwert', attribute: 'st', attack_bonus: 3, damage_bonus: 3, damage_type: 'Hiebschaden/Stichschaden' })
+  })
+
+  it('re-derives armor class, Max BW and attacks when gear is equipped from the inventory', () => {
+    const rawFiles = parseVaultFiles(sampleVaultFiles)
+    const borin = character('Borin Eisenfaust')
+    expect(borin.armor_class).toBe(5)
+    expect(borin.shield).toBe('[[Holzschild]]')
+    expect(borin._write?.equipment?.path).toMatch(/Borin Eisenfaust\.md$/)
+
+    const elandra = character('Elandra Windrider')
+    const result = equipNew(elandra, index, '[[Schuppenpanzer]]')
+    if (!result.ok) throw new Error(result.reason)
+    const next = { ...elandra, armor: result.change.armor ?? undefined }
+    expect(deriveEquipment(next, rawFiles)).toMatchObject({ armor_class: 5, bw_cap: 2 })
+
+    const unarmed = { ...elandra, attack_entries: ['[[Dolch]]'] }
+    expect(deriveEquipment(unarmed, rawFiles).attacks?.map((a) => a.name)).toEqual(['Dolch', 'Dolch (Wurf)'])
+  })
+
+  it('keeps equipped weapons out of the inventory', () => {
+    for (const { frontmatter } of vault.characters) {
+      const carried = (frontmatter.endeavour_inventory?.containers ?? []).flatMap((c) => c.items).map((e) => (typeof e === 'string' ? e : 'link' in e ? e.link : e.name))
+      for (const { link } of equippedWeapons(frontmatter)) {
+        expect(carried, `${frontmatter.name}: ${link}`).not.toContain(link)
+      }
+    }
   })
 
   it('pulls inventory, currency and spells in from the linked sheets, with write targets', () => {

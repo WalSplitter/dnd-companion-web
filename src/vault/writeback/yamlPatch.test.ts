@@ -222,3 +222,22 @@ describe('patchFrontmatterBlock: flow-style currency', () => {
     expect(out).toBe('---\nCharakter: "[[Dummy]]"\ncurrency: {cp: 12, sp: 8, ep: 0, gp: 31, pp: 1}\n---\n\nBody\n')
   })
 })
+
+describe('patchFrontmatterBlock: equipment keys', () => {
+  const sheet = '---\nname: Dummy\narmor: "[[Lederrüstung]]"\nattacks:\n  - "[[Dolch]]"\nspeed: 9 m\n---\n\nBody\n'
+
+  it('appends a missing top-level key at the end of the frontmatter when asked to', () => {
+    const out = patchFrontmatterBlock(sheet, ['shield'], '[[Holzschild]]', -1, true)
+    expect(out).toBe(`---\nname: Dummy\narmor: "[[Lederrüstung]]"\nattacks:\n  - "[[Dolch]]"\nspeed: 9 m\nshield: '[[Holzschild]]'\n---\n\nBody\n`)
+  })
+
+  it('removes the whole block for an undefined value, and does nothing when the key is absent', () => {
+    expect(patchFrontmatterBlock(sheet, ['attacks'], undefined)).toBe('---\nname: Dummy\narmor: "[[Lederrüstung]]"\nspeed: 9 m\n---\n\nBody\n')
+    expect(patchFrontmatterBlock(sheet, ['shield'], undefined, -1, true)).toBe(sheet)
+  })
+
+  it('replaces a list with a longer one', () => {
+    const out = patchFrontmatterBlock(sheet, ['attacks'], ['[[Dolch]]', '[[Kampfstab]]'], -1, true)
+    expect(out).toContain("attacks:\n  - '[[Dolch]]'\n  - '[[Kampfstab]]'\nspeed: 9 m")
+  })
+})

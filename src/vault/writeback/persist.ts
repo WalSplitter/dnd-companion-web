@@ -1,5 +1,5 @@
 import { load } from 'js-yaml'
-import type { Currency, EndeavourContainerSlotAssignment, FieldWriteTarget } from '../types'
+import type { Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -12,12 +12,12 @@ export { YamlPatchError }
  */
 export type FrontmatterPatch =
   | { kind: 'field'; keyPath: string[]; value: number | boolean; createIfMissing?: boolean }
-  | { kind: 'block'; keyPath: string[]; value: unknown; flowLevel?: number }
+  | { kind: 'block'; keyPath: string[]; value: unknown; flowLevel?: number; createIfMissing?: boolean }
 
 export function applyPatch(content: string, patch: FrontmatterPatch): string {
   return patch.kind === 'field'
     ? patchFrontmatterField(content, patch.keyPath, patch.value, { createIfMissing: patch.createIfMissing })
-    : patchFrontmatterBlock(content, patch.keyPath, patch.value, patch.flowLevel)
+    : patchFrontmatterBlock(content, patch.keyPath, patch.value, patch.flowLevel, patch.createIfMissing)
 }
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
@@ -56,6 +56,20 @@ export function fieldPatch(target: FieldWriteTarget, logicalValue: number | bool
  * scalar — see `patchFrontmatterBlock`). */
 export function endeavourInventoryPatch(containers: EndeavourContainerSlotAssignment[]): FrontmatterPatch {
   return { kind: 'block', keyPath: ['endeavour_inventory', 'containers'], value: containers }
+}
+
+/**
+ * What the character wears and wields, on its own file: `armor:` and `shield:` (one wikilink each;
+ * `null` = taken off, which deletes the key) and the whole `attacks:` list (an empty list deletes it).
+ * Fields left `undefined` are unchanged and get no patch.
+ */
+export function equipmentPatches(change: Pick<EquipmentChange, 'armor' | 'shield' | 'attack_entries'>): FrontmatterPatch[] {
+  const patches: FrontmatterPatch[] = []
+  const add = (key: string, value: unknown) => patches.push({ kind: 'block', keyPath: [key], value, createIfMissing: true })
+  if (change.armor !== undefined) add('armor', change.armor ?? undefined)
+  if (change.shield !== undefined) add('shield', change.shield ?? undefined)
+  if (change.attack_entries !== undefined) add('attacks', change.attack_entries.length > 0 ? change.attack_entries : undefined)
+  return patches
 }
 
 /** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how

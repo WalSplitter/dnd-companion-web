@@ -1,4 +1,4 @@
-import { resolveSlotCost, type EndeavourItemFrontmatter, type EndeavourItemSize } from '../../vault/adapters/endeavourItem'
+import { compareEndeavourItemSize, resolveItemSize, resolveSlotCost, type EndeavourItemFrontmatter, type EndeavourItemSize } from '../../vault/adapters/endeavourItem'
 import type { EndeavourContainerSlotAssignment, EndeavourCustomItem, EndeavourInventoryEntry, EndeavourStackEntry, VaultFile } from '../../vault/types'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 
@@ -167,4 +167,31 @@ export function resolveContainers(containers: EndeavourContainerSlotAssignment[]
     running.set(baseName, next)
     return { ...r, name: `${baseName} ${next}` }
   })
+}
+
+export type PlaceFailure = 'too_big' | 'no_room'
+
+/** Pure attempt: checks size against the container's `max_size`, then whether `entry` still fits
+ * after `currentItems` — without touching state, so callers (single drop vs. a quantity loop vs. a
+ * cross-container move vs. unequipping) decide when to actually commit. */
+export function tryPlaceEntry(
+  resolved: ResolvedContainer[],
+  index: VaultIndex,
+  currentItems: EndeavourInventoryEntry[],
+  entry: EndeavourInventoryEntry,
+  containerIndex: number,
+): { ok: true; items: EndeavourInventoryEntry[] } | { ok: false; reason: PlaceFailure } {
+  const target = resolved.find((r) => r.containerIndex === containerIndex)
+  if (!target) return { ok: false, reason: 'no_room' }
+
+  const itemFile = resolveEntry(index, entry)
+  const itemSize = itemFile ? resolveItemSize(itemFile.frontmatter) : undefined
+  if (itemSize && target.maxSize && compareEndeavourItemSize(itemSize, target.maxSize) > 0) {
+    return { ok: false, reason: 'too_big' }
+  }
+
+  const nextItems = [...currentItems, entry]
+  const layout = layoutContainer(nextItems, index, target.capacity)
+  if (layout.overflow.some((o) => o.linkIndex === nextItems.length - 1)) return { ok: false, reason: 'no_room' }
+  return { ok: true, items: nextItems }
 }

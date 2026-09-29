@@ -3,6 +3,7 @@ import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
+import { ShieldIcon } from '../../inventory/components/EquipmentLoadout'
 import { useT } from '../../../i18n/useI18n'
 import {
   exhaustionLevel,
@@ -23,11 +24,13 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   const gradientId = useId()
   // Nimble armor class is damage reduction from the worn armor, not a to-hit target — say so.
-  const hint = character.nimble_attributes
+  const armorHint = character.nimble_attributes
     ? character.armor
       ? t('stats.armorClassHint', { value: character.armor_class, armor: wikilinkTarget(character.armor) })
       : t('stats.armorClassHintNone')
     : undefined
+  const block = character.nimble_attributes ? character.shield_block : undefined
+  const hint = block ? `${armorHint} ${t('equipment.blockHint', { value: block })}` : armorHint
 
   return (
     <div className="flex shrink-0 flex-col items-center" title={hint}>
@@ -53,6 +56,11 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
           />
         </svg>
         <span className="absolute inset-x-0 top-[1.2rem] text-center font-num text-2xl text-fg">{character.armor_class}</span>
+        {block ? (
+          <span className="rpg-plate absolute -right-2 bottom-0 flex items-center gap-0.5 px-1 font-num text-[0.65rem] leading-tight text-trim">
+            <ShieldIcon className="size-2.5" />+{block}
+          </span>
+        ) : null}
       </div>
       <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.armorClass')}</span>
     </div>

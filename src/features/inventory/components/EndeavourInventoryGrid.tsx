@@ -2,22 +2,33 @@ import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
-import { compareEndeavourItemSize, resolveItemSize } from '../../../vault/adapters/endeavourItem'
-import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry } from '../../../vault/types'
+import { resolveItemSize } from '../../../vault/adapters/endeavourItem'
+import { deriveEquipment } from '../../../vault/adapters/nativeCharacter'
+import { evasionValue, formatModifier } from '../../../vault/deriveStats'
+import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
+import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { isCustomEntry, isStackEntry, layoutContainer, resolveContainers, resolveEntry, type ResolvedContainer } from '../grid'
+import { equipFromInventory, equipNew, equippedKey, equippedLink, equipSlotOf, isEquippedStack, setEquippedCharges, unequip, type EquippedRef, type EquipResult } from '../equipment'
+import { isCustomEntry, isStackEntry, resolveContainers, resolveEntry, tryPlaceEntry, type PlaceFailure, type ResolvedContainer } from '../grid'
 import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
 import { ContainerGrid } from './ContainerGrid'
 import { CurrencyDisplay } from './CurrencyDisplay'
-import { ItemDetailPanel, type SelectedGridItem } from './ItemDetailPanel'
+import { EquipmentLoadout, type EquippedDragPayload } from './EquipmentLoadout'
+import { ItemDetailPanel, type EquipAction, type EquipPreviewLine, type SelectedGridItem } from './ItemDetailPanel'
 import { ItemSearchPanel, type ContainerOption } from './ItemSearchPanel'
 
-type PlaceFailure = 'too_big' | 'no_room'
-
 /** A search result drop carries just the wikilink; a tile dragged from another container carries a
- * `MoveTilePayload` instead — see `ItemTile.tsx`. */
-type DropPayload = { type: 'new'; link: string } | MoveTilePayload
+ * `MoveTilePayload` instead — see `ItemTile.tsx` — and an item dragged off the loadout an
+ * `EquippedDragPayload`. */
+type DropPayload = { type: 'new'; link: string } | MoveTilePayload | EquippedDragPayload
+
+function parseEquippedRef(raw: unknown): EquippedRef | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const ref = raw as Record<string, unknown>
+  if (ref.slot === 'armor' || ref.slot === 'shield') return { slot: ref.slot }
+  return ref.slot === 'weapon' && typeof ref.position === 'number' ? { slot: 'weapon', position: ref.position } : undefined
+}
 
 function parseDropPayload(raw: string): DropPayload {
   try {
@@ -28,6 +39,8 @@ function parseDropPayload(raw: string): DropPayload {
         return { type: 'move', sourceContainerIndex: p.sourceContainerIndex, sourceLinkIndex: p.sourceLinkIndex }
       }
       if (p.type === 'new' && typeof p.link === 'string') return { type: 'new', link: p.link }
+      const ref = p.type === 'equipped' ? parseEquippedRef(p.ref) : undefined
+      if (ref) return { type: 'equipped', ref }
     }
   } catch {
     // Not JSON — treat the raw string itself as a wikilink (defensive; every drag source in this
@@ -55,6 +68,8 @@ export function EndeavourInventoryGrid({
 }) {
   const t = useT()
   const setEndeavourInventory = useVaultStore((s) => s.setEndeavourInventory)
+  const setEquipment = useVaultStore((s) => s.setEquipment)
+  const rawFiles = useVaultStore((s) => s.rawFiles)
   const vaultEndeavourItems = useVaultStore((s) => s.vault.endeavourItems)
   const canEdit = useCanEdit()
   const containers = useMemo(() => character.endeavour_inventory?.containers ?? [], [character.endeavour_inventory])
@@ -122,33 +137,67 @@ export function EndeavourInventoryGrid({
     const max = stackSizeFor(entry.link) ?? entry.charges
     const clamped = Math.max(0, Math.min(max, Math.round(next)))
     if (clamped === entry.charges) return
+    // Used up: the empty stack leaves the inventory (and the selection, which pointed at it).
+    if (clamped === 0) {
+      updateAssignment(
+        containerIndex,
+        assignment.items.filter((_, i) => i !== linkIndex),
+      )
+      setSelected(null)
+      return
+    }
     updateAssignment(
       containerIndex,
       assignment.items.map((it, i) => (i === linkIndex ? { ...entry, charges: clamped } : it)),
     )
   }
 
-  /** Pure attempt: checks size against the container's `max_size`, then whether it still fits
-   * alongside `currentItems` — without touching state, so callers (single drop vs. a quantity loop
-   * vs. a cross-container move) decide when to actually commit. */
-  function tryPlace(
-    currentItems: EndeavourInventoryEntry[],
-    entry: EndeavourInventoryEntry,
-    containerIndex: number,
-  ): { ok: true; items: EndeavourInventoryEntry[] } | { ok: false; reason: PlaceFailure } {
-    const target = resolved.find((r) => r.containerIndex === containerIndex)
-    if (!target) return { ok: false, reason: 'no_room' }
+  /** See `tryPlaceEntry` — bound to this character's containers. */
+  function tryPlace(currentItems: EndeavourInventoryEntry[], entry: EndeavourInventoryEntry, containerIndex: number) {
+    return tryPlaceEntry(resolved, index, currentItems, entry, containerIndex)
+  }
 
-    const itemFile = resolveEntry(index, entry)
-    const itemSize = itemFile ? resolveItemSize(itemFile.frontmatter) : undefined
-    if (itemSize && target.maxSize && compareEndeavourItemSize(itemSize, target.maxSize) > 0) {
-      return { ok: false, reason: 'too_big' }
+  /** Commits an equip/unequip (see `equipment.ts`), or explains why it can't happen. On success the
+   * selection follows the item: onto its loadout slot when equipped, cleared when stowed (the
+   * inventory's indices have shifted, so a tile selection would point at the wrong item). */
+  function applyEquip(result: EquipResult, select?: EquippedRef) {
+    if (!result.ok) {
+      const name = result.name ?? '?'
+      if (result.reason === 'not_equippable') setWarning(t('equipment.warningNotEquippable', { name }))
+      else setWarning(t(result.reason === 'too_big' ? 'equipment.warningTooBig' : 'equipment.warningNoRoom', { name }))
+      return
     }
+    void setEquipment(characterPath, result.change)
+    setWarning(null)
+    const link = select ? equippedLink({ ...character, ...changedFields(result.change) }, select) : undefined
+    setSelected(select && link ? { key: equippedKey(select), item: resolveEndeavourItemLink(index, link), equipped: select } : null)
+  }
 
-    const nextItems = [...currentItems, entry]
-    const layout = layoutContainer(nextItems, index, target.capacity)
-    if (layout.overflow.some((o) => o.linkIndex === nextItems.length - 1)) return { ok: false, reason: 'no_room' }
-    return { ok: true, items: nextItems }
+  function equipTile(containerIndex: number, linkIndex: number) {
+    if (!canEdit) return // defense in depth — the equip controls only render when canEdit
+    const result = equipFromInventory(character, index, containerIndex, linkIndex)
+    applyEquip(result, result.ok ? result.equipped : undefined)
+  }
+
+  function equipLinkNew(link: string) {
+    if (!canEdit) return
+    const result = equipNew(character, index, link)
+    applyEquip(result, result.ok ? result.equipped : undefined)
+  }
+
+  function unequipRef(ref: EquippedRef, targetContainerIndex?: number) {
+    if (!canEdit) return
+    applyEquip(unequip(character, index, ref, targetContainerIndex))
+  }
+
+  function handleLoadoutDrop(raw: string) {
+    if (!canEdit) {
+      setWarning(t('endeavourInventory.editLocked'))
+      return
+    }
+    const payload = parseDropPayload(raw)
+    if (payload.type === 'move') equipTile(payload.sourceContainerIndex, payload.sourceLinkIndex)
+    else if (payload.type === 'new') equipLinkNew(payload.link)
   }
 
   function warningMessage(reason: PlaceFailure, entry: EndeavourInventoryEntry, containerIndex: number): string {
@@ -212,6 +261,7 @@ export function EndeavourInventoryGrid({
     }
     const payload = parseDropPayload(raw)
     if (payload.type === 'move') moveTile(payload.sourceContainerIndex, payload.sourceLinkIndex, containerIndex)
+    else if (payload.type === 'equipped') unequipRef(payload.ref, containerIndex)
     else placeNew(payload.link, containerIndex)
   }
 
@@ -261,15 +311,98 @@ export function EndeavourInventoryGrid({
   const selLinkIndex = selected?.linkIndex
   const selectedEntry =
     selContainerIndex !== undefined && selLinkIndex !== undefined ? containers[selContainerIndex]?.items[selLinkIndex] : undefined
-  const selectedCharges = selectedEntry && isStackEntry(selectedEntry) ? selectedEntry.charges : undefined
-  const onChangeSelectedCharges =
-    canEdit && selContainerIndex !== undefined && selLinkIndex !== undefined
-      ? (next: number) => setCharges(selContainerIndex, selLinkIndex, next)
+  // An equipped weapon stack (throwing knives in hand) tracks its charges on the character instead.
+  const selEquipped = selected?.equipped
+  const equippedPosition = selEquipped?.slot === 'weapon' ? selEquipped.position : undefined
+  const equippedEntry = equippedPosition !== undefined ? character.attack_entries?.[equippedPosition] : undefined
+  const selectedCharges = isEquippedStack(equippedEntry)
+    ? equippedEntry.charges
+    : selectedEntry && isStackEntry(selectedEntry)
+      ? selectedEntry.charges
       : undefined
+  const onChangeSelectedCharges = !canEdit
+    ? undefined
+    : equippedPosition !== undefined && isEquippedStack(equippedEntry)
+      ? (next: number) => {
+          const change = setEquippedCharges(character, index, equippedPosition, next)
+          if (!change) return
+          void setEquipment(characterPath, change)
+          if (change.attack_entries && change.attack_entries.length < (character.attack_entries?.length ?? 0)) setSelected(null)
+        }
+      : selContainerIndex !== undefined && selLinkIndex !== undefined
+        ? (next: number) => setCharges(selContainerIndex, selLinkIndex, next)
+        : undefined
+  // Equipment lives on the character's own note (Nimble own schema only).
+  const canEquip = Boolean(character._write?.equipment)
+  const equipAction = canEdit && canEquip && selected ? selectedEquipAction(selected) : undefined
+
+  /** The detail panel's button: "take off" for an equipped item, "put on"/"equip" — with what it
+   * would change — for armor, a shield or a weapon in the inventory or the search results. */
+  function selectedEquipAction(sel: SelectedGridItem): EquipAction | undefined {
+    if (sel.equipped) {
+      const ref = sel.equipped
+      return { kind: 'unequip', label: t('equipment.unequip'), onClick: () => unequipRef(ref) }
+    }
+    const slot = sel.custom ? undefined : equipSlotOf(sel.item?.frontmatter)
+    if (!slot || !sel.item) return undefined
+
+    const { containerIndex, linkIndex } = sel
+    const link = `[[${sel.item.frontmatter.name}]]`
+    const fromTile = containerIndex !== undefined && linkIndex !== undefined
+    const result = fromTile ? equipFromInventory(character, index, containerIndex, linkIndex) : equipNew(character, index, link)
+    if (!result.ok) return undefined
+    const previous = slot === 'weapon' ? undefined : character[slot]
+    return {
+      kind: 'equip',
+      label: t(slot === 'weapon' ? 'equipment.equipWield' : 'equipment.equipWear'),
+      onClick: () => (fromTile ? equipTile(containerIndex, linkIndex) : equipLinkNew(link)),
+      preview: equipPreview(result.change),
+      note: previous ? t('equipment.swapNote', { name: resolveEndeavourItemLink(index, previous)?.frontmatter.name ?? wikilinkTarget(previous) }) : undefined,
+    }
+  }
+
+  /** Armor class, evasion, block and new attacks before → after `change`, computed with the same
+   * derivation the sheet uses (`deriveEquipment`). */
+  function equipPreview(change: EquipmentChange): EquipPreviewLine[] {
+    const next = { ...character, ...changedFields(change) }
+    const after = { ...next, ...deriveEquipment(next, rawFiles) }
+    const lines: EquipPreviewLine[] = []
+    if (change.armor !== undefined) {
+      lines.push({ label: t('stats.armorClass'), from: String(character.armor_class), to: String(after.armor_class), change: after.armor_class - character.armor_class })
+      const before = evasionValue(character)
+      const now = evasionValue(after)
+      if (before !== undefined && now !== undefined) lines.push({ label: t('stats.evasion'), from: String(before), to: String(now), change: now - before })
+    }
+    if (change.shield !== undefined) {
+      const before = shieldBlock(index, character.shield)
+      const now = shieldBlock(index, next.shield)
+      const label = (link: string | undefined, value: number) => (link ? t('equipment.block', { value }) : '—')
+      lines.push({ label: t('equipment.shield'), from: label(character.shield, before), to: label(next.shield, now), change: now - before })
+    }
+    if (change.attack_entries) {
+      const known = new Set((character.attacks ?? []).map((a) => a.name))
+      for (const attack of after.attacks ?? []) {
+        if (!known.has(attack.name)) lines.push({ label: attack.name, from: '', to: attackSummary(attack), change: 0 })
+      }
+    }
+    return lines
+  }
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
       <div className="space-y-4">
+        {canEquip && (
+          <EquipmentLoadout
+            character={character}
+            index={index}
+            canEdit={canEdit}
+            selectedKey={selected?.key}
+            onSelect={(ref, item) => setSelected({ key: equippedKey(ref), item, equipped: ref })}
+            onUnequip={(ref) => unequipRef(ref)}
+            onDropPayload={handleLoadoutDrop}
+          />
+        )}
+
         {quickContainers.length > 0 && (
           <div>
             <SectionTitle className="mb-2">{t('endeavourInventory.quickSlots')}</SectionTitle>
@@ -285,6 +418,7 @@ export function EndeavourInventoryGrid({
                     selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
                     onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
                     onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
+                    onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
                     onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
                     canEdit={canEdit}
                   />
@@ -305,6 +439,7 @@ export function EndeavourInventoryGrid({
             selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
             onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
             onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
+            onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
             onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
             canEdit={canEdit}
           />
@@ -334,8 +469,29 @@ export function EndeavourInventoryGrid({
           canEdit={canEdit}
         />
         {warning && <div role="alert" className="rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
-        <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} />
+        <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} equipAction={equipAction} />
       </div>
     </div>
   )
+}
+
+/** The character fields an `EquipmentChange` sets, in `CharacterFrontmatter` shape (`null` → absent). */
+function changedFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
+  return {
+    ...(change.armor !== undefined ? { armor: change.armor ?? undefined } : {}),
+    ...(change.shield !== undefined ? { shield: change.shield ?? undefined } : {}),
+    ...(change.attack_entries !== undefined ? { attack_entries: change.attack_entries } : {}),
+  }
+}
+
+/** What `Blocken` adds with this shield: its `RK` (0 without one). */
+function shieldBlock(index: VaultIndex, link: string | undefined): number {
+  const fm = link ? resolveEndeavourItemLink(index, link)?.frontmatter : undefined
+  return fm && (fm.kind === 'shield' || fm.kind === 'armor') ? (fm.rk ?? 0) : 0
+}
+
+/** `+2 · 1d6+2 Wuchtschaden` — an attack's bonus and damage in one line. */
+function attackSummary(attack: WeaponAttack): string {
+  const damage = `${attack.damage_dice}${attack.damage_bonus ? formatModifier(attack.damage_bonus) : ''}`
+  return `${formatModifier(attack.attack_bonus)} · ${damage}${attack.damage_type ? ` ${attack.damage_type}` : ''}`
 }
