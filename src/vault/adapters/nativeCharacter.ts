@@ -269,7 +269,8 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * sheet's own `max` is kept) when any class note lacks its base value.
  *
  * TODO: provisional until the DM ships subclass notes and multiclass rules — revisit (1) the subclass
- * bonus counting for every level of that class (even before the subclass is picked), (2) no per-level
+ * bonus (the DM hasn't decided whether subclasses affect TP/RP at all; today no subclass note carries
+ * `BasisTP`/`BasisRP`, so it adds 0) counting for every level of that class, (2) no per-level
  * minimum (a negative KO can make a level's gain negative; only the total is clamped at 0) and (3) the
  * doubled level 1 going to the first listed class only.
  */
