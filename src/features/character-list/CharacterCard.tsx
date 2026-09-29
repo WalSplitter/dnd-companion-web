@@ -14,6 +14,7 @@ import {
   nimbleAttributeValue,
   nimbleSkillBonus,
   nimbleSkillValue,
+  proficiencyBonus,
   skillBonus,
   skillProficiencyLevel,
   totalCharacterLevel,
@@ -204,10 +205,11 @@ function HeadlineStats({ character: c }: { character: CharacterFrontmatter }) {
         </StatTile>
       ) : (
         <StatTile label={t('short.profBonus')} title={t('stats.profBonus')}>
-          {formatModifier(c.proficiency_bonus)}
+          {formatModifier(proficiencyBonus(c))}
         </StatTile>
       )}
-      <StatTile label={t('short.initiative')} title={t('stats.initiative')}>
+      {/* Nimble: the turn-order roll (IN); the AP roll lives on the sheet. */}
+      <StatTile label={t('short.initiative')} title={c.nimble_attributes ? t('stats.initiativeOrderNote') : t('stats.initiative')}>
         <D20Modifier value={initiativeBonus(c)} />
       </StatTile>
       {squares !== undefined ? (

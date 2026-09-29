@@ -90,11 +90,13 @@ export function CharacterSheet({
                 <Attacks character={character} />
                 {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <Conditions character={character} characterPath={characterPath} />
-                <FeaturesTraits character={character} />
+                {!character.nimble_attributes && <FeaturesTraits character={character} />}
                 <About body={body} />
               </div>
             </div>
           )}
+          {/* Nimble features get their own full-width section, split into actions/reactions/passive. */}
+          {tab === 'sheet' && character.nimble_attributes && <FeaturesTraits character={character} />}
 
           {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
           {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}

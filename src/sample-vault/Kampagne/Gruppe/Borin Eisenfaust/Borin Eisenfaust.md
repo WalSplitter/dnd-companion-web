@@ -61,6 +61,7 @@ features:
   - name: Zweiter Atem
     source: Krieger 1
     description: Einmal pro Rast kannst du als Bonusaktion 1W10 + deine Kriegerstufe an [[Resilienzpunkte]]n zurückgewinnen.
+    usage: action
   - name: Kampfstil — Verteidigung
     source: Krieger 1
     description: Solange du eine Rüstung trägst, ist deine [[Rüstungsklasse]] um 1 erhöht.

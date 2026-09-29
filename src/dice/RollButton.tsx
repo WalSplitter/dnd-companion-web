@@ -9,7 +9,7 @@ import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type Roll
 /** `penalty` is the part of a d20 result's modifier that came from `D20PenaltyContext` (exhaustion),
  * kept apart so the popover can show it separately from the roll's own bonus. */
 type RollOutcome =
-  | { kind: 'd20'; label: string; result: D20RollResult; penalty: number }
+  | { kind: 'd20'; label: string; result: D20RollResult; penalty: number; effect?: string }
   | { kind: 'damage'; label: string; result: DiceRollResult }
 
 /**
@@ -24,11 +24,14 @@ export function D20RollButton({
   title,
   note,
   mode: defaultMode = 'normal',
+  effect,
   children,
 }: {
   label: string
   modifier: number
   className?: string
+  /** What the result means in play, shown under it (e.g. the action points an initiative roll grants). */
+  effect?: (result: D20RollResult) => string
   /** Mode a plain click rolls with (e.g. a class's save advantage); Shift/Alt still force advantage/disadvantage. */
   mode?: RollMode
   /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
@@ -51,7 +54,8 @@ export function D20RollButton({
     e.stopPropagation()
     const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : defaultMode
     setRolls((n) => n + 1)
-    setOutcome({ kind: 'd20', label, result: rollD20({ mode, modifier: modifier - penalty }), penalty })
+    const result = rollD20({ mode, modifier: modifier - penalty })
+    setOutcome({ kind: 'd20', label, result, penalty, effect: effect?.(result) })
   }
 
   const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note))
@@ -194,6 +198,7 @@ function RollResultPopover({ outcome, onClose }: { outcome: RollOutcome; onClose
       </span>
       {crit && <span className="mt-1 block text-xs font-semibold text-success">{t('roll.critical')}</span>}
       {fumble && <span className="mt-1 block text-xs font-semibold text-danger">{t('roll.fumble')}</span>}
+      {outcome.kind === 'd20' && outcome.effect && <span className="mt-1 block text-xs font-semibold text-trim">{outcome.effect}</span>}
     </span>
   )
 }

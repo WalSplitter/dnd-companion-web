@@ -1,4 +1,4 @@
-import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from './types'
+import { ABILITY_TO_NIMBLE_ATTRIBUTE, NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from './types'
 
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2)
@@ -12,9 +12,15 @@ export function isSavingThrowProficient(character: CharacterFrontmatter, ability
   return character.saving_throw_proficiencies?.includes(ability) ?? false
 }
 
+/** D&D proficiency bonus, 0 when absent. Nimble has none at all (the DM dropped it in #9), so a
+ * leftover `proficiency_bonus` on a Nimble sheet is ignored. */
+export function proficiencyBonus(character: CharacterFrontmatter): number {
+  return character.nimble_attributes ? 0 : (character.proficiency_bonus ?? 0)
+}
+
 export function savingThrowBonus(character: CharacterFrontmatter, ability: AbilityKey): number {
   const base = abilityModifier(character.abilities[ability])
-  return isSavingThrowProficient(character, ability) ? base + character.proficiency_bonus : base
+  return isSavingThrowProficient(character, ability) ? base + proficiencyBonus(character) : base
 }
 
 export type SkillProficiencyLevel = 'none' | 'proficient' | 'expertise'
@@ -31,13 +37,31 @@ export function skillBonus(character: CharacterFrontmatter, skill: SkillKey): nu
 
   const base = abilityModifier(character.abilities[definition.ability])
   const level = skillProficiencyLevel(character, skill)
-  if (level === 'expertise') return base + character.proficiency_bonus * 2
-  if (level === 'proficient') return base + character.proficiency_bonus
+  if (level === 'expertise') return base + proficiencyBonus(character) * 2
+  if (level === 'proficient') return base + proficiencyBonus(character)
   return base
 }
 
+/** Initiative modifier. Nimble characters roll initiative twice (see `nimbleInitiative`); this is
+ * the turn-order roll there (IN), the DEX modifier in D&D. */
 export function initiativeBonus(character: CharacterFrontmatter): number {
-  return abilityModifier(character.abilities.dex)
+  return nimbleInitiative(character)?.order ?? abilityModifier(character.abilities.dex)
+}
+
+/**
+ * Rule `Initiative`: every creature rolls twice at the start of combat. The Instinkt roll (`order`)
+ * sets the turn order, the Beweglichkeit roll (`actions`) the action points in the first round
+ * (see `initiativeActionPoints`). Undefined for characters without Nimble attributes.
+ */
+export function nimbleInitiative(character: CharacterFrontmatter): { order: number; actions: number } | undefined {
+  if (!character.nimble_attributes) return undefined
+  return { order: nimbleAttributeValue(character, 'in'), actions: nimbleAttributeValue(character, 'bw') }
+}
+
+/** Rule `Initiative#Beweglichkeitswurf`: 1-9 → 1 AP, 10-19 → 2 AP, 20+ (or a natural 20) → 3 AP. */
+export function initiativeActionPoints(total: number, natural?: number): number {
+  if (natural === 20 || total >= 20) return 3
+  return total >= 10 ? 2 : 1
 }
 
 /** Passive Perception, already lowered by `exhaustionStaticPenalty`. Nimble characters use rule
@@ -67,17 +91,28 @@ export function exhaustionStaticPenalty(character: CharacterFrontmatter): number
   return character.nimble_attributes ? exhaustionD20Penalty(character) : 0
 }
 
-/** Spell save DC, already lowered by `exhaustionStaticPenalty`. */
-export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
+/** The spellcasting attribute's roll value: the Nimble attribute (KEY) on an Endeavour sheet, the
+ * D&D ability modifier otherwise. Undefined for non-casters. */
+export function spellcastingValue(character: CharacterFrontmatter): number | undefined {
   const ability = character.spellcasting?.ability
   if (!ability) return undefined
-  return 8 + character.proficiency_bonus + abilityModifier(character.abilities[ability]) - exhaustionStaticPenalty(character)
+  return character.nimble_attributes
+    ? nimbleAttributeValue(character, ABILITY_TO_NIMBLE_ATTRIBUTE[ability])
+    : abilityModifier(character.abilities[ability])
 }
 
+/** Spell save DC: 8 + spellcasting value (+ proficiency bonus in D&D; Nimble has none, #9), already
+ * lowered by `exhaustionStaticPenalty`. */
+export function spellSaveDC(character: CharacterFrontmatter): number | undefined {
+  const value = spellcastingValue(character)
+  if (value === undefined) return undefined
+  return 8 + proficiencyBonus(character) + value - exhaustionStaticPenalty(character)
+}
+
+/** Spell attack bonus: the spellcasting value (+ proficiency bonus in D&D). */
 export function spellAttackBonus(character: CharacterFrontmatter): number | undefined {
-  const ability = character.spellcasting?.ability
-  if (!ability) return undefined
-  return character.proficiency_bonus + abilityModifier(character.abilities[ability])
+  const value = spellcastingValue(character)
+  return value === undefined ? undefined : proficiencyBonus(character) + value
 }
 
 /** Feet per grid square on a standard battle map. */

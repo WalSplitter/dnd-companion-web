@@ -5,8 +5,10 @@ import {
   exhaustionD20Penalty,
   movementSquares,
   formatModifier,
+  initiativeActionPoints,
   initiativeBonus,
   nimbleAttributeValue,
+  nimbleInitiative,
   nimbleSkillBonus,
   nimbleSkillValue,
   speedInSquares,
@@ -103,6 +105,34 @@ describe('spell save DC / attack bonus', () => {
     expect(spellSaveDC(nonCaster)).toBeUndefined()
     expect(spellAttackBonus(nonCaster)).toBeUndefined()
   })
+
+  it('uses the Nimble attribute and no proficiency bonus for Nimble characters (#9)', () => {
+    const nimble = { ...character, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 1, vs: 3, pr: 0, en: 0 } }
+    expect(spellSaveDC(nimble)).toBe(11) // 8 + VS 3
+    expect(spellAttackBonus(nimble)).toBe(3)
+  })
+
+  it('treats a missing proficiency bonus as 0', () => {
+    expect(spellSaveDC({ ...character, proficiency_bonus: undefined })).toBe(11)
+  })
+})
+
+describe('Nimble initiative (rule Initiative)', () => {
+  const nimble = { ...character, nimble_attributes: { st: 0, bw: 2, ko: 0, ge: 0, in: -1, vs: 0, pr: 0, en: 0 } }
+
+  it('rolls Instinkt for the order and Beweglichkeit for the action points', () => {
+    expect(nimbleInitiative(nimble)).toEqual({ order: -1, actions: 2 })
+    expect(initiativeBonus(nimble)).toBe(-1)
+    expect(nimbleInitiative(character)).toBeUndefined()
+  })
+
+  it('maps the Beweglichkeit roll to 1/2/3 AP', () => {
+    expect(initiativeActionPoints(9)).toBe(1)
+    expect(initiativeActionPoints(10)).toBe(2)
+    expect(initiativeActionPoints(19)).toBe(2)
+    expect(initiativeActionPoints(20)).toBe(3)
+    expect(initiativeActionPoints(18, 20)).toBe(3) // natural 20 lowered by exhaustion
+  })
 })
 
 describe('nimbleAttributeValue', () => {
@@ -188,7 +218,7 @@ describe('exhaustion (rule Erschöpfung)', () => {
 
   it('lowers the spell save DC by twice the level for Nimble characters only', () => {
     expect(spellSaveDC(exhausted)).toBe(14)
-    expect(spellSaveDC(nimbleExhausted)).toBe(8)
+    expect(spellSaveDC(nimbleExhausted)).toBe(2) // 8 + VS 0 − 6
   })
 
   it('lowers Passive Perception by twice the level for Nimble characters only', () => {

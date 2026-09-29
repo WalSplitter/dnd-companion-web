@@ -240,10 +240,13 @@ export interface CharacterFrontmatter {
   alignment: string
   experience: number
   abilities: Record<AbilityKey, number>
-  proficiency_bonus: number
+  /** D&D only — Nimble has no proficiency bonus (#9); read through `proficiencyBonus()`, 0 when absent. */
+  proficiency_bonus?: number
   saving_throw_proficiencies: AbilityKey[]
   skill_proficiencies: SkillKey[]
   skill_expertise?: SkillKey[]
+  /** Nimble: derived from the worn `armor` note's `RK` (0 without armor, rule `Rüstungsklasse`) —
+   * damage reduction, not a to-hit target. A value typed onto a Nimble sheet is ignored. */
   armor_class: number
   speed: string
   hp: { current: number; max: number; temp?: number }
@@ -280,8 +283,8 @@ export interface CharacterFrontmatter {
    * Real "Endeavour"/Nimble ruleset attributes/skills (see `NIMBLE_ATTRIBUTES`/`NIMBLE_SKILL_ATTRIBUTES`)
    * — present only for characters using that vault's actual rules instead of this schema's default
    * D&D-shaped `abilities`/`skill_proficiencies`. When present, the Ability Scores/Skills/Saving
-   * Throws cards render these instead. `abilities`/`proficiency_bonus` stay a required bridge either
-   * way — combat math untouched by this (AC, initiative, spellcasting DC) still reads them directly.
+   * Throws cards render these instead, and armor class, initiative and spell DC/attack are computed
+   * from them (see `deriveStats.ts`) rather than from `abilities`/`proficiency_bonus`.
    */
   nimble_attributes?: Record<NimbleAttributeKey, number>
   nimble_skills?: Partial<Record<SkillKey, number>>
@@ -320,10 +323,16 @@ export interface CharacterFrontmatter {
   _write?: CharacterWriteTargets
 }
 
+/** When a feature is used (`Einsatz` on a `#Merkmal` note): `[[Aktion]]`, `[[Reaktion]]`, or
+ * `Passiv`/absent. Nimble has no bonus actions, so `[[Bonusaktion]]` counts as an action. */
+export type FeatureUsage = 'action' | 'reaction' | 'passive'
+
 export interface CharacterFeature {
   name: string
   source?: string
   description?: string
+  /** Absent = passive. */
+  usage?: FeatureUsage
 }
 
 /** A vault-file wikilink (`"[[Name]]"`, resolved against `type: item` files) or an inline item with data already attached. */

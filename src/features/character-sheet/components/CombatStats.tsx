@@ -1,9 +1,19 @@
 import { useId } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
+import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { evasionValue, exhaustionLevel, formatModifier, initiativeBonus, movementSquares, nimbleAttributeValue } from '../../../vault/deriveStats'
+import {
+  exhaustionLevel,
+  formatModifier,
+  initiativeActionPoints,
+  initiativeBonus,
+  movementSquares,
+  nimbleAttributeValue,
+  nimbleInitiative,
+  proficiencyBonus,
+} from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { movementHint } from '../vitals'
@@ -12,9 +22,15 @@ import { movementHint } from '../vitals'
 export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   const gradientId = useId()
+  // Nimble armor class is damage reduction from the worn armor, not a to-hit target — say so.
+  const hint = character.nimble_attributes
+    ? character.armor
+      ? t('stats.armorClassHint', { value: character.armor_class, armor: wikilinkTarget(character.armor) })
+      : t('stats.armorClassHintNone')
+    : undefined
 
   return (
-    <div className="flex shrink-0 flex-col items-center">
+    <div className="flex shrink-0 flex-col items-center" title={hint}>
       <div className="relative h-[4.6rem] w-16">
         <svg viewBox="0 0 100 116" className="absolute inset-0 size-full" aria-hidden>
           <defs>
@@ -88,22 +104,38 @@ export function Evasion({ value, character }: { value: number; character: Charac
   )
 }
 
+/** A stat plate whose number rolls a d20 with that modifier. */
+function InitiativePlate({ label, modifier, note, effect }: { label: string; modifier: number; note?: string; effect?: (result: D20RollResult) => string }) {
+  return (
+    <StatPlate label={label}>
+      <D20RollButton label={label} modifier={modifier} note={note} effect={effect} className="cursor-pointer transition hover:text-trim">
+        <D20Modifier value={modifier} hint={false} />
+      </D20RollButton>
+    </StatPlate>
+  )
+}
+
 export function CombatStats({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
-  const initiative = initiativeBonus(character)
+  const nimble = nimbleInitiative(character)
   const squares = movementSquares(character)
   const exhaustion = exhaustionLevel(character)
   return (
     <div className="flex gap-2 *:flex-1">
-      <StatPlate label={t('stats.initiative')}>
-        <D20RollButton
-          label={t('stats.initiative')}
-          modifier={initiative}
-          className="cursor-pointer transition hover:text-trim"
-        >
-          <D20Modifier value={initiative} hint={false} />
-        </D20RollButton>
-      </StatPlate>
+      {nimble ? (
+        // Rule `Initiative`: two rolls — Instinkt for the turn order, Beweglichkeit for the first round's AP.
+        <>
+          <InitiativePlate label={t('stats.initiativeOrder')} modifier={nimble.order} note={t('stats.initiativeOrderNote')} />
+          <InitiativePlate
+            label={t('stats.initiativeActions')}
+            modifier={nimble.actions}
+            note={t('stats.initiativeActionsNote')}
+            effect={(result) => t('stats.initiativeActionsResult', { count: initiativeActionPoints(result.total, result.kept) })}
+          />
+        </>
+      ) : (
+        <InitiativePlate label={t('stats.initiative')} modifier={initiativeBonus(character)} />
+      )}
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />
       ) : (
@@ -111,10 +143,8 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           {exhaustion > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : undefined}
         </StatPlate>
       )}
-      {/* Nimble has no proficiency bonus in play; its evasion value sits by the armor class instead. */}
-      {evasionValue(character) === undefined && (
-        <StatPlate label={t('stats.profBonus')} value={formatModifier(character.proficiency_bonus)} />
-      )}
+      {/* Nimble has no proficiency bonus at all (#9); its evasion value sits by the armor class instead. */}
+      {!character.nimble_attributes && <StatPlate label={t('stats.profBonus')} value={formatModifier(proficiencyBonus(character))} />}
     </div>
   )
 }
