@@ -355,9 +355,8 @@ function SpellRow({
     ),
     flow === 'auto' && (
       <CaptionedRoll key="auto" caption={t('spells.autoCaption')} className="text-accent/80">
-        <span className="inline-flex items-center gap-1 rounded-md border border-accent/30 px-1.5 py-0.5 text-xs text-accent" title={t('spells.autoHint')}>
+        <span className="inline-flex items-center rounded-md border border-accent/30 px-1.5 py-[3px] text-accent" title={t('spells.autoHint')} role="img" aria-label={t('spells.autoHint')}>
           <AutoHitIcon />
-          {t('spells.autoHit')}
         </span>
       </CaptionedRoll>
     ),

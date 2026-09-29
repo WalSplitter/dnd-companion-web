@@ -7,6 +7,7 @@
 export const en = {
   // App chrome
   'app.brand': 'D&D Companion',
+  'app.brandShort': 'D&D',
   'app.createdBy': 'Crafted by',
   'app.sourceCode': 'Source on GitHub',
   'app.sponsor': 'Sponsor me',
@@ -447,8 +448,7 @@ export const en = {
   'spells.dmSaveHintArea': 'The DM rolls a {{ability}} saving throw for every creature in the area against DC {{dc}}. You make no attack roll: the spell lands, the save only softens or stops it',
   'spells.damageNoteSave': 'Roll once for all targets · A successful save usually halves it',
   'spells.damageNoteAuto': 'Hits without an attack roll',
-  'spells.autoCaption': 'Always',
-  'spells.autoHit': 'Hits',
+  'spells.autoCaption': 'Auto-hit',
   'spells.autoHint': 'This spell hits without an attack roll or a saving throw',
   'spells.area': 'Area',
   'spells.areaHint': 'Area of effect: hits every creature in the area',

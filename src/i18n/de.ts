@@ -4,6 +4,7 @@ import type { en } from './en'
  * this at compile time: a missing or extra key is a type error). */
 export const de = {
   'app.brand': 'D&D Companion',
+  'app.brandShort': 'D&D',
   'app.createdBy': 'Erstellt von',
   'app.sourceCode': 'Quellcode auf GitHub',
   'app.sponsor': 'Unterstütze mich',
@@ -427,8 +428,7 @@ export const de = {
   'spells.dmSaveHintArea': 'Der DM würfelt für jede Kreatur im Bereich einen {{ability}}-Rettungswurf gegen SG {{dc}}. Du würfelst keinen Angriff: der Zauber trifft, der Rettungswurf mildert oder verhindert nur die Wirkung',
   'spells.damageNoteSave': 'Einmal für alle Ziele würfeln · Gelungener Rettungswurf meist halber Schaden',
   'spells.damageNoteAuto': 'Trifft ohne Angriffswurf',
-  'spells.autoCaption': 'Immer',
-  'spells.autoHit': 'Trifft',
+  'spells.autoCaption': 'Auto-Treffer',
   'spells.autoHint': 'Dieser Zauber trifft ohne Angriffswurf und ohne Rettungswurf',
   'spells.area': 'Fläche',
   'spells.areaHint': 'Flächenzauber: trifft jede Kreatur im Bereich',

@@ -63,7 +63,7 @@ export function CharacterSheet({
             <HitPoints character={character} characterPath={characterPath} stats={<CombatStats character={character} />} />
           </section>
 
-          <div role="tablist" className="flex gap-1 border-b border-trim/25">
+          <div role="tablist" className="flex gap-1 whitespace-nowrap border-b border-trim/25">
             {tabs.map((entry) => (
               <button
                 key={entry.key}

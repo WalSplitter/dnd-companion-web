@@ -1,4 +1,4 @@
-/* Topic themes: a palette (like tokens.css) plus a backdrop motif on `body`, themed `.rpg-panel`
+/* Topic themes: a palette (like tokens.css) plus a backdrop motif on `body::before`, themed `.rpg-panel`
  * corners and ambient particles (AmbientLayer). `ThemeEffect` sets `data-theme-kind="topic"` on
  * <html> for them, which swaps the gilded corner brackets for the theme's `--topic-corner` mask.
  * Corners and motifs are tinted from the tokens, so they follow the palette. Unlayered on purpose,
@@ -118,7 +118,7 @@
 
 /* A tomb world along the bottom (pyramids, pylons, a capstone beam) in gauss-green haze, faint
  * scan lines over everything, darkened edges. */
-[data-theme='necromancer'] body {
+[data-theme='necromancer'] body::before {
   background-image:
     radial-gradient(ellipse 70% 30% at 20% 104%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%),
     radial-gradient(ellipse 70% 28% at 82% 106%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 70%),
@@ -382,7 +382,7 @@
 }
 
 /* Full moon top right, a pumpkin-lit horizon, violet haze. */
-[data-theme='halloween'] body {
+[data-theme='halloween'] body::before {
   background-image:
     radial-gradient(
       circle at 88% 11%,
@@ -457,7 +457,7 @@
 }
 
 /* The castle on its hill in front of a banded, dithered sunset; a pine forest along the bottom. */
-[data-theme='pixelquest'] body {
+[data-theme='pixelquest'] body::before {
   background-image:
     url('./art/pixelforest.svg'),
     url('./art/pixelcastle.svg'),
@@ -745,7 +745,7 @@
 }
 
 /* Fire glow rising from a hoard of gold along the bottom, smoke-dark above. */
-[data-theme='dragon'] body {
+[data-theme='dragon'] body::before {
   background-image:
     radial-gradient(ellipse 90% 30% at 50% 108%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 70%),
     url('./art/hoard.svg'),
@@ -829,7 +829,7 @@
 }
 
 /* A pastel rainbow rising bottom left, soft pastel clouds in all four corners. */
-[data-theme='unicorn'] body {
+[data-theme='unicorn'] body::before {
   background-image:
     radial-gradient(
       circle at 4% 108%,
@@ -1026,7 +1026,7 @@
 }
 
 /* Warm hearth glow from below, cold winter sky above. */
-[data-theme='christmas'] body {
+[data-theme='christmas'] body::before {
   background-image:
     radial-gradient(ellipse 80% 30% at 50% 108%, color-mix(in srgb, var(--color-trim) 16%, transparent), transparent 70%),
     radial-gradient(ellipse 60% 40% at 50% -10%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%),
@@ -1130,7 +1130,7 @@
 }
 
 /* The sun top right, a turquoise sea shimmering along the bottom. */
-[data-theme='summer'] body {
+[data-theme='summer'] body::before {
   background-image:
     radial-gradient(
       circle at 90% 6%,
@@ -1192,7 +1192,7 @@
 }
 
 /* Blossom haze top left, fresh meadow green along the bottom. */
-[data-theme='spring'] body {
+[data-theme='spring'] body::before {
   background-image:
     radial-gradient(ellipse 55% 40% at 0% 0%, color-mix(in srgb, #f9a8d4 40%, transparent), transparent 70%),
     radial-gradient(ellipse 45% 35% at 100% 5%, color-mix(in srgb, #fbcfe8 45%, transparent), transparent 70%),

@@ -60,11 +60,12 @@ export function ItemTile({
         }
       }}
       style={{ gridColumn: `span ${tile.length}` }}
-      className={`relative flex min-h-14 flex-col items-center justify-center rounded-md border px-1.5 py-1 text-center text-[11px] font-medium leading-tight text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] transition hover:brightness-125 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${kindClasses} ${
+      className={`relative flex min-h-14 min-w-0 flex-col items-center justify-center rounded-md border px-1.5 py-1 text-center text-[11px] font-medium leading-tight text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] transition hover:brightness-125 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${kindClasses} ${
         selected ? 'ring-2 ring-trim' : ''
       }`}
     >
-      <span className="line-clamp-2">{name}</span>
+      {/* Narrow one-slot tiles can't fit long single words ("Blendlaterne"): hyphenate, else break anywhere. */}
+      <span className="line-clamp-2 max-w-full hyphens-auto [overflow-wrap:anywhere]">{name}</span>
       {tile.custom && (
         <span className="text-[9px] uppercase text-fg-muted">{t('endeavourInventory.customBadge')}</span>
       )}
