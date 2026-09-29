@@ -35,6 +35,9 @@ function ownFileWriteTargets(path: string, data: Record<string, unknown>): Chara
 
   if (isRecord(data.resilience)) targets.resilience_current = { path, keyPath: ['resilience', 'current'] }
 
+  // Armor, shield and weapons are equipped from the inventory, which only Nimble characters have.
+  if (isRecord(data.nimble_attributes)) targets.equipment = { path }
+
   // Exhaustion starts at 0 and is written on first use, creating `conditions:` if needed.
   targets.exhaustion = { path, keyPath: ['conditions', 'exhaustion'], createIfMissing: true }
 
@@ -189,9 +192,10 @@ function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['nimb
   return weapons.length > 0 || armor.length > 0 ? { weapons, armor } : undefined
 }
 
-/** The worn armor's wikilink: `armor:`, or `Rüstung:` as on the old sheet (`Verteidigung.Rüstung`). */
-function armorLink(data: Record<string, unknown>): string | undefined {
-  const raw = data.armor ?? data.Rüstung
+/** The first of `keys` holding a non-empty wikilink: the worn armor is `armor:` or `Rüstung:` (as on
+ * the old sheet's `Verteidigung.Rüstung`), the shield `shield:` or `Schild:`. */
+function linkField(data: Record<string, unknown>, ...keys: string[]): string | undefined {
+  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
@@ -205,6 +209,25 @@ function resolveArmor(link: string | undefined, files: RawFile[]): { armorClass:
   const file = link ? findRawFileByName(files, linkFile(link)) : undefined
   const item = file && looksLikeEndeavourItem(file.data) ? normalizeEndeavourItem(file) : undefined
   return item?.kind === 'armor' ? { armorClass: item.rk ?? 0, bwCap: item.bw_cap } : { armorClass: 0 }
+}
+
+/**
+ * Everything the equipped gear decides on the sheet: armor class and Max BW from `armor`, attacks
+ * from `attack_entries`. Called when the character is read, and again by the store whenever the
+ * inventory equips or unequips something, so the sheet follows without reloading the vault.
+ */
+export function deriveEquipment(character: CharacterFrontmatter, files: RawFile[]): Pick<CharacterFrontmatter, 'armor_class' | 'bw_cap' | 'shield_block' | 'attacks'> {
+  const worn = resolveArmor(character.armor, files)
+  const shieldFile = character.shield ? findRawFileByName(files, linkFile(character.shield)) : undefined
+  const shield = shieldFile && looksLikeEndeavourItem(shieldFile.data) ? normalizeEndeavourItem(shieldFile) : undefined
+  return {
+    shield_block: shield?.kind === 'shield' ? shield.rk : undefined,
+    // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored, and so is
+    // a Nimble sheet's own `armor_class` (a leftover D&D bridge value).
+    bw_cap: worn.bwCap,
+    armor_class: character.nimble_attributes ? worn.armorClass : character.armor_class,
+    attacks: resolveWeaponAttacks(character.attack_entries, character, files),
+  }
 }
 
 /** `Einsatz` of a `#Merkmal` note: `[[Aktion]]`/`[[Bonusaktion]]` → action, `[[Reaktion]]` → reaction,
@@ -297,23 +320,23 @@ function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): {
 export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAssets?: ImageAssets): CharacterFrontmatter {
   const character = raw.data as unknown as CharacterFrontmatter
   const linked = resolveLinkedFields(raw, files)
-  const armor = armorLink(raw.data)
-  const worn = resolveArmor(armor, files)
+  const equipped: CharacterFrontmatter = {
+    ...character,
+    armor: linkField(raw.data, 'armor', 'Rüstung'),
+    shield: linkField(raw.data, 'shield', 'Schild'),
+    attack_entries: Array.isArray(raw.data.attacks) ? raw.data.attacks : undefined,
+  }
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
   const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data), ...linked.writeTargets }
 
   return {
-    ...character,
+    ...equipped,
     ...linked.values,
     // Endeavour sheets may leave out the D&D `abilities` entirely (nothing Nimble reads them, #9);
     // neutral scores keep the D&D-only code paths safe.
     abilities: isRecord(raw.data.abilities) ? character.abilities : { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-    armor,
-    // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored, and so is
-    // a Nimble sheet's own `armor_class` (a leftover D&D bridge value).
-    bw_cap: worn.bwCap,
-    armor_class: character.nimble_attributes ? worn.armorClass : character.armor_class,
+    ...deriveEquipment(equipped, files),
     features: resolveFeatures(raw.data, files),
     hit_dice: character.nimble_attributes ? undefined : character.hit_dice,
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
@@ -321,7 +344,6 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
     nimble_save_modes: resolveClassSaveModes(notes),
     nimble_class_proficiencies: resolveClassProficiencies(notes),
-    attacks: resolveWeaponAttacks(raw.data.attacks, character, files),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }

@@ -4,7 +4,6 @@ endeavour_inventory:
   containers:
     - container: '[[Rucksack (Groß)]]'
       items:
-        - '[[Kampfstab]]'
         - name: Zauberbuch
           plaetze: 2
         - '[[Tinte und Feder]]'
@@ -18,8 +17,7 @@ endeavour_inventory:
       items:
         - '[[Heiltrank]]'
     - container: '[[Gürteltasche]]'
-      items:
-        - '[[Dolch]]'
+      items: []
 currency: {cp: 40, sp: 15, gp: 42}
 ---
 
@@ -27,4 +25,6 @@ Inventar zu [[Elandra Windrider]].
 
 Das `Zauberbuch` ist bewusst ein temporärer Gegenstand (nur `name` + `plaetze`, ohne eigene
 Vault-Seite) — so sieht die App einen Gegenstand, den die Spielleitung noch nicht angelegt hat.
-Die [[Kreide]] ist ein angebrochener Stapel (7 von 10 Stück).
+Die [[Kreide]] ist ein angebrochener Stapel (7 von 10 Stück). [[Kampfstab]] und [[Dolch]] trägt sie
+griffbereit am Körper (`attacks:` auf ihrem Charakterbogen) — ausgerüstete Gegenstände belegen keine
+Plätze.

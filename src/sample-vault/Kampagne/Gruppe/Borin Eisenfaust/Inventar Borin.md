@@ -4,7 +4,6 @@ endeavour_inventory:
   containers:
     - container: '[[Rucksack (Groß)]]'
       items:
-        - '[[Langschwert]]'
         - '[[Schlafsack]]'
         - '[[Seil aus Hanf]]'
         - '[[Zunderkästchen]]'
@@ -22,9 +21,7 @@ endeavour_inventory:
       items:
         - '[[Heiltrank]]'
     - container: '[[Gürteltasche]]'
-      items:
-        - link: '[[Wurfmesser]]'
-          charges: 4
+      items: []
 currency: {cp: 12, sp: 30, gp: 8}
 ---
 

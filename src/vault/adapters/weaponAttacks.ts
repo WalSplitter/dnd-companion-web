@@ -85,8 +85,10 @@ function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFron
 export function resolveWeaponAttacks(raw: unknown, character: CharacterFrontmatter, files: RawFile[]): WeaponAttack[] | undefined {
   if (!Array.isArray(raw)) return undefined
   const attacks = raw.flatMap((entry): WeaponAttack[] => {
-    if (typeof entry !== 'string') return entry && typeof entry === 'object' ? [entry as WeaponAttack] : []
-    const name = linkFile(entry)
+    // A stack of a stackable weapon (`{ link: "[[Wurfmesser]]", charges: 3 }`) attacks like its link.
+    const stack = entry && typeof entry === 'object' && typeof (entry as { link?: unknown }).link === 'string' ? (entry as { link: string }).link : undefined
+    if (typeof entry !== 'string' && stack === undefined) return entry && typeof entry === 'object' ? [entry as WeaponAttack] : []
+    const name = linkFile(stack ?? entry)
     const note = character.nimble_attributes && name ? findRawFileByName(files, name) : undefined
     return note && looksLikeEndeavourItem(note.data) ? weaponNoteAttacks(note, name, character) : []
   })

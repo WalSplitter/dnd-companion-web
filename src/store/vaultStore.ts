@@ -2,7 +2,9 @@ import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
-import { buildVault } from '../vault/parseFrontmatter'
+import { deriveEquipment } from '../vault/adapters/nativeCharacter'
+import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
+import type { RawFile } from '../vault/rawFile'
 import { openBlobCache } from '../vault/github/blobCache'
 import { GitHubError, gitHubVaultKey, gitHubVaultName, type GitHubErrorKind, type GitHubVaultRef } from '../vault/github/githubApi'
 import { GitHubSync, type SyncStatus } from '../vault/github/githubSync'
@@ -25,9 +27,9 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { currencyBlockPatch, endeavourInventoryPatch, fieldPatch, folderWriter, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
@@ -56,6 +58,9 @@ interface VaultState {
   loadingProgress: { done: number; total: number } | null
   vault: Vault
   index: VaultIndex
+  /** The vault's parsed markdown files, kept for re-deriving a character after an edit changes what
+   * its stats depend on (equipping armor or a weapon — see `setEquipment`). */
+  rawFiles: RawFile[]
   /** Best-effort guess at which ruleset the loaded vault's content follows — see `detectRuleset.ts`. */
   ruleset: RulesetDetectionResult
   error: string | null
@@ -126,6 +131,14 @@ interface VaultState {
    * legacy vault, to each changed `Geld.*` scalar (`_write.currency`). No-op without edit permission.
    */
   setCurrency: (characterPath: string, currency: Currency) => Promise<void>
+  /**
+   * Equips or unequips armor, a shield or a weapon from the slot-grid inventory: the character's
+   * `armor`/`shield`/`attacks` and the inventory's containers change together, and armor class, Max BW
+   * and attacks are re-derived right away. Two notes are written (see `EquipmentChange.first`); a
+   * failed write rolls the local change back. No-op without edit permission or for a character that
+   * has nowhere to store its equipment.
+   */
+  setEquipment: (characterPath: string, change: EquipmentChange) => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -153,8 +166,9 @@ function replaceSync(next: GitHubSync | null) {
 function applyVault(files: VaultSourceFile[], imageAssets?: ImageAssets) {
   revokeActiveImageAssets()
   activeImageAssets = imageAssets ?? null
-  const vault = buildVault(files, imageAssets)
-  return { vault, index: buildVaultIndex(vault), ruleset: detectRuleset(files) }
+  const rawFiles = parseVaultFiles(files)
+  const vault = buildVaultFromRawFiles(rawFiles, imageAssets)
+  return { vault, index: buildVaultIndex(vault), rawFiles, ruleset: detectRuleset(files) }
 }
 
 function errorMessage(err: unknown): string {
@@ -199,7 +213,7 @@ function githubHint(err: unknown): TranslationKey {
 
 /** Nothing opened: the store's initial state, so a returning visitor never sees the sample flash by. */
 const EMPTY_STATE = (() => {
-  const vault = buildVault(NO_FILES)
+  const vault = buildVaultFromRawFiles([])
   return {
     status: 'idle',
     source: 'none',
@@ -210,6 +224,7 @@ const EMPTY_STATE = (() => {
     loadingProgress: null,
     vault,
     index: buildVaultIndex(vault),
+    rawFiles: [] as RawFile[],
     ruleset: detectRuleset(NO_FILES),
     error: null,
     ...NO_WRITE_ACCESS,
@@ -220,13 +235,15 @@ const EMPTY_STATE = (() => {
 /** Editable so visitors can try every control, but through `sandboxWriter`: edits change only the
  * in-memory vault and are gone on reload or the next `loadSampleVault`. */
 function buildSampleState() {
-  const vault = buildVault(sampleVaultFiles, sampleVaultImages)
+  const rawFiles = parseVaultFiles(sampleVaultFiles)
+  const vault = buildVaultFromRawFiles(rawFiles, sampleVaultImages)
   return {
     ...EMPTY_STATE,
     status: 'loaded',
     source: 'sample',
     vault,
     index: buildVaultIndex(vault),
+    rawFiles,
     ruleset: detectRuleset(sampleVaultFiles),
     writer: sandboxWriter,
     editPermission: 'granted',
@@ -609,6 +626,51 @@ export const useVaultStore = create<VaultState>((set, get) => {
         source: 'vault.setCurrency',
         context: { characterPath, previous, next: currency, writeTargets: { currency_block: targets.currency_block, currency: targets.currency } },
         retry: () => void get().setCurrency(characterPath, currency),
+      })
+    },
+
+    setEquipment: async (characterPath, change) => {
+      const { vault, writer, editPermission, rawFiles } = get()
+      const targets = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write
+      const equipmentTarget = targets?.equipment
+      const inventoryTarget = change.containers ? targets?.endeavour_inventory : undefined
+      if (editPermission !== 'granted' || !equipmentTarget || (change.containers && !inventoryTarget)) return
+      const canWrite = writer?.canWrite(equipmentTarget.path) && (!inventoryTarget || writer.canWrite(inventoryTarget.path))
+      const context = characterContext(vault, characterPath)
+      const { first, containers, ...fields } = change
+
+      function mutate(c: CharacterFrontmatter): CharacterFrontmatter {
+        const next: CharacterFrontmatter = {
+          ...c,
+          ...(fields.armor !== undefined ? { armor: fields.armor ?? undefined } : {}),
+          ...(fields.shield !== undefined ? { shield: fields.shield ?? undefined } : {}),
+          ...(fields.attack_entries !== undefined ? { attack_entries: fields.attack_entries } : {}),
+          ...(containers ? { endeavour_inventory: { containers } } : {}),
+        }
+        return { ...next, ...deriveEquipment(next, rawFiles) }
+      }
+
+      async function write() {
+        if (!writer || !equipmentTarget) return
+        const writeCharacter = async () => {
+          for (const patch of equipmentPatches(fields)) await writer.write(equipmentTarget.path, patch, context)
+        }
+        const writeInventory = async () => {
+          if (containers && inventoryTarget) await writer.write(inventoryTarget.path, endeavourInventoryPatch(containers), context)
+        }
+        if (first === 'character') {
+          await writeCharacter()
+          await writeInventory()
+        } else {
+          await writeInventory()
+          await writeCharacter()
+        }
+      }
+
+      await editCharacter(characterPath, mutate, canWrite ? write : null, {
+        source: 'vault.setEquipment',
+        context: { characterPath, change },
+        retry: () => void get().setEquipment(characterPath, change),
       })
     },
   }

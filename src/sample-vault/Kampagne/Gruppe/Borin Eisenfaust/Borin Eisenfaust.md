@@ -43,6 +43,7 @@ nimble_skills:
   history: 1
 armor_class: 6
 armor: "[[Schuppenpanzer]]"
+shield: "[[Holzschild]]"
 speed: 7,5 m
 hp:
   current: 21
@@ -56,7 +57,8 @@ senses:
 languages: [Gemeinsprache, Zwergisch]
 attacks:
   - "[[Langschwert]]"
-  - "[[Wurfmesser]]"
+  - link: "[[Wurfmesser]]"
+    charges: 4
 features:
   - name: Zweiter Atem
     source: Krieger 1
@@ -90,9 +92,9 @@ conditions:
 
 | 🛡️ RK | 💨 Ausweichwert | 🔥 Resilienzpunkte | ❤️ Trefferpunkte | 🏃 Initiative | 👟 Bewegungsrate |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| **6** | **12** | **5 / 16** | **21 / 36** (+4 temp.) | In **+1** · Bw **+3** | 7,5 m (5 Kästchen) |
+| **5** | **12** | **5 / 16** | **21 / 36** (+4 temp.) | In **+1** · Bw **+3** | 7,5 m (5 Kästchen) |
 
-- **RK 6** — [[Schuppenpanzer]] (5) + [[Holzschild]] (1) ([[Rüstungsklasse]]).
+- **RK 5** — [[Schuppenpanzer]]; der [[Holzschild]] gibt beim [[Blocken]] +1 ([[Rüstungsklasse]]).
 - **Ausweichwert 12** — 10 + BW +3, aber der Schuppenpanzer begrenzt auf Max BW 2 ([[Ausweichwert]]).
 - **Trefferpunkte** — 4 × (7 [[Krieger]] + KO 2) = 36.
 - **Resilienzpunkte** — 4 × (4 [[Krieger]] + EN 1 / 2) = 16.

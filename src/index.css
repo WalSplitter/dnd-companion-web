@@ -2011,3 +2011,96 @@ button.exh-token:hover {
     transform: rotate(720deg) scale(1);
   }
 }
+
+/* Equipment loadout (EquipmentLoadout): a gilded paper doll that lights up where gear is worn. */
+.equip-loadout-over {
+  box-shadow:
+    0 0 0 2px var(--color-trim),
+    0 0 26px -2px var(--color-trim);
+}
+.equip-loadout-over .equip-socket {
+  border-color: var(--color-trim);
+  background: color-mix(in srgb, var(--color-trim) 10%, var(--color-surface));
+}
+.equip-doll-body {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-trim) 32%, transparent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.equip-doll-shadow {
+  fill: color-mix(in srgb, var(--color-trim) 14%, transparent);
+}
+.equip-doll-part {
+  opacity: 0;
+  transform: translateY(4px);
+  transform-box: fill-box;
+  transition:
+    opacity 350ms ease,
+    transform 350ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.equip-doll-part.is-on {
+  opacity: 1;
+  transform: none;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-trim) 70%, transparent));
+}
+.equip-doll-fill {
+  fill: color-mix(in srgb, var(--color-trim) 30%, var(--color-surface));
+  stroke: var(--color-trim);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.equip-doll-line {
+  fill: none;
+  stroke: var(--color-trim);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.equip-doll-blade {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-fg) 85%, var(--color-trim));
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.equip-delta {
+  animation: equip-delta 1.6s ease-out forwards;
+}
+@keyframes equip-delta {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .equip-flash {
+    animation: equip-flash 700ms ease-out;
+  }
+}
+@keyframes equip-flash {
+  0% {
+    box-shadow:
+      0 0 0 2px var(--color-trim),
+      0 0 28px 4px color-mix(in srgb, var(--color-trim) 75%, transparent);
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .equip-doll-part,
+  .equip-delta {
+    transition: none;
+    animation-duration: 1ms;
+  }
+}

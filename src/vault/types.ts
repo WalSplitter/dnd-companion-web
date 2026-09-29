@@ -192,6 +192,9 @@ export interface CharacterWriteTargets {
    * (see `resolveLinkedFields` in `adapters/nativeCharacter.ts`). Absent when neither carries the field yet (a brand-new
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
   endeavour_inventory?: { path: string }
+  /** Nimble own schema: the character's own file, which holds what it has equipped (`armor:`,
+   * `shield:`, `attacks:`) — see `setEquipment`. */
+  equipment?: { path: string }
   /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */
   currency?: Partial<Record<keyof Currency, FieldWriteTarget>>
   /** Own schema: the file owning the `currency` key, rewritten as a whole block (it may be a flow map
@@ -256,6 +259,14 @@ export interface CharacterFrontmatter {
   /** Own-schema input field: a `"[[Kettenhemd]]"` wikilink to the worn armor's item note (`armor:`, or
    * `Rüstung:` like the old sheet's `Verteidigung.Rüstung`). Its `BW_cap` feeds `bw_cap` below. */
   armor?: string
+  /** Own-schema input field: a `"[[Holzschild]]"` wikilink to the carried shield (`shield:`, or
+   * `Schild:`). It never raises the armor class by itself — only reactively via `Blocken`. */
+  shield?: string
+  /** Own-schema input field: the `attacks:` list exactly as on disk (weapon wikilinks and written-out
+   * attacks), so the inventory can equip and unequip weapons; `attacks` below is derived from it. */
+  attack_entries?: unknown[]
+  /** Derived: the carried `shield`'s `RK`, added to the armor class for one hit by `Blocken`. */
+  shield_block?: number
   /** Derived, not read from the character file: `BW_cap` of the worn `armor` (Nimble), which caps the
    * BW part of the evasion value. Absent = no armor, or armor without a cap. */
   bw_cap?: number
@@ -357,6 +368,21 @@ export interface EndeavourContainerSlotAssignment {
   container: string
   /** The items placed inside, in grid fill order (row-major, see `grid.ts`). */
   items: EndeavourInventoryEntry[]
+}
+
+/**
+ * One equip/unequip step from the inventory: what changes on the character's own file (`armor`/
+ * `shield`: `undefined` = unchanged, `null` = taken off; `attack_entries`: the new `attacks:` list)
+ * and the inventory's new containers. The two live in different notes, so they are two writes;
+ * `first` names the side that gains the item, written first so a failed second write leaves a
+ * duplicate rather than a lost item.
+ */
+export interface EquipmentChange {
+  armor?: string | null
+  shield?: string | null
+  attack_entries?: unknown[]
+  containers?: EndeavourContainerSlotAssignment[]
+  first: 'character' | 'inventory'
 }
 
 /** A wikilink to a vault item note, a player-created temporary item (see `EndeavourCustomItem`), or a

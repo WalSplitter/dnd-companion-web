@@ -15,6 +15,7 @@ const FIELD_NAMES: Record<string, string> = {
   slots: 'spell slots',
   luck_points: 'luck',
   hit_dice: 'hit dice',
+  attacks: 'weapons',
 }
 
 const noteName = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/i, '')

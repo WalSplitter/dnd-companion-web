@@ -24,6 +24,7 @@ export function ItemTile({
   selected,
   onSelect,
   onRemove,
+  onEquip,
   canEdit,
 }: {
   tile: ContainerTile
@@ -31,6 +32,9 @@ export function ItemTile({
   selected: boolean
   onSelect: () => void
   onRemove: () => void
+  /** Set for armor, shields and weapons while editing is unlocked: equips the item (double-click, or
+   * the small button in the corner) — see `equipment.ts`. */
+  onEquip?: () => void
   /** Hides the remove control and disables dragging — the tile is still clickable to view its
    * details, just not rearrangeable, while editing is locked (see `EndeavourInventoryGrid`). */
   canEdit: boolean
@@ -53,6 +57,7 @@ export function ItemTile({
         e.dataTransfer.setData('text/plain', JSON.stringify(payload))
       }}
       onClick={onSelect}
+      onDoubleClick={onEquip}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
@@ -71,6 +76,22 @@ export function ItemTile({
       )}
       {tile.charges !== undefined && (
         <span className="rpg-plate absolute bottom-0.5 left-0.5 px-1 text-[9px] font-semibold leading-tight text-fg">{tile.charges}</span>
+      )}
+      {onEquip && (
+        <button
+          type="button"
+          aria-label={t('equipment.equipAria', { name })}
+          title={t('equipment.equipAria', { name })}
+          onClick={(e) => {
+            e.stopPropagation()
+            onEquip()
+          }}
+          className="absolute bottom-0.5 right-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full border border-trim/40 bg-surface/85 text-trim transition hover:border-trim hover:bg-trim hover:text-surface"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-2.5" aria-hidden>
+            <path d="M8 13.5v-9M4.5 8 8 4.5 11.5 8" />
+          </svg>
+        </button>
       )}
       {canEdit && (
         <button
