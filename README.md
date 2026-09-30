@@ -51,7 +51,7 @@ duplicated.
 **Spells and resources.** Slots, known spells, class pools, luck points and exhaustion.
 
 **Slot-grid inventory.** Drag items between backpacks and pouches, track charges, add temporary
-items.
+items, and equip gear on a character screen with body slots.
 
 </td>
 <td valign="top">
@@ -367,7 +367,11 @@ Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`).
 feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
 [`src/sample-vault/`](src/sample-vault) for complete, Endeavour-flavoured examples.
 
-`endeavour_inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
+The `inventory` lists can be edited in the app: items are searched in the vault, added to either
+list, removed, and moved between `equipped` and `carried` (see
+[`listInventory.ts`](src/features/inventory/listInventory.ts)); the whole block is written back.
+
+`endeavour_inventory`, `inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
 character's own file: they are also read from separate notes that link back via
 `Charakter: "[[<character file name>]]"` (see `resolveLinkedFields()` in
 [`nativeCharacter.ts`](src/vault/adapters/nativeCharacter.ts)). A field set directly on the
@@ -393,11 +397,20 @@ additively:
 - **Attributes and skills** (`nimble_attributes` / `nimble_skills`): eight attributes valued −5…+5
   and used directly as the roll modifier, with the 18 skills reassigned to the attribute that governs
   them. The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
-  `abilities` / `proficiency_bonus` stay populated as an internal bridge for AC, initiative and spell
-  DC math, which is not yet ported to the real Nimble formulas.
+  `abilities` / `proficiency_bonus` are optional: armor class is the worn armor's `RK`, initiative
+  is split into turn order (IN) and starting AP (BW), and the spell DC is `8 + attribute` without a
+  proficiency bonus.
 - **Armor and evasion**: `armor: "[[Kettenhemd]]"` (or `Rüstung:`) links the worn armor note; its
   "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never
-  read from the character file itself.
+  read from the character file itself. `shield: "[[Holzschild]]"` (or `Schild:`) links the shield,
+  whose `RK` is only the Block bonus.
+- **Equipment** ([`EquipmentLoadout.tsx`](src/features/inventory/components/EquipmentLoadout.tsx),
+  [`equipment.ts`](src/features/inventory/equipment.ts)): a character screen with body slots for
+  armor, shield, cloak, gloves, boots, necklace and two rings (`cloak`, `gloves`, `boots`,
+  `necklace`, `rings` on the character, German keys accepted) plus the weapons in `attacks`.
+  Equipping moves an item out of its container (equipped gear takes no slots); a taken slot swaps
+  the old item back. Wearables are assigned to a slot by a `Trageplatz:` field, a
+  `Gegenstand/Kleidung/<Platz>` tag, or a magic item's `Art`.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
   Following the DM's class notes, level 1 grants `(BasisTP + KO) × 2` TP and every further level
   `BasisTP + KO`, so max TP is `(level + 1) × (BasisTP + KO)`; RP likewise with `BasisRP` and half EN
@@ -522,12 +535,6 @@ oxlint.
 
 Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues):
 
-- [#7](https://github.com/WalSplitter/dnd-companion-web/issues/7) Firefox/Safari: export changes as a
-  download or ZIP, since those browsers cannot write to a vault folder.
-- [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
-  and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
-- [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
-  inventory entries (only quantity and weight of inline items are written back today).
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA
   (`vite-plugin-pwa`), including the last vault opened from GitHub.
 
