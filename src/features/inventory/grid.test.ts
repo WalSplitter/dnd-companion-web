@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
 import type { Vault, VaultFile } from '../../vault/types'
 import { buildVaultIndex } from '../../vault/wikilinks'
-import { containerCapacity, findBestFit, GRID_COLUMNS, layoutContainer, resolveContainers } from './grid'
+import { containerCapacity, findBestFit, GRID_COLUMNS, layoutContainer, packedOrder, resolveContainers, tryPlaceEntry } from './grid'
 
 function endeavourItem(path: string, frontmatter: EndeavourItemFrontmatter): VaultFile<EndeavourItemFrontmatter> {
   return { path, frontmatter, body: '' }
@@ -109,5 +109,47 @@ describe('resolveContainers', () => {
     expect(resolved.map((r) => r.name)).toEqual(['Gürteltasche 1', 'Rucksack', 'Gürteltasche 2'])
     expect(resolved.map((r) => r.capacity)).toEqual([1, 10, 1])
     expect(resolved.map((r) => r.containerIndex)).toEqual([0, 1, 2])
+  })
+})
+
+describe('packing (issue #18)', () => {
+  const stab = endeavourItem('Kampfstab.md', { name: 'Kampfstab', kind: 'weapon', weapon_kind: 'melee', plaetze: 3 })
+  const ration = endeavourItem('Ration.md', { name: 'Ration', kind: 'equipment', plaetze: 1 })
+  const rucksack = endeavourItem('Rucksack (Groß).md', { name: 'Rucksack (Groß)', kind: 'container', plaetze: 15, max_size: 'gross' })
+  const index = indexWith(stab, ration, rucksack)
+  // The backpack from the bug report: a staff and nine 1-slot items leave 3 slots free — two at
+  // the end of row 2, one in row 3 — so a second staff never fit in list order.
+  const items = ['[[Kampfstab]]', ...Array.from({ length: 9 }, () => '[[Ration]]')]
+
+  it('fits a 3-slot item whenever 3 slots are free, repacking the rows', () => {
+    const resolved = resolveContainers([{ container: '[[Rucksack (Groß)]]', items }], index)
+    const result = tryPlaceEntry(resolved, index, items, '[[Kampfstab]]', 0)
+    expect(result).toEqual({ ok: true, items: [...items, '[[Kampfstab]]'] })
+
+    const layout = layoutContainer([...items, '[[Kampfstab]]'], index, 15)
+    expect(layout.overflow).toEqual([])
+    expect(layout.used).toBe(15)
+    // Both staffs share the first row; the rations fill the rest.
+    expect(layout.tiles.filter((t) => t.length === 3).map((t) => t.start)).toEqual([0, 3])
+  })
+
+  it('keeps list order while it fits', () => {
+    const layout = layoutContainer(['[[Ration]]', '[[Kampfstab]]'], index, 15)
+    expect(layout.tiles.map((t) => [t.linkIndex, t.start])).toEqual([
+      [0, 0],
+      [1, 1],
+    ])
+  })
+
+  it('still refuses an item once the slots run out', () => {
+    const full = [...items, '[[Kampfstab]]']
+    const resolved = resolveContainers([{ container: '[[Rucksack (Groß)]]', items: full }], index)
+    expect(tryPlaceEntry(resolved, index, full, '[[Ration]]', 0)).toEqual({ ok: false, reason: 'no_room' })
+  })
+
+  it('finds no order when the rows cannot hold the multi-slot items, even if the total fits', () => {
+    // Three 4-slot items in two 7-slot rows: 12 of 14 slots, but only one 4 fits per row.
+    expect(packedOrder([4, 4, 4], 14, 7)).toBeUndefined()
+    expect(packedOrder([4, 3, 4, 3], 14, 7)).toEqual([0, 1, 2, 3])
   })
 })
