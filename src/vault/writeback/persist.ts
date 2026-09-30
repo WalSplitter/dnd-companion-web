@@ -1,5 +1,5 @@
 import { load } from 'js-yaml'
-import type { Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget } from '../types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, InventoryEntry } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -50,6 +50,25 @@ export function encodeFieldValue(target: FieldWriteTarget, logicalValue: number 
 /** Patches a single frontmatter field. */
 export function fieldPatch(target: FieldWriteTarget, logicalValue: number | boolean): FrontmatterPatch {
   return { kind: 'field', keyPath: target.keyPath, value: encodeFieldValue(target, logicalValue), createIfMissing: target.createIfMissing }
+}
+
+/**
+ * Rewrites the list inventory's whole `inventory` block (own schema: `equipped`/`carried` wikilink
+ * lists, possibly with inline `{ name, quantity, weight_lb }` items). Keeps any other keys the block
+ * carries, leaves out an empty list, and removes the block once both lists are empty.
+ */
+export function inventoryPatch(inventory: NonNullable<CharacterFrontmatter['inventory']>): FrontmatterPatch {
+  const clean = (list: InventoryEntry[] | undefined) =>
+    (list ?? []).map((entry) => {
+      if (typeof entry === 'string') return entry
+      const { _write: _unused, ...item } = entry
+      return item
+    })
+  const { equipped, carried, ...rest } = inventory
+  const value: Record<string, unknown> = { ...rest }
+  if (equipped && equipped.length > 0) value.equipped = clean(equipped)
+  if (carried && carried.length > 0) value.carried = clean(carried)
+  return { kind: 'block', keyPath: ['inventory'], value: Object.keys(value).length > 0 ? value : undefined, createIfMissing: true }
 }
 
 /** Rewrites the slot-grid inventory's whole `endeavour_inventory.containers` array (not a single

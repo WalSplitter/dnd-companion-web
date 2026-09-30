@@ -1,11 +1,28 @@
+import type { ReactNode } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { endeavourItemSummary, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
 import type { CharacterFrontmatter, InlineItem, InventoryEntry, ItemFrontmatter, VaultFile } from '../../../vault/types'
+import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveEndeavourItemLink, resolveItemLink } from '../../../vault/wikilinks'
+
+/** Native-DnD payload for dragging a row onto the other list — see `InventoryPanel`. */
+export interface ListMovePayload {
+  type: 'list-move'
+  section: 'equipped' | 'carried'
+  position: number
+}
+
+/** Row controls while the list inventory is editable: move to the other list, remove. */
+export interface ItemListActions {
+  moveLabel: string
+  moveIcon: 'up' | 'down'
+  onMove: (position: number) => void
+  onRemove: (position: number) => void
+}
 
 export function ItemList({
   entries,
@@ -13,12 +30,15 @@ export function ItemList({
   emptyLabel,
   characterPath,
   section,
+  actions,
 }: {
   entries: InventoryEntry[]
   index: VaultIndex
   emptyLabel: string
   characterPath: string
   section: 'equipped' | 'carried'
+  /** Set while the inventory can be edited: each row gets move/remove buttons and can be dragged. */
+  actions?: ItemListActions
 }) {
   const t = useT()
 
@@ -29,22 +49,65 @@ export function ItemList({
   return (
     <ul className="divide-y divide-border">
       {entries.map((entry, i) => {
+        let row: ReactNode
+        let name: string
         if (typeof entry !== 'string') {
-          return <InlineItemRow key={`${entry.name}-${i}`} item={entry} characterPath={characterPath} section={section} rowIndex={i} />
+          name = entry.name
+          row = <InlineItemRow item={entry} characterPath={characterPath} section={section} rowIndex={i} />
+        } else {
+          const item = resolveItemLink(index, entry)
+          const endeavourItem = item ? undefined : resolveEndeavourItemLink(index, entry)
+          name = item?.frontmatter.name ?? endeavourItem?.frontmatter.name ?? wikilinkTarget(entry)
+          row = item ? (
+            <ItemRow item={item} />
+          ) : endeavourItem ? (
+            <EndeavourItemRow item={endeavourItem} />
+          ) : (
+            <div className="py-2 text-sm text-danger">{t('inventory.unresolvedReference', { name: entry })}</div>
+          )
         }
-        const item = resolveItemLink(index, entry)
-        if (item) return <ItemRow key={item.path} item={item} />
-
-        const endeavourItem = resolveEndeavourItemLink(index, entry)
-        if (endeavourItem) return <EndeavourItemRow key={endeavourItem.path} item={endeavourItem} />
 
         return (
-          <li key={entry} className="py-2 text-sm text-danger">
-            {t('inventory.unresolvedReference', { name: entry })}
+          <li
+            key={`${typeof entry === 'string' ? entry : entry.name}-${i}`}
+            draggable={Boolean(actions)}
+            onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list-move', section, position: i } satisfies ListMovePayload))}
+            className={`flex items-start gap-2 ${actions ? 'cursor-grab' : ''}`}
+          >
+            <div className="min-w-0 flex-1">{row}</div>
+            {actions && (
+              <div className="flex shrink-0 items-center gap-1 self-center">
+                <RowButton label={`${actions.moveLabel}: ${name}`} title={actions.moveLabel} onClick={() => actions.onMove(i)}>
+                  <path d={actions.moveIcon === 'up' ? 'M8 13V3.5M4 7.5 8 3.5l4 4' : 'M8 3v9.5M4 8.5l4 4 4-4'} />
+                </RowButton>
+                <RowButton label={t('inventory.removeAria', { name })} title={t('inventory.removeAria', { name })} danger onClick={() => actions.onRemove(i)}>
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </RowButton>
+              </div>
+            )}
           </li>
         )
       })}
     </ul>
+  )
+}
+
+/** A round icon button in a row, sized to hit comfortably (see `ItemTile`'s corner buttons). */
+function RowButton({ label, title, danger = false, onClick, children }: { label: string; title: string; danger?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={title}
+      onClick={onClick}
+      className={`flex size-7 cursor-pointer items-center justify-center rounded-full border border-trim/30 bg-surface/85 text-fg-muted transition ${
+        danger ? 'hover:border-danger hover:bg-danger hover:text-white' : 'hover:border-trim hover:bg-trim hover:text-surface'
+      }`}
+    >
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden>
+        {children}
+      </svg>
+    </button>
   )
 }
 
@@ -74,7 +137,7 @@ function InlineItemRow({
   }
 
   return (
-    <li className="flex items-start justify-between gap-3 py-2">
+    <div className="flex items-start justify-between gap-3 py-2">
       <div className="font-medium text-fg">
         {name}
         {canEdit && item._write?.quantity ? (
@@ -103,7 +166,7 @@ function InlineItemRow({
         ) : (
           <div className="shrink-0 text-xs text-fg-muted">{t('inventory.weightValue', { value: weight_lb * quantity })}</div>
         ))}
-    </li>
+    </div>
   )
 }
 
@@ -155,14 +218,14 @@ function EndeavourItemRow({ item }: { item: VaultFile<EndeavourItemFrontmatter> 
   const { name } = item.frontmatter
   const details = endeavourItemDetails(item.frontmatter)
   return (
-    <li className="py-2">
+    <div className="py-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-medium text-fg">{name}</span>
         <span className="shrink-0 text-xs uppercase text-fg-muted">{endeavourItemSummary(item.frontmatter)}</span>
       </div>
       {details.length > 0 && <div className="mt-0.5 text-xs text-fg-muted">{details.join(' · ')}</div>}
       {item.body && <div className="mt-0.5 text-sm text-fg-muted">{renderObsidianBody(item.body)}</div>}
-    </li>
+    </div>
   )
 }
 
@@ -170,7 +233,7 @@ function ItemRow({ item }: { item: VaultFile<ItemFrontmatter> }) {
   const t = useT()
   const { name, quantity = 1, weight_lb, category } = item.frontmatter
   return (
-    <li className="flex items-start justify-between gap-3 py-2">
+    <div className="flex items-start justify-between gap-3 py-2">
       <div>
         <div className="font-medium text-fg">
           {name}
@@ -182,6 +245,6 @@ function ItemRow({ item }: { item: VaultFile<ItemFrontmatter> }) {
         {category && <div className="capitalize">{category}</div>}
         {weight_lb !== undefined && <div>{t('inventory.weightValue', { value: weight_lb * quantity })}</div>}
       </div>
-    </li>
+    </div>
   )
 }

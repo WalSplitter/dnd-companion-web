@@ -192,6 +192,10 @@ export interface CharacterWriteTargets {
    * (see `resolveLinkedFields` in `adapters/nativeCharacter.ts`). Absent when neither carries the field yet (a brand-new
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
   endeavour_inventory?: { path: string }
+  /** Own schema: the file owning the list inventory (`inventory.equipped`/`inventory.carried`) — the
+   * character's own file, or a linked sheet that carries it. Defaults to the character's own file, so
+   * a character without an inventory yet can still add its first item — see `setInventory`. */
+  inventory?: { path: string }
   /** Nimble own schema: the character's own file, which holds what it has equipped (`armor:`,
    * `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
   equipment?: { path: string }

@@ -1,6 +1,6 @@
 import { load } from 'js-yaml'
 import { describe, expect, it } from 'vitest'
-import { encodeFieldValue, writeEndeavourInventory, writeFieldValue } from './persist'
+import { encodeFieldValue, inventoryPatch, rewriteFile, writeEndeavourInventory, writeFieldValue } from './persist'
 import type { FieldWriteTarget } from '../types'
 
 const fixture = `---
@@ -88,6 +88,37 @@ describe('writeEndeavourInventory', () => {
     const parsed = load(match![1]) as Record<string, unknown>
     expect(parsed.endeavour_inventory).toEqual({ containers })
     expect(getContent()).toContain('Inventar zu [[Dummy]].') // rest of the file untouched
+  })
+})
+
+function frontmatterOf(content: string): Record<string, unknown> {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)
+  return load(match![1]) as Record<string, unknown>
+}
+
+describe('inventoryPatch (list inventory)', () => {
+  it("creates the inventory block on a character that doesn't have one yet", async () => {
+    const { handle, getContent } = fakeFileHandle('---\ntype: character\nname: Test\n---\nBody.\n')
+    await rewriteFile(handle, inventoryPatch({ carried: ['[[Seil]]'] }))
+    expect(frontmatterOf(getContent()).inventory).toEqual({ carried: ['[[Seil]]'] })
+    expect(getContent()).toContain('Body.')
+  })
+
+  it('rewrites both lists, keeps inline items and other keys, and drops write metadata', async () => {
+    const { handle, getContent } = fakeFileHandle('---\nname: Test\ninventory:\n  equipped: ["[[Schwert]]"]\n  carried: ["[[Seil]]"]\n  note: kept\n---\n')
+    const inventory = {
+      equipped: [] as string[],
+      carried: ['[[Seil]]', '[[Schwert]]', { name: 'Fackel', quantity: 3, _write: { quantity: { path: 'x', keyPath: ['a'] } } }],
+      note: 'kept',
+    }
+    await rewriteFile(handle, inventoryPatch(inventory))
+    expect(frontmatterOf(getContent()).inventory).toEqual({ carried: ['[[Seil]]', '[[Schwert]]', { name: 'Fackel', quantity: 3 }], note: 'kept' })
+  })
+
+  it('removes the block once both lists are empty', async () => {
+    const { handle, getContent } = fakeFileHandle('---\nname: Test\ninventory:\n  carried: ["[[Seil]]"]\n---\n')
+    await rewriteFile(handle, inventoryPatch({ carried: [] }))
+    expect(frontmatterOf(getContent())).toEqual({ name: 'Test' })
   })
 })
 

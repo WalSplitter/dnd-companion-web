@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
-import { resolveItemSize } from '../../../vault/adapters/endeavourItem'
+import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
 import { deriveEquipment } from '../../../vault/adapters/nativeCharacter'
 import { evasionValue, formatModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
@@ -17,6 +17,10 @@ import { CurrencyDisplay } from './CurrencyDisplay'
 import { EquipmentLoadout, type EquippedDragPayload } from './EquipmentLoadout'
 import { ItemDetailPanel, type EquipAction, type EquipPreviewLine, type SelectedGridItem } from './ItemDetailPanel'
 import { ItemSearchPanel, type ContainerOption } from './ItemSearchPanel'
+
+/** The most slots an item of each size category takes (rule `Gegenstandsgrößen`: Klein 1, Mittel 2,
+ * Groß 3; Sehr groß is 4 and up, so it caps nothing). */
+const MAX_SLOTS_FOR_SIZE: Record<EndeavourItemSize, number | undefined> = { klein: 1, mittel: 2, gross: 3, sehr_gross: undefined }
 
 /** A search result drop carries just the wikilink; a tile dragged from another container carries a
  * `MoveTilePayload` instead — see `ItemTile.tsx` — and an item dragged off the loadout an
@@ -210,6 +214,13 @@ export function EndeavourInventoryGrid({
     const target = resolved.find((r) => r.containerIndex === containerIndex)
     const size = itemSize ? t(`endeavourInventory.size.${itemSize}` as TranslationKey) : ''
     const maxSize = target?.maxSize ? t(`endeavourInventory.size.${target.maxSize}` as TranslationKey) : ''
+    // Spell out why (rule `Gegenstandsgrößen`: the size is the slot count, and a container caps the
+    // size of each single item) — otherwise a refusal with plenty of free slots looks like a bug.
+    const slots = itemFile ? resolveSlotCost(itemFile.frontmatter) : undefined
+    const maxSlots = target?.maxSize ? MAX_SLOTS_FOR_SIZE[target.maxSize] : undefined
+    if (slots !== undefined && maxSlots !== undefined && target) {
+      return t('endeavourInventory.warningTooBigSlots', { name, container: target.name, slots, size, maxSize, maxSlots })
+    }
     return t('endeavourInventory.warningTooBig', { name, size, maxSize })
   }
 
