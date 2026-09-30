@@ -644,6 +644,11 @@ export const useVaultStore = create<VaultState>((set, get) => {
           ...c,
           ...(fields.armor !== undefined ? { armor: fields.armor ?? undefined } : {}),
           ...(fields.shield !== undefined ? { shield: fields.shield ?? undefined } : {}),
+          ...(fields.cloak !== undefined ? { cloak: fields.cloak ?? undefined } : {}),
+          ...(fields.gloves !== undefined ? { gloves: fields.gloves ?? undefined } : {}),
+          ...(fields.boots !== undefined ? { boots: fields.boots ?? undefined } : {}),
+          ...(fields.necklace !== undefined ? { necklace: fields.necklace ?? undefined } : {}),
+          ...(fields.rings !== undefined ? { rings: fields.rings.length > 0 ? fields.rings : undefined } : {}),
           ...(fields.attack_entries !== undefined ? { attack_entries: fields.attack_entries } : {}),
           ...(containers ? { endeavour_inventory: { containers } } : {}),
         }

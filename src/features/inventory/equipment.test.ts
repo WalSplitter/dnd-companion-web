@@ -22,6 +22,13 @@ const index = buildVaultIndex({
     item({ kind: 'weapon', weapon_kind: 'melee', name: 'Dolch', plaetze: 1 }),
     item({ kind: 'weapon', weapon_kind: 'thrown', name: 'Wurfmesser', plaetze: 1, stack_size: 4 }),
     item({ kind: 'equipment', name: 'Seil', plaetze: 1 }),
+    item({ kind: 'equipment', name: 'Reiseumhang', plaetze: 2, wear_slot: 'cloak' }),
+    item({ kind: 'equipment', name: 'Lederhandschuhe', plaetze: 1, wear_slot: 'gloves' }),
+    item({ kind: 'equipment', name: 'Reisestiefel', plaetze: 1, wear_slot: 'boots' }),
+    item({ kind: 'magic_item', name: 'Amulett', plaetze: 1, wear_slot: 'necklace' }),
+    item({ kind: 'magic_item', name: 'Silberring', plaetze: 1, wear_slot: 'ring' }),
+    item({ kind: 'magic_item', name: 'Goldring', plaetze: 1, wear_slot: 'ring' }),
+    item({ kind: 'magic_item', name: 'Eisenring', plaetze: 1, wear_slot: 'ring' }),
   ],
 } satisfies Vault)
 
@@ -38,6 +45,73 @@ describe('equipSlotOf', () => {
     expect(equipSlotOf({ kind: 'shield', name: 's' })).toBe('shield')
     expect(equipSlotOf({ kind: 'weapon', weapon_kind: 'melee', name: 'w' })).toBe('weapon')
     expect(equipSlotOf({ kind: 'equipment', name: 'e' })).toBeUndefined()
+  })
+
+  it('maps wearables to the slot they are worn in', () => {
+    expect(equipSlotOf({ kind: 'equipment', name: 'g', wear_slot: 'gloves' })).toBe('gloves')
+    expect(equipSlotOf({ kind: 'magic_item', name: 'r', wear_slot: 'ring' })).toBe('ring')
+  })
+})
+
+describe('wearables', () => {
+  it('puts on gloves, boots and a necklace, swapping out the ones worn before', () => {
+    expect(equipFromInventory(character([backpack('[[Lederhandschuhe]]')]), index, 0, 0)).toEqual({
+      ok: true,
+      change: { gloves: '[[Lederhandschuhe]]', containers: [backpack()], first: 'character' },
+      equipped: { slot: 'gloves' },
+    })
+    expect(equipNew(character([backpack()], { boots: '[[Reisestiefel]]' }), index, '[[Reisestiefel]]')).toEqual({
+      ok: true,
+      change: { boots: '[[Reisestiefel]]', containers: [backpack('[[Reisestiefel]]')], first: 'character' },
+      equipped: { slot: 'boots' },
+    })
+    expect(unequip(character([backpack()], { necklace: '[[Amulett]]' }), index, { slot: 'necklace' })).toEqual({
+      ok: true,
+      change: { necklace: null, containers: [backpack('[[Amulett]]')], first: 'inventory' },
+    })
+  })
+
+  it('puts on a cloak and takes it off again', () => {
+    const result = equipFromInventory(character([backpack('[[Reiseumhang]]')]), index, 0, 0)
+    expect(result).toEqual({ ok: true, change: { cloak: '[[Reiseumhang]]', containers: [backpack()], first: 'character' }, equipped: { slot: 'cloak' } })
+    expect(unequip(character([backpack()], { cloak: '[[Reiseumhang]]' }), index, { slot: 'cloak' })).toEqual({
+      ok: true,
+      change: { cloak: null, containers: [backpack('[[Reiseumhang]]')], first: 'inventory' },
+    })
+  })
+
+  it('fills the free ring finger first, then swaps out the first ring', () => {
+    const one = character([backpack('[[Goldring]]')], { rings: ['[[Silberring]]'] })
+    expect(equipFromInventory(one, index, 0, 0)).toEqual({
+      ok: true,
+      change: { rings: ['[[Silberring]]', '[[Goldring]]'], containers: [backpack()], first: 'character' },
+      equipped: { slot: 'ring', position: 1 },
+    })
+    const two = character([backpack('[[Eisenring]]')], { rings: ['[[Silberring]]', '[[Goldring]]'] })
+    expect(equipFromInventory(two, index, 0, 0)).toEqual({
+      ok: true,
+      change: { rings: ['[[Eisenring]]', '[[Goldring]]'], containers: [backpack('[[Silberring]]')], first: 'character' },
+      equipped: { slot: 'ring', position: 0 },
+    })
+  })
+
+  it('puts a ring dropped on a ring slot onto that finger', () => {
+    const two = character([backpack('[[Eisenring]]')], { rings: ['[[Silberring]]', '[[Goldring]]'] })
+    expect(equipFromInventory(two, index, 0, 0, 1)).toMatchObject({
+      ok: true,
+      change: { rings: ['[[Silberring]]', '[[Eisenring]]'], containers: [backpack('[[Goldring]]')] },
+      equipped: { slot: 'ring', position: 1 },
+    })
+    // An empty ring slot just takes the next free finger.
+    expect(equipNew(character([backpack()]), index, '[[Silberring]]', 1)).toMatchObject({ ok: true, change: { rings: ['[[Silberring]]'] }, equipped: { slot: 'ring', position: 0 } })
+  })
+
+  it('takes off one ring, keeping the other', () => {
+    const c = character([backpack()], { rings: ['[[Silberring]]', '[[Goldring]]'] })
+    expect(unequip(c, index, { slot: 'ring', position: 0 })).toEqual({
+      ok: true,
+      change: { rings: ['[[Goldring]]'], containers: [backpack('[[Silberring]]')], first: 'inventory' },
+    })
   })
 })
 

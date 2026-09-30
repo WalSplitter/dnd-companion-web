@@ -12,6 +12,7 @@ endeavour_inventory:
         - '[[Ration]]'
         - '[[Ration]]'
         - '[[Trinkschlauch]]'
+        - '[[Amulett der Tiefe]]'
         - name: Zwergischer Flachmann
           plaetze: 1
     - container: '[[Gürteltasche]]'

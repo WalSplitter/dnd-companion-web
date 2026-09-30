@@ -199,6 +199,14 @@ function linkField(data: Record<string, unknown>, ...keys: string[]): string | u
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
+/** The first of `keys` holding a list: its non-empty wikilinks (a single wikilink counts as a list
+ * of one). `undefined` when there are none. */
+function linkList(data: Record<string, unknown>, ...keys: string[]): string[] | undefined {
+  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const list = (Array.isArray(raw) ? raw : [raw]).filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+  return list.length > 0 ? list : undefined
+}
+
 /**
  * What the armor note the character links as worn contributes: its `RK` (rule `Rüstungsklasse`, the
  * flat damage reduction; 0 without armor — shields only add theirs reactively via `Blocken`) and its
@@ -324,6 +332,11 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     ...character,
     armor: linkField(raw.data, 'armor', 'Rüstung'),
     shield: linkField(raw.data, 'shield', 'Schild'),
+    cloak: linkField(raw.data, 'cloak', 'Umhang', 'Mantel'),
+    gloves: linkField(raw.data, 'gloves', 'Handschuhe'),
+    boots: linkField(raw.data, 'boots', 'Stiefel', 'Schuhe'),
+    necklace: linkField(raw.data, 'necklace', 'Halskette', 'Amulett'),
+    rings: linkList(raw.data, 'rings', 'Ringe'),
     attack_entries: Array.isArray(raw.data.attacks) ? raw.data.attacks : undefined,
   }
   const pools = resolveLevelPools(character, files)

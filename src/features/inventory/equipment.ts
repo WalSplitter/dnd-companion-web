@@ -6,31 +6,46 @@ import { isCustomEntry, isStackEntry, resolveContainers, tryPlaceEntry, type Pla
 
 /**
  * Equipping from the slot-grid inventory. What a character wears and wields lives on its own note
- * (`armor:`, `shield:`, the weapons in `attacks:` — a wikilink, or a `{ link, charges }` stack for
- * stackable weapons like throwing knives) and takes no slots: equipping moves the item
- * out of its container, unequipping stows it back into one. Armor and shield have one slot each —
- * equipping a second one swaps the first back into the inventory; weapons are a list.
+ * (`armor:`, `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, the `rings:` list, the weapons in
+ * `attacks:` — a wikilink, or a `{ link, charges }` stack for stackable weapons like throwing knives)
+ * and takes no slots: equipping moves the item out of its container, unequipping stows it back into
+ * one. Armor, shield, cloak, gloves, boots and necklace have one slot each — equipping a second one swaps the
+ * first back into the inventory; there are `MAX_RINGS` ring slots, and weapons are a list.
  */
 
-export type EquipSlot = 'armor' | 'shield' | 'weapon'
+/** The slots that hold exactly one item. */
+export type WornSlot = 'armor' | 'shield' | 'cloak' | 'gloves' | 'boots' | 'necklace'
 
-/** One equipped item: the armor, the shield, or the weapon at `position` in `attack_entries`. */
-export type EquippedRef = { slot: 'armor' | 'shield' } | { slot: 'weapon'; position: number }
+export type EquipSlot = WornSlot | 'ring' | 'weapon'
+
+/** One equipped item: a worn one, the ring at `position` in `rings`, or the weapon at `position` in
+ * `attack_entries`. */
+export type EquippedRef = { slot: WornSlot } | { slot: 'weapon' | 'ring'; position: number }
+
+/** One ring per hand. */
+export const MAX_RINGS = 2
+
+const WORN_SLOTS: readonly WornSlot[] = ['armor', 'shield', 'cloak', 'gloves', 'boots', 'necklace']
+
+export function isWornSlot(slot: unknown): slot is WornSlot {
+  return WORN_SLOTS.includes(slot as WornSlot)
+}
 
 export type EquipFailure = PlaceFailure | 'not_equippable'
 
 /** On success, `equipped` says where an equipped item ended up on the loadout (unset when unequipping). */
 export type EquipResult = { ok: true; change: EquipmentChange; equipped?: EquippedRef } | { ok: false; reason: EquipFailure; name?: string }
 
-/** Where an item goes when equipped; `undefined` for anything that isn't armor, a shield or a weapon. */
+/** Where an item goes when equipped: armor, shields and weapons by kind, anything else by where it is
+ * worn (`wear_slot`); `undefined` for gear that can't be equipped. */
 export function equipSlotOf(fm: EndeavourItemFrontmatter | undefined): EquipSlot | undefined {
   if (fm?.kind === 'armor' || fm?.kind === 'shield') return fm.kind
-  return fm?.kind === 'weapon' ? 'weapon' : undefined
+  return fm?.kind === 'weapon' ? 'weapon' : fm?.wear_slot
 }
 
 /** Selection identity of an equipped item, distinct from any inventory tile's `entryKey`. */
 export function equippedKey(ref: EquippedRef): string {
-  return ref.slot === 'weapon' ? `equipped:weapon:${ref.position}` : `equipped:${ref.slot}`
+  return 'position' in ref ? `equipped:${ref.slot}:${ref.position}` : `equipped:${ref.slot}`
 }
 
 /** A weapon entry of `attacks:` that is a stack (`{ link, charges }`, e.g. throwing knives), as opposed
@@ -52,7 +67,7 @@ export function equippedWeapons(character: CharacterFrontmatter): { position: nu
 
 /** The wikilink an equipped ref points at, if it is still there. */
 export function equippedLink(character: CharacterFrontmatter, ref: EquippedRef): string | undefined {
-  const raw = ref.slot === 'weapon' ? character.attack_entries?.[ref.position] : character[ref.slot]
+  const raw = ref.slot === 'weapon' ? character.attack_entries?.[ref.position] : ref.slot === 'ring' ? character.rings?.[ref.position] : character[ref.slot]
   const link = isEquippedStack(raw) ? raw.link : raw
   return typeof link === 'string' && link.trim() ? link : undefined
 }
@@ -152,9 +167,10 @@ function addWeapon(entries: unknown[], link: string, charges: number | undefined
   return { entries: merged, position }
 }
 
-/** Equips `link` on top of `containers` (already without the item): armor and shield swap out
- * whatever was worn before, which goes back into the inventory — preferably into `stowInto`. A
- * weapon stack brings its `charges` along. */
+/** Equips `link` on top of `containers` (already without the item): a worn slot swaps out whatever
+ * was worn before, which goes back into the inventory — preferably into `stowInto`. A ring takes the
+ * next free ring slot, or swaps out the ring at `ringPosition` (the first one by default) once both
+ * are taken. A weapon stack brings its `charges` along. */
 function equipLink(
   character: CharacterFrontmatter,
   index: VaultIndex,
@@ -162,6 +178,7 @@ function equipLink(
   link: string,
   stowInto?: number,
   charges?: number,
+  ringPosition?: number,
 ): EquipResult {
   const slot = equipSlotOf(resolveEndeavourItemLink(index, link)?.frontmatter)
   if (!slot) return { ok: false, reason: 'not_equippable', name: itemName(index, link) }
@@ -171,32 +188,56 @@ function equipLink(
     return { ok: true, change: { attack_entries: entries, containers, first: 'character' }, equipped: { slot: 'weapon', position } }
   }
 
-  let next = containers
-  const previous = character[slot]
-  if (previous) {
+  /** Stows what was worn in the slot before. */
+  const swapOut = (previous: string | undefined): { ok: true; containers: EndeavourContainerSlotAssignment[] } | { ok: false; reason: PlaceFailure; name: string } => {
+    if (!previous) return { ok: true, containers }
     const stowed = stowLink(containers, index, previous, stowInto)
     const fallback = stowed.ok || stowInto === undefined ? stowed : stowLink(containers, index, previous)
-    if (!fallback.ok) return { ok: false, reason: fallback.reason, name: itemName(index, previous) }
-    next = fallback.containers
+    return fallback.ok ? fallback : { ok: false, reason: fallback.reason, name: itemName(index, previous) }
   }
-  return { ok: true, change: { [slot]: link, containers: next, first: 'character' }, equipped: { slot } }
+
+  if (slot === 'ring') {
+    const rings = character.rings ?? []
+    const target = ringPosition !== undefined && ringPosition >= 0 && ringPosition < MAX_RINGS ? ringPosition : undefined
+    // A ring dropped on a worn ring swaps it; otherwise it takes the next free finger, or swaps out
+    // the targeted (else the first) ring once both are taken.
+    const position = target !== undefined && target < rings.length ? target : rings.length < MAX_RINGS ? rings.length : (target ?? 0)
+    const swapped = swapOut(rings[position])
+    if (!swapped.ok) return swapped
+    const next = [...rings]
+    next[position] = link
+    return { ok: true, change: { rings: next, containers: swapped.containers, first: 'character' }, equipped: { slot: 'ring', position } }
+  }
+
+  const swapped = swapOut(character[slot])
+  if (!swapped.ok) return swapped
+  return { ok: true, change: { [slot]: link, containers: swapped.containers, first: 'character' }, equipped: { slot } }
 }
 
-/** Equips the item placed at `items[linkIndex]` of container `containerIndex`. A stack moves whole,
- * with its remaining charges; a temporary item has no stats to equip. */
-export function equipFromInventory(character: CharacterFrontmatter, index: VaultIndex, containerIndex: number, linkIndex: number): EquipResult {
+/** Equips the item placed at `items[linkIndex]` of container `containerIndex` (a ring onto ring slot
+ * `ringPosition` when it was dropped on one). A stack moves whole, with its remaining charges; a
+ * temporary item has no stats to equip. */
+export function equipFromInventory(
+  character: CharacterFrontmatter,
+  index: VaultIndex,
+  containerIndex: number,
+  linkIndex: number,
+  ringPosition?: number,
+): EquipResult {
   const containers = character.endeavour_inventory?.containers ?? []
   const entry = containers[containerIndex]?.items[linkIndex]
   if (entry === undefined || isCustomEntry(entry)) return { ok: false, reason: 'not_equippable', name: entry && isCustomEntry(entry) ? entry.name : undefined }
 
   const without = containers.map((c, i) => (i !== containerIndex ? c : { ...c, items: c.items.filter((_, j) => j !== linkIndex) }))
-  return isStackEntry(entry) ? equipLink(character, index, without, entry.link, containerIndex, entry.charges) : equipLink(character, index, without, entry, containerIndex)
+  return isStackEntry(entry)
+    ? equipLink(character, index, without, entry.link, containerIndex, entry.charges, ringPosition)
+    : equipLink(character, index, without, entry, containerIndex, undefined, ringPosition)
 }
 
 /** Equips an item straight from the vault search, without it having been in the inventory first (a
  * stackable one as a full stack). */
-export function equipNew(character: CharacterFrontmatter, index: VaultIndex, link: string): EquipResult {
-  return equipLink(character, index, character.endeavour_inventory?.containers ?? [], link)
+export function equipNew(character: CharacterFrontmatter, index: VaultIndex, link: string, ringPosition?: number): EquipResult {
+  return equipLink(character, index, character.endeavour_inventory?.containers ?? [], link, undefined, undefined, ringPosition)
 }
 
 /** Takes an equipped item off and stows it in the inventory (into `targetContainerIndex` when it was
@@ -210,7 +251,11 @@ export function unequip(character: CharacterFrontmatter, index: VaultIndex, ref:
   if (!stowed.ok) return { ok: false, reason: stowed.reason, name: itemName(index, link) }
 
   const fields =
-    ref.slot === 'weapon' ? { attack_entries: (character.attack_entries ?? []).filter((_, i) => i !== ref.position) } : { [ref.slot]: null }
+    ref.slot === 'weapon'
+      ? { attack_entries: (character.attack_entries ?? []).filter((_, i) => i !== ref.position) }
+      : ref.slot === 'ring'
+        ? { rings: (character.rings ?? []).filter((_, i) => i !== ref.position) }
+        : { [ref.slot]: null }
   return { ok: true, change: { ...fields, containers: stowed.containers, first: 'inventory' } }
 }
 

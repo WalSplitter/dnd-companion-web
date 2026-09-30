@@ -193,7 +193,7 @@ export interface CharacterWriteTargets {
    * character placing their first item has nowhere on disk to write it — see `setEndeavourInventory`). */
   endeavour_inventory?: { path: string }
   /** Nimble own schema: the character's own file, which holds what it has equipped (`armor:`,
-   * `shield:`, `attacks:`) — see `setEquipment`. */
+   * `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
   equipment?: { path: string }
   /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */
   currency?: Partial<Record<keyof Currency, FieldWriteTarget>>
@@ -262,6 +262,15 @@ export interface CharacterFrontmatter {
   /** Own-schema input field: a `"[[Holzschild]]"` wikilink to the carried shield (`shield:`, or
    * `Schild:`). It never raises the armor class by itself — only reactively via `Blocken`. */
   shield?: string
+  /** Own-schema input fields: wikilinks to worn accessories — `cloak:` (`Umhang:`/`Mantel:`),
+   * `gloves:` (`Handschuhe:`), `boots:`
+   * (`Stiefel:`), `necklace:` (`Halskette:`/`Amulett:`) and up to two `rings:` (`Ringe:`). They take
+   * no pack slots and derive nothing on the sheet (yet). */
+  cloak?: string
+  gloves?: string
+  boots?: string
+  necklace?: string
+  rings?: string[]
   /** Own-schema input field: the `attacks:` list exactly as on disk (weapon wikilinks and written-out
    * attacks), so the inventory can equip and unequip weapons; `attacks` below is derived from it. */
   attack_entries?: unknown[]
@@ -380,6 +389,12 @@ export interface EndeavourContainerSlotAssignment {
 export interface EquipmentChange {
   armor?: string | null
   shield?: string | null
+  cloak?: string | null
+  gloves?: string | null
+  boots?: string | null
+  necklace?: string | null
+  /** The whole `rings:` list (an empty list deletes it). */
+  rings?: string[]
   attack_entries?: unknown[]
   containers?: EndeavourContainerSlotAssignment[]
   first: 'character' | 'inventory'
