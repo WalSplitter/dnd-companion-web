@@ -97,20 +97,42 @@ export function resolveEntry(index: VaultIndex, entry: EndeavourInventoryEntry):
   return resolveEndeavourItemLink(index, isStackEntry(entry) ? entry.link : entry)
 }
 
-/** Lays out a container's `items` into its grid, in list order (first-fit, see `findBestFit`).
- * Pure — takes the resolved capacity so callers decide how it was derived. */
+/**
+ * Lays out a container's `items` into its grid (first-fit, see `findBestFit`) — in list order when
+ * that fits, otherwise in a packed order (`packedOrder`): the rules only count slots, so a 3-slot
+ * staff must fit whenever 3 slots are free, even if they're scattered over two rows in list order.
+ * Tiles keep their `linkIndex` either way; only where they're drawn changes. Pure — takes the
+ * resolved capacity so callers decide how it was derived.
+ */
 export function layoutContainer(entries: EndeavourInventoryEntry[], index: VaultIndex, capacity: number, columns = GRID_COLUMNS): ContainerLayout {
+  const items = entries.map((entry) => resolveEntry(index, entry))
+  const costs = items.map((item) => Math.min(slotCostOf(item), columns))
+  const inOrder = layoutInOrder(entries, items, costs, entries.map((_, i) => i), capacity, columns)
+  if (inOrder.overflow.length === 0) return inOrder
+  const order = packedOrder(costs, capacity, columns)
+  return order ? layoutInOrder(entries, items, costs, order, capacity, columns) : inOrder
+}
+
+function layoutInOrder(
+  entries: EndeavourInventoryEntry[],
+  items: (VaultFile<EndeavourItemFrontmatter> | undefined)[],
+  costs: number[],
+  order: number[],
+  capacity: number,
+  columns: number,
+): ContainerLayout {
   const occupied = new Array<boolean>(capacity).fill(false)
   const tiles: ContainerTile[] = []
   const overflow: ContainerLayout['overflow'] = []
 
-  entries.forEach((entry, linkIndex) => {
-    const item = resolveEntry(index, entry)
-    const length = Math.min(slotCostOf(item), columns)
+  for (const linkIndex of order) {
+    const entry = entries[linkIndex]
+    const item = items[linkIndex]
+    const length = costs[linkIndex]
     const start = findBestFit(occupied, capacity, length, columns)
     if (start === null) {
       overflow.push({ linkIndex, entry, item })
-      return
+      continue
     }
     for (let i = start; i < start + length; i++) occupied[i] = true
     tiles.push({
@@ -122,9 +144,54 @@ export function layoutContainer(entries: EndeavourInventoryEntry[], index: Vault
       length,
       charges: isStackEntry(entry) ? entry.charges : undefined,
     })
-  })
+  }
 
+  tiles.sort((a, b) => a.start - b.start)
+  overflow.sort((a, b) => a.linkIndex - b.linkIndex)
   return { tiles, overflow, used: occupied.filter(Boolean).length, capacity, occupied }
+}
+
+/** Upper bound on search steps in `packedOrder` — far above what a real pack needs (a handful of
+ * multi-slot items over a few rows), just a guard against pathological data. */
+const PACK_SEARCH_LIMIT = 50_000
+
+/**
+ * An order of the entries (indices) in which first-fit places every one of them, or `undefined` if
+ * there is none. The grid is rows of `columns` cells (the last one possibly shorter), and an item
+ * can't span rows — so this is bin packing: the multi-slot items are assigned to rows by a small
+ * exhaustive search (largest first), and the 1-slot items then fill whatever is left, which always
+ * works once the total fits. The order lists the multi-slot items row by row, then the 1-slot items,
+ * each group keeping its list order.
+ */
+export function packedOrder(costs: number[], capacity: number, columns = GRID_COLUMNS): number[] | undefined {
+  if (costs.reduce((sum, c) => sum + c, 0) > capacity) return undefined
+  const rowCount = Math.ceil(capacity / columns)
+  const free = Array.from({ length: rowCount }, (_, r) => Math.min(columns, capacity - r * columns))
+
+  const big = costs.map((cost, i) => ({ cost, i })).filter((b) => b.cost > 1)
+  big.sort((a, b) => b.cost - a.cost || a.i - b.i)
+  const rowOf = new Array<number>(big.length)
+  let steps = 0
+
+  const place = (k: number): boolean => {
+    if (k === big.length) return true
+    if (++steps > PACK_SEARCH_LIMIT) return false
+    const tried = new Set<number>()
+    for (let r = 0; r < rowCount; r++) {
+      // Rows with the same free space are interchangeable for what's still to place.
+      if (free[r] < big[k].cost || tried.has(free[r])) continue
+      tried.add(free[r])
+      free[r] -= big[k].cost
+      rowOf[k] = r
+      if (place(k + 1)) return true
+      free[r] += big[k].cost
+    }
+    return false
+  }
+  if (!place(0)) return undefined
+
+  const byRow = big.map((b, k) => ({ ...b, row: rowOf[k] })).sort((a, b) => a.row - b.row || a.i - b.i)
+  return [...byRow.map((b) => b.i), ...costs.flatMap((cost, i) => (cost <= 1 ? [i] : []))]
 }
 
 /** A container item's own total slot capacity (its `Plaetze` is a capacity here, not a cost). */
@@ -190,8 +257,11 @@ export function tryPlaceEntry(
     return { ok: false, reason: 'too_big' }
   }
 
+  // The item fits if the container can still show everything it showed before, plus it — the
+  // layout repacks the rows if list order alone leaves the free slots scattered.
   const nextItems = [...currentItems, entry]
+  const before = layoutContainer(currentItems, index, target.capacity).overflow.length
   const layout = layoutContainer(nextItems, index, target.capacity)
-  if (layout.overflow.some((o) => o.linkIndex === nextItems.length - 1)) return { ok: false, reason: 'no_room' }
+  if (layout.overflow.length > before || layout.overflow.some((o) => o.linkIndex === nextItems.length - 1)) return { ok: false, reason: 'no_room' }
   return { ok: true, items: nextItems }
 }

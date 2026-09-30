@@ -69,7 +69,7 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
 
 /**
  * Like the legacy vault's `Inventar <Name>.md` convention, a character's `endeavour_inventory`,
- * `currency`, `spellcasting` and `spells_known` may live on separate notes that link back via
+ * `inventory`, `currency`, `spellcasting` and `spells_known` may live on separate notes that link back via
  * `Charakter: "[[<character file name>]]"` (the Endeavour vault keeps `Inventar.md` and
  * `Spell Sheet.md` next to the character). A field set on the character's own file always wins, so
  * a linked sheet can't silently override an inline value; otherwise the first linked note carrying
@@ -85,6 +85,7 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
   }
 
   const inventory = blockSource('endeavour_inventory')
+  const listInventory = blockSource('inventory')
   const currency = blockSource('currency')
   const spellcasting = blockSource('spellcasting')
   const spellsKnown = candidates.find((f) => Array.isArray(f.data.spells_known))?.data.spells_known
@@ -94,12 +95,15 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
   return {
     values: {
       endeavour_inventory: inventory?.record as CharacterFrontmatter['endeavour_inventory'],
+      inventory: listInventory?.record as CharacterFrontmatter['inventory'],
       currency: currency?.record as CharacterFrontmatter['currency'],
       spellcasting: spellcasting?.record as unknown as CharacterFrontmatter['spellcasting'],
       spells_known: spellsKnown as CharacterFrontmatter['spells_known'],
     },
     writeTargets: {
       ...(inventory ? { endeavour_inventory: { path: inventory.path } } : {}),
+      // Without any list inventory yet, the first item goes onto the character's own file.
+      inventory: { path: listInventory?.path ?? own.path },
       ...(currency ? { currency_block: { path: currency.path } } : {}),
       ...(spellSlots ? { spell_slots: spellSlots } : {}),
       ...(mana ? { mana_current: mana } : {}),
@@ -197,6 +201,14 @@ function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['nimb
 function linkField(data: Record<string, unknown>, ...keys: string[]): string | undefined {
   const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
   return typeof raw === 'string' && raw.trim() ? raw : undefined
+}
+
+/** The first of `keys` holding a list: its non-empty wikilinks (a single wikilink counts as a list
+ * of one). `undefined` when there are none. */
+function linkList(data: Record<string, unknown>, ...keys: string[]): string[] | undefined {
+  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const list = (Array.isArray(raw) ? raw : [raw]).filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+  return list.length > 0 ? list : undefined
 }
 
 /**
@@ -324,6 +336,11 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     ...character,
     armor: linkField(raw.data, 'armor', 'Rüstung'),
     shield: linkField(raw.data, 'shield', 'Schild'),
+    cloak: linkField(raw.data, 'cloak', 'Umhang', 'Mantel'),
+    gloves: linkField(raw.data, 'gloves', 'Handschuhe'),
+    boots: linkField(raw.data, 'boots', 'Stiefel', 'Schuhe'),
+    necklace: linkField(raw.data, 'necklace', 'Halskette', 'Amulett'),
+    rings: linkList(raw.data, 'rings', 'Ringe'),
     attack_entries: Array.isArray(raw.data.attacks) ? raw.data.attacks : undefined,
   }
   const pools = resolveLevelPools(character, files)

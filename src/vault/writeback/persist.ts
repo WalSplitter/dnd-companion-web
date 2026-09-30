@@ -1,5 +1,5 @@
 import { load } from 'js-yaml'
-import type { Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget } from '../types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, InventoryEntry } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -52,6 +52,25 @@ export function fieldPatch(target: FieldWriteTarget, logicalValue: number | bool
   return { kind: 'field', keyPath: target.keyPath, value: encodeFieldValue(target, logicalValue), createIfMissing: target.createIfMissing }
 }
 
+/**
+ * Rewrites the list inventory's whole `inventory` block (own schema: `equipped`/`carried` wikilink
+ * lists, possibly with inline `{ name, quantity, weight_lb }` items). Keeps any other keys the block
+ * carries, leaves out an empty list, and removes the block once both lists are empty.
+ */
+export function inventoryPatch(inventory: NonNullable<CharacterFrontmatter['inventory']>): FrontmatterPatch {
+  const clean = (list: InventoryEntry[] | undefined) =>
+    (list ?? []).map((entry) => {
+      if (typeof entry === 'string') return entry
+      const { _write: _unused, ...item } = entry
+      return item
+    })
+  const { equipped, carried, ...rest } = inventory
+  const value: Record<string, unknown> = { ...rest }
+  if (equipped && equipped.length > 0) value.equipped = clean(equipped)
+  if (carried && carried.length > 0) value.carried = clean(carried)
+  return { kind: 'block', keyPath: ['inventory'], value: Object.keys(value).length > 0 ? value : undefined, createIfMissing: true }
+}
+
 /** Rewrites the slot-grid inventory's whole `endeavour_inventory.containers` array (not a single
  * scalar — see `patchFrontmatterBlock`). */
 export function endeavourInventoryPatch(containers: EndeavourContainerSlotAssignment[]): FrontmatterPatch {
@@ -59,15 +78,18 @@ export function endeavourInventoryPatch(containers: EndeavourContainerSlotAssign
 }
 
 /**
- * What the character wears and wields, on its own file: `armor:` and `shield:` (one wikilink each;
- * `null` = taken off, which deletes the key) and the whole `attacks:` list (an empty list deletes it).
+ * What the character wears and wields, on its own file: `armor:`, `shield:`, `cloak:`, `gloves:`, `boots:` and
+ * `necklace:` (one wikilink each; `null` = taken off, which deletes the key) and the whole `rings:`
+ * and `attacks:` lists (an empty list deletes the key).
  * Fields left `undefined` are unchanged and get no patch.
  */
-export function equipmentPatches(change: Pick<EquipmentChange, 'armor' | 'shield' | 'attack_entries'>): FrontmatterPatch[] {
+export function equipmentPatches(change: Omit<EquipmentChange, 'containers' | 'first'>): FrontmatterPatch[] {
   const patches: FrontmatterPatch[] = []
   const add = (key: string, value: unknown) => patches.push({ kind: 'block', keyPath: [key], value, createIfMissing: true })
   if (change.armor !== undefined) add('armor', change.armor ?? undefined)
   if (change.shield !== undefined) add('shield', change.shield ?? undefined)
+  for (const key of ['cloak', 'gloves', 'boots', 'necklace'] as const) if (change[key] !== undefined) add(key, change[key] ?? undefined)
+  if (change.rings !== undefined) add('rings', change.rings.length > 0 ? change.rings : undefined)
   if (change.attack_entries !== undefined) add('attacks', change.attack_entries.length > 0 ? change.attack_entries : undefined)
   return patches
 }

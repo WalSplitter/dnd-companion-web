@@ -238,6 +238,7 @@ Voraussetzung: "Keine"
       weight_class: undefined,
       cost: undefined,
       kind: 'magic_item',
+      wear_slot: 'ring',
       magic_type: 'Ring',
       rarity: 'Selten',
       requires_attunement: true,
@@ -305,6 +306,30 @@ MaxGroesse: Groß
       kind: 'container',
       max_size: 'gross',
     })
+  })
+})
+
+describe('wear_slot', () => {
+  const slot = (...lines: string[]) => normalizeEndeavourItem(raw('X.md', ['---', ...lines, '---', ''].join('\n'))).wear_slot
+
+  it('reads an explicit Trageplatz on any kind of item', () => {
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Handschuhe')).toBe('gloves')
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Füße')).toBe('boots')
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Umhang')).toBe('cloak')
+  })
+
+  it('reads a Gegenstand/Kleidung/<Platz> tag', () => {
+    expect(slot('tags: [Gegenstand/Kleidung/Stiefel]')).toBe('boots')
+  })
+
+  it("reads a magic item's Art as whole words", () => {
+    expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Ring')).toBe('ring')
+    expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Wundersamer Gegenstand (Amulett)')).toBe('necklace')
+    expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Trank')).toBeUndefined()
+  })
+
+  it("ignores Art on anything that isn't a magic item", () => {
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Art: Ring')).toBeUndefined()
   })
 })
 

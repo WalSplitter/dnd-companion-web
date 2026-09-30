@@ -27,7 +27,7 @@ import {
   type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
 
@@ -125,6 +125,13 @@ interface VaultState {
    * yet (a brand-new character with nowhere on disk to place `endeavour_inventory`).
    */
   setEndeavourInventory: (characterPath: string, containers: EndeavourContainerSlotAssignment[]) => Promise<void>
+  /**
+   * Replaces a character's list inventory (own schema: `inventory.equipped`/`inventory.carried`) —
+   * adding, removing and moving items between the two lists. Written as the whole `inventory` block
+   * to the file that owns it (`CharacterWriteTargets.inventory`), with the same optimistic-write +
+   * rollback shape as `setEndeavourInventory`. No-op without edit permission or a write target.
+   */
+  setInventory: (characterPath: string, inventory: NonNullable<CharacterFrontmatter['inventory']>) => Promise<void>
   /**
    * Replaces a character's coin purse. Same optimistic-write + rollback shape as the other writers;
    * disk write goes to the whole `currency` block (own schema, `_write.currency_block`) or, for the
@@ -601,6 +608,23 @@ export const useVaultStore = create<VaultState>((set, get) => {
       )
     },
 
+    setInventory: async (characterPath, inventory) => {
+      const { vault, writer, editPermission } = get()
+      const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.inventory
+      if (editPermission !== 'granted' || !target || !writer?.canWrite(target.path)) return
+
+      await editCharacter(
+        characterPath,
+        (c) => ({ ...c, inventory }),
+        () => writer.write(target.path, inventoryPatch(inventory), characterContext(vault, characterPath)),
+        {
+          source: 'vault.setInventory',
+          context: { characterPath, writePath: target.path, inventory },
+          retry: () => void get().setInventory(characterPath, inventory),
+        },
+      )
+    },
+
     setCurrency: async (characterPath, currency) => {
       const { vault, writer, editPermission } = get()
       if (editPermission !== 'granted' || !writer) return
@@ -644,6 +668,11 @@ export const useVaultStore = create<VaultState>((set, get) => {
           ...c,
           ...(fields.armor !== undefined ? { armor: fields.armor ?? undefined } : {}),
           ...(fields.shield !== undefined ? { shield: fields.shield ?? undefined } : {}),
+          ...(fields.cloak !== undefined ? { cloak: fields.cloak ?? undefined } : {}),
+          ...(fields.gloves !== undefined ? { gloves: fields.gloves ?? undefined } : {}),
+          ...(fields.boots !== undefined ? { boots: fields.boots ?? undefined } : {}),
+          ...(fields.necklace !== undefined ? { necklace: fields.necklace ?? undefined } : {}),
+          ...(fields.rings !== undefined ? { rings: fields.rings.length > 0 ? fields.rings : undefined } : {}),
           ...(fields.attack_entries !== undefined ? { attack_entries: fields.attack_entries } : {}),
           ...(containers ? { endeavour_inventory: { containers } } : {}),
         }

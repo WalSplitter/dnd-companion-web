@@ -44,6 +44,11 @@ nimble_skills:
 armor_class: 6
 armor: "[[Schuppenpanzer]]"
 shield: "[[Holzschild]]"
+cloak: "[[Reiseumhang]]"
+gloves: "[[Lederhandschuhe]]"
+boots: "[[Reisestiefel]]"
+rings:
+  - "[[Ring des Schutzes]]"
 speed: 7,5 m
 hp:
   current: 21

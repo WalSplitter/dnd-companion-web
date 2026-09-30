@@ -92,6 +92,15 @@ describe('buildVault', () => {
     expect(vault.characters[0].frontmatter._write?.endeavour_inventory).toBeUndefined()
   })
 
+  it('points list inventory write-back at the file carrying `inventory`, else at the character file', () => {
+    expect(buildVault([characterFile]).characters[0].frontmatter._write?.inventory).toEqual({ path: 'Characters/Test.md' })
+
+    const linked = { path: 'Characters/Test Inventar.md', content: '---\nCharakter: "[[Test]]"\ninventory:\n  carried: ["[[Seil]]"]\n---\n' }
+    const character = buildVault([characterFile, linked]).characters[0]
+    expect(character.frontmatter._write?.inventory).toEqual({ path: 'Characters/Test Inventar.md' })
+    expect(character.frontmatter.inventory).toEqual({ carried: ['[[Seil]]'] })
+  })
+
   it('points spell slot write-back at a linked spell sheet when the character file has no inline spellcasting', () => {
     const linkedSpells = {
       path: 'Characters/Spell Sheet.md',

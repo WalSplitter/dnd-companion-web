@@ -41,6 +41,9 @@ export type EndeavourWeightClass = 'schwer' | 'sehr_schwer'
 
 export type EndeavourWeaponKind = 'melee' | 'ranged' | 'thrown'
 
+/** Where a worn accessory goes on the equipment loadout: shoulders, hands, feet, neck or a finger. */
+export type EndeavourWearSlot = 'cloak' | 'gloves' | 'boots' | 'necklace' | 'ring'
+
 interface EndeavourItemBase {
   name: string
   size?: EndeavourItemSize
@@ -54,6 +57,10 @@ interface EndeavourItemBase {
    * Kleinstitems`, e.g. 4 torches or 4 throwing knives per slot). Any item kind may carry it; a
    * placed stack tracks how many units are left (see `EndeavourStackEntry`). */
   stack_size?: number
+  /** Worn over the shoulders, on the hands, feet, neck or a finger — see `wearSlotOf`. The vault has no such items yet;
+   * this reads a `Trageplatz:` field (any kind), a `Gegenstand/Kleidung/<Platz>` tag, or a magic
+   * item's `Art` (e.g. `Art: Ring`). */
+  wear_slot?: EndeavourWearSlot
 }
 
 export interface EndeavourWeaponItem extends EndeavourItemBase {
@@ -219,6 +226,32 @@ function propertyLabels(raw: unknown): string[] | undefined {
   return labels.length > 0 ? labels : undefined
 }
 
+/** Words (lowercase, matched as whole words) naming each wear slot in a `Trageplatz`/`Art` field or
+ * a `Gegenstand/Kleidung/...` tag. */
+const WEAR_SLOT_WORDS: [EndeavourWearSlot, string[]][] = [
+  ['cloak', ['umhang', 'mantel', 'cape', 'rücken', 'schultern', 'cloak', 'back', 'shoulders']],
+  ['gloves', ['handschuhe', 'handschuh', 'hände', 'hand', 'gloves', 'hands', 'armschienen', 'bracers']],
+  ['boots', ['stiefel', 'schuhe', 'füße', 'fuß', 'boots', 'feet']],
+  ['necklace', ['halskette', 'kette', 'amulett', 'hals', 'anhänger', 'necklace', 'amulet', 'neck']],
+  ['ring', ['ring', 'finger']],
+]
+
+function wearSlotFromText(raw: unknown): EndeavourWearSlot | undefined {
+  const text = linkDisplay(raw).toLowerCase()
+  if (!text) return undefined
+  const words = text.split(/[^\p{L}]+/u)
+  return WEAR_SLOT_WORDS.find(([, names]) => names.some((n) => words.includes(n)))?.[0]
+}
+
+/** An explicit `Trageplatz:` wins, then a `Gegenstand/Kleidung/<Platz>` tag, then a magic item's `Art`. */
+function wearSlotOf(data: Record<string, unknown>, tags: string[]): EndeavourWearSlot | undefined {
+  const explicit = wearSlotFromText(data.Trageplatz)
+  if (explicit) return explicit
+  const clothing = tags.find((t) => t.toLowerCase().startsWith('gegenstand/kleidung/'))
+  if (clothing) return wearSlotFromText(clothing.slice('gegenstand/kleidung/'.length))
+  return hasTag(tags, 'Gegenstand/Magischer_Gegenstand') ? wearSlotFromText(data.Art) : undefined
+}
+
 function baseFields(raw: RawFile): EndeavourItemBase {
   const { data, name } = raw
   return {
@@ -228,6 +261,7 @@ function baseFields(raw: RawFile): EndeavourItemBase {
     cost: stringField(data.Kosten),
     plaetze: numberField(data.Plaetze),
     stack_size: numberField(data.Stapelgroesse),
+    wear_slot: wearSlotOf(data, tagList(data)),
   }
 }
 

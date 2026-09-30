@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
-import { resolveItemSize } from '../../../vault/adapters/endeavourItem'
+import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
 import { deriveEquipment } from '../../../vault/adapters/nativeCharacter'
 import { evasionValue, formatModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { equipFromInventory, equipNew, equippedKey, equippedLink, equipSlotOf, isEquippedStack, setEquippedCharges, unequip, type EquippedRef, type EquipResult } from '../equipment'
+import { equipFromInventory, equipNew, equippedKey, equippedLink, equipSlotOf, isEquippedStack, isWornSlot, setEquippedCharges, unequip, type EquippedRef, type EquipResult } from '../equipment'
 import { isCustomEntry, isStackEntry, resolveContainers, resolveEntry, tryPlaceEntry, type PlaceFailure, type ResolvedContainer } from '../grid'
 import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
@@ -18,6 +18,10 @@ import { EquipmentLoadout, type EquippedDragPayload } from './EquipmentLoadout'
 import { ItemDetailPanel, type EquipAction, type EquipPreviewLine, type SelectedGridItem } from './ItemDetailPanel'
 import { ItemSearchPanel, type ContainerOption } from './ItemSearchPanel'
 
+/** The most slots an item of each size category takes (rule `Gegenstandsgrößen`: Klein 1, Mittel 2,
+ * Groß 3; Sehr groß is 4 and up, so it caps nothing). */
+const MAX_SLOTS_FOR_SIZE: Record<EndeavourItemSize, number | undefined> = { klein: 1, mittel: 2, gross: 3, sehr_gross: undefined }
+
 /** A search result drop carries just the wikilink; a tile dragged from another container carries a
  * `MoveTilePayload` instead — see `ItemTile.tsx` — and an item dragged off the loadout an
  * `EquippedDragPayload`. */
@@ -26,8 +30,8 @@ type DropPayload = { type: 'new'; link: string } | MoveTilePayload | EquippedDra
 function parseEquippedRef(raw: unknown): EquippedRef | undefined {
   if (!raw || typeof raw !== 'object') return undefined
   const ref = raw as Record<string, unknown>
-  if (ref.slot === 'armor' || ref.slot === 'shield') return { slot: ref.slot }
-  return ref.slot === 'weapon' && typeof ref.position === 'number' ? { slot: 'weapon', position: ref.position } : undefined
+  if (isWornSlot(ref.slot)) return { slot: ref.slot }
+  return (ref.slot === 'weapon' || ref.slot === 'ring') && typeof ref.position === 'number' ? { slot: ref.slot, position: ref.position } : undefined
 }
 
 function parseDropPayload(raw: string): DropPayload {
@@ -173,15 +177,15 @@ export function EndeavourInventoryGrid({
     setSelected(select && link ? { key: equippedKey(select), item: resolveEndeavourItemLink(index, link), equipped: select } : null)
   }
 
-  function equipTile(containerIndex: number, linkIndex: number) {
+  function equipTile(containerIndex: number, linkIndex: number, ringPosition?: number) {
     if (!canEdit) return // defense in depth — the equip controls only render when canEdit
-    const result = equipFromInventory(character, index, containerIndex, linkIndex)
+    const result = equipFromInventory(character, index, containerIndex, linkIndex, ringPosition)
     applyEquip(result, result.ok ? result.equipped : undefined)
   }
 
-  function equipLinkNew(link: string) {
+  function equipLinkNew(link: string, ringPosition?: number) {
     if (!canEdit) return
-    const result = equipNew(character, index, link)
+    const result = equipNew(character, index, link, ringPosition)
     applyEquip(result, result.ok ? result.equipped : undefined)
   }
 
@@ -190,14 +194,15 @@ export function EndeavourInventoryGrid({
     applyEquip(unequip(character, index, ref, targetContainerIndex))
   }
 
-  function handleLoadoutDrop(raw: string) {
+  /** A drop on the loadout; `ringPosition` is set when it landed on one of the ring slots. */
+  function handleLoadoutDrop(raw: string, ringPosition?: number) {
     if (!canEdit) {
       setWarning(t('endeavourInventory.editLocked'))
       return
     }
     const payload = parseDropPayload(raw)
-    if (payload.type === 'move') equipTile(payload.sourceContainerIndex, payload.sourceLinkIndex)
-    else if (payload.type === 'new') equipLinkNew(payload.link)
+    if (payload.type === 'move') equipTile(payload.sourceContainerIndex, payload.sourceLinkIndex, ringPosition)
+    else if (payload.type === 'new') equipLinkNew(payload.link, ringPosition)
   }
 
   function warningMessage(reason: PlaceFailure, entry: EndeavourInventoryEntry, containerIndex: number): string {
@@ -209,6 +214,13 @@ export function EndeavourInventoryGrid({
     const target = resolved.find((r) => r.containerIndex === containerIndex)
     const size = itemSize ? t(`endeavourInventory.size.${itemSize}` as TranslationKey) : ''
     const maxSize = target?.maxSize ? t(`endeavourInventory.size.${target.maxSize}` as TranslationKey) : ''
+    // Spell out why (rule `Gegenstandsgrößen`: the size is the slot count, and a container caps the
+    // size of each single item) — otherwise a refusal with plenty of free slots looks like a bug.
+    const slots = itemFile ? resolveSlotCost(itemFile.frontmatter) : undefined
+    const maxSlots = target?.maxSize ? MAX_SLOTS_FOR_SIZE[target.maxSize] : undefined
+    if (slots !== undefined && maxSlots !== undefined && target) {
+      return t('endeavourInventory.warningTooBigSlots', { name, container: target.name, slots, size, maxSize, maxSlots })
+    }
     return t('endeavourInventory.warningTooBig', { name, size, maxSize })
   }
 
@@ -351,7 +363,9 @@ export function EndeavourInventoryGrid({
     const fromTile = containerIndex !== undefined && linkIndex !== undefined
     const result = fromTile ? equipFromInventory(character, index, containerIndex, linkIndex) : equipNew(character, index, link)
     if (!result.ok) return undefined
-    const previous = slot === 'weapon' ? undefined : character[slot]
+    // What the equip would swap back into the pack: the item worn in that slot (or on that finger).
+    const at = result.equipped
+    const previous = at?.slot === 'ring' ? character.rings?.[at.position] : at && at.slot !== 'weapon' ? character[at.slot] : undefined
     return {
       kind: 'equip',
       label: t(slot === 'weapon' ? 'equipment.equipWield' : 'equipment.equipWear'),
@@ -480,6 +494,11 @@ function changedFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
   return {
     ...(change.armor !== undefined ? { armor: change.armor ?? undefined } : {}),
     ...(change.shield !== undefined ? { shield: change.shield ?? undefined } : {}),
+    ...(change.cloak !== undefined ? { cloak: change.cloak ?? undefined } : {}),
+    ...(change.gloves !== undefined ? { gloves: change.gloves ?? undefined } : {}),
+    ...(change.boots !== undefined ? { boots: change.boots ?? undefined } : {}),
+    ...(change.necklace !== undefined ? { necklace: change.necklace ?? undefined } : {}),
+    ...(change.rings !== undefined ? { rings: change.rings } : {}),
     ...(change.attack_entries !== undefined ? { attack_entries: change.attack_entries } : {}),
   }
 }
