@@ -29,7 +29,7 @@ const TOP_SKILL_COUNT = 3
 
 const PROFICIENCY_RANK = { none: 0, proficient: 1, expertise: 2 } as const
 
-function initials(name: string): string {
+export function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
 }
@@ -94,7 +94,7 @@ function StatTile({ label, title, children }: { label: string; title: string; ch
 }
 
 /** Portrait (or a monogram medallion) with the total level as a badge; `small` for the list rows. */
-function Portrait({ character: c, small = false }: { character: CharacterFrontmatter; small?: boolean }) {
+export function Portrait({ character: c, small = false }: { character: CharacterFrontmatter; small?: boolean }) {
   return (
     <div className="relative shrink-0">
       {c.portrait_url ? (
@@ -121,7 +121,7 @@ function Portrait({ character: c, small = false }: { character: CharacterFrontma
 
 /** Resilience/HP (and mana, for casters with a pool) bars — same colours and ward as the sheet. The
  * card adds the temp-HP and exhaustion line below; the list row shows it beside the name instead. */
-function LifeForce({ character: c, withStatus = true }: { character: CharacterFrontmatter; withStatus?: boolean }) {
+export function LifeForce({ character: c, withStatus = true }: { character: CharacterFrontmatter; withStatus?: boolean }) {
   const t = useT()
   const temp = c.hp.temp ?? 0
   const resilience = resiliencePool(c)
@@ -168,8 +168,19 @@ function LifeForce({ character: c, withStatus = true }: { character: CharacterFr
 }
 
 /** Temp HP and exhaustion tokens; renders nothing while neither applies. `spread` pins exhaustion to
- * the right edge (card), otherwise both sit side by side (list row). */
-function VitalStatus({ character: c, spread = true, className = '' }: { character: CharacterFrontmatter; spread?: boolean; className?: string }) {
+ * the right edge (card), otherwise both sit side by side (list row). `tokensOnly` drops the
+ * exhaustion label (still in the tooltip) where space is tight (lineup). */
+export function VitalStatus({
+  character: c,
+  spread = true,
+  tokensOnly = false,
+  className = '',
+}: {
+  character: CharacterFrontmatter
+  spread?: boolean
+  tokensOnly?: boolean
+  className?: string
+}) {
   const t = useT()
   const temp = c.hp.temp ?? 0
   const exhaustion = exhaustionLevel(c)
@@ -185,7 +196,7 @@ function VitalStatus({ character: c, spread = true, className = '' }: { characte
       )}
       {exhaustion > 0 && (
         <span className={`flex items-center gap-1 font-semibold text-danger ${spread ? 'ml-auto' : ''}`} title={`${t('stats.exhaustion')}: ${exhaustion}/${exhaustionMax}`}>
-          {t('stats.exhaustion')}
+          {!tokensOnly && t('stats.exhaustion')}
           <span className="flex">
             {Array.from({ length: exhaustionMax }, (_, i) => {
               const skull = i === exhaustionMax - 1
@@ -314,7 +325,7 @@ export function CharacterCard({ character }: { character: CharacterFrontmatter }
   )
 }
 
-function FallenSeal({ dead }: { dead: boolean }) {
+export function FallenSeal({ dead }: { dead: boolean }) {
   const t = useT()
   return (
     <span className="card-fallen-seal shrink-0">

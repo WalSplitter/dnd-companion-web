@@ -707,6 +707,29 @@ export const useVaultStore = create<VaultState>((set, get) => {
   }
 })
 
+/** Which vault source this tab showed last, so a reload reopens the sample vault instead of jumping
+ * to the most recent real vault. Per tab (sessionStorage): a fresh tab still picks up the last real vault. */
+const ACTIVE_SOURCE_KEY = 'dnd-companion-active-source'
+
+useVaultStore.subscribe((state, previous) => {
+  if (state.source === previous.source) return
+  try {
+    if (state.source === 'none') sessionStorage.removeItem(ACTIVE_SOURCE_KEY)
+    else sessionStorage.setItem(ACTIVE_SOURCE_KEY, state.source)
+  } catch {
+    // sessionStorage unavailable — a reload then falls back to the most recent real vault.
+  }
+})
+
+/** Whether this tab had the sample vault open before the page was reloaded. */
+export function wasSampleVaultActive(): boolean {
+  try {
+    return sessionStorage.getItem(ACTIVE_SOURCE_KEY) === 'sample'
+  } catch {
+    return false
+  }
+}
+
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)

@@ -732,6 +732,124 @@ button.exh-token:hover {
     inset 0 1px 0 rgb(255 255 255 / 0.25),
     0 0 10px rgb(200 0 0 / 0.55);
 }
+
+/* Party lineup (CharacterListPage, "lineup" view): each member stands on a soft trim-coloured
+ * pedestal like a JRPG party screen. Hovering lifts the figure and brightens its pedestal; fallen
+ * members sink, desaturate and stand on a blood-red one. */
+.lineup-portrait {
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 10px 24px -8px rgb(0 0 0 / 0.8),
+    0 0 22px -6px color-mix(in srgb, var(--color-trim) 70%, transparent);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease,
+    filter 400ms ease;
+}
+.lineup-figure {
+  transition: transform 250ms ease;
+}
+.lineup-member:hover .lineup-figure {
+  transform: translateY(-6px);
+}
+.lineup-member:hover .lineup-portrait {
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 16px 28px -8px rgb(0 0 0 / 0.85),
+    0 0 30px -4px color-mix(in srgb, var(--color-trim) 85%, transparent);
+}
+.lineup-pedestal {
+  margin-top: 0.85rem;
+  height: 0.6rem;
+  width: 7rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-trim) 45%, transparent), transparent 70%);
+  filter: blur(1.5px);
+  transition:
+    opacity 250ms ease,
+    transform 250ms ease;
+  opacity: 0.75;
+}
+.lineup-member:hover .lineup-pedestal {
+  opacity: 1;
+  transform: scaleX(0.82);
+}
+.lineup-member.is-fallen .lineup-portrait {
+  filter: grayscale(0.9) brightness(0.7);
+  border-color: #b3121b;
+}
+.lineup-member.is-fallen .lineup-figure {
+  transform: translateY(4px);
+}
+.lineup-member.is-fallen:hover .lineup-portrait {
+  filter: grayscale(0.4) brightness(0.9);
+}
+.lineup-member.is-fallen .lineup-pedestal {
+  background: radial-gradient(ellipse at center, rgb(179 18 27 / 0.55), transparent 70%);
+}
+/* Formation stage (PartyFormation): a dim hall with a pool of torchlight on the floor and a
+ * receding flagstone grid, so the absolutely placed party reads as standing in one space. A faint
+ * crimson haze along the top edge marks the enemy's side, where the front line faces. */
+.formation-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 18rem;
+  background:
+    linear-gradient(to bottom, rgb(140 10 20 / 0.16), transparent 22%),
+    radial-gradient(ellipse 55% 45% at 50% 58%, color-mix(in srgb, var(--color-trim) 13%, transparent), transparent 75%),
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgb(0 0 0 / 0.35), transparent 70%),
+    var(--color-surface);
+}
+.formation-floor {
+  position: absolute;
+  inset: 35% -30% -10%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-trim) 14%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-trim) 14%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+  transform: perspective(520px) rotateX(58deg);
+  transform-origin: center top;
+  mask-image: radial-gradient(ellipse 50% 70% at 50% 30%, black, transparent 75%);
+}
+/* Name and vitals sit on a soft dark plate so the floor grid never runs through the text. */
+.lineup-plate {
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.5rem 0.45rem;
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  box-shadow: 0 6px 18px -10px rgb(0 0 0 / 0.9);
+  backdrop-filter: blur(2px);
+}
+/* Idle breathing: each figure bobs gently, out of step with the others. */
+@media (prefers-reduced-motion: no-preference) {
+  .lineup-breath {
+    animation: lineup-breath 5s ease-in-out infinite;
+  }
+}
+@keyframes lineup-breath {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Character comparison: the best value of a row, as a softly lit cell. */
+.compare-best {
+  background: color-mix(in srgb, var(--color-trim) 13%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lineup-figure,
+  .lineup-portrait,
+  .lineup-pedestal {
+    transition: none;
+  }
+}
 .card-fallen.is-dead .card-fallen-seal {
   border-color: #6e0000;
   background: radial-gradient(ellipse at 30% 25%, #2a0a0b, #0b0203 80%);

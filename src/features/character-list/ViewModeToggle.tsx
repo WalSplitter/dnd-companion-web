@@ -19,7 +19,18 @@ const ListIcon = () => (
   </svg>
 )
 
-/** Auto / cards / list switch in the style of the language switcher. In auto mode the button also
+const LineupIcon = () => (
+  <svg aria-hidden viewBox="0 0 16 16" className="size-3.5" fill="currentColor">
+    <circle cx="3.5" cy="5" r="1.8" />
+    <circle cx="8" cy="4.2" r="2.1" />
+    <circle cx="12.5" cy="5" r="1.8" />
+    <path d="M0.8 12.5c0-2 1.2-3.6 2.7-3.6s2.7 1.6 2.7 3.6Z" />
+    <path d="M4.9 12.5c0-2.4 1.4-4.2 3.1-4.2s3.1 1.8 3.1 4.2Z" />
+    <path d="M9.8 12.5c0-2 1.2-3.6 2.7-3.6s2.7 1.6 2.7 3.6Z" />
+  </svg>
+)
+
+/** Auto / cards / list / lineup switch in the style of the language switcher. In auto mode the button also
  * shows which layout it picked, so the choice never looks arbitrary. */
 export function ViewModeToggle({
   mode,
@@ -44,6 +55,7 @@ export function ViewModeToggle({
     },
     { key: 'cards', title: t('characterList.viewCards'), content: <GridIcon /> },
     { key: 'list', title: t('characterList.viewList'), content: <ListIcon /> },
+    { key: 'lineup', title: t('characterList.viewLineup'), content: <LineupIcon /> },
   ]
 
   return (

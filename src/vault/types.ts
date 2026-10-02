@@ -338,6 +338,9 @@ export interface CharacterFrontmatter {
   backstory?: string
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
+  /** Optional lineup rank (`front`/`middle`/`back`, or `vorne`/`mitte`/`hinten`) overriding the class
+   * default — see `formationRank`. Kept loose since it's read straight from the frontmatter. */
+  formation?: unknown
   conditions?: ConditionsInfo
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]

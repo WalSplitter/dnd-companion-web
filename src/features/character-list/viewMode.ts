@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export type CharacterViewMode = 'auto' | 'cards' | 'list'
+export type CharacterViewMode = 'auto' | 'cards' | 'list' | 'lineup'
 export type CharacterLayout = Exclude<CharacterViewMode, 'auto'>
 
 /** From this many characters `auto` switches from cards to list rows: up to four cards still fit in
@@ -8,7 +8,7 @@ export type CharacterLayout = Exclude<CharacterViewMode, 'auto'>
 export const AUTO_LIST_FROM = 5
 
 const STORAGE_KEY = 'dnd-companion-character-view'
-const MODES: CharacterViewMode[] = ['auto', 'cards', 'list']
+const MODES: CharacterViewMode[] = ['auto', 'cards', 'list', 'lineup']
 
 export function resolveLayout(mode: CharacterViewMode, count: number): CharacterLayout {
   if (mode !== 'auto') return mode
