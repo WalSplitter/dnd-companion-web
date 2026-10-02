@@ -53,6 +53,8 @@ duplicated.
 **Slot-grid inventory.** Drag items between backpacks and pouches, track charges, add temporary
 items, and equip gear on a character screen with body slots.
 
+**Biography.** Portrait, profile, appearance, backstory and personality on a tab of their own.
+
 </td>
 <td valign="top">
 
@@ -71,6 +73,9 @@ Failed writes are rolled back.
 <td valign="top">
 
 **Picks up where you left off.** Reopen a recent vault straight at the last character.
+
+**The whole party.** Cards, a compact list or a lineup by front, middle and back line, plus a
+comparison of everyone's values.
 
 **Easy navigation.** Breadcrumbs to the list and start page; step between characters.
 
@@ -367,6 +372,23 @@ Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`).
 feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
 [`src/sample-vault/`](src/sample-vault) for complete, Endeavour-flavoured examples.
 
+The **Biography** tab reads optional roleplay fields
+([`biography.ts`](src/vault/adapters/biography.ts)): `personality` (a list or a text), `ideals`,
+`bonds`, `flaws` and `appearance`, either a text or a map such as `{ age: 112, height: 1,35 m, eyes:
+grau }` (`gender`, `age`, `size`, `height`, `weight`, `eyes`, `hair`, `skin`; other keys are shown
+as written). The older German blocks `Persönlichkeit` (`Persönlichkeitsmerkmale`, `Ideale`,
+`Bindungen`, `Makel`) and `Aussehen` (`Geschlecht`, `Alter`, `Größe`, …) work too. The backstory
+is `backstory:`, or else the note body. The tab only appears when there is something to show.
+
+The party **lineup** on the character list places each character by the main class (melee classes
+in front, skirmishers and support casters in the middle, full casters at the back;
+[`formation.ts`](src/features/character-list/formation.ts)). `formation: front | middle | back`
+(or `vorne` / `mitte` / `hinten`) overrides it.
+
+Notes under a path containing `vorlage` (e.g. `Kampagne/Gruppe/_Vorlage Charakter/`) are treated
+as blank templates: they never show up as characters or spells, even with `type: character`, but
+links to them still resolve.
+
 The `inventory` lists can be edited in the app: items are searched in the vault, added to either
 list, removed, and moved between `equipped` and `carried` (see
 [`listInventory.ts`](src/features/inventory/listInventory.ts)); the whole block is written back.
@@ -439,8 +461,8 @@ additively:
 
 An older vault predating this app uses a different schema with no `type:` marker (nested
 `Attribute` / `Rettungswürfe` / `Fertigkeiten` objects, Dataview-flavoured formulas, items in
-markdown tables inside a linked `Inventar <Name>.md`). The app detects it structurally and normalises
-it on the fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in
+markdown tables inside a linked `Inventar <Name>.md`). The app detects it structurally (skipping the blank sheets in
+`vorlage` folders) and normalises it on the fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in
 the source vault is modified except through explicit edits.
 
 This adapter is best-effort, not full fidelity:
