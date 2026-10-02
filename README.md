@@ -51,7 +51,9 @@ duplicated.
 **Spells and resources.** Slots, known spells, class pools, luck points and exhaustion.
 
 **Slot-grid inventory.** Drag items between backpacks and pouches, track charges, add temporary
-items.
+items, and equip gear on a character screen with body slots.
+
+**Biography.** Portrait, profile, appearance, backstory and personality on a tab of their own.
 
 </td>
 <td valign="top">
@@ -71,6 +73,9 @@ Failed writes are rolled back.
 <td valign="top">
 
 **Picks up where you left off.** Reopen a recent vault straight at the last character.
+
+**The whole party.** Cards, a compact list or a lineup by front, middle and back line, plus a
+comparison of everyone's values.
 
 **Easy navigation.** Breadcrumbs to the list and start page; step between characters.
 
@@ -367,7 +372,28 @@ Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`).
 feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
 [`src/sample-vault/`](src/sample-vault) for complete, Endeavour-flavoured examples.
 
-`endeavour_inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
+The **Biography** tab reads optional roleplay fields
+([`biography.ts`](src/vault/adapters/biography.ts)): `personality` (a list or a text), `ideals`,
+`bonds`, `flaws` and `appearance`, either a text or a map such as `{ age: 112, height: 1,35 m, eyes:
+grau }` (`gender`, `age`, `size`, `height`, `weight`, `eyes`, `hair`, `skin`; other keys are shown
+as written). The older German blocks `Persönlichkeit` (`Persönlichkeitsmerkmale`, `Ideale`,
+`Bindungen`, `Makel`) and `Aussehen` (`Geschlecht`, `Alter`, `Größe`, …) work too. The backstory
+is `backstory:`, or else the note body. The tab only appears when there is something to show.
+
+The party **lineup** on the character list places each character by the main class (melee classes
+in front, skirmishers and support casters in the middle, full casters at the back;
+[`formation.ts`](src/features/character-list/formation.ts)). `formation: front | middle | back`
+(or `vorne` / `mitte` / `hinten`) overrides it.
+
+Notes under a path containing `vorlage` (e.g. `Kampagne/Gruppe/_Vorlage Charakter/`) are treated
+as blank templates: they never show up as characters or spells, even with `type: character`, but
+links to them still resolve.
+
+The `inventory` lists can be edited in the app: items are searched in the vault, added to either
+list, removed, and moved between `equipped` and `carried` (see
+[`listInventory.ts`](src/features/inventory/listInventory.ts)); the whole block is written back.
+
+`endeavour_inventory`, `inventory`, `currency`, `spellcasting` and `spells_known` don't have to live on the
 character's own file: they are also read from separate notes that link back via
 `Charakter: "[[<character file name>]]"` (see `resolveLinkedFields()` in
 [`nativeCharacter.ts`](src/vault/adapters/nativeCharacter.ts)). A field set directly on the
@@ -393,11 +419,25 @@ additively:
 - **Attributes and skills** (`nimble_attributes` / `nimble_skills`): eight attributes valued −5…+5
   and used directly as the roll modifier, with the 18 skills reassigned to the attribute that governs
   them. The Ability Scores / Skills / Saving Throws cards render this shape whenever it is present.
-  `abilities` / `proficiency_bonus` stay populated as an internal bridge for AC, initiative and spell
-  DC math, which is not yet ported to the real Nimble formulas.
+  `abilities` / `proficiency_bonus` are optional: armor class is the worn armor's `RK`, initiative
+  is split into turn order (IN) and starting AP (BW), and the spell DC is `8 + attribute` without a
+  proficiency bonus.
 - **Armor and evasion**: `armor: "[[Kettenhemd]]"` (or `Rüstung:`) links the worn armor note; its
   "Max BW" (`BW_cap` on the note) caps the BW part of the evasion value (`10 + BW`). The cap is never
-  read from the character file itself.
+  read from the character file itself. `shield: "[[Holzschild]]"` (or `Schild:`) links the shield,
+  whose `RK` is only the Block bonus.
+- **Equipment** ([`EquipmentLoadout.tsx`](src/features/inventory/components/EquipmentLoadout.tsx),
+  [`equipment.ts`](src/features/inventory/equipment.ts)): a character screen with body slots for
+  head, necklace, armor, belt, boots, cloak, shield, gloves and two rings (`head`, `cloak`,
+  `gloves`, `belt`, `boots`, `necklace`, `rings` on the character, German keys accepted) plus the
+  weapons in `attacks`. Equipping moves an item out of its container (equipped gear takes no
+  slots); a taken slot swaps the old item back. Wearables are assigned to a slot by a
+  `Trageplatz:` field, a `Gegenstand/Kleidung/<Platz>` tag, or a magic item's `Art`; armor with a
+  `Trageplatz` (e.g. a helm with `Trageplatz: Kopf`) goes to that slot instead of the body.
+  The silhouette ([`PaperDoll.tsx`](src/features/inventory/components/PaperDoll.tsx)) shows the body armor by its `Klasse` (clothing such as `Trageplatz: Kleidung`,
+  `Leicht`, `Mittel`, `Schwer`) and the weapon by its `Gegenstand/Waffe/<Form>` tag or name (sword,
+  dagger, axe, mace, staff, polearm, bow, crossbow); a second one-handed weapon goes into the off
+  hand when no shield is carried.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
   Following the DM's class notes, level 1 grants `(BasisTP + KO) × 2` TP and every further level
   `BasisTP + KO`, so max TP is `(level + 1) × (BasisTP + KO)`; RP likewise with `BasisRP` and half EN
@@ -421,8 +461,8 @@ additively:
 
 An older vault predating this app uses a different schema with no `type:` marker (nested
 `Attribute` / `Rettungswürfe` / `Fertigkeiten` objects, Dataview-flavoured formulas, items in
-markdown tables inside a linked `Inventar <Name>.md`). The app detects it structurally and normalises
-it on the fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in
+markdown tables inside a linked `Inventar <Name>.md`). The app detects it structurally (skipping the blank sheets in
+`vorlage` folders) and normalises it on the fly ([`legacyCharacterSheet.ts`](src/vault/adapters/legacyCharacterSheet.ts)); nothing in
 the source vault is modified except through explicit edits.
 
 This adapter is best-effort, not full fidelity:
@@ -522,12 +562,6 @@ oxlint.
 
 Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues):
 
-- [#7](https://github.com/WalSplitter/dnd-companion-web/issues/7) Firefox/Safari: export changes as a
-  download or ZIP, since those browsers cannot write to a vault folder.
-- [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) Endeavour: compute AC, initiative
-  and spell DC from the Nimble formulas (they still come from the D&D-shaped bridge fields).
-- [#11](https://github.com/WalSplitter/dnd-companion-web/issues/11) Native schema: add and remove
-  inventory entries (only quantity and weight of inline items are written back today).
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA
   (`vite-plugin-pwa`), including the last vault opened from GitHub.
 

@@ -197,7 +197,7 @@ export interface CharacterWriteTargets {
    * a character without an inventory yet can still add its first item — see `setInventory`. */
   inventory?: { path: string }
   /** Nimble own schema: the character's own file, which holds what it has equipped (`armor:`,
-   * `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
+   * `shield:`, `head:`, `cloak:`, `gloves:`, `belt:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
   equipment?: { path: string }
   /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */
   currency?: Partial<Record<keyof Currency, FieldWriteTarget>>
@@ -267,11 +267,13 @@ export interface CharacterFrontmatter {
    * `Schild:`). It never raises the armor class by itself — only reactively via `Blocken`. */
   shield?: string
   /** Own-schema input fields: wikilinks to worn accessories — `cloak:` (`Umhang:`/`Mantel:`),
-   * `gloves:` (`Handschuhe:`), `boots:`
+   * `head:` (`Kopf:`/`Helm:`), `gloves:` (`Handschuhe:`), `belt:` (`Gürtel:`), `boots:`
    * (`Stiefel:`), `necklace:` (`Halskette:`/`Amulett:`) and up to two `rings:` (`Ringe:`). They take
    * no pack slots and derive nothing on the sheet (yet). */
+  head?: string
   cloak?: string
   gloves?: string
+  belt?: string
   boots?: string
   necklace?: string
   rings?: string[]
@@ -334,8 +336,14 @@ export interface CharacterFrontmatter {
    * body instead (see `CharacterSheetPage.tsx`).
    */
   backstory?: string
+  /** Derived (`resolveBiography`): personality, ideals, bonds, flaws and appearance for the
+   * "Biography" tab — read from either the own schema or the older German sheet blocks. */
+  biography?: CharacterBiography
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
+  /** Optional lineup rank (`front`/`middle`/`back`, or `vorne`/`mitte`/`hinten`) overriding the class
+   * default — see `formationRank`. Kept loose since it's read straight from the frontmatter. */
+  formation?: unknown
   conditions?: ConditionsInfo
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]
@@ -349,6 +357,21 @@ export interface CharacterFrontmatter {
 
 /** When a feature is used (`Einsatz` on a `#Merkmal` note): `[[Aktion]]`, `[[Reaktion]]`, or
  * `Passiv`/absent. Nimble has no bonus actions, so `[[Bonusaktion]]` counts as an action. */
+/** Appearance fields the "Biography" tab labels itself; anything else keeps the note's own key. */
+export type AppearanceKey = 'gender' | 'age' | 'size' | 'height' | 'weight' | 'eyes' | 'hair' | 'skin'
+
+/** A character's roleplay details — every part optional (see `resolveBiography`). */
+export interface CharacterBiography {
+  personality?: string[]
+  ideals?: string
+  bonds?: string
+  flaws?: string
+  /** Appearance as labelled fields (`key` is an `AppearanceKey` or the note's own key)… */
+  appearance?: { key: string; value: string }[]
+  /** …or as one free text, for a simplified sheet. */
+  appearance_text?: string
+}
+
 export type FeatureUsage = 'action' | 'reaction' | 'passive'
 
 export interface CharacterFeature {
@@ -383,6 +406,11 @@ export interface EndeavourContainerSlotAssignment {
   items: EndeavourInventoryEntry[]
 }
 
+/** The equipment slots that hold exactly one item (a wikilink each, on the character's own note). */
+export const WORN_SLOTS = ['armor', 'shield', 'head', 'cloak', 'gloves', 'belt', 'boots', 'necklace'] as const
+
+export type WornSlot = (typeof WORN_SLOTS)[number]
+
 /**
  * One equip/unequip step from the inventory: what changes on the character's own file (`armor`/
  * `shield`: `undefined` = unchanged, `null` = taken off; `attack_entries`: the new `attacks:` list)
@@ -393,8 +421,10 @@ export interface EndeavourContainerSlotAssignment {
 export interface EquipmentChange {
   armor?: string | null
   shield?: string | null
+  head?: string | null
   cloak?: string | null
   gloves?: string | null
+  belt?: string | null
   boots?: string | null
   necklace?: string | null
   /** The whole `rings:` list (an empty list deletes it). */

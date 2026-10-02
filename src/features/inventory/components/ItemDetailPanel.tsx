@@ -76,7 +76,7 @@ export function ItemDetailPanel({
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-trim/25 pb-2">
         <span className="font-display text-base font-bold tracking-wide text-fg">{fm.name}</span>
         <span className="rounded-sm bg-trim/15 px-1.5 py-px text-[0.65rem] font-medium uppercase tracking-wider text-trim">
-          {selected.custom ? t('endeavourInventory.customBadge') : endeavourItemSummary(fm)}
+          {selected.custom ? t('endeavourInventory.customBadge') : endeavourItemSummary(fm, t)}
         </span>
         {selected.equipped && (
           <span className="rounded-sm bg-success/15 px-1.5 py-px text-[0.65rem] font-medium uppercase tracking-wider text-success">{t('equipment.equippedBadge')}</span>

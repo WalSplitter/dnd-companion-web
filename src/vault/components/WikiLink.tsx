@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useT, type TranslationKey } from '../../i18n/useI18n'
+import { characterRoute } from '../../routes/paths'
+import { endeavourItemSummary } from '../adapters/endeavourItem'
 import { useVaultIndex } from '../useVaultIndex'
 import { resolveWikilink, type ResolvedWikilink } from '../wikilinks'
 import { renderObsidianBody } from './renderObsidian'
@@ -167,7 +169,7 @@ function WikiLinkDialog({
       <div className="mb-1.5 text-xs uppercase tracking-wide text-trim">
         {t(KIND_KEY[resolved.kind])}
         {resolved.spellLevel !== undefined && ` · ${resolved.spellLevel === 0 ? t('spells.cantripBadge') : t('spells.levelBadge', { level: resolved.spellLevel })}`}
-        {resolved.summary ? ` · ${resolved.summary}` : ''}
+        {resolved.endeavourItem ? ` · ${endeavourItemSummary(resolved.endeavourItem, t)}` : resolved.summary ? ` · ${resolved.summary}` : ''}
       </div>
       {resolved.kind === 'unresolved' ? (
         <div className="text-sm text-fg-muted">{t('wikilink.noNoteFound', { name })}</div>
@@ -178,7 +180,7 @@ function WikiLinkDialog({
       )}
       {resolved.kind === 'character' && (
         <Link
-          to={`/characters/${encodeURIComponent(resolved.name)}`}
+          to={characterRoute(resolved.name)}
           className="mt-2 inline-block text-xs text-primary hover:underline"
           onClick={onClose}
         >

@@ -9,6 +9,18 @@ backstory: |
 
   In der Gruppe steht er vorne, redet wenig und hat für jede Lage einen Trinkspruch. Die Narbe an
   seiner Schulter stammt aus dem Kampf gegen die Grubenschrecken — sie ist noch nicht verheilt.
+personality:
+  - Redet wenig, aber wenn, dann zählt jedes Wort.
+  - Prüft jeden Stollen und jede Decke, bevor er darunter tritt.
+ideals: Niemand wird zurückgelassen.
+bonds: Der Schuppenpanzer seines Hauptmanns — und die Namen des verschütteten Trupps, die er in den Schild geritzt hat.
+flaws: Traut keiner Magie, die er nicht anfassen kann.
+appearance:
+  age: 112
+  height: 1,35 m
+  weight: 85 kg
+  eyes: Grau wie Granit
+  hair: Rostrot, zu zwei Zöpfen geflochten
 class:
   - name: Krieger
     level: 4
@@ -44,8 +56,10 @@ nimble_skills:
 armor_class: 6
 armor: "[[Schuppenpanzer]]"
 shield: "[[Holzschild]]"
+head: "[[Lederkappe]]"
 cloak: "[[Reiseumhang]]"
 gloves: "[[Lederhandschuhe]]"
+belt: "[[Ledergürtel]]"
 boots: "[[Reisestiefel]]"
 rings:
   - "[[Ring des Schutzes]]"

@@ -1,10 +1,11 @@
 import { nimbleAttributeValue } from '../deriveStats'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
-import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from '../types'
-import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
+import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
+import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../vaultLoader'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
+import { resolveBiography } from './biography'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
 import { resolveWeaponAttacks } from './weaponAttacks'
 
@@ -223,6 +224,17 @@ function resolveArmor(link: string | undefined, files: RawFile[]): { armorClass:
   return item?.kind === 'armor' ? { armorClass: item.rk ?? 0, bwCap: item.bw_cap } : { armorClass: 0 }
 }
 
+/** The character fields an `EquipmentChange` sets, in `CharacterFrontmatter` shape: a slot set to
+ * `null` and an empty `rings` list become absent, fields the change leaves `undefined` are not included.
+ * The new containers belong to the inventory note and are not part of it. */
+export function equipmentChangeFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
+  const fields: Partial<CharacterFrontmatter> = {}
+  for (const slot of WORN_SLOTS) if (change[slot] !== undefined) fields[slot] = change[slot] ?? undefined
+  if (change.rings !== undefined) fields.rings = change.rings.length > 0 ? change.rings : undefined
+  if (change.attack_entries !== undefined) fields.attack_entries = change.attack_entries
+  return fields
+}
+
 /**
  * Everything the equipped gear decides on the sheet: armor class and Max BW from `armor`, attacks
  * from `attack_entries`. Called when the character is read, and again by the store whenever the
@@ -337,7 +349,9 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     armor: linkField(raw.data, 'armor', 'Rüstung'),
     shield: linkField(raw.data, 'shield', 'Schild'),
     cloak: linkField(raw.data, 'cloak', 'Umhang', 'Mantel'),
+    head: linkField(raw.data, 'head', 'Kopf', 'Helm'),
     gloves: linkField(raw.data, 'gloves', 'Handschuhe'),
+    belt: linkField(raw.data, 'belt', 'Gürtel'),
     boots: linkField(raw.data, 'boots', 'Stiefel', 'Schuhe'),
     necklace: linkField(raw.data, 'necklace', 'Halskette', 'Amulett'),
     rings: linkList(raw.data, 'rings', 'Ringe'),
@@ -362,6 +376,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     nimble_save_modes: resolveClassSaveModes(notes),
     nimble_class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
+    biography: resolveBiography(raw.data),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }
 }

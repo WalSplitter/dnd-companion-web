@@ -310,47 +310,6 @@
   animation: glow-pulse 0.5s ease-in-out infinite alternate;
 }
 
-/* The watcher: a small metal skull resting in the tomb world's corner. Its pupils follow the
- * pointer (see WatchingSkull.tsx); now and then its jaw chatters. */
-[data-theme='necromancer'] .ambient-watching-skull {
-  right: clamp(12px, 3vw, 48px);
-  bottom: clamp(6px, 1.5vh, 16px);
-  width: clamp(56px, 7vw, 92px);
-  opacity: 0.8;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-primary) 30%, transparent));
-}
-.watching-skull {
-  transition: transform 1.2s ease-out;
-}
-.watching-skull-bone {
-  opacity: 0.75;
-}
-.watching-skull-pupil {
-  transition: transform 0.35s ease-out;
-}
-.watching-skull-eye {
-  animation: glow-pulse 1.6s ease-in-out infinite alternate;
-}
-.watching-skull-jaw {
-  animation: skull-chatter 14s ease-in-out infinite;
-}
-@keyframes skull-chatter {
-  0%,
-  86%,
-  100% {
-    transform: translateY(0);
-  }
-  88%,
-  92%,
-  96% {
-    transform: translateY(6px);
-  }
-  90%,
-  94% {
-    transform: translateY(1px);
-  }
-}
-
 /* Shared by the crescent ship: a slow hover. */
 @keyframes shade-hover {
   from {

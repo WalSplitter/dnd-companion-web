@@ -3,7 +3,7 @@ import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
-import { ShieldIcon } from '../../inventory/components/EquipmentLoadout'
+import { ShieldIcon } from '../../inventory/components/equipmentIcons'
 import { useT } from '../../../i18n/useI18n'
 import {
   exhaustionLevel,
@@ -117,7 +117,7 @@ function InitiativePlate({ label, modifier, note, effect }: { label: string; mod
   return (
     <StatPlate label={label}>
       <D20RollButton label={label} modifier={modifier} note={note} effect={effect} className="cursor-pointer transition hover:text-trim">
-        <D20Modifier value={modifier} hint={false} />
+        <D20Modifier value={modifier} hint={false} className="is-loud" />
       </D20RollButton>
     </StatPlate>
   )
@@ -148,7 +148,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
         <StatPlate label={t('stats.speed')} value={character.speed} />
       ) : (
         <StatPlate label={t('stats.movement')} value={exhaustion > 0 ? undefined : String(squares)} title={movementHint(t, character, squares)}>
-          {exhaustion > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : undefined}
+          {exhaustion > 0 ? <ExhaustedValue className="is-loud">{squares}</ExhaustedValue> : undefined}
         </StatPlate>
       )}
       {/* Nimble has no proficiency bonus at all (#9); its evasion value sits by the armor class instead. */}

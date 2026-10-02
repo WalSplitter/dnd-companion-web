@@ -3,7 +3,7 @@ import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
-import { deriveEquipment } from '../../../vault/adapters/nativeCharacter'
+import { deriveEquipment, equipmentChangeFields } from '../../../vault/adapters/nativeCharacter'
 import { evasionValue, formatModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
@@ -173,7 +173,7 @@ export function EndeavourInventoryGrid({
     }
     void setEquipment(characterPath, result.change)
     setWarning(null)
-    const link = select ? equippedLink({ ...character, ...changedFields(result.change) }, select) : undefined
+    const link = select ? equippedLink({ ...character, ...equipmentChangeFields(result.change) }, select) : undefined
     setSelected(select && link ? { key: equippedKey(select), item: resolveEndeavourItemLink(index, link), equipped: select } : null)
   }
 
@@ -378,7 +378,7 @@ export function EndeavourInventoryGrid({
   /** Armor class, evasion, block and new attacks before → after `change`, computed with the same
    * derivation the sheet uses (`deriveEquipment`). */
   function equipPreview(change: EquipmentChange): EquipPreviewLine[] {
-    const next = { ...character, ...changedFields(change) }
+    const next = { ...character, ...equipmentChangeFields(change) }
     const after = { ...next, ...deriveEquipment(next, rawFiles) }
     const lines: EquipPreviewLine[] = []
     if (change.armor !== undefined) {
@@ -487,20 +487,6 @@ export function EndeavourInventoryGrid({
       </div>
     </div>
   )
-}
-
-/** The character fields an `EquipmentChange` sets, in `CharacterFrontmatter` shape (`null` → absent). */
-function changedFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
-  return {
-    ...(change.armor !== undefined ? { armor: change.armor ?? undefined } : {}),
-    ...(change.shield !== undefined ? { shield: change.shield ?? undefined } : {}),
-    ...(change.cloak !== undefined ? { cloak: change.cloak ?? undefined } : {}),
-    ...(change.gloves !== undefined ? { gloves: change.gloves ?? undefined } : {}),
-    ...(change.boots !== undefined ? { boots: change.boots ?? undefined } : {}),
-    ...(change.necklace !== undefined ? { necklace: change.necklace ?? undefined } : {}),
-    ...(change.rings !== undefined ? { rings: change.rings } : {}),
-    ...(change.attack_entries !== undefined ? { attack_entries: change.attack_entries } : {}),
-  }
 }
 
 /** What `Blocken` adds with this shield: its `RK` (0 without one). */

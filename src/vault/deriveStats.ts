@@ -177,13 +177,28 @@ export function nimbleSkillBonus(character: CharacterFrontmatter, skill: SkillKe
   return nimbleAttributeValue(character, attribute) + nimbleSkillValue(character, skill)
 }
 
+/** A skill's total roll bonus under the character's rules: attribute + trained value on a Nimble
+ * sheet, ability modifier + proficiency in D&D. */
+export function characterSkillBonus(character: CharacterFrontmatter, skill: SkillKey): number {
+  return character.nimble_attributes ? nimbleSkillBonus(character, skill) : skillBonus(character, skill)
+}
+
+/** Whether the character trained the skill: a Nimble skill value above 0, or D&D proficiency/expertise. */
+export function isSkillTrained(character: CharacterFrontmatter, skill: SkillKey): boolean {
+  return character.nimble_attributes ? nimbleSkillValue(character, skill) > 0 : skillProficiencyLevel(character, skill) !== 'none'
+}
+
 export function totalCharacterLevel(character: CharacterFrontmatter): number {
   return character.class.reduce((sum, c) => sum + c.level, 0)
 }
 
+/** The character's class(es) for display. Per-class levels only appear when multiclassing
+ * ("Arkanist 1 / Paladin 4"); a single class shows just its name, since its level is the
+ * character's total level, which every view already shows beside it. */
 export function classSummary(character: CharacterFrontmatter): string {
+  const multiclass = character.class.length > 1
   return character.class
-    .map((c) => `${c.name}${c.subclass ? ` (${c.subclass})` : ''} ${c.level}`)
+    .map((c) => `${c.name}${c.subclass ? ` (${c.subclass})` : ''}${multiclass ? ` ${c.level}` : ''}`)
     .join(' / ')
 }
 

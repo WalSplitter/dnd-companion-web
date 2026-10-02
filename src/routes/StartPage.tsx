@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArcaneSigil } from '../components/ArcaneSigil'
 import { VaultLoadingScreen } from '../components/VaultLoadingScreen'
-import { formatRelativeTime } from '../i18n/relativeTime'
-import { useI18n, type TranslateFn } from '../i18n/useI18n'
+import { useI18n } from '../i18n/useI18n'
 import { sampleVaultImages } from '../sample-vault'
 import { useVaultStore } from '../store/vaultStore'
 import type { GitHubErrorKind, GitHubVaultRef } from '../vault/github/githubApi'
@@ -11,17 +10,11 @@ import { GitHubVaultDialog } from '../vault/github/GitHubVaultDialog'
 import { EMPTY_GITHUB_FORM, gitHubFormValues, type GitHubFormValues } from '../vault/github/githubForm'
 import type { RecentVault } from '../vault/handleStore'
 import { isFileSystemAccessSupported } from '../vault/vaultLoader'
+import { ContinueCard } from './start/ContinueCard'
+import { ChestIcon, RepoIcon } from './start/portalIcons'
+import { CardHead, Emblem, PortalCard } from './start/PortalCard'
 
 const EMBER_COUNT = 22
-
-function characterPath(name: string) {
-  return `/characters/${encodeURIComponent(name)}`
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
-}
 
 /** Whether folders dropped on the page can be opened (Chromium's `getAsFileSystemHandle`). */
 function supportsFolderDrop(): boolean {
@@ -53,256 +46,10 @@ function Embers() {
   )
 }
 
-/**
- * A card that tilts toward the pointer and lights up where it is, with a spinning gilded rim on
- * hover. `accent` tints it (any CSS colour). Rendered as a button when it has a single action.
- */
-function PortalCard({
-  accent,
-  onActivate,
-  disabled,
-  className = '',
-  children,
-}: {
-  accent: string
-  onActivate?: () => void
-  disabled?: boolean
-  className?: string
-  children: ReactNode
-}) {
-  const ref = useRef<HTMLElement>(null)
-
-  function track(e: PointerEvent) {
-    const el = ref.current
-    if (!el || e.pointerType !== 'mouse') return
-    const r = el.getBoundingClientRect()
-    const x = (e.clientX - r.left) / r.width
-    const y = (e.clientY - r.top) / r.height
-    el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`)
-    el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`)
-    el.style.setProperty('--ry', `${((x - 0.5) * 7).toFixed(2)}deg`)
-    el.style.setProperty('--rx', `${((0.5 - y) * 7).toFixed(2)}deg`)
-  }
-
-  function reset() {
-    ref.current?.style.setProperty('--rx', '0deg')
-    ref.current?.style.setProperty('--ry', '0deg')
-  }
-
-  const props = {
-    className: `portal-card group ${className}`,
-    style: { '--portal': accent } as CSSProperties,
-    onPointerMove: track,
-    onPointerLeave: reset,
-  }
-  const inner = <div className="portal-card-inner flex h-full flex-col p-6">{children}</div>
-
-  return onActivate ? (
-    <button ref={ref as RefObject<HTMLButtonElement>} type="button" onClick={onActivate} disabled={disabled} {...props}>
-      {inner}
-    </button>
-  ) : (
-    <div ref={ref as RefObject<HTMLDivElement>} {...props}>
-      {inner}
-    </div>
-  )
-}
-
-function Emblem({ children }: { children: ReactNode }) {
-  return <div className="portal-emblem mb-5 flex size-16 shrink-0 items-center justify-center rounded-2xl">{children}</div>
-}
-
-function BookIcon() {
-  return (
-    <svg viewBox="0 0 48 48" className="portal-float size-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
-      <path d="M24 12c-4-3-10-4-17-3v27c7-1 13 0 17 3 4-3 10-4 17-3V9c-7-1-13 0-17 3Z" fill="color-mix(in srgb, currentColor 12%, transparent)" />
-      <path d="M24 12v27" />
-      <path className="book-mark" d="M31 10v12l3-2.5 3 2.5V9.4" fill="currentColor" />
-    </svg>
-  )
-}
-
-function ChestIcon() {
-  return (
-    <svg viewBox="0 0 48 48" className="portal-float size-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-      <rect x="7" y="22" width="34" height="18" rx="2" fill="color-mix(in srgb, currentColor 12%, transparent)" />
-      <path d="M7 30h34M24 26v8" />
-      <circle className="chest-keyhole" cx="24" cy="30" r="2.6" fill="currentColor" stroke="none" />
-      <g className="chest-lid">
-        <path d="M7 22v-4a10 8 0 0 1 10-8h14a10 8 0 0 1 10 8v4Z" fill="color-mix(in srgb, currentColor 18%, transparent)" />
-        <path d="M17 10v12M31 10v12" strokeOpacity="0.6" />
-      </g>
-      <g className="chest-glow" stroke="none" fill="currentColor">
-        <circle cx="16" cy="16" r="1.2" />
-        <circle cx="24" cy="12" r="1.5" />
-        <circle cx="32" cy="15" r="1.1" />
-      </g>
-    </svg>
-  )
-}
-
-function RepoIcon() {
-  return (
-    <svg viewBox="0 0 48 48" className="portal-float size-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
-      <path d="M15 15v18M33 21c0 9-18 6-18 12" />
-      <circle cx="15" cy="11" r="4" fill="color-mix(in srgb, currentColor 18%, transparent)" />
-      <circle cx="15" cy="37" r="4" fill="color-mix(in srgb, currentColor 18%, transparent)" />
-      <circle cx="33" cy="17" r="4" fill="currentColor" />
-    </svg>
-  )
-}
-
-/** Marks a recents entry that was opened from a GitHub repository (hover: which one). */
-function GitHubBadge({ recent, t }: { recent: RecentVault; t: TranslateFn }) {
-  if (recent.kind !== 'github') return null
-  const { owner, repo, branch, subpath } = recent.github
-  return (
-    <span className="shrink-0 rounded-full border border-fg-muted/35 px-2 py-0.5 text-[0.65rem] font-semibold text-fg-muted" title={`${owner}/${repo}@${branch}${subpath ? ` · ${subpath}` : ''}`}>
-      {t('github.sourceBadge')}
-    </span>
-  )
-}
-
-function Medallion({ name, index, image }: { name: string; index: number; image?: string }) {
-  return (
-    <span
-      className="recent-medallion flex size-8 items-center justify-center overflow-hidden rounded-full border-2 border-trim/70 bg-surface-2 font-display text-[0.65rem] font-bold text-trim"
-      style={{ '--i': index } as CSSProperties}
-      title={name}
-    >
-      {image ? <img src={image} alt="" className="size-full object-cover" /> : initials(name)}
-    </span>
-  )
-}
-
-function RecentMeta({ recent, t, lang }: { recent: RecentVault; t: TranslateFn; lang: 'en' | 'de' }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-fg-muted">
-      <GitHubBadge recent={recent} t={t} />
-      {recent.ruleset && recent.ruleset !== 'unknown' && (
-        <span className="rounded-full border border-trim/35 bg-trim/10 px-2 py-0.5 font-semibold text-trim">{t(`ruleset.${recent.ruleset}`)}</span>
-      )}
-      {recent.characterCount !== undefined && <span>{t('start.characterCount', { n: recent.characterCount })}</span>}
-      <span className="flex items-center gap-2.5">
-        <span aria-hidden className="size-1 rotate-45 bg-trim/60" />
-        {t('start.openedAgo', { ago: formatRelativeTime(recent.openedAt, lang) })}
-      </span>
-    </div>
-  )
-}
-
-function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: string) => void }) {
-  const { t, lang } = useI18n()
-  const recents = useVaultStore((s) => s.recents)
-  const recentsLoaded = useVaultStore((s) => s.recentsLoaded)
-  const recentId = useVaultStore((s) => s.recentId)
-  const forget = useVaultStore((s) => s.forgetRecentVault)
-  const [latest, ...older] = recents
-  const supported = isFileSystemAccessSupported()
-
-  return (
-    <PortalCard accent="var(--color-trim)" className="h-full">
-      <Emblem>
-        <BookIcon />
-      </Emblem>
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-trim">{t('start.continueHeading')}</p>
-
-      {latest ? (
-        <div className="mt-3 flex flex-1 flex-col">
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="min-w-0 truncate font-display text-2xl font-bold tracking-wide text-fg" title={latest.name}>
-              {latest.name}
-            </h2>
-            {recentId === latest.id && <span className="recent-live mt-2.5 size-2.5 shrink-0 rounded-full bg-success" title={t('start.currentLabel')} />}
-          </div>
-          <div className="mt-2">
-            <RecentMeta recent={latest} t={t} lang={lang} />
-          </div>
-          {latest.characters && latest.characters.length > 0 && (
-            <div className="mt-4 flex -space-x-2">
-              {latest.characters.map((name, i) => (
-                <Medallion key={name} name={name} index={i} />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button type="button" className="rpg-button start-cta" onClick={() => onOpen(latest)}>
-              {t('start.reopen')}
-            </button>
-            {latest.lastCharacter && (
-              <button
-                type="button"
-                onClick={() => onOpen(latest, characterPath(latest.lastCharacter!))}
-                className="group/cta inline-flex items-center gap-1.5 rounded-md border border-trim/40 px-3 py-1.5 text-sm font-medium text-fg transition hover:border-trim hover:bg-trim/10"
-              >
-                {t('start.continueWith', { name: latest.lastCharacter })}
-                <span aria-hidden className="transition-transform group-hover/cta:translate-x-0.5">
-                  →
-                </span>
-              </button>
-            )}
-          </div>
-          {latest.kind === 'folder' && <p className="mt-2 text-[0.7rem] text-fg-muted/80">{t('start.permissionHint')}</p>}
-
-          {older.length > 0 && (
-            <div className="mt-5 border-t border-trim/15 pt-4">
-              <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-fg-muted">{t('start.recentHeading')}</p>
-              <ul className="space-y-1">
-                {older.map((r) => (
-                  <li key={r.id} className="recent-row group/row flex items-center gap-2 rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => onOpen(r)}
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left transition hover:bg-trim/10"
-                    >
-                      <span aria-hidden className="size-1.5 shrink-0 rotate-45 border border-trim/60 transition group-hover/row:bg-trim" />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{r.name}</span>
-                      <GitHubBadge recent={r} t={t} />
-                      <span className="shrink-0 text-xs text-fg-muted">{formatRelativeTime(r.openedAt, lang)}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void forget(r.id)}
-                      title={t('start.forget')}
-                      aria-label={`${t('start.forget')}: ${r.name}`}
-                      className="shrink-0 rounded-md px-2 py-1 text-fg-muted opacity-0 transition hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 group-hover/row:opacity-100"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => void forget(latest.id)}
-            className="mt-auto self-start pt-4 text-[0.7rem] text-fg-muted/70 underline-offset-4 transition hover:text-danger hover:underline"
-          >
-            {t('start.forget')}
-          </button>
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-1 flex-col justify-center">
-          <p className="text-sm leading-relaxed text-fg-muted">
-            {!supported ? t('start.unsupported') : recentsLoaded ? t('start.noRecents') : ' '}
-          </p>
-          <div aria-hidden className="mt-6 flex gap-2 opacity-40">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="recent-ghost h-10 flex-1 rounded-lg border border-dashed border-trim/40" style={{ '--i': i } as CSSProperties} />
-            ))}
-          </div>
-        </div>
-      )}
-    </PortalCard>
-  )
-}
-
 function Feature({ icon, title, body, index }: { icon: ReactNode; title: string; body: string; index: number }) {
   return (
     <div className="rise-in flex items-start gap-3" style={{ '--i': index + 6 } as CSSProperties}>
-      <span className="feature-icon flex size-9 shrink-0 items-center justify-center rounded-lg border border-trim/30 bg-trim/5 text-trim">{icon}</span>
+      <span className="feature-icon flex size-8 shrink-0 items-center justify-center rounded-lg border border-trim/30 bg-trim/5 text-trim">{icon}</span>
       <div>
         <p className="font-display text-sm font-bold tracking-wide text-fg">{title}</p>
         <p className="text-xs leading-relaxed text-fg-muted">{body}</p>
@@ -431,162 +178,192 @@ export function StartPage() {
         disabled={loading}
         className="h-full w-full text-left"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 sm:[&>.portal-emblem]:mb-0">
-          <Emblem>
-            <RepoIcon />
-          </Emblem>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-success">{t('github.cardEyebrow')}</p>
-            <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('github.cardBody')}</p>
+            <CardHead
+              emblem={
+                <Emblem>
+                  <RepoIcon />
+                </Emblem>
+              }
+              eyebrow={t('github.cardEyebrow')}
+              eyebrowClass="text-success"
+              title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>}
+            />
+            <p className="mt-2 text-sm leading-relaxed text-fg-muted tall:text-base">{t('github.cardBody')}</p>
           </div>
-          <span className="rpg-button start-cta mt-6 inline-block self-start sm:mt-0 sm:self-center">{t('github.cardAction')}</span>
+          <span className="rpg-button start-cta inline-block self-start sm:self-center">{t('github.cardAction')}</span>
         </div>
       </PortalCard>
     </div>
   )
 
   return (
-    <div className="relative">
+    // Fills the height between header and footer: the hero, the current vault and the portals sit as
+    // one group in the middle of the free space, the feature strip rests just above the footer.
+    <div className="relative flex flex-1 flex-col">
       <Embers />
 
-      <div className="relative z-[1]">
-        {/* Hero */}
-        <section className={`flex flex-col items-center text-center ${vaultOpen ? 'pb-6 pt-0 sm:pt-2' : 'pb-10 pt-4 sm:pt-8'}`}>
-          <div className="rise-in relative" style={{ '--i': 0 } as CSSProperties}>
-            <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
-            <ArcaneSigil className={vaultOpen ? 'size-24 sm:size-28' : 'size-36 sm:size-44'} />
-          </div>
-          <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim ${vaultOpen ? 'mt-4' : 'mt-6'}`} style={{ '--i': 1 } as CSSProperties}>
-            {t('start.eyebrow')}
-          </p>
-          <h1 className="rise-in start-title mt-3 font-display text-4xl font-bold tracking-wide sm:text-6xl" style={{ '--i': 2 } as CSSProperties}>
-            {t('app.brand')}
-          </h1>
-          <p className="rise-in mt-4 max-w-xl text-balance text-fg-muted" style={{ '--i': 3 } as CSSProperties}>
-            {t('start.tagline')}
-          </p>
-          {!vaultOpen && (
-            <div className="rise-in mt-6 flex w-64 items-center gap-3" style={{ '--i': 3 } as CSSProperties} aria-hidden>
-              <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
-              <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
-              <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
+      <div className="relative z-[1] flex flex-1 flex-col">
+        <div className="my-auto">
+          {/* Hero: stacked on narrow screens; on wide ones the sigil stands beside the title, so the
+              portals and the footer fit without scrolling. Laptop-height windows (`short`/`tight`)
+              shrink it further and drop the eyebrow and tagline; with a vault open a `tight` window
+              drops the hero altogether — the header already carries the name. */}
+          <section
+            className={`flex flex-col items-center text-center lg:flex-row lg:justify-center lg:gap-7 lg:text-left ${vaultOpen ? 'pb-4 pt-0 short:pb-3 tight:hidden tall:pb-7' : 'pb-6 pt-2 sm:pt-4 lg:pt-2 short:pb-4 tight:pb-2 tight:pt-0 tall:pb-9'}`}
+          >
+            <div className="rise-in relative shrink-0" style={{ '--i': 0 } as CSSProperties}>
+              <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
+              <ArcaneSigil className={vaultOpen ? 'size-16 sm:size-20 short:size-14 sm:short:size-16 tall:size-24 sm:tall:size-28' : 'size-24 sm:size-32 lg:size-28 short:size-20 sm:short:size-24 tight:size-16 sm:tight:size-16 lg:tall:size-36'} />
+            </div>
+            <div className="flex flex-col items-center lg:items-start">
+              <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim tight:hidden ${vaultOpen ? 'mt-2' : 'mt-4'} lg:mt-0`} style={{ '--i': 1 } as CSSProperties}>
+                {t('start.eyebrow')}
+              </p>
+              <h1
+                className={`rise-in start-title mt-2 font-display font-bold tracking-wide ${vaultOpen ? 'text-3xl sm:text-5xl sm:short:text-4xl sm:tall:text-6xl' : 'text-4xl sm:text-6xl sm:short:text-5xl sm:tight:text-4xl sm:tall:text-7xl'}`}
+                style={{ '--i': 2 } as CSSProperties}
+              >
+                {t('app.brand')}
+              </h1>
+              <p className={`rise-in max-w-xl text-balance text-fg-muted short:text-sm tight:hidden ${vaultOpen ? 'mt-2' : 'mt-3'} lg:mt-2`} style={{ '--i': 3 } as CSSProperties}>
+                {t('start.tagline')}
+              </p>
+              {!vaultOpen && (
+                <div className="rise-in mt-4 flex w-64 items-center gap-3 short:hidden lg:hidden" style={{ '--i': 3 } as CSSProperties} aria-hidden>
+                  <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
+                  <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
+                  <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
+                </div>
+              )}
+            </div>
+          </section>
+
+          {!isFileSystemAccessSupported() && (
+            <p
+              role="note"
+              className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
+              style={{ '--i': 3 } as CSSProperties}
+            >
+              {t('start.readOnlyBrowser')}
+            </p>
+          )}
+
+          {redirectedFrom && source === 'none' && (
+            <p className="rise-in mx-auto mb-5 w-fit rounded-full border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm text-warning">
+              {t('start.reconnectNotice')}
+            </p>
+          )}
+
+          {vaultOpen && (
+            <div className="rise-in current-vault mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-trim/30 px-5 py-2.5 short:mb-3 short:py-2 tall:mb-6 tall:py-3.5" style={{ '--i': 3 } as CSSProperties}>
+              <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-fg-muted">{t('start.currentLabel')}</p>
+                <p className="truncate font-display text-lg font-bold text-fg">
+                  {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
+                  <span className="ml-3 font-sans text-xs font-normal text-fg-muted">
+                    {ruleset !== 'unknown' && `${t(`ruleset.${ruleset}`)} · `}
+                    {t('start.characterCount', { n: characterCount })}
+                  </span>
+                </p>
+              </div>
+              <button type="button" onClick={closeVault} className="rounded-md px-3 py-1.5 text-sm text-fg-muted transition hover:bg-surface-2 hover:text-fg">
+                {t('start.closeVault')}
+              </button>
+              <button type="button" onClick={() => navigate('/characters')} className="rpg-button start-cta">
+                {t('start.toCharacters')} →
+              </button>
             </div>
           )}
-        </section>
 
-        {!isFileSystemAccessSupported() && (
-          <p
-            role="note"
-            className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
-            style={{ '--i': 3 } as CSSProperties}
-          >
-            {t('start.readOnlyBrowser')}
-          </p>
-        )}
-
-        {redirectedFrom && source === 'none' && (
-          <p className="rise-in mx-auto mb-5 w-fit rounded-full border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm text-warning">
-            {t('start.reconnectNotice')}
-          </p>
-        )}
-
-        {vaultOpen && (
-          <div className="rise-in current-vault mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-trim/30 px-5 py-3" style={{ '--i': 3 } as CSSProperties}>
-            <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-fg-muted">{t('start.currentLabel')}</p>
-              <p className="truncate font-display text-lg font-bold text-fg">
-                {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
-                <span className="ml-3 font-sans text-xs font-normal text-fg-muted">
-                  {ruleset !== 'unknown' && `${t(`ruleset.${ruleset}`)} · `}
-                  {t('start.characterCount', { n: characterCount })}
-                </span>
-              </p>
+          {/* Portals */}
+          <div className="grid grid-cols-1 gap-4 short:gap-3 tall:gap-6 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
+            <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
+              <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
             </div>
-            <button type="button" onClick={closeVault} className="rounded-md px-3 py-1.5 text-sm text-fg-muted transition hover:bg-surface-2 hover:text-fg">
-              {t('start.closeVault')}
-            </button>
-            <button type="button" onClick={() => navigate('/characters')} className="rpg-button start-cta">
-              {t('start.toCharacters')} →
-            </button>
-          </div>
-        )}
 
-        {/* Portals */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
-            <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
-          </div>
+            {!isFileSystemAccessSupported() && githubCard}
 
-          {!isFileSystemAccessSupported() && githubCard}
+            <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
+              <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
+                <CardHead
+                  emblem={
+                    <Emblem>
+                      <ChestIcon />
+                    </Emblem>
+                  }
+                  eyebrow={t('start.openTitle')}
+                  eyebrowClass="text-primary"
+                  title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
+                />
+                <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.openBody')}</p>
+                <div className="mt-auto pt-4">
+                  <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
+                  {supportsFolderDrop() && (
+                    <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
+                      <svg {...ICON} className="size-4 text-primary">
+                        <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                      </svg>
+                      {t('start.dropHint')}
+                    </p>
+                  )}
+                  {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
+                </div>
+              </PortalCard>
+              <input
+                ref={fileInputRef}
+                type="file"
+                // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
+                webkitdirectory=""
+                multiple
+                hidden
+                onChange={(e) => {
+                  if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
+                }}
+              />
+            </div>
 
-          <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
-            <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
-              <Emblem>
-                <ChestIcon />
-              </Emblem>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{t('start.openTitle')}</p>
-              <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('start.openBody')}</p>
-              <div className="mt-auto pt-6">
-                <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
-                {supportsFolderDrop() && (
-                  <p className="mt-3 flex items-center gap-2 text-xs text-fg-muted">
-                    <svg {...ICON} className="size-4 text-primary">
-                      <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                    </svg>
-                    {t('start.dropHint')}
-                  </p>
-                )}
-                {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
-              </div>
-            </PortalCard>
-            <input
-              ref={fileInputRef}
-              type="file"
-              // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
-              webkitdirectory=""
-              multiple
-              hidden
-              onChange={(e) => {
-                if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
-              }}
-            />
-          </div>
-
-          <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
-            <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
-              <div className="mb-5 flex h-16 items-center">
-                {samplePortraits.map((src, i) => (
-                  <img
-                    key={src}
-                    src={src}
-                    alt=""
-                    className="sample-hero size-14 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
-                    style={{ '--i': i } as CSSProperties}
-                  />
-                ))}
-              </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">{t('vaultLoader.sampleData')}</p>
-              <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('start.sampleBody')}</p>
-              <div className="mt-auto pt-6">
-                <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
-                  {t('start.sampleAction')}
-                  <span aria-hidden className="transition-transform group-hover:translate-x-1">
-                    →
+            <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
+              <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
+                <CardHead
+                  emblem={
+                    <div className="flex h-12 shrink-0 items-center">
+                      {samplePortraits.map((src, i) => (
+                        <img
+                          key={src}
+                          src={src}
+                          alt=""
+                          className="sample-hero size-11 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
+                          style={{ '--i': i } as CSSProperties}
+                        />
+                      ))}
+                    </div>
+                  }
+                  eyebrow={t('vaultLoader.sampleData')}
+                  eyebrowClass="text-accent"
+                  title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>}
+                />
+                <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.sampleBody')}</p>
+                <div className="mt-auto pt-4">
+                  <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
+                    {t('start.sampleAction')}
+                    <span aria-hidden className="transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
                   </span>
-                </span>
-              </div>
-            </PortalCard>
-          </div>
+                </div>
+              </PortalCard>
+            </div>
 
-          {isFileSystemAccessSupported() && githubCard}
+            {isFileSystemAccessSupported() && githubCard}
+          </div>
         </div>
 
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 gap-6 border-t border-trim/15 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Features — a nice-to-have: on wide but short screens they give way so the portals and the
+            footer stay on one screen; where the page scrolls anyway (narrow screens) they stay. */}
+        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-trim/15 pt-5 pb-1 sm:grid-cols-2 lg:grid-cols-4 lg:short:hidden tall:mt-10">
           <Feature
             index={0}
             title={t('start.featureLocalTitle')}

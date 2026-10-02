@@ -1,3 +1,4 @@
+import type { TranslateFn } from '../../i18n/useI18n'
 import type { RawFile } from '../rawFile'
 import { hasTag, tagList } from '../frontmatterFields'
 import { linkDisplay } from '../wikilinkSyntax'
@@ -41,8 +42,12 @@ export type EndeavourWeightClass = 'schwer' | 'sehr_schwer'
 
 export type EndeavourWeaponKind = 'melee' | 'ranged' | 'thrown'
 
-/** Where a worn accessory goes on the equipment loadout: shoulders, hands, feet, neck or a finger. */
-export type EndeavourWearSlot = 'cloak' | 'gloves' | 'boots' | 'necklace' | 'ring'
+/** What a weapon looks like, for drawing it in the character's hand — see `weaponFormOf`. */
+export type EndeavourWeaponForm = 'sword' | 'dagger' | 'axe' | 'mace' | 'staff' | 'polearm' | 'bow' | 'crossbow'
+
+/** Where a worn accessory goes on the equipment loadout: head, body (clothing, worn in the armor
+ * slot), shoulders, hands, waist, feet, neck or a finger. */
+export type EndeavourWearSlot = 'head' | 'body' | 'cloak' | 'gloves' | 'belt' | 'boots' | 'necklace' | 'ring'
 
 interface EndeavourItemBase {
   name: string
@@ -68,6 +73,8 @@ export interface EndeavourWeaponItem extends EndeavourItemBase {
   weapon_kind: EndeavourWeaponKind
   /** `Hände` — one- or two-handed. */
   hands?: 'one' | 'two'
+  /** Sword, axe, bow, ... — from a `Gegenstand/Waffe/<Form>` tag, else the name; see `weaponFormOf`. */
+  form?: EndeavourWeaponForm
   /** Derived from the `Gegenstand/Waffe/Einfach` ("Einfach"/simple) vs `Gegenstand/Waffe/Kriegswaffe`
    * ("Kriegswaffe"/martial) tag — there's no separate `Kategorie` field on real weapon notes. */
   category?: string
@@ -177,6 +184,36 @@ function endeavourWeaponKind(tags: string[]): EndeavourWeaponKind | undefined {
   return undefined
 }
 
+/** `Gegenstand/Waffe/<Form>` tags naming a weapon's shape, and words in a weapon's name that do the
+ * same for notes without one (e.g. `Kampfstab`). Crossbow before bow: an "Armbrust" is no "Bogen". */
+const WEAPON_FORM_TAGS: [EndeavourWeaponForm, string[]][] = [
+  ['sword', ['Schwert']],
+  ['dagger', ['Messer']],
+  ['axe', ['Axt']],
+  ['mace', ['Hammer', 'Keule', 'Flegel']],
+  ['staff', ['Stab']],
+  ['polearm', ['Stangenwaffe']],
+  ['crossbow', ['Armbrust']],
+  ['bow', ['Bogen']],
+]
+const WEAPON_FORM_NAMES: [EndeavourWeaponForm, string[]][] = [
+  ['crossbow', ['armbrust', 'crossbow']],
+  ['bow', ['bogen', 'bow']],
+  ['staff', ['stab', 'staff', 'stock']],
+  ['axe', ['axt', 'beil', 'axe']],
+  ['dagger', ['dolch', 'messer', 'dagger', 'knife']],
+  ['polearm', ['speer', 'pike', 'hellebarde', 'glefe', 'lanze', 'dreizack', 'spear', 'halberd', 'glaive']],
+  ['mace', ['hammer', 'kolben', 'keule', 'knüppel', 'flegel', 'mace', 'club', 'flail']],
+  ['sword', ['schwert', 'säbel', 'rapier', 'falchion', 'klinge', 'sword', 'saber', 'blade']],
+]
+
+function weaponFormOf(tags: string[], name: string): EndeavourWeaponForm | undefined {
+  const tagged = WEAPON_FORM_TAGS.find(([, names]) => names.some((n) => hasTag(tags, `Gegenstand/Waffe/${n}`)))
+  if (tagged) return tagged[0]
+  const lower = name.toLowerCase()
+  return WEAPON_FORM_NAMES.find(([, words]) => words.some((w) => lower.includes(w)))?.[0]
+}
+
 /** `Range1`/`Range2`/`Range3` (short/medium/long, e.g. `"4,5(3)"`) joined the same way
  * `legacyCharacterSheet.ts`'s `resolveWeaponAttacks()` already does for the identical field names on
  * the older vault's ranged weapon notes. */
@@ -233,6 +270,9 @@ const WEAR_SLOT_WORDS: [EndeavourWearSlot, string[]][] = [
   ['gloves', ['handschuhe', 'handschuh', 'hände', 'hand', 'gloves', 'hands', 'armschienen', 'bracers']],
   ['boots', ['stiefel', 'schuhe', 'füße', 'fuß', 'boots', 'feet']],
   ['necklace', ['halskette', 'kette', 'amulett', 'hals', 'anhänger', 'necklace', 'amulet', 'neck']],
+  ['body', ['körper', 'oberkörper', 'torso', 'kleidung', 'gewand', 'robe', 'tunika', 'body', 'clothes', 'clothing', 'robes']],
+  ['head', ['kopf', 'helm', 'hut', 'haube', 'kapuze', 'krone', 'stirnreif', 'diadem', 'head', 'helmet', 'hat', 'hood', 'circlet', 'crown']],
+  ['belt', ['gürtel', 'hüfte', 'taille', 'belt', 'girdle', 'waist']],
   ['ring', ['ring', 'finger']],
 ]
 
@@ -249,6 +289,7 @@ function wearSlotOf(data: Record<string, unknown>, tags: string[]): EndeavourWea
   if (explicit) return explicit
   const clothing = tags.find((t) => t.toLowerCase().startsWith('gegenstand/kleidung/'))
   if (clothing) return wearSlotFromText(clothing.slice('gegenstand/kleidung/'.length))
+  if (tags.some((t) => t.toLowerCase() === 'gegenstand/kleidung')) return 'body'
   return hasTag(tags, 'Gegenstand/Magischer_Gegenstand') ? wearSlotFromText(data.Art) : undefined
 }
 
@@ -289,6 +330,7 @@ export function normalizeEndeavourItem(raw: RawFile): EndeavourItemFrontmatter {
       ...base,
       kind: 'weapon',
       weapon_kind: weaponKind,
+      form: weaponFormOf(tags, base.name),
       hands: data.Hände === 2 || data.Hände === '2' ? 'two' : data.Hände === 1 || data.Hände === '1' ? 'one' : undefined,
       category: hasTag(tags, 'Gegenstand/Waffe/Kriegswaffe') ? 'Kriegswaffe' : hasTag(tags, 'Gegenstand/Waffe/Einfach') ? 'Einfach' : undefined,
       availability: stringField(data.Verfügbarkeit),
@@ -394,25 +436,23 @@ export function compareEndeavourItemSize(a: EndeavourItemSize, b: EndeavourItemS
   return SIZE_ORDER[a] - SIZE_ORDER[b]
 }
 
-const WEAPON_KIND_LABEL: Record<EndeavourWeaponKind, string> = { melee: 'Nahkampf', ranged: 'Fernkampf', thrown: 'Wurf' }
-
-/** Short German label for the wikilink popover / item list — kept in German (not run through the
- * app's i18n dictionary) since it's derived from vault content/tags, not app UI chrome. */
-export function endeavourItemSummary(fm: EndeavourItemFrontmatter): string {
+/** Short kind label for the wikilink popover / item list. Derived from the item's tags, not its
+ * prose, so it follows the app language like the rest of the UI chrome. */
+export function endeavourItemSummary(fm: EndeavourItemFrontmatter, t: TranslateFn): string {
   switch (fm.kind) {
     case 'weapon':
-      return `Waffe (${WEAPON_KIND_LABEL[fm.weapon_kind]})`
+      return t('endeavourInventory.kind.weapon', { kind: t(`weaponKind.${fm.weapon_kind}`) })
     case 'armor':
-      return 'Rüstung'
+      return t('endeavourInventory.kind.armor')
     case 'shield':
-      return 'Schild'
+      return t('endeavourInventory.kind.shield')
     case 'magic_item':
-      return 'Magischer Gegenstand'
+      return t('endeavourInventory.kind.magicItem')
     case 'tool':
-      return 'Werkzeug'
+      return t('endeavourInventory.kind.tool')
     case 'equipment':
-      return 'Ausrüstung'
+      return t('endeavourInventory.kind.equipment')
     case 'container':
-      return 'Behälter'
+      return t('endeavourInventory.kind.container')
   }
 }

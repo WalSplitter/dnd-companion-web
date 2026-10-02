@@ -44,6 +44,14 @@ function withNumbers(line: string): ReactNode[] {
   )
 }
 
+/** An element whose `title` the layer takes over. SVG shapes count too: a `title` *attribute* on
+ * one (unlike an SVG `<title>` child) shows no native tooltip, so it reaches only this layer. */
+type Titled = HTMLElement | SVGElement
+
+function isTitled(el: unknown): el is Titled {
+  return el instanceof HTMLElement || el instanceof SVGElement
+}
+
 /**
  * App-wide replacement for the browser's native `title` tooltip. Rather than every component opting
  * in, this listens once at the document level: when the pointer rests on (or keyboard focus reaches) an
@@ -61,11 +69,11 @@ export function TooltipLayer() {
     // `anchor` is the innermost titled element under the pointer, whose tip is shown. `parked` is it
     // plus every titled ancestor: all of their titles are parked, since the browser would otherwise
     // fall back to the nearest ancestor's native tooltip.
-    let anchor: HTMLElement | null = null
-    let parked: HTMLElement[] = []
+    let anchor: Titled | null = null
+    let parked: Titled[] = []
     let timer: number | undefined
 
-    const park = (el: HTMLElement) => {
+    const park = (el: Titled) => {
       const text = el.getAttribute('title')
       if (text === null) return
       el.dataset.tip = text
@@ -75,7 +83,7 @@ export function TooltipLayer() {
     // new text if it's the one on screen.
     const observer = new MutationObserver((mutations) => {
       for (const { target } of mutations) {
-        if (!(target instanceof HTMLElement) || !target.hasAttribute('title')) continue
+        if (!isTitled(target) || !target.hasAttribute('title')) continue
         park(target)
         if (target === anchor) setTip((current) => (current ? { ...current, text: target.dataset.tip ?? '' } : current))
       }
@@ -97,10 +105,10 @@ export function TooltipLayer() {
 
     /** Titled elements from `target` upward, innermost first — counting ones we already parked. An
      * empty `title` doesn't count, so an element can opt out and leave the tooltip to its container. */
-    const titledChain = (target: EventTarget | null): HTMLElement[] => {
-      const chain: HTMLElement[] = []
+    const titledChain = (target: EventTarget | null): Titled[] => {
+      const chain: Titled[] = []
       for (let el = target instanceof Element ? target : null; el; el = el.parentElement) {
-        if (el instanceof HTMLElement && (el.getAttribute('title') ?? el.dataset.tip)?.trim()) chain.push(el)
+        if (isTitled(el) && (el.getAttribute('title') ?? el.dataset.tip)?.trim()) chain.push(el)
       }
       return chain
     }

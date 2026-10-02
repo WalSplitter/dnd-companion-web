@@ -368,3 +368,12 @@ Rettungswürfe:
     })
   })
 })
+
+describe('template files', () => {
+  it('skips a `type: character` note under a "Vorlage" folder but keeps it as a plain note', () => {
+    const template = { ...characterFile, path: 'Kampagne/Gruppe/_Vorlage Charakter/Vorlage Charakter.md' }
+    const vault = buildVault([characterFile, template])
+    expect(vault.characters.map((c) => c.path)).toEqual(['Characters/Test.md'])
+    expect(vault.notes.map((n) => n.path)).toContain(template.path)
+  })
+})

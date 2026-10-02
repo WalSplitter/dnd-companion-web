@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
-import { deriveEquipment } from '../vault/adapters/nativeCharacter'
+import { deriveEquipment, equipmentChangeFields } from '../vault/adapters/nativeCharacter'
 import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
 import type { RawFile } from '../vault/rawFile'
 import { openBlobCache } from '../vault/github/blobCache'
@@ -183,9 +183,14 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
+/** The frontmatter of the character note at `characterPath`, if the vault has one. */
+function findCharacter(vault: Vault, characterPath: string): CharacterFrontmatter | undefined {
+  return vault.characters.find((c) => c.path === characterPath)?.frontmatter
+}
+
 /** Names the character an edit belongs to, for the GitHub commit message. */
 function characterContext(vault: Vault, characterPath: string) {
-  return { character: vault.characters.find((c) => c.path === characterPath)?.frontmatter.name }
+  return { character: findCharacter(vault, characterPath)?.name }
 }
 
 /** Returns `vault` with `mutate` applied to one character's frontmatter. */
@@ -363,7 +368,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
     write: (() => Promise<void>) | null,
     failure: { source: string; context?: Record<string, unknown>; retry: () => void },
   ) {
-    const previous = get().vault.characters.find((c) => c.path === characterPath)?.frontmatter
+    const previous = findCharacter(get().vault, characterPath)
     set({ vault: mapCharacter(get().vault, characterPath, mutate), writeError: null })
     if (!write) return
 
@@ -592,7 +597,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
     setEndeavourInventory: async (characterPath, containers) => {
       const { vault, writer, editPermission } = get()
-      const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.endeavour_inventory
+      const target = findCharacter(vault, characterPath)?._write?.endeavour_inventory
       const canWrite = editPermission === 'granted' && target !== undefined && writer?.canWrite(target.path)
 
       await editCharacter(
@@ -610,7 +615,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
     setInventory: async (characterPath, inventory) => {
       const { vault, writer, editPermission } = get()
-      const target = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write?.inventory
+      const target = findCharacter(vault, characterPath)?._write?.inventory
       if (editPermission !== 'granted' || !target || !writer?.canWrite(target.path)) return
 
       await editCharacter(
@@ -628,7 +633,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
     setCurrency: async (characterPath, currency) => {
       const { vault, writer, editPermission } = get()
       if (editPermission !== 'granted' || !writer) return
-      const character = vault.characters.find((c) => c.path === characterPath)?.frontmatter
+      const character = findCharacter(vault, characterPath)
       const targets = character?._write
       if (!character || !targets) return
       const previous = character.currency ?? {}
@@ -655,7 +660,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
     setEquipment: async (characterPath, change) => {
       const { vault, writer, editPermission, rawFiles } = get()
-      const targets = vault.characters.find((c) => c.path === characterPath)?.frontmatter._write
+      const targets = findCharacter(vault, characterPath)?._write
       const equipmentTarget = targets?.equipment
       const inventoryTarget = change.containers ? targets?.endeavour_inventory : undefined
       if (editPermission !== 'granted' || !equipmentTarget || (change.containers && !inventoryTarget)) return
@@ -666,14 +671,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       function mutate(c: CharacterFrontmatter): CharacterFrontmatter {
         const next: CharacterFrontmatter = {
           ...c,
-          ...(fields.armor !== undefined ? { armor: fields.armor ?? undefined } : {}),
-          ...(fields.shield !== undefined ? { shield: fields.shield ?? undefined } : {}),
-          ...(fields.cloak !== undefined ? { cloak: fields.cloak ?? undefined } : {}),
-          ...(fields.gloves !== undefined ? { gloves: fields.gloves ?? undefined } : {}),
-          ...(fields.boots !== undefined ? { boots: fields.boots ?? undefined } : {}),
-          ...(fields.necklace !== undefined ? { necklace: fields.necklace ?? undefined } : {}),
-          ...(fields.rings !== undefined ? { rings: fields.rings.length > 0 ? fields.rings : undefined } : {}),
-          ...(fields.attack_entries !== undefined ? { attack_entries: fields.attack_entries } : {}),
+          ...equipmentChangeFields(change),
           ...(containers ? { endeavour_inventory: { containers } } : {}),
         }
         return { ...next, ...deriveEquipment(next, rawFiles) }
@@ -704,6 +702,29 @@ export const useVaultStore = create<VaultState>((set, get) => {
     },
   }
 })
+
+/** Which vault source this tab showed last, so a reload reopens the sample vault instead of jumping
+ * to the most recent real vault. Per tab (sessionStorage): a fresh tab still picks up the last real vault. */
+const ACTIVE_SOURCE_KEY = 'dnd-companion-active-source'
+
+useVaultStore.subscribe((state, previous) => {
+  if (state.source === previous.source) return
+  try {
+    if (state.source === 'none') sessionStorage.removeItem(ACTIVE_SOURCE_KEY)
+    else sessionStorage.setItem(ACTIVE_SOURCE_KEY, state.source)
+  } catch {
+    // sessionStorage unavailable — a reload then falls back to the most recent real vault.
+  }
+})
+
+/** Whether this tab had the sample vault open before the page was reloaded. */
+export function wasSampleVaultActive(): boolean {
+  try {
+    return sessionStorage.getItem(ACTIVE_SOURCE_KEY) === 'sample'
+  } catch {
+    return false
+  }
+}
 
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {

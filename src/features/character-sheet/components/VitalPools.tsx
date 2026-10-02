@@ -92,7 +92,7 @@ export function ExhaustionTrack({
           </span>
         )}
       </div>
-      <div className="flex items-center justify-end gap-0.5" title={`${label}: ${level}/${max}`}>
+      <div className="flex items-center justify-end gap-px sm:gap-0.5" title={`${label}: ${level}/${max}`}>
         {onChange && <StepButton direction={-1} label={label} disabled={level <= 0} onStep={(d) => onChange(stepWithin(level, d, 0, max))} />}
         {Array.from({ length: max }, (_, i) => {
           const filled = i < level

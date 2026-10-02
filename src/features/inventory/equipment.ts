@@ -1,20 +1,19 @@
 import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
-import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourStackEntry, EquipmentChange } from '../../vault/types'
+import { WORN_SLOTS, type CharacterFrontmatter, type EndeavourContainerSlotAssignment, type EndeavourStackEntry, type EquipmentChange, type WornSlot } from '../../vault/types'
 import { wikilinkTarget } from '../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 import { isCustomEntry, isStackEntry, resolveContainers, tryPlaceEntry, type PlaceFailure } from './grid'
 
 /**
  * Equipping from the slot-grid inventory. What a character wears and wields lives on its own note
- * (`armor:`, `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, the `rings:` list, the weapons in
+ * (`armor:`, `shield:`, `head:`, `cloak:`, `gloves:`, `belt:`, `boots:`, `necklace:`, the `rings:` list, the weapons in
  * `attacks:` — a wikilink, or a `{ link, charges }` stack for stackable weapons like throwing knives)
  * and takes no slots: equipping moves the item out of its container, unequipping stows it back into
- * one. Armor, shield, cloak, gloves, boots and necklace have one slot each — equipping a second one swaps the
+ * one. Armor, shield, head, cloak, gloves, belt, boots and necklace have one slot each — equipping a second one swaps the
  * first back into the inventory; there are `MAX_RINGS` ring slots, and weapons are a list.
  */
 
-/** The slots that hold exactly one item. */
-export type WornSlot = 'armor' | 'shield' | 'cloak' | 'gloves' | 'boots' | 'necklace'
+export type { WornSlot }
 
 export type EquipSlot = WornSlot | 'ring' | 'weapon'
 
@@ -25,10 +24,8 @@ export type EquippedRef = { slot: WornSlot } | { slot: 'weapon' | 'ring'; positi
 /** One ring per hand. */
 export const MAX_RINGS = 2
 
-const WORN_SLOTS: readonly WornSlot[] = ['armor', 'shield', 'cloak', 'gloves', 'boots', 'necklace']
-
 export function isWornSlot(slot: unknown): slot is WornSlot {
-  return WORN_SLOTS.includes(slot as WornSlot)
+  return (WORN_SLOTS as readonly unknown[]).includes(slot)
 }
 
 export type EquipFailure = PlaceFailure | 'not_equippable'
@@ -37,10 +34,28 @@ export type EquipFailure = PlaceFailure | 'not_equippable'
 export type EquipResult = { ok: true; change: EquipmentChange; equipped?: EquippedRef } | { ok: false; reason: EquipFailure; name?: string }
 
 /** Where an item goes when equipped: armor, shields and weapons by kind, anything else by where it is
- * worn (`wear_slot`); `undefined` for gear that can't be equipped. */
+ * worn (`wear_slot`); `undefined` for gear that can't be equipped. Armor with a `Trageplatz` (a helm
+ * worn on the head) goes there instead of the body-armor slot; clothing (`body`) goes into the armor
+ * slot. */
 export function equipSlotOf(fm: EndeavourItemFrontmatter | undefined): EquipSlot | undefined {
-  if (fm?.kind === 'armor' || fm?.kind === 'shield') return fm.kind
-  return fm?.kind === 'weapon' ? 'weapon' : fm?.wear_slot
+  if (fm?.kind === 'shield') return fm.kind
+  if (fm?.kind === 'weapon') return 'weapon'
+  const worn = fm?.kind === 'armor' ? (fm.wear_slot ?? 'armor') : fm?.wear_slot
+  return worn === 'body' ? 'armor' : worn
+}
+
+/** How the body-armor slot's item is drawn on the character: plain clothing, or light, medium or
+ * heavy armor by its `Klasse` (`[[Leichte Rüstung|Leicht]]`, `Mittel`, `Schwer`). Armor without a
+ * recognizable class counts as medium; anything else worn there (a robe, a tunic) is clothing. */
+export type ArmorLook = 'clothing' | 'light' | 'medium' | 'heavy'
+
+export function armorLookOf(fm: EndeavourItemFrontmatter | undefined): ArmorLook {
+  if (fm?.kind !== 'armor') return 'clothing'
+  const category = fm.armor_category?.toLowerCase() ?? ''
+  if (/kleid|stoff|cloth|robe/.test(category)) return 'clothing'
+  if (/leicht|light/.test(category)) return 'light'
+  if (/schwer|heavy/.test(category) && !/mittel/.test(category)) return 'heavy'
+  return 'medium'
 }
 
 /** Selection identity of an equipped item, distinct from any inventory tile's `entryKey`. */

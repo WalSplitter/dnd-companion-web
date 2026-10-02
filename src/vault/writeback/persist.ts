@@ -1,5 +1,5 @@
 import { load } from 'js-yaml'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, InventoryEntry } from '../types'
+import { WORN_SLOTS, type CharacterFrontmatter, type Currency, type EndeavourContainerSlotAssignment, type EquipmentChange, type FieldWriteTarget, type InventoryEntry } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -78,7 +78,7 @@ export function endeavourInventoryPatch(containers: EndeavourContainerSlotAssign
 }
 
 /**
- * What the character wears and wields, on its own file: `armor:`, `shield:`, `cloak:`, `gloves:`, `boots:` and
+ * What the character wears and wields, on its own file: `armor:`, `shield:`, `head:`, `cloak:`, `gloves:`, `belt:`, `boots:` and
  * `necklace:` (one wikilink each; `null` = taken off, which deletes the key) and the whole `rings:`
  * and `attacks:` lists (an empty list deletes the key).
  * Fields left `undefined` are unchanged and get no patch.
@@ -86,9 +86,7 @@ export function endeavourInventoryPatch(containers: EndeavourContainerSlotAssign
 export function equipmentPatches(change: Omit<EquipmentChange, 'containers' | 'first'>): FrontmatterPatch[] {
   const patches: FrontmatterPatch[] = []
   const add = (key: string, value: unknown) => patches.push({ kind: 'block', keyPath: [key], value, createIfMissing: true })
-  if (change.armor !== undefined) add('armor', change.armor ?? undefined)
-  if (change.shield !== undefined) add('shield', change.shield ?? undefined)
-  for (const key of ['cloak', 'gloves', 'boots', 'necklace'] as const) if (change[key] !== undefined) add(key, change[key] ?? undefined)
+  for (const slot of WORN_SLOTS) if (change[slot] !== undefined) add(slot, change[slot] ?? undefined)
   if (change.rings !== undefined) add('rings', change.rings.length > 0 ? change.rings : undefined)
   if (change.attack_entries !== undefined) add('attacks', change.attack_entries.length > 0 ? change.attack_entries : undefined)
   return patches

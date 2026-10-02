@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { WatchingSkull } from './WatchingSkull'
 
 /* Drawn figures of the topic themes' ambient layer (see `AmbientLayer`). Motion, size and most
  * colours live in `topics.css`: parts that move carry a class, colours that follow the palette
@@ -407,7 +406,6 @@ export const AMBIENT_ART = {
   scarab,
   android,
   'crescent-ship': crescentShip,
-  'watching-skull': <WatchingSkull />,
   glint,
   'pixel-cloud': pixelCloud,
   'pixel-dragon': pixelDragon,

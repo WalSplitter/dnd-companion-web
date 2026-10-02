@@ -2,12 +2,13 @@ import { Suspense, useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { VaultLoadingScreen } from '../components/VaultLoadingScreen'
 import { VaultNav } from '../components/VaultNav'
-import { useVaultStore } from '../store/vaultStore'
+import { useVaultStore, wasSampleVaultActive } from '../store/vaultStore'
 
 /**
  * Shell of every page that shows vault content. Opened straight from a link or a reload (nothing
- * loaded yet), it quietly reopens the last vault if the browser still grants access, and otherwise
- * sends the visitor to the start page — never showing another vault in the meantime.
+ * loaded yet), it reopens the sample vault if this tab was showing it, else quietly reopens the last
+ * vault if the browser still grants access, and otherwise sends the visitor to the start page —
+ * never showing another vault in the meantime.
  */
 export function VaultLayout() {
   const location = useLocation()
@@ -17,6 +18,8 @@ export function VaultLayout() {
 
   useEffect(() => {
     if (useVaultStore.getState().source !== 'none') return
+    // Loads synchronously, so the source is set before the next render and `restoring` no longer matters.
+    if (wasSampleVaultActive()) return useVaultStore.getState().loadSampleVault()
     let active = true
     void (async () => {
       const store = useVaultStore.getState()
