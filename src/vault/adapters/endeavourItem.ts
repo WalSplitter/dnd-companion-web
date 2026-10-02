@@ -1,3 +1,4 @@
+import type { TranslateFn } from '../../i18n/useI18n'
 import type { RawFile } from '../rawFile'
 import { hasTag, tagList } from '../frontmatterFields'
 import { linkDisplay } from '../wikilinkSyntax'
@@ -435,25 +436,23 @@ export function compareEndeavourItemSize(a: EndeavourItemSize, b: EndeavourItemS
   return SIZE_ORDER[a] - SIZE_ORDER[b]
 }
 
-const WEAPON_KIND_LABEL: Record<EndeavourWeaponKind, string> = { melee: 'Nahkampf', ranged: 'Fernkampf', thrown: 'Wurf' }
-
-/** Short German label for the wikilink popover / item list — kept in German (not run through the
- * app's i18n dictionary) since it's derived from vault content/tags, not app UI chrome. */
-export function endeavourItemSummary(fm: EndeavourItemFrontmatter): string {
+/** Short kind label for the wikilink popover / item list. Derived from the item's tags, not its
+ * prose, so it follows the app language like the rest of the UI chrome. */
+export function endeavourItemSummary(fm: EndeavourItemFrontmatter, t: TranslateFn): string {
   switch (fm.kind) {
     case 'weapon':
-      return `Waffe (${WEAPON_KIND_LABEL[fm.weapon_kind]})`
+      return t('endeavourInventory.kind.weapon', { kind: t(`weaponKind.${fm.weapon_kind}`) })
     case 'armor':
-      return 'Rüstung'
+      return t('endeavourInventory.kind.armor')
     case 'shield':
-      return 'Schild'
+      return t('endeavourInventory.kind.shield')
     case 'magic_item':
-      return 'Magischer Gegenstand'
+      return t('endeavourInventory.kind.magicItem')
     case 'tool':
-      return 'Werkzeug'
+      return t('endeavourInventory.kind.tool')
     case 'equipment':
-      return 'Ausrüstung'
+      return t('endeavourInventory.kind.equipment')
     case 'container':
-      return 'Behälter'
+      return t('endeavourInventory.kind.container')
   }
 }

@@ -1,4 +1,3 @@
-import { endeavourItemSummary } from './adapters/endeavourItem'
 import { wikilinkTarget } from './wikilinkSyntax'
 import type { CharacterFrontmatter, EndeavourItemFrontmatter, ItemFrontmatter, SpellFrontmatter, Vault, VaultFile, VaultNote } from './types'
 
@@ -64,6 +63,8 @@ export interface ResolvedWikilink {
   path?: string
   body?: string
   summary?: string
+  /** An Endeavour item's frontmatter, so the UI can localize its kind label in place of `summary`. */
+  endeavourItem?: EndeavourItemFrontmatter
   /** Spell grade (0 = cantrip), localized by the UI in front of `summary`. */
   spellLevel?: number
 }
@@ -90,7 +91,7 @@ export function resolveWikilink(index: VaultIndex, link: string): ResolvedWikili
       name: endeavourItem.frontmatter.name,
       path: endeavourItem.path,
       body: endeavourItem.body,
-      summary: endeavourItemSummary(endeavourItem.frontmatter),
+      endeavourItem: endeavourItem.frontmatter,
     }
   }
 

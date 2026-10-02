@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
-import { useT } from '../../../i18n/useI18n'
+import { useT, type TranslateFn, type TranslationKey } from '../../../i18n/useI18n'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { endeavourItemSummary, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import { renderObsidianBody } from '../../../vault/components/renderObsidian'
@@ -173,40 +173,41 @@ function InlineItemRow({
 /** Key facts for a given Endeavour-schema item kind, as `"Label: value"` strings — deliberately
  * plain/utilitarian (not styled per-kind) since this whole schema is experimental scaffolding for
  * inventory UI work, not a finished design; see `docs/inventory-vault-alignment.md`. */
-function endeavourItemDetails(fm: EndeavourItemFrontmatter): string[] {
+function endeavourItemDetails(fm: EndeavourItemFrontmatter, t: TranslateFn): string[] {
   const details: string[] = []
-  if (fm.size) details.push(`Größe: ${fm.size}`)
-  if (fm.weight_class) details.push(`Gewicht: ${fm.weight_class}`)
-  if (fm.cost) details.push(`Kosten: ${fm.cost}`)
+  const add = (key: TranslationKey, value: string | number) => details.push(`${t(key)}: ${value}`)
+  if (fm.size) add('endeavourInventory.detailSize', fm.size)
+  if (fm.weight_class) add('endeavourInventory.detailWeight', fm.weight_class)
+  if (fm.cost) add('endeavourInventory.detailCost', fm.cost)
 
   switch (fm.kind) {
     case 'weapon':
-      if (fm.hands) details.push(`Hände: ${fm.hands}`)
-      if (fm.category) details.push(`Kategorie: ${fm.category}`)
-      if (fm.range) details.push(`Reichweite: ${fm.range}`)
-      if (fm.damage_dice) details.push(`Schaden: ${fm.damage_dice}${fm.damage_type ? ` (${fm.damage_type})` : ''}`)
-      if (fm.properties && fm.properties.length > 0) details.push(`Eigenschaften: ${fm.properties.join(', ')}`)
+      if (fm.hands) details.push(t(fm.hands === 'two' ? 'equipment.handsTwoHint' : 'equipment.handsOneHint'))
+      if (fm.category) add('endeavourInventory.detailCategory', fm.category)
+      if (fm.range) add('endeavourInventory.detailRange', fm.range)
+      if (fm.damage_dice) add('endeavourInventory.detailDamage', `${fm.damage_dice}${fm.damage_type ? ` (${fm.damage_type})` : ''}`)
+      if (fm.properties && fm.properties.length > 0) add('endeavourInventory.detailProperties', fm.properties.join(', '))
       break
     case 'armor':
-      if (fm.armor_category) details.push(`Klasse: ${fm.armor_category}`)
-      if (fm.rk !== undefined) details.push(`RK: ${fm.rk}`)
+      if (fm.armor_category) add('endeavourInventory.detailArmorCategory', fm.armor_category)
+      if (fm.rk !== undefined) add('short.armorClass', fm.rk)
       if (fm.rp !== undefined) details.push(`RP: ${fm.rp}`)
-      if (fm.damage_reduction !== undefined) details.push(`SR: ${fm.damage_reduction}`)
-      if (fm.strength_requirement !== undefined) details.push(`Stärke: ${fm.strength_requirement}`)
-      if (fm.bw_cap !== undefined) details.push(`Max BW: ${fm.bw_cap}`)
-      if (fm.stealth_disadvantage) details.push(`Heimlichkeit: ${fm.stealth_disadvantage}`)
+      if (fm.damage_reduction !== undefined) add('endeavourInventory.detailDamageReduction', fm.damage_reduction)
+      if (fm.strength_requirement !== undefined) add('endeavourInventory.detailStrength', fm.strength_requirement)
+      if (fm.bw_cap !== undefined) add('endeavourInventory.detailMaxBw', fm.bw_cap)
+      if (fm.stealth_disadvantage) add('endeavourInventory.detailStealth', fm.stealth_disadvantage)
       break
     case 'shield':
-      if (fm.rk !== undefined) details.push(`RK: ${fm.rk}`)
+      if (fm.rk !== undefined) add('short.armorClass', fm.rk)
       if (fm.rp !== undefined) details.push(`RP: ${fm.rp}`)
-      if (fm.damage_reduction !== undefined) details.push(`SR: ${fm.damage_reduction}`)
+      if (fm.damage_reduction !== undefined) add('endeavourInventory.detailDamageReduction', fm.damage_reduction)
       break
     case 'magic_item':
-      if (fm.magic_type) details.push(`Art: ${fm.magic_type}`)
-      if (fm.rarity) details.push(`Seltenheit: ${fm.rarity}`)
-      if (fm.requires_attunement) details.push('Einstimmung: Ja')
-      if (fm.cursed) details.push('Verflucht: Ja')
-      if (fm.requirement) details.push(`Voraussetzung: ${fm.requirement}`)
+      if (fm.magic_type) add('endeavourInventory.detailMagicType', fm.magic_type)
+      if (fm.rarity) add('endeavourInventory.detailRarity', fm.rarity)
+      if (fm.requires_attunement) details.push(t('endeavourInventory.detailAttunement'))
+      if (fm.cursed) details.push(t('endeavourInventory.detailCursed'))
+      if (fm.requirement) add('endeavourInventory.detailRequirement', fm.requirement)
       break
     case 'tool':
       break
@@ -215,13 +216,14 @@ function endeavourItemDetails(fm: EndeavourItemFrontmatter): string[] {
 }
 
 function EndeavourItemRow({ item }: { item: VaultFile<EndeavourItemFrontmatter> }) {
+  const t = useT()
   const { name } = item.frontmatter
-  const details = endeavourItemDetails(item.frontmatter)
+  const details = endeavourItemDetails(item.frontmatter, t)
   return (
     <div className="py-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-medium text-fg">{name}</span>
-        <span className="shrink-0 text-xs uppercase text-fg-muted">{endeavourItemSummary(item.frontmatter)}</span>
+        <span className="shrink-0 text-xs uppercase text-fg-muted">{endeavourItemSummary(item.frontmatter, t)}</span>
       </div>
       {details.length > 0 && <div className="mt-0.5 text-xs text-fg-muted">{details.join(' · ')}</div>}
       {item.body && <div className="mt-0.5 text-sm text-fg-muted">{renderObsidianBody(item.body)}</div>}
