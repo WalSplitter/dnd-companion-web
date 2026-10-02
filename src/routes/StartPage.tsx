@@ -95,7 +95,7 @@ function PortalCard({
     onPointerMove: track,
     onPointerLeave: reset,
   }
-  const inner = <div className="portal-card-inner flex h-full flex-col p-6">{children}</div>
+  const inner = <div className="portal-card-inner flex h-full flex-col p-5">{children}</div>
 
   return onActivate ? (
     <button ref={ref as RefObject<HTMLButtonElement>} type="button" onClick={onActivate} disabled={disabled} {...props}>
@@ -109,7 +109,20 @@ function PortalCard({
 }
 
 function Emblem({ children }: { children: ReactNode }) {
-  return <div className="portal-emblem mb-5 flex size-16 shrink-0 items-center justify-center rounded-2xl">{children}</div>
+  return <div className="portal-emblem flex size-12 shrink-0 items-center justify-center rounded-xl [&>svg]:size-7">{children}</div>
+}
+
+/** A card's head: its emblem beside the eyebrow and title, so the card spends no height on the emblem. */
+function CardHead({ emblem, eyebrow, eyebrowClass, title }: { emblem: ReactNode; eyebrow: string; eyebrowClass: string; title: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3.5">
+      {emblem}
+      <div className="min-w-0 flex-1">
+        <p className={`text-[0.7rem] font-bold uppercase tracking-[0.2em] ${eyebrowClass}`}>{eyebrow}</p>
+        {title}
+      </div>
+    </div>
+  )
 }
 
 function BookIcon() {
@@ -202,31 +215,40 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
 
   return (
     <PortalCard accent="var(--color-trim)" className="h-full">
-      <Emblem>
-        <BookIcon />
-      </Emblem>
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-trim">{t('start.continueHeading')}</p>
+      <CardHead
+        emblem={
+          <Emblem>
+            <BookIcon />
+          </Emblem>
+        }
+        eyebrow={t('start.continueHeading')}
+        eyebrowClass="text-trim"
+        title={
+          latest && (
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 truncate font-display text-xl font-bold tracking-wide text-fg" title={latest.name}>
+                {latest.name}
+              </h2>
+              {recentId === latest.id && <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" title={t('start.currentLabel')} />}
+            </div>
+          )
+        }
+      />
 
       {latest ? (
         <div className="mt-3 flex flex-1 flex-col">
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="min-w-0 truncate font-display text-2xl font-bold tracking-wide text-fg" title={latest.name}>
-              {latest.name}
-            </h2>
-            {recentId === latest.id && <span className="recent-live mt-2.5 size-2.5 shrink-0 rounded-full bg-success" title={t('start.currentLabel')} />}
-          </div>
-          <div className="mt-2">
+          <div>
             <RecentMeta recent={latest} t={t} lang={lang} />
           </div>
           {latest.characters && latest.characters.length > 0 && (
-            <div className="mt-4 flex -space-x-2">
+            <div className="mt-3 flex -space-x-2">
               {latest.characters.map((name, i) => (
                 <Medallion key={name} name={name} index={i} />
               ))}
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <button type="button" className="rpg-button start-cta" onClick={() => onOpen(latest)}>
               {t('start.reopen')}
             </button>
@@ -246,15 +268,15 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
           {latest.kind === 'folder' && <p className="mt-2 text-[0.7rem] text-fg-muted/80">{t('start.permissionHint')}</p>}
 
           {older.length > 0 && (
-            <div className="mt-5 border-t border-trim/15 pt-4">
+            <div className="mt-4 border-t border-trim/15 pt-3">
               <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-fg-muted">{t('start.recentHeading')}</p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {older.map((r) => (
                   <li key={r.id} className="recent-row group/row flex items-center gap-2 rounded-lg">
                     <button
                       type="button"
                       onClick={() => onOpen(r)}
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left transition hover:bg-trim/10"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1 text-left transition hover:bg-trim/10"
                     >
                       <span aria-hidden className="size-1.5 shrink-0 rotate-45 border border-trim/60 transition group-hover/row:bg-trim" />
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{r.name}</span>
@@ -278,7 +300,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
           <button
             type="button"
             onClick={() => void forget(latest.id)}
-            className="mt-auto self-start pt-4 text-[0.7rem] text-fg-muted/70 underline-offset-4 transition hover:text-danger hover:underline"
+            className="mt-auto self-start pt-3 text-[0.7rem] text-fg-muted/70 underline-offset-4 transition hover:text-danger hover:underline"
           >
             {t('start.forget')}
           </button>
@@ -288,7 +310,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
           <p className="text-sm leading-relaxed text-fg-muted">
             {!supported ? t('start.unsupported') : recentsLoaded ? t('start.noRecents') : ' '}
           </p>
-          <div aria-hidden className="mt-6 flex gap-2 opacity-40">
+          <div aria-hidden className="mt-4 flex gap-2 opacity-40">
             {[0, 1, 2].map((i) => (
               <span key={i} className="recent-ghost h-10 flex-1 rounded-lg border border-dashed border-trim/40" style={{ '--i': i } as CSSProperties} />
             ))}
@@ -302,7 +324,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
 function Feature({ icon, title, body, index }: { icon: ReactNode; title: string; body: string; index: number }) {
   return (
     <div className="rise-in flex items-start gap-3" style={{ '--i': index + 6 } as CSSProperties}>
-      <span className="feature-icon flex size-9 shrink-0 items-center justify-center rounded-lg border border-trim/30 bg-trim/5 text-trim">{icon}</span>
+      <span className="feature-icon flex size-8 shrink-0 items-center justify-center rounded-lg border border-trim/30 bg-trim/5 text-trim">{icon}</span>
       <div>
         <p className="font-display text-sm font-bold tracking-wide text-fg">{title}</p>
         <p className="text-xs leading-relaxed text-fg-muted">{body}</p>
@@ -431,16 +453,21 @@ export function StartPage() {
         disabled={loading}
         className="h-full w-full text-left"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 sm:[&>.portal-emblem]:mb-0">
-          <Emblem>
-            <RepoIcon />
-          </Emblem>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-success">{t('github.cardEyebrow')}</p>
-            <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>
+            <CardHead
+              emblem={
+                <Emblem>
+                  <RepoIcon />
+                </Emblem>
+              }
+              eyebrow={t('github.cardEyebrow')}
+              eyebrowClass="text-success"
+              title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>}
+            />
             <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('github.cardBody')}</p>
           </div>
-          <span className="rpg-button start-cta mt-6 inline-block self-start sm:mt-0 sm:self-center">{t('github.cardAction')}</span>
+          <span className="rpg-button start-cta inline-block self-start sm:self-center">{t('github.cardAction')}</span>
         </div>
       </PortalCard>
     </div>
@@ -451,28 +478,36 @@ export function StartPage() {
       <Embers />
 
       <div className="relative z-[1]">
-        {/* Hero */}
-        <section className={`flex flex-col items-center text-center ${vaultOpen ? 'pb-6 pt-0 sm:pt-2' : 'pb-10 pt-4 sm:pt-8'}`}>
-          <div className="rise-in relative" style={{ '--i': 0 } as CSSProperties}>
+        {/* Hero: stacked on narrow screens; on wide ones the sigil stands beside the title, so the
+            portals and the footer fit without scrolling. */}
+        <section
+          className={`flex flex-col items-center text-center lg:flex-row lg:justify-center lg:gap-7 lg:text-left ${vaultOpen ? 'pb-4 pt-0' : 'pb-6 pt-2 sm:pt-4 lg:pt-2'}`}
+        >
+          <div className="rise-in relative shrink-0" style={{ '--i': 0 } as CSSProperties}>
             <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
-            <ArcaneSigil className={vaultOpen ? 'size-24 sm:size-28' : 'size-36 sm:size-44'} />
+            <ArcaneSigil className={vaultOpen ? 'size-16 sm:size-20' : 'size-24 sm:size-32 lg:size-28'} />
           </div>
-          <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim ${vaultOpen ? 'mt-4' : 'mt-6'}`} style={{ '--i': 1 } as CSSProperties}>
-            {t('start.eyebrow')}
-          </p>
-          <h1 className="rise-in start-title mt-3 font-display text-4xl font-bold tracking-wide sm:text-6xl" style={{ '--i': 2 } as CSSProperties}>
-            {t('app.brand')}
-          </h1>
-          <p className="rise-in mt-4 max-w-xl text-balance text-fg-muted" style={{ '--i': 3 } as CSSProperties}>
-            {t('start.tagline')}
-          </p>
-          {!vaultOpen && (
-            <div className="rise-in mt-6 flex w-64 items-center gap-3" style={{ '--i': 3 } as CSSProperties} aria-hidden>
-              <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
-              <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
-              <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
-            </div>
-          )}
+          <div className="flex flex-col items-center lg:items-start">
+            <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim ${vaultOpen ? 'mt-2' : 'mt-4'} lg:mt-0`} style={{ '--i': 1 } as CSSProperties}>
+              {t('start.eyebrow')}
+            </p>
+            <h1
+              className={`rise-in start-title mt-2 font-display font-bold tracking-wide ${vaultOpen ? 'text-3xl sm:text-5xl' : 'text-4xl sm:text-6xl'}`}
+              style={{ '--i': 2 } as CSSProperties}
+            >
+              {t('app.brand')}
+            </h1>
+            <p className={`rise-in max-w-xl text-balance text-fg-muted ${vaultOpen ? 'mt-2' : 'mt-3'} lg:mt-2`} style={{ '--i': 3 } as CSSProperties}>
+              {t('start.tagline')}
+            </p>
+            {!vaultOpen && (
+              <div className="rise-in mt-4 flex w-64 items-center gap-3 lg:hidden" style={{ '--i': 3 } as CSSProperties} aria-hidden>
+                <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
+                <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
+                <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
+              </div>
+            )}
+          </div>
         </section>
 
         {!isFileSystemAccessSupported() && (
@@ -492,7 +527,7 @@ export function StartPage() {
         )}
 
         {vaultOpen && (
-          <div className="rise-in current-vault mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-trim/30 px-5 py-3" style={{ '--i': 3 } as CSSProperties}>
+          <div className="rise-in current-vault mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-trim/30 px-5 py-2.5" style={{ '--i': 3 } as CSSProperties}>
             <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-fg-muted">{t('start.currentLabel')}</p>
@@ -514,7 +549,7 @@ export function StartPage() {
         )}
 
         {/* Portals */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
           <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
             <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
           </div>
@@ -523,16 +558,21 @@ export function StartPage() {
 
           <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
             <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
-              <Emblem>
-                <ChestIcon />
-              </Emblem>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{t('start.openTitle')}</p>
-              <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('start.openBody')}</p>
-              <div className="mt-auto pt-6">
+              <CardHead
+                emblem={
+                  <Emblem>
+                    <ChestIcon />
+                  </Emblem>
+                }
+                eyebrow={t('start.openTitle')}
+                eyebrowClass="text-primary"
+                title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
+              />
+              <p className="mt-2.5 text-sm leading-relaxed text-fg-muted">{t('start.openBody')}</p>
+              <div className="mt-auto pt-4">
                 <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
                 {supportsFolderDrop() && (
-                  <p className="mt-3 flex items-center gap-2 text-xs text-fg-muted">
+                  <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
                     <svg {...ICON} className="size-4 text-primary">
                       <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                     </svg>
@@ -557,21 +597,26 @@ export function StartPage() {
 
           <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
             <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
-              <div className="mb-5 flex h-16 items-center">
-                {samplePortraits.map((src, i) => (
-                  <img
-                    key={src}
-                    src={src}
-                    alt=""
-                    className="sample-hero size-14 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
-                    style={{ '--i': i } as CSSProperties}
-                  />
-                ))}
-              </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">{t('vaultLoader.sampleData')}</p>
-              <h2 className="mt-3 font-display text-2xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('start.sampleBody')}</p>
-              <div className="mt-auto pt-6">
+              <CardHead
+                emblem={
+                  <div className="flex h-12 shrink-0 items-center">
+                    {samplePortraits.map((src, i) => (
+                      <img
+                        key={src}
+                        src={src}
+                        alt=""
+                        className="sample-hero size-11 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
+                        style={{ '--i': i } as CSSProperties}
+                      />
+                    ))}
+                  </div>
+                }
+                eyebrow={t('vaultLoader.sampleData')}
+                eyebrowClass="text-accent"
+                title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>}
+              />
+              <p className="mt-2.5 text-sm leading-relaxed text-fg-muted">{t('start.sampleBody')}</p>
+              <div className="mt-auto pt-4">
                 <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
                   {t('start.sampleAction')}
                   <span aria-hidden className="transition-transform group-hover:translate-x-1">
@@ -586,7 +631,7 @@ export function StartPage() {
         </div>
 
         {/* Features */}
-        <div className="mt-12 grid grid-cols-1 gap-6 border-t border-trim/15 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-trim/15 pt-5 sm:grid-cols-2 lg:grid-cols-4">
           <Feature
             index={0}
             title={t('start.featureLocalTitle')}
