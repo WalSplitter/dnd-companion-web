@@ -7,6 +7,13 @@
 @import '@fontsource/pixelify-sans/400.css';
 @import '@fontsource/pixelify-sans/700.css';
 
+/* Viewport-height variants, for pages that should fit one screen (the start page): `short` for
+ * laptop-height windows, `tight` for small ones (1366×768 / 1280×720 with browser chrome). */
+@custom-variant short (@media (max-height: 860px));
+@custom-variant tight (@media (max-height: 700px));
+/* Tall windows (1080p and up without much browser chrome): a roomier start page. */
+@custom-variant tall (@media (min-height: 1000px));
+
 @theme inline {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
@@ -911,6 +918,22 @@ button.exh-token:hover {
   paint-order: stroke;
   stroke: var(--color-surface);
   stroke-width: 3px;
+}
+
+/* Scrolls without showing a scrollbar (the start page between header and footer). */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Below `lg` the start page usually scrolls between header and footer; with no scrollbar shown, the
+ * content fading out above the footer is the hint that there's more. */
+@media (max-width: 1023px) {
+  .start-scroll {
+    mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+  }
 }
 
 /* A slim scrollbar in the trim colour, for containers that really do scroll sideways (wide tables on phones). */

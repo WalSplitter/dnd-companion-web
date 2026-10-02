@@ -27,7 +27,11 @@ function App() {
   const percent = loadingProgress && loadingProgress.total > 0 ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
 
   return (
-    <div className="flex min-h-full flex-col">
+    // The start page is a single screen: the shell is exactly viewport-tall, header and footer stay
+    // put, and only the content between them scrolls when it doesn't fit (phones, small windows) —
+    // by touch or wheel, without a visible scrollbar.
+    // Vault pages scroll as a whole, so the footer doesn't take room from long character sheets.
+    <div className={onStartPage ? 'flex h-dvh flex-col' : 'flex min-h-full flex-col'}>
       <ThemeEffect />
       <AmbientLayer />
       <ErrorToaster />
@@ -63,16 +67,18 @@ function App() {
         )}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-4 pt-6">
-        <Routes>
-          <Route path="/" element={<StartPage />} />
-          <Route element={<VaultLayout />}>
-            <Route path="/characters" element={<CharacterListPage />} />
-            <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+      <div data-start-scroll={onStartPage || undefined} className={onStartPage ? 'no-scrollbar start-scroll flex min-h-0 flex-1 flex-col overflow-y-auto' : 'flex flex-1 flex-col'}>
+        <main className={`mx-auto w-full max-w-6xl flex-1 px-4 pb-4 ${onStartPage ? 'flex flex-col pt-6 short:pt-3' : 'pt-6'}`}>
+          <Routes>
+            <Route path="/" element={<StartPage />} />
+            <Route element={<VaultLayout />}>
+              <Route path="/characters" element={<CharacterListPage />} />
+              <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
 
       <AppFooter />
     </div>

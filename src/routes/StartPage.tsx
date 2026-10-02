@@ -95,7 +95,7 @@ function PortalCard({
     onPointerMove: track,
     onPointerLeave: reset,
   }
-  const inner = <div className="portal-card-inner flex h-full flex-col p-5">{children}</div>
+  const inner = <div className="portal-card-inner flex h-full flex-col p-5 tall:p-7">{children}</div>
 
   return onActivate ? (
     <button ref={ref as RefObject<HTMLButtonElement>} type="button" onClick={onActivate} disabled={disabled} {...props}>
@@ -265,7 +265,7 @@ function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?: strin
               </button>
             )}
           </div>
-          {latest.kind === 'folder' && <p className="mt-2 text-[0.7rem] text-fg-muted/80">{t('start.permissionHint')}</p>}
+          {latest.kind === 'folder' && <p className="mt-2 text-[0.7rem] text-fg-muted/80 tight:hidden">{t('start.permissionHint')}</p>}
 
           {older.length > 0 && (
             <div className="mt-4 border-t border-trim/15 pt-3">
@@ -465,7 +465,7 @@ export function StartPage() {
               eyebrowClass="text-success"
               title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('github.cardTitle')}</h2>}
             />
-            <p className="mt-2 text-sm leading-relaxed text-fg-muted">{t('github.cardBody')}</p>
+            <p className="mt-2 text-sm leading-relaxed text-fg-muted tall:text-base">{t('github.cardBody')}</p>
           </div>
           <span className="rpg-button start-cta inline-block self-start sm:self-center">{t('github.cardAction')}</span>
         </div>
@@ -474,164 +474,171 @@ export function StartPage() {
   )
 
   return (
-    <div className="relative">
+    // Fills the height between header and footer: the hero, the current vault and the portals sit as
+    // one group in the middle of the free space, the feature strip rests just above the footer.
+    <div className="relative flex flex-1 flex-col">
       <Embers />
 
-      <div className="relative z-[1]">
-        {/* Hero: stacked on narrow screens; on wide ones the sigil stands beside the title, so the
-            portals and the footer fit without scrolling. */}
-        <section
-          className={`flex flex-col items-center text-center lg:flex-row lg:justify-center lg:gap-7 lg:text-left ${vaultOpen ? 'pb-4 pt-0' : 'pb-6 pt-2 sm:pt-4 lg:pt-2'}`}
-        >
-          <div className="rise-in relative shrink-0" style={{ '--i': 0 } as CSSProperties}>
-            <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
-            <ArcaneSigil className={vaultOpen ? 'size-16 sm:size-20' : 'size-24 sm:size-32 lg:size-28'} />
-          </div>
-          <div className="flex flex-col items-center lg:items-start">
-            <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim ${vaultOpen ? 'mt-2' : 'mt-4'} lg:mt-0`} style={{ '--i': 1 } as CSSProperties}>
-              {t('start.eyebrow')}
-            </p>
-            <h1
-              className={`rise-in start-title mt-2 font-display font-bold tracking-wide ${vaultOpen ? 'text-3xl sm:text-5xl' : 'text-4xl sm:text-6xl'}`}
-              style={{ '--i': 2 } as CSSProperties}
-            >
-              {t('app.brand')}
-            </h1>
-            <p className={`rise-in max-w-xl text-balance text-fg-muted ${vaultOpen ? 'mt-2' : 'mt-3'} lg:mt-2`} style={{ '--i': 3 } as CSSProperties}>
-              {t('start.tagline')}
-            </p>
-            {!vaultOpen && (
-              <div className="rise-in mt-4 flex w-64 items-center gap-3 lg:hidden" style={{ '--i': 3 } as CSSProperties} aria-hidden>
-                <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
-                <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
-                <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
-              </div>
-            )}
-          </div>
-        </section>
-
-        {!isFileSystemAccessSupported() && (
-          <p
-            role="note"
-            className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
-            style={{ '--i': 3 } as CSSProperties}
+      <div className="relative z-[1] flex flex-1 flex-col">
+        <div className="my-auto">
+          {/* Hero: stacked on narrow screens; on wide ones the sigil stands beside the title, so the
+              portals and the footer fit without scrolling. Laptop-height windows (`short`/`tight`)
+              shrink it further and drop the eyebrow and tagline; with a vault open a `tight` window
+              drops the hero altogether — the header already carries the name. */}
+          <section
+            className={`flex flex-col items-center text-center lg:flex-row lg:justify-center lg:gap-7 lg:text-left ${vaultOpen ? 'pb-4 pt-0 short:pb-3 tight:hidden tall:pb-7' : 'pb-6 pt-2 sm:pt-4 lg:pt-2 short:pb-4 tight:pb-2 tight:pt-0 tall:pb-9'}`}
           >
-            {t('start.readOnlyBrowser')}
-          </p>
-        )}
-
-        {redirectedFrom && source === 'none' && (
-          <p className="rise-in mx-auto mb-5 w-fit rounded-full border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm text-warning">
-            {t('start.reconnectNotice')}
-          </p>
-        )}
-
-        {vaultOpen && (
-          <div className="rise-in current-vault mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-trim/30 px-5 py-2.5" style={{ '--i': 3 } as CSSProperties}>
-            <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-fg-muted">{t('start.currentLabel')}</p>
-              <p className="truncate font-display text-lg font-bold text-fg">
-                {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
-                <span className="ml-3 font-sans text-xs font-normal text-fg-muted">
-                  {ruleset !== 'unknown' && `${t(`ruleset.${ruleset}`)} · `}
-                  {t('start.characterCount', { n: characterCount })}
-                </span>
-              </p>
+            <div className="rise-in relative shrink-0" style={{ '--i': 0 } as CSSProperties}>
+              <div aria-hidden className="start-aura absolute inset-0 -z-10 rounded-full" />
+              <ArcaneSigil className={vaultOpen ? 'size-16 sm:size-20 short:size-14 sm:short:size-16 tall:size-24 sm:tall:size-28' : 'size-24 sm:size-32 lg:size-28 short:size-20 sm:short:size-24 tight:size-16 sm:tight:size-16 lg:tall:size-36'} />
             </div>
-            <button type="button" onClick={closeVault} className="rounded-md px-3 py-1.5 text-sm text-fg-muted transition hover:bg-surface-2 hover:text-fg">
-              {t('start.closeVault')}
-            </button>
-            <button type="button" onClick={() => navigate('/characters')} className="rpg-button start-cta">
-              {t('start.toCharacters')} →
-            </button>
-          </div>
-        )}
+            <div className="flex flex-col items-center lg:items-start">
+              <p className={`rise-in text-[0.7rem] font-bold uppercase tracking-[0.35em] text-trim tight:hidden ${vaultOpen ? 'mt-2' : 'mt-4'} lg:mt-0`} style={{ '--i': 1 } as CSSProperties}>
+                {t('start.eyebrow')}
+              </p>
+              <h1
+                className={`rise-in start-title mt-2 font-display font-bold tracking-wide ${vaultOpen ? 'text-3xl sm:text-5xl sm:short:text-4xl sm:tall:text-6xl' : 'text-4xl sm:text-6xl sm:short:text-5xl sm:tight:text-4xl sm:tall:text-7xl'}`}
+                style={{ '--i': 2 } as CSSProperties}
+              >
+                {t('app.brand')}
+              </h1>
+              <p className={`rise-in max-w-xl text-balance text-fg-muted short:text-sm tight:hidden ${vaultOpen ? 'mt-2' : 'mt-3'} lg:mt-2`} style={{ '--i': 3 } as CSSProperties}>
+                {t('start.tagline')}
+              </p>
+              {!vaultOpen && (
+                <div className="rise-in mt-4 flex w-64 items-center gap-3 short:hidden lg:hidden" style={{ '--i': 3 } as CSSProperties} aria-hidden>
+                  <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/50" />
+                  <span className="start-gem size-2 rotate-45 border border-trim bg-trim/30" />
+                  <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/50" />
+                </div>
+              )}
+            </div>
+          </section>
 
-        {/* Portals */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
-            <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
-          </div>
+          {!isFileSystemAccessSupported() && (
+            <p
+              role="note"
+              className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
+              style={{ '--i': 3 } as CSSProperties}
+            >
+              {t('start.readOnlyBrowser')}
+            </p>
+          )}
 
-          {!isFileSystemAccessSupported() && githubCard}
+          {redirectedFrom && source === 'none' && (
+            <p className="rise-in mx-auto mb-5 w-fit rounded-full border border-warning/40 bg-warning/10 px-4 py-1.5 text-sm text-warning">
+              {t('start.reconnectNotice')}
+            </p>
+          )}
 
-          <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
-            <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
-              <CardHead
-                emblem={
-                  <Emblem>
-                    <ChestIcon />
-                  </Emblem>
-                }
-                eyebrow={t('start.openTitle')}
-                eyebrowClass="text-primary"
-                title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
-              />
-              <p className="mt-2.5 text-sm leading-relaxed text-fg-muted">{t('start.openBody')}</p>
-              <div className="mt-auto pt-4">
-                <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
-                {supportsFolderDrop() && (
-                  <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
-                    <svg {...ICON} className="size-4 text-primary">
-                      <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                    </svg>
-                    {t('start.dropHint')}
-                  </p>
-                )}
-                {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
-              </div>
-            </PortalCard>
-            <input
-              ref={fileInputRef}
-              type="file"
-              // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
-              webkitdirectory=""
-              multiple
-              hidden
-              onChange={(e) => {
-                if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
-              }}
-            />
-          </div>
-
-          <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
-            <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
-              <CardHead
-                emblem={
-                  <div className="flex h-12 shrink-0 items-center">
-                    {samplePortraits.map((src, i) => (
-                      <img
-                        key={src}
-                        src={src}
-                        alt=""
-                        className="sample-hero size-11 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
-                        style={{ '--i': i } as CSSProperties}
-                      />
-                    ))}
-                  </div>
-                }
-                eyebrow={t('vaultLoader.sampleData')}
-                eyebrowClass="text-accent"
-                title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>}
-              />
-              <p className="mt-2.5 text-sm leading-relaxed text-fg-muted">{t('start.sampleBody')}</p>
-              <div className="mt-auto pt-4">
-                <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
-                  {t('start.sampleAction')}
-                  <span aria-hidden className="transition-transform group-hover:translate-x-1">
-                    →
+          {vaultOpen && (
+            <div className="rise-in current-vault mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-trim/30 px-5 py-2.5 short:mb-3 short:py-2 tall:mb-6 tall:py-3.5" style={{ '--i': 3 } as CSSProperties}>
+              <span className="recent-live size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-fg-muted">{t('start.currentLabel')}</p>
+                <p className="truncate font-display text-lg font-bold text-fg">
+                  {source === 'sample' ? t('vaultLoader.sampleData') : vaultName}
+                  <span className="ml-3 font-sans text-xs font-normal text-fg-muted">
+                    {ruleset !== 'unknown' && `${t(`ruleset.${ruleset}`)} · `}
+                    {t('start.characterCount', { n: characterCount })}
                   </span>
-                </span>
+                </p>
               </div>
-            </PortalCard>
-          </div>
+              <button type="button" onClick={closeVault} className="rounded-md px-3 py-1.5 text-sm text-fg-muted transition hover:bg-surface-2 hover:text-fg">
+                {t('start.closeVault')}
+              </button>
+              <button type="button" onClick={() => navigate('/characters')} className="rpg-button start-cta">
+                {t('start.toCharacters')} →
+              </button>
+            </div>
+          )}
 
-          {isFileSystemAccessSupported() && githubCard}
+          {/* Portals */}
+          <div className="grid grid-cols-1 gap-4 short:gap-3 tall:gap-6 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
+            <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
+              <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
+            </div>
+
+            {!isFileSystemAccessSupported() && githubCard}
+
+            <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
+              <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
+                <CardHead
+                  emblem={
+                    <Emblem>
+                      <ChestIcon />
+                    </Emblem>
+                  }
+                  eyebrow={t('start.openTitle')}
+                  eyebrowClass="text-primary"
+                  title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
+                />
+                <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.openBody')}</p>
+                <div className="mt-auto pt-4">
+                  <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
+                  {supportsFolderDrop() && (
+                    <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
+                      <svg {...ICON} className="size-4 text-primary">
+                        <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                      </svg>
+                      {t('start.dropHint')}
+                    </p>
+                  )}
+                  {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
+                </div>
+              </PortalCard>
+              <input
+                ref={fileInputRef}
+                type="file"
+                // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
+                webkitdirectory=""
+                multiple
+                hidden
+                onChange={(e) => {
+                  if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
+                }}
+              />
+            </div>
+
+            <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
+              <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
+                <CardHead
+                  emblem={
+                    <div className="flex h-12 shrink-0 items-center">
+                      {samplePortraits.map((src, i) => (
+                        <img
+                          key={src}
+                          src={src}
+                          alt=""
+                          className="sample-hero size-11 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
+                          style={{ '--i': i } as CSSProperties}
+                        />
+                      ))}
+                    </div>
+                  }
+                  eyebrow={t('vaultLoader.sampleData')}
+                  eyebrowClass="text-accent"
+                  title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>}
+                />
+                <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.sampleBody')}</p>
+                <div className="mt-auto pt-4">
+                  <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
+                    {t('start.sampleAction')}
+                    <span aria-hidden className="transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
+                  </span>
+                </div>
+              </PortalCard>
+            </div>
+
+            {isFileSystemAccessSupported() && githubCard}
+          </div>
         </div>
 
-        {/* Features */}
-        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-trim/15 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Features — a nice-to-have: on wide but short screens they give way so the portals and the
+            footer stay on one screen; where the page scrolls anyway (narrow screens) they stay. */}
+        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-trim/15 pt-5 pb-1 sm:grid-cols-2 lg:grid-cols-4 lg:short:hidden tall:mt-10">
           <Feature
             index={0}
             title={t('start.featureLocalTitle')}
