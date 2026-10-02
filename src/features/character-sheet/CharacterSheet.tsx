@@ -15,7 +15,6 @@ import { FallenOverlay } from './components/FallenOverlay'
 import { FeaturesTraits } from './components/FeaturesTraits'
 import { Header } from './components/Header'
 import { HitPoints } from './components/HitPoints'
-import { SavingThrows } from './components/SavingThrows'
 import { SensesLanguages } from './components/SensesLanguages'
 import { Skills } from './components/Skills'
 import { characterFate } from './vitals'
@@ -80,23 +79,22 @@ export function CharacterSheet({
 
           {tab === 'sheet' && (
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+              {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
+                  the attribute medallions, so the three columns come out about equally long. */}
               <div className="space-y-4">
-                <AbilityScores character={character} />
-                <SavingThrows character={character} characterPath={characterPath} />
+                <AbilityScores character={character} characterPath={characterPath} />
                 <SensesLanguages character={character} />
+                <About body={body} />
               </div>
               <Skills character={character} />
               <div className="space-y-4">
                 <Attacks character={character} />
                 {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <Conditions character={character} characterPath={characterPath} />
-                {!character.nimble_attributes && <FeaturesTraits character={character} />}
-                <About body={body} />
+                <FeaturesTraits character={character} />
               </div>
             </div>
           )}
-          {/* Nimble features get their own full-width section, split into actions/reactions/passive. */}
-          {tab === 'sheet' && character.nimble_attributes && <FeaturesTraits character={character} />}
 
           {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
           {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}

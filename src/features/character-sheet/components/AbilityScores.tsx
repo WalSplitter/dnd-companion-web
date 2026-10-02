@@ -1,11 +1,16 @@
+import type { ReactNode } from 'react'
 import { Card } from '../../../components/Card'
+import { D20Modifier } from '../../../components/ExhaustedValue'
 import { useExhaustedSync } from '../../../components/exhaustedSync'
 import { useD20Penalty } from '../../../dice/d20Penalty'
 import { D20RollButton } from '../../../dice/RollButton'
+import type { RollMode } from '../../../dice/notation'
 import { d20RollHint } from '../../../dice/rollHint'
 import { useT } from '../../../i18n/useI18n'
-import { abilityModifier, formatModifier, nimbleAttributeValue } from '../../../vault/deriveStats'
-import { ABILITIES, NIMBLE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
+import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { abilityModifier, formatModifier, isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../vault/deriveStats'
+import { ABILITIES, NIMBLE_ATTRIBUTES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
+import { ProficiencyDot } from './ProficiencyDot'
 
 /** A medallion + caption plate, shared by the D&D-shaped `abilities` and Nimble `nimble_attributes`
  * branches below. The value itself is never edited here (attributes are set by the DM), but the
@@ -25,6 +30,7 @@ function AbilityMedallion({
   abbr,
   modifier,
   caption,
+  save,
   muted = false,
   core = false,
 }: {
@@ -32,6 +38,9 @@ function AbilityMedallion({
   abbr: string
   modifier: number
   caption?: string
+  /** The attribute's saving-throw chip (`SaveChip`), or `null` for an attribute without a save — a
+   * same-height gap then keeps the row aligned. */
+  save?: ReactNode
   muted?: boolean
   core?: boolean
 }) {
@@ -78,17 +87,71 @@ function AbilityMedallion({
           <span className={`text-[0.6rem] font-semibold uppercase tracking-wider ${muted ? 'text-fg-muted' : 'text-trim'}`}>{caption}</span>
         </div>
       )}
+      {save !== undefined && (save ?? <div className="mt-2 h-6" aria-hidden />)}
     </div>
   )
 }
 
-export function AbilityScores({ character }: { character: CharacterFrontmatter }) {
+/**
+ * The saving throw that goes with an attribute, as a chip under its medallion — it used to be a
+ * card of its own that mostly repeated the attribute values. Clicking it rolls the save (with the
+ * class's advantage/disadvantage, ▲/▼, in Nimble); the medallion above still rolls the plain check.
+ * D&D saves keep their proficiency dot, a toggle while editing.
+ */
+function SaveChip({
+  label,
+  bonus,
+  mode,
+  proficient,
+  onToggle,
+}: {
+  label: string
+  bonus: number
+  mode?: RollMode
+  proficient?: boolean
+  onToggle?: () => void
+}) {
   const t = useT()
+  const modeLabel = mode && mode !== 'normal' ? t(`roll.mode.${mode}`) : undefined
+  const dot = proficient !== undefined && <ProficiencyDot active={proficient} />
+  return (
+    <div className="mt-2 flex h-6 items-center gap-1 rounded-full border border-trim/25 bg-surface/80 px-1.5 text-[0.7rem] transition hover:border-trim/60">
+      {onToggle ? (
+        <button type="button" aria-label={t('a11y.toggleSavingThrow', { label })} onClick={onToggle} className="cursor-pointer transition hover:opacity-70">
+          {dot}
+        </button>
+      ) : (
+        dot
+      )}
+      <D20RollButton
+        label={t('roll.saveSuffix', { label })}
+        modifier={bonus}
+        mode={mode}
+        note={modeLabel ? t('roll.classMode', { mode: modeLabel }) : undefined}
+        className="flex cursor-pointer items-center gap-1 hover:text-trim"
+      >
+        <span className="font-semibold uppercase tracking-wider text-fg-muted">{t('short.save')}</span>
+        <D20Modifier value={bonus} hint={false} className={`font-num ${proficient ? 'text-trim' : 'text-fg'}`} />
+        {modeLabel && (
+          <span className={mode === 'advantage' ? 'text-success' : 'text-danger'}>
+            <span aria-hidden>{mode === 'advantage' ? '▲' : '▼'}</span>
+            <span className="sr-only">{modeLabel}</span>
+          </span>
+        )}
+      </D20RollButton>
+    </div>
+  )
+}
+
+export function AbilityScores({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const t = useT()
+  const canEdit = useCanEdit()
+  const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const nimble = character.nimble_attributes
   const primary = character.nimble_primary_attributes
 
   return (
-    <Card title={t('cards.abilityScores')}>
+    <Card title={t('cards.abilitiesAndSaves')}>
       {/* 8 Nimble attributes lay out cleanly as 2 rows of 4; the 6 D&D abilities as 2 rows of 3. */}
       <div className={`grid gap-x-2 gap-y-5 pb-1 pt-1 ${nimble ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {nimble
@@ -102,12 +165,32 @@ export function AbilityScores({ character }: { character: CharacterFrontmatter }
                   modifier={nimbleAttributeValue(character, key)}
                   core={isPrimary}
                   muted={!!primary && !isPrimary}
+                  // Only six of the eight attributes back a save (`NIMBLE_SAVE_ATTRIBUTES`).
+                  save={
+                    NIMBLE_SAVE_ATTRIBUTES.includes(key) ? (
+                      <SaveChip label={t(`nimbleAttribute.${key}`)} bonus={nimbleAttributeValue(character, key)} mode={character.nimble_save_modes?.[key]} />
+                    ) : null
+                  }
                 />
               )
             })
           : ABILITIES.map(({ key }) => {
               const label = t(`ability.${key}`)
               const score = character.abilities[key]
+              const proficient = isSavingThrowProficient(character, key)
+              const target = character._write?.saving_throw_proficiencies?.[key]
+              const toggle =
+                canEdit && target
+                  ? () => {
+                      const next = !proficient
+                      void updateCharacterField(characterPath, target, next ? 1 : 0, (c) => ({
+                        ...c,
+                        saving_throw_proficiencies: next
+                          ? [...c.saving_throw_proficiencies.filter((k) => k !== key), key]
+                          : c.saving_throw_proficiencies.filter((k) => k !== key),
+                      }))
+                    }
+                  : undefined
               return (
                 <AbilityMedallion
                   key={key}
@@ -115,6 +198,7 @@ export function AbilityScores({ character }: { character: CharacterFrontmatter }
                   abbr={label.slice(0, 3)}
                   modifier={abilityModifier(score)}
                   caption={String(score)}
+                  save={<SaveChip label={label} bonus={savingThrowBonus(character, key)} proficient={proficient} onToggle={toggle} />}
                 />
               )
             })}

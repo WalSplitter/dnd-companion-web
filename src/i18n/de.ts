@@ -90,6 +90,7 @@ export const de = {
   'short.initiative': 'Ini',
   'short.movement': 'Felder',
   'short.speed': 'Tempo',
+  'short.save': 'RW',
   'short.profBonus': 'ÜB',
   'short.spellGrade': 'G{{grade}}',
   'characterList.emptyBefore': 'Keine Charaktere in diesem Vault gefunden. Öffne einen Vault-Ordner mit Dateien, die',
@@ -261,7 +262,7 @@ export const de = {
   'skill.survival': 'Überlebenskunst',
 
   'cards.abilityScores': 'Attribute',
-  'cards.savingThrows': 'Rettungswürfe',
+  'cards.abilitiesAndSaves': 'Attribute & Rettungswürfe',
   'cards.skills': 'Fertigkeiten',
   'cards.combat': 'Kampf',
   'cards.hitPoints': 'Trefferpunkte',

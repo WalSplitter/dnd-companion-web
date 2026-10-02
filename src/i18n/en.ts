@@ -97,6 +97,7 @@ export const en = {
   'short.initiative': 'Init',
   'short.movement': 'Squares',
   'short.speed': 'Speed',
+  'short.save': 'Save',
   'short.profBonus': 'PB',
   'short.spellGrade': 'L{{grade}}',
   'characterList.emptyBefore': 'No characters found in this vault. Open a vault folder that contains files with',
@@ -274,7 +275,7 @@ export const en = {
 
   // Card titles
   'cards.abilityScores': 'Ability Scores',
-  'cards.savingThrows': 'Saving Throws',
+  'cards.abilitiesAndSaves': 'Abilities & Saves',
   'cards.skills': 'Skills',
   'cards.combat': 'Combat',
   'cards.hitPoints': 'Hit Points',

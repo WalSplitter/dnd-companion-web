@@ -1128,33 +1128,44 @@ button.exh-token:hover {
   }
 }
 
-/* Values lowered by exhaustion (ExhaustedValue): crimson ember glow, and a blood drop hanging off
- * the corner that swells, falls and re-forms. Unlayered, so it wins over the caller's text colour.
+/* Values lowered by exhaustion (ExhaustedValue). By default quiet: the value keeps its normal colour
+ * and only a small static blood drop on its corner marks it — with every d20 value on the sheet
+ * lowered, a red glow on each would drown the numbers. The penalty itself is shouted once, in the
+ * HUD: values there carry `is-loud` (crimson ember glow, a drop that swells, falls and re-forms).
  * Every exhaustion animation shares one 4s cycle, phase-locked via `--exhausted-sync`
- * (`useExhaustedSync`), so all values drip and pulse together. */
+ * (`useExhaustedSync`), so loud values drip and pulse together. */
 .exhausted-value {
   position: relative;
   display: inline-block;
+}
+.exhausted-drop {
+  position: absolute;
+  top: -0.1em;
+  right: -0.45em;
+  width: 0.4em;
+  height: 0.5em;
+  color: color-mix(in srgb, #b3121b 85%, transparent);
+  pointer-events: none;
+}
+.exhausted-value.is-loud {
   color: #ff5b5b;
   text-shadow:
     0 0 6px rgb(210 20 20 / 0.75),
     0 0 14px rgb(150 0 0 / 0.45);
 }
-.exhausted-drop {
-  position: absolute;
+.exhausted-value.is-loud .exhausted-drop {
   top: -0.15em;
   right: -0.5em;
   width: 0.48em;
   height: 0.6em;
   color: #b3121b;
   filter: drop-shadow(0 0 3px rgb(220 0 0 / 0.8));
-  pointer-events: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .exhausted-value {
+  .exhausted-value.is-loud {
     animation: exhausted-ember 4s ease-in-out var(--exhausted-sync, 0s) infinite;
   }
-  .exhausted-drop {
+  .exhausted-value.is-loud .exhausted-drop {
     transform-origin: 50% 0;
     animation: exhausted-drip 4s ease-in var(--exhausted-sync, 0s) infinite;
   }
@@ -1338,45 +1349,11 @@ button.exh-token:hover {
   }
 }
 
-/* An exhausted attribute medallion: the trim bleeds into crimson and a slow heartbeat glows from
- * within. */
-.rpg-medallion.is-exhausted {
-  border-color: color-mix(in srgb, #b3121b 65%, var(--color-trim));
-  background: radial-gradient(circle at 50% 60%, rgb(150 10 15 / 0.35), transparent 65%),
-    radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--color-trim) 18%, var(--color-surface-2)), var(--color-surface) 72%);
-  box-shadow:
-    0 0 0 3px var(--color-surface),
-    0 0 0 4px color-mix(in srgb, #b3121b 50%, transparent),
-    inset 0 0 16px rgb(120 0 0 / 0.55),
-    0 0 18px -4px rgb(200 0 0 / 0.6);
-}
+/* An exhausted attribute medallion keeps its normal rim — the blood pool inside (with the actual roll
+ * value) says enough; the drop sits on the rim like on every other lowered value. */
 .rpg-medallion.is-exhausted .exhausted-drop {
   top: 0;
   right: -0.45em;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .rpg-medallion.is-exhausted {
-    animation: exhausted-heartbeat 4s ease-in-out var(--exhausted-sync, 0s) infinite;
-  }
-}
-@keyframes exhausted-heartbeat {
-  0%,
-  35%,
-  100% {
-    box-shadow:
-      0 0 0 3px var(--color-surface),
-      0 0 0 4px color-mix(in srgb, #b3121b 50%, transparent),
-      inset 0 0 16px rgb(120 0 0 / 0.55),
-      0 0 18px -4px rgb(200 0 0 / 0.6);
-  }
-  8%,
-  20% {
-    box-shadow:
-      0 0 0 3px var(--color-surface),
-      0 0 0 4px color-mix(in srgb, #d11a1a 75%, transparent),
-      inset 0 0 22px rgb(170 0 0 / 0.7),
-      0 0 26px -2px rgb(230 0 0 / 0.75);
-  }
 }
 
 /* Spell slots (SpellSlotTracker): arcane crystals in --color-accent. A charged slot glows and slowly
