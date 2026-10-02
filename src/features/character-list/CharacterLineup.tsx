@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
+import { initials } from '../../components/initials'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
+import { characterRoute } from '../../routes/paths'
 import { classSummary, exhaustionD20Penalty, totalCharacterLevel } from '../../vault/deriveStats'
 import type { CharacterFrontmatter, VaultFile } from '../../vault/types'
 import { characterFate } from '../character-sheet/vitals'
-import { FallenSeal, initials, LifeForce, VitalStatus } from './CharacterCard'
+import { FallenSeal, LifeForce, VitalStatus } from './CharacterParts'
 import { formationRanks, layoutFormation, type FormationRank } from './formation'
 
 /** Portraits shrink towards the front line (furthest from the viewer), so the formation reads as
@@ -74,7 +76,7 @@ export function PartyFormation({ characters }: { characters: VaultFile<Character
             }}
           >
             <Link
-              to={`/characters/${encodeURIComponent(member.entry.frontmatter.name)}`}
+              to={characterRoute(member.entry.frontmatter.name)}
               className="rise-in block"
               style={{ '--i': order.indexOf(member) } as CSSProperties}
             >

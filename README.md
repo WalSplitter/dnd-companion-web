@@ -434,7 +434,7 @@ additively:
   slots); a taken slot swaps the old item back. Wearables are assigned to a slot by a
   `Trageplatz:` field, a `Gegenstand/Kleidung/<Platz>` tag, or a magic item's `Art`; armor with a
   `Trageplatz` (e.g. a helm with `Trageplatz: Kopf`) goes to that slot instead of the body.
-  The silhouette shows the body armor by its `Klasse` (clothing such as `Trageplatz: Kleidung`,
+  The silhouette ([`PaperDoll.tsx`](src/features/inventory/components/PaperDoll.tsx)) shows the body armor by its `Klasse` (clothing such as `Trageplatz: Kleidung`,
   `Leicht`, `Mittel`, `Schwer`) and the weapon by its `Gegenstand/Waffe/<Form>` tag or name (sword,
   dagger, axe, mace, staff, polearm, bow, crossbow); a second one-handed weapon goes into the off
   hand when no shield is carried.

@@ -1,5 +1,5 @@
 import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
-import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourStackEntry, EquipmentChange } from '../../vault/types'
+import { WORN_SLOTS, type CharacterFrontmatter, type EndeavourContainerSlotAssignment, type EndeavourStackEntry, type EquipmentChange, type WornSlot } from '../../vault/types'
 import { wikilinkTarget } from '../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../vault/wikilinks'
 import { isCustomEntry, isStackEntry, resolveContainers, tryPlaceEntry, type PlaceFailure } from './grid'
@@ -13,8 +13,7 @@ import { isCustomEntry, isStackEntry, resolveContainers, tryPlaceEntry, type Pla
  * first back into the inventory; there are `MAX_RINGS` ring slots, and weapons are a list.
  */
 
-/** The slots that hold exactly one item. */
-export type WornSlot = 'armor' | 'shield' | 'head' | 'cloak' | 'gloves' | 'belt' | 'boots' | 'necklace'
+export type { WornSlot }
 
 export type EquipSlot = WornSlot | 'ring' | 'weapon'
 
@@ -25,10 +24,8 @@ export type EquippedRef = { slot: WornSlot } | { slot: 'weapon' | 'ring'; positi
 /** One ring per hand. */
 export const MAX_RINGS = 2
 
-const WORN_SLOTS: readonly WornSlot[] = ['armor', 'shield', 'head', 'cloak', 'gloves', 'belt', 'boots', 'necklace']
-
 export function isWornSlot(slot: unknown): slot is WornSlot {
-  return WORN_SLOTS.includes(slot as WornSlot)
+  return (WORN_SLOTS as readonly unknown[]).includes(slot)
 }
 
 export type EquipFailure = PlaceFailure | 'not_equippable'

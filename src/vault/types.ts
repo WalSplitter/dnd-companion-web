@@ -406,6 +406,11 @@ export interface EndeavourContainerSlotAssignment {
   items: EndeavourInventoryEntry[]
 }
 
+/** The equipment slots that hold exactly one item (a wikilink each, on the character's own note). */
+export const WORN_SLOTS = ['armor', 'shield', 'head', 'cloak', 'gloves', 'belt', 'boots', 'necklace'] as const
+
+export type WornSlot = (typeof WORN_SLOTS)[number]
+
 /**
  * One equip/unequip step from the inventory: what changes on the character's own file (`armor`/
  * `shield`: `undefined` = unchanged, `null` = taken off; `attack_entries`: the new `attacks:` list)

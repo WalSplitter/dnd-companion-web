@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Combobox, type ComboboxOption } from '../../components/Combobox'
 import { useT } from '../../i18n/useI18n'
 import {
@@ -112,7 +112,9 @@ type TokenCheck =
 function useDebouncedLookup<T>(key: string | null, load: () => Promise<T>): T | null {
   const [result, setResult] = useState<{ key: string; value: T } | null>(null)
   const loadRef = useRef(load)
-  loadRef.current = load
+  useLayoutEffect(() => {
+    loadRef.current = load
+  })
   useEffect(() => {
     if (key === null) return
     let cancelled = false
@@ -137,23 +139,28 @@ function useDebouncedLookup<T>(key: string | null, load: () => Promise<T>): T | 
  */
 function useGitHubSuggestions(values: GitHubFormValues) {
   const token = values.token.trim()
-  const [check, setCheck] = useState<TokenCheck>({ state: 'idle' })
+  const checkable = token.length >= 20
+  // The answer for the token it was asked about; idle while the token is too short to be one,
+  // checking while the answer belongs to an earlier token (or none has come yet).
+  const [answer, setAnswer] = useState<{ token: string; check: TokenCheck } | null>(null)
+  const check: TokenCheck = !checkable ? { state: 'idle' } : answer?.token === token ? answer.check : { state: 'checking' }
 
   useEffect(() => {
-    if (token.length < 20) return setCheck({ state: 'idle' })
+    if (!checkable) return
     let cancelled = false
-    setCheck({ state: 'checking' })
     const timer = setTimeout(() => {
       Promise.all([fetchLogin(token), listRepos(token)]).then(
-        ([login, repos]) => !cancelled && setCheck({ state: 'ok', login, repos }),
-        (err) => !cancelled && setCheck({ state: err instanceof GitHubError && err.kind === 'unauthorized' ? 'rejected' : 'failed' }),
+        ([login, repos]) => !cancelled && setAnswer({ token, check: { state: 'ok', login, repos } }),
+        (err) =>
+          !cancelled &&
+          setAnswer({ token, check: { state: err instanceof GitHubError && err.kind === 'unauthorized' ? 'rejected' : 'failed' } }),
       )
     }, LOOKUP_DELAY_MS)
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [token])
+  }, [token, checkable])
 
   const ok = check.state === 'ok'
   const ref = ok ? parseGitHubVaultRef(values.repo) : null

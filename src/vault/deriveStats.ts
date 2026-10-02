@@ -177,6 +177,17 @@ export function nimbleSkillBonus(character: CharacterFrontmatter, skill: SkillKe
   return nimbleAttributeValue(character, attribute) + nimbleSkillValue(character, skill)
 }
 
+/** A skill's total roll bonus under the character's rules: attribute + trained value on a Nimble
+ * sheet, ability modifier + proficiency in D&D. */
+export function characterSkillBonus(character: CharacterFrontmatter, skill: SkillKey): number {
+  return character.nimble_attributes ? nimbleSkillBonus(character, skill) : skillBonus(character, skill)
+}
+
+/** Whether the character trained the skill: a Nimble skill value above 0, or D&D proficiency/expertise. */
+export function isSkillTrained(character: CharacterFrontmatter, skill: SkillKey): boolean {
+  return character.nimble_attributes ? nimbleSkillValue(character, skill) > 0 : skillProficiencyLevel(character, skill) !== 'none'
+}
+
 export function totalCharacterLevel(character: CharacterFrontmatter): number {
   return character.class.reduce((sum, c) => sum + c.level, 0)
 }

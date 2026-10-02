@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CharacterCard, CharacterRow } from '../features/character-list/CharacterCard'
-import { PartyRadar } from '../features/character-list/AttributeRadar'
+import { PartyRadar } from '../features/character-list/PartyRadar'
 import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
+import { characterRoute } from './paths'
 
 const CONTAINER: Record<Exclude<CharacterLayout, 'lineup'>, string> = {
   cards: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3',
@@ -69,7 +70,7 @@ export function CharacterListPage() {
           {characters.map((c, i) => (
             <Link
               key={c.path}
-              to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
+              to={characterRoute(c.frontmatter.name)}
               className="rise-in block"
               style={{ '--i': i } as CSSProperties}
             >

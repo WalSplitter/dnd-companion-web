@@ -3,7 +3,7 @@ import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
-import { ShieldIcon } from '../../inventory/components/EquipmentLoadout'
+import { ShieldIcon } from '../../inventory/components/equipmentIcons'
 import { useT } from '../../../i18n/useI18n'
 import {
   exhaustionLevel,

@@ -1,5 +1,11 @@
 import { isRecord } from '../frontmatterFields'
-import type { AppearanceKey, CharacterBiography } from '../types'
+import type { AppearanceKey, CharacterBiography, CharacterFrontmatter } from '../types'
+
+/** Whether the character has anything for the Biography tab (a story in the note body or roleplay
+ * details) — the tab only appears then. */
+export function hasBiography(character: CharacterFrontmatter, story: string | undefined): boolean {
+  return Boolean(story?.trim()) || character.biography !== undefined
+}
 
 /**
  * Reads a character's roleplay details for the "Biography" tab. Everything is optional and both

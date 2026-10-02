@@ -16,11 +16,6 @@ const APPEARANCE_LABEL: Record<AppearanceKey, TranslationKey> = {
   skin: 'bio.appearance.skin',
 }
 
-/** Whether the character has anything for the Biography tab — the tab only appears then. */
-export function hasBiography(character: CharacterFrontmatter, story: string | undefined): boolean {
-  return Boolean(story?.trim()) || character.biography !== undefined
-}
-
 function Facts({ rows }: { rows: { label: string; value: ReactNode }[] }) {
   return (
     <dl className="divide-y divide-trim/10 text-sm">

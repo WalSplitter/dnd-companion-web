@@ -4,6 +4,7 @@ import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
 import {
   abilityModifier,
+  characterSkillBonus,
   classSummary,
   evasionValue,
   exhaustionD20Penalty,
@@ -12,27 +13,19 @@ import {
   initiativeBonus,
   movementSquares,
   nimbleAttributeValue,
-  nimbleSkillBonus,
   nimbleSkillValue,
   proficiencyBonus,
-  skillBonus,
   skillProficiencyLevel,
-  totalCharacterLevel,
 } from '../../vault/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../vault/types'
-import { ExhaustionGlyph } from '../character-sheet/components/VitalPools'
-import { characterFate, hpFillClass, maxExhaustion, movementHint, percentOf, resiliencePool } from '../character-sheet/vitals'
+import { characterFate, movementHint } from '../character-sheet/vitals'
 import { CrystalGradient, SlotCrystal } from '../spells/components/SpellSlotTracker'
+import { FallenSeal, LifeForce, Portrait, VitalStatus } from './CharacterParts'
 
 /** How many of a character's best skills the card lists. */
 const TOP_SKILL_COUNT = 3
 
 const PROFICIENCY_RANK = { none: 0, proficient: 1, expertise: 2 } as const
-
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
-}
 
 /** The trained skills worth showing off: Nimble skills by trained value, D&D skills by proficiency
  * (expertise first), each with its total roll bonus. */
@@ -41,46 +34,11 @@ function topSkills(character: CharacterFrontmatter): { key: SkillKey; bonus: num
   return SKILLS.map(({ key }) => ({
     key,
     rank: nimble ? nimbleSkillValue(character, key) : PROFICIENCY_RANK[skillProficiencyLevel(character, key)],
-    bonus: nimble ? nimbleSkillBonus(character, key) : skillBonus(character, key),
+    bonus: characterSkillBonus(character, key),
   }))
     .filter((s) => s.rank > 0)
     .sort((a, b) => b.rank - a.rank || b.bonus - a.bonus)
     .slice(0, TOP_SKILL_COUNT)
-}
-
-/** A slim version of the sheet's vitals bar; `warded` adds the temp-HP ward like on the sheet. */
-function MiniBar({
-  icon,
-  label,
-  current,
-  max,
-  fillClass,
-  warded,
-}: {
-  icon: ReactNode
-  label: string
-  current: number
-  max: number
-  fillClass: string
-  warded: boolean
-}) {
-  return (
-    <div className="flex items-center gap-2" title={`${label}: ${current}/${max}`}>
-      {icon}
-      <div
-        className={`relative h-2 min-w-0 flex-1 overflow-hidden rounded-full border bg-black/35 shadow-[inset_0_1px_3px_rgb(0_0_0/0.55)] ${
-          warded ? 'hp-warded border-accent/70' : 'border-trim/45'
-        }`}
-      >
-        <div className={`h-full rounded-full transition-[width] ${fillClass}`} style={{ width: `${percentOf(current, max)}%` }} />
-        {warded && <div className="hp-ward absolute inset-0" />}
-      </div>
-      <span className="w-11 text-right font-num text-xs text-fg">
-        {current}
-        <span className="text-fg-muted">/{max}</span>
-      </span>
-    </div>
-  )
 }
 
 /** Small engraved tile for one headline stat. */
@@ -89,126 +47,6 @@ function StatTile({ label, title, children }: { label: string; title: string; ch
     <div title={title} className="rpg-plate flex flex-col items-center justify-center px-1 py-1 text-center">
       <span className="font-num text-base leading-tight text-fg">{children}</span>
       <span className="text-[0.58rem] font-semibold uppercase tracking-wider text-fg-muted">{label}</span>
-    </div>
-  )
-}
-
-/** Portrait (or a monogram medallion) with the total level as a badge; `small` for the list rows. */
-export function Portrait({ character: c, small = false }: { character: CharacterFrontmatter; small?: boolean }) {
-  return (
-    <div className="relative shrink-0">
-      {c.portrait_url ? (
-        <img
-          src={c.portrait_url}
-          alt=""
-          className={`${small ? 'size-11' : 'size-16'} rounded-md border-2 border-trim object-cover shadow-[0_0_0_2px_var(--color-surface),0_0_16px_-4px_color-mix(in_srgb,var(--color-trim)_60%,transparent)] transition`}
-        />
-      ) : (
-        <div aria-hidden className={`rpg-medallion font-display font-bold text-trim ${small ? '!size-11 text-base' : '!size-16 text-xl'}`}>
-          {initials(c.name)}
-        </div>
-      )}
-      <span
-        className={`absolute -bottom-1.5 -right-1.5 flex items-center justify-center rounded-full border-2 border-trim bg-surface font-num font-bold ${
-          small ? 'size-5 text-[0.6rem]' : 'size-6 text-xs'
-        } text-trim shadow-[0_0_8px_color-mix(in_srgb,var(--color-trim)_55%,transparent)]`}
-      >
-        {totalCharacterLevel(c)}
-      </span>
-    </div>
-  )
-}
-
-/** Resilience/HP (and mana, for casters with a pool) bars — same colours and ward as the sheet. The
- * card adds the temp-HP and exhaustion line below; the list row shows it beside the name instead. */
-export function LifeForce({ character: c, withStatus = true }: { character: CharacterFrontmatter; withStatus?: boolean }) {
-  const t = useT()
-  const temp = c.hp.temp ?? 0
-  const resilience = resiliencePool(c)
-  const mana = c.spellcasting?.mana
-
-  return (
-    <div className="space-y-1.5">
-      {resilience && (
-        <MiniBar
-          icon={<span aria-hidden className="w-3.5 text-center text-[0.7rem] text-trim">🔥</span>}
-          label={t('stats.resilience')}
-          current={resilience.current}
-          max={resilience.max}
-          fillClass="rp-fill"
-          warded={temp > 0}
-        />
-      )}
-      <MiniBar
-        icon={<span aria-hidden className="w-3.5 text-center text-[0.7rem] text-danger">♥</span>}
-        label={t('cards.hitPoints')}
-        current={c.hp.current}
-        max={c.hp.max}
-        fillClass={`bg-linear-to-r ${hpFillClass(percentOf(c.hp.current, c.hp.max))}`}
-        warded={temp > 0}
-      />
-      {mana && (
-        <MiniBar
-          icon={
-            <svg aria-hidden viewBox="0 0 16 16" className="mana-caption size-3.5">
-              <circle cx="8" cy="8.5" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M3.1 9.1q2.4-1.2 4.9 0t4.9 0A4.9 4.9 0 0 1 3.1 9.1Z" fill="currentColor" />
-            </svg>
-          }
-          label={t('stats.mana')}
-          current={mana.current}
-          max={mana.max}
-          fillClass="mana-fill"
-          warded={false}
-        />
-      )}
-      {withStatus && <VitalStatus character={c} />}
-    </div>
-  )
-}
-
-/** Temp HP and exhaustion tokens; renders nothing while neither applies. `spread` pins exhaustion to
- * the right edge (card), otherwise both sit side by side (list row). `tokensOnly` drops the
- * exhaustion label (still in the tooltip) where space is tight (lineup). */
-export function VitalStatus({
-  character: c,
-  spread = true,
-  tokensOnly = false,
-  className = '',
-}: {
-  character: CharacterFrontmatter
-  spread?: boolean
-  tokensOnly?: boolean
-  className?: string
-}) {
-  const t = useT()
-  const temp = c.hp.temp ?? 0
-  const exhaustion = exhaustionLevel(c)
-  const exhaustionMax = maxExhaustion(c)
-  if (temp === 0 && exhaustion === 0) return null
-
-  return (
-    <div className={`flex items-center gap-2 text-[0.7rem] ${className}`}>
-      {temp > 0 && (
-        <span className="font-semibold text-accent" title={t('stats.tempHp')}>
-          🛡 +{temp} {t('stats.temp')}
-        </span>
-      )}
-      {exhaustion > 0 && (
-        <span className={`flex items-center gap-1 font-semibold text-danger ${spread ? 'ml-auto' : ''}`} title={`${t('stats.exhaustion')}: ${exhaustion}/${exhaustionMax}`}>
-          {!tokensOnly && t('stats.exhaustion')}
-          <span className="flex">
-            {Array.from({ length: exhaustionMax }, (_, i) => {
-              const skull = i === exhaustionMax - 1
-              return (
-                <span key={i} className={`exh-token size-3.5 ${i < exhaustion ? 'is-filled' : ''} ${skull ? 'is-skull' : ''}`}>
-                  <ExhaustionGlyph skull={skull} />
-                </span>
-              )
-            })}
-          </span>
-        </span>
-      )}
     </div>
   )
 }
@@ -322,16 +160,6 @@ export function CharacterCard({ character }: { character: CharacterFrontmatter }
     <D20PenaltyContext value={exhaustionD20Penalty(character)}>
       <CharacterCardBody character={character} />
     </D20PenaltyContext>
-  )
-}
-
-export function FallenSeal({ dead }: { dead: boolean }) {
-  const t = useT()
-  return (
-    <span className="card-fallen-seal shrink-0">
-      <span aria-hidden>{dead ? '☠' : '🩸'}</span>
-      {dead ? t('characterList.dead') : t('characterList.fallen')}
-    </span>
   )
 }
 

@@ -3,22 +3,22 @@ import { Link } from 'react-router-dom'
 import { D20Modifier } from '../../components/ExhaustedValue'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
+import { characterRoute } from '../../routes/paths'
 import {
   abilityModifier,
+  characterSkillBonus,
   evasionValue,
   exhaustionD20Penalty,
   formatModifier,
   initiativeBonus,
+  isSkillTrained,
   movementSquares,
   nimbleAttributeValue,
-  nimbleSkillBonus,
-  nimbleSkillValue,
-  skillBonus,
-  skillProficiencyLevel,
 } from '../../vault/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type VaultFile } from '../../vault/types'
 import { resiliencePool } from '../character-sheet/vitals'
-import { Portrait } from './CharacterCard'
+import { Portrait } from './CharacterParts'
+import { bestValue } from './partyStats'
 
 /** How a row's numbers are shown: a d20 bonus (lowered by exhaustion), a plain modifier, or a number. */
 type RowFormat = 'd20' | 'modifier' | 'number'
@@ -45,14 +45,6 @@ function effectiveValue(row: Row, c: CharacterFrontmatter): number | undefined {
   const value = row.value(c)
   if (value === undefined) return undefined
   return row.format === 'd20' ? value - exhaustionD20Penalty(c) : value
-}
-
-/** Every value tied for the row's best, or none when the whole party is level (nothing to point at). */
-export function bestValue(values: (number | undefined)[]): number | undefined {
-  const known = values.filter((v): v is number => v !== undefined)
-  if (known.length < 2) return undefined
-  const best = Math.max(...known)
-  return known.every((v) => v === best) ? undefined : best
 }
 
 function useSections(characters: CharacterFrontmatter[]): Section[] {
@@ -104,8 +96,8 @@ function useSections(characters: CharacterFrontmatter[]): Section[] {
       key: `s-${key}`,
       label: t(`skill.${key}`),
       format: 'd20',
-      value: (c) => (c.nimble_attributes ? nimbleSkillBonus(c, key) : skillBonus(c, key)),
-      trained: (c) => (c.nimble_attributes ? nimbleSkillValue(c, key) > 0 : skillProficiencyLevel(c, key) !== 'none'),
+      value: (c) => characterSkillBonus(c, key),
+      trained: (c) => isSkillTrained(c, key),
     }),
   ).sort((a, b) => a.label.localeCompare(b.label))
 
@@ -167,7 +159,7 @@ export function CharacterComparison({ characters }: { characters: VaultFile<Char
               {characters.map((c) => (
                 <th key={c.path} scope="col" className="min-w-24 px-2 py-2.5 align-top font-normal">
                   <Link
-                    to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
+                    to={characterRoute(c.frontmatter.name)}
                     className="group flex flex-col items-center gap-2 text-center"
                   >
                     <Portrait character={c.frontmatter} small />

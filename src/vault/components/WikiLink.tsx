@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useT, type TranslationKey } from '../../i18n/useI18n'
+import { characterRoute } from '../../routes/paths'
 import { endeavourItemSummary } from '../adapters/endeavourItem'
 import { useVaultIndex } from '../useVaultIndex'
 import { resolveWikilink, type ResolvedWikilink } from '../wikilinks'
@@ -179,7 +180,7 @@ function WikiLinkDialog({
       )}
       {resolved.kind === 'character' && (
         <Link
-          to={`/characters/${encodeURIComponent(resolved.name)}`}
+          to={characterRoute(resolved.name)}
           className="mt-2 inline-block text-xs text-primary hover:underline"
           onClick={onClose}
         >

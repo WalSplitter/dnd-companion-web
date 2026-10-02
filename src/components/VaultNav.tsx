@@ -4,11 +4,8 @@ import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { classSummary, totalCharacterLevel } from '../vault/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
+import { characterRoute } from '../routes/paths'
 import { ArcaneSigil } from './ArcaneSigil'
-
-function characterPath(name: string) {
-  return `/characters/${encodeURIComponent(name)}`
-}
 
 function Avatar({ character, size = 'size-6' }: { character: CharacterFrontmatter; size?: string }) {
   return character.portrait_url ? (
@@ -87,7 +84,7 @@ function CharacterSwitcher({ current, characters }: { current: CharacterFrontmat
                   type="button"
                   onClick={() => {
                     setOpen(false)
-                    if (!selected) navigate(characterPath(c.name))
+                    if (!selected) navigate(characterRoute(c.name))
                   }}
                   className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition ${selected ? 'bg-trim/15' : 'hover:bg-trim/10'}`}
                 >
@@ -165,7 +162,7 @@ export function VaultNav() {
 
       {current && characters.length > 1 && (
         <div className="flex shrink-0 items-center gap-1.5 pr-1">
-          <StepButton to={characterPath(step(-1))} label={step(-1)}>
+          <StepButton to={characterRoute(step(-1))} label={step(-1)}>
             <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
               <path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -173,7 +170,7 @@ export function VaultNav() {
           <span className="hidden font-num text-xs text-fg-muted sm:inline">
             {currentIndex + 1}/{characters.length}
           </span>
-          <StepButton to={characterPath(step(1))} label={step(1)}>
+          <StepButton to={characterRoute(step(1))} label={step(1)}>
             <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
               <path d="M4.5 2.5 8 6 4.5 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

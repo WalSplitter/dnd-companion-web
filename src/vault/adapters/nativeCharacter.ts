@@ -1,8 +1,8 @@
 import { nimbleAttributeValue } from '../deriveStats'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
-import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from '../types'
-import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
+import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
+import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../vaultLoader'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { resolveBiography } from './biography'
@@ -222,6 +222,17 @@ function resolveArmor(link: string | undefined, files: RawFile[]): { armorClass:
   const file = link ? findRawFileByName(files, linkFile(link)) : undefined
   const item = file && looksLikeEndeavourItem(file.data) ? normalizeEndeavourItem(file) : undefined
   return item?.kind === 'armor' ? { armorClass: item.rk ?? 0, bwCap: item.bw_cap } : { armorClass: 0 }
+}
+
+/** The character fields an `EquipmentChange` sets, in `CharacterFrontmatter` shape: a slot set to
+ * `null` and an empty `rings` list become absent, fields the change leaves `undefined` are not included.
+ * The new containers belong to the inventory note and are not part of it. */
+export function equipmentChangeFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
+  const fields: Partial<CharacterFrontmatter> = {}
+  for (const slot of WORN_SLOTS) if (change[slot] !== undefined) fields[slot] = change[slot] ?? undefined
+  if (change.rings !== undefined) fields.rings = change.rings.length > 0 ? change.rings : undefined
+  if (change.attack_entries !== undefined) fields.attack_entries = change.attack_entries
+  return fields
 }
 
 /**
