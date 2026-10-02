@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EndeavourItemFrontmatter } from '../../vault/adapters/endeavourItem'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, Vault, VaultFile } from '../../vault/types'
 import { buildVaultIndex } from '../../vault/wikilinks'
-import { equipFromInventory, equippedWeapons, equipNew, equipSlotOf, setEquippedCharges, stowLink, unequip } from './equipment'
+import { armorLookOf, equipFromInventory, equippedWeapons, equipNew, equipSlotOf, setEquippedCharges, stowLink, unequip } from './equipment'
 
 function item(frontmatter: EndeavourItemFrontmatter): VaultFile<EndeavourItemFrontmatter> {
   return { path: `${frontmatter.name}.md`, frontmatter, body: '' }
@@ -26,6 +26,9 @@ const index = buildVaultIndex({
     item({ kind: 'equipment', name: 'Lederhandschuhe', plaetze: 1, wear_slot: 'gloves' }),
     item({ kind: 'equipment', name: 'Reisestiefel', plaetze: 1, wear_slot: 'boots' }),
     item({ kind: 'magic_item', name: 'Amulett', plaetze: 1, wear_slot: 'necklace' }),
+    item({ kind: 'armor', name: 'Eisenhelm', rk: 1, plaetze: 1, wear_slot: 'head' }),
+    item({ kind: 'equipment', name: 'Lederhut', plaetze: 1, wear_slot: 'head' }),
+    item({ kind: 'magic_item', name: 'Stärkegürtel', plaetze: 1, wear_slot: 'belt' }),
     item({ kind: 'magic_item', name: 'Silberring', plaetze: 1, wear_slot: 'ring' }),
     item({ kind: 'magic_item', name: 'Goldring', plaetze: 1, wear_slot: 'ring' }),
     item({ kind: 'magic_item', name: 'Eisenring', plaetze: 1, wear_slot: 'ring' }),
@@ -50,6 +53,26 @@ describe('equipSlotOf', () => {
   it('maps wearables to the slot they are worn in', () => {
     expect(equipSlotOf({ kind: 'equipment', name: 'g', wear_slot: 'gloves' })).toBe('gloves')
     expect(equipSlotOf({ kind: 'magic_item', name: 'r', wear_slot: 'ring' })).toBe('ring')
+    expect(equipSlotOf({ kind: 'equipment', name: 'b', wear_slot: 'belt' })).toBe('belt')
+  })
+
+  it('puts armor with a Trageplatz (a helm) on that slot instead of the body', () => {
+    expect(equipSlotOf({ kind: 'armor', name: 'h', wear_slot: 'head' })).toBe('head')
+  })
+
+  it('puts clothing into the armor slot', () => {
+    expect(equipSlotOf({ kind: 'equipment', name: 'Robe', wear_slot: 'body' })).toBe('armor')
+  })
+})
+
+describe('armorLookOf', () => {
+  it('draws armor by its Klasse, anything else as clothing', () => {
+    expect(armorLookOf({ kind: 'armor', name: 'a', armor_category: 'Leicht' })).toBe('light')
+    expect(armorLookOf({ kind: 'armor', name: 'a', armor_category: 'Mittel' })).toBe('medium')
+    expect(armorLookOf({ kind: 'armor', name: 'a', armor_category: 'Mittelschwere Rüstung' })).toBe('medium')
+    expect(armorLookOf({ kind: 'armor', name: 'a', armor_category: 'Schwer' })).toBe('heavy')
+    expect(armorLookOf({ kind: 'armor', name: 'a' })).toBe('medium')
+    expect(armorLookOf({ kind: 'equipment', name: 'Robe', wear_slot: 'body' })).toBe('clothing')
   })
 })
 
@@ -68,6 +91,23 @@ describe('wearables', () => {
     expect(unequip(character([backpack()], { necklace: '[[Amulett]]' }), index, { slot: 'necklace' })).toEqual({
       ok: true,
       change: { necklace: null, containers: [backpack('[[Amulett]]')], first: 'inventory' },
+    })
+  })
+
+  it('puts on headgear and a belt, swapping out the ones worn before', () => {
+    expect(equipFromInventory(character([backpack('[[Eisenhelm]]')], { head: '[[Lederhut]]' }), index, 0, 0)).toEqual({
+      ok: true,
+      change: { head: '[[Eisenhelm]]', containers: [backpack('[[Lederhut]]')], first: 'character' },
+      equipped: { slot: 'head' },
+    })
+    expect(equipNew(character([backpack()]), index, '[[Stärkegürtel]]')).toEqual({
+      ok: true,
+      change: { belt: '[[Stärkegürtel]]', containers: [backpack()], first: 'character' },
+      equipped: { slot: 'belt' },
+    })
+    expect(unequip(character([backpack()], { belt: '[[Stärkegürtel]]' }), index, { slot: 'belt' })).toEqual({
+      ok: true,
+      change: { belt: null, containers: [backpack('[[Stärkegürtel]]')], first: 'inventory' },
     })
   })
 

@@ -406,11 +406,16 @@ additively:
   whose `RK` is only the Block bonus.
 - **Equipment** ([`EquipmentLoadout.tsx`](src/features/inventory/components/EquipmentLoadout.tsx),
   [`equipment.ts`](src/features/inventory/equipment.ts)): a character screen with body slots for
-  armor, shield, cloak, gloves, boots, necklace and two rings (`cloak`, `gloves`, `boots`,
-  `necklace`, `rings` on the character, German keys accepted) plus the weapons in `attacks`.
-  Equipping moves an item out of its container (equipped gear takes no slots); a taken slot swaps
-  the old item back. Wearables are assigned to a slot by a `Trageplatz:` field, a
-  `Gegenstand/Kleidung/<Platz>` tag, or a magic item's `Art`.
+  head, necklace, armor, belt, boots, cloak, shield, gloves and two rings (`head`, `cloak`,
+  `gloves`, `belt`, `boots`, `necklace`, `rings` on the character, German keys accepted) plus the
+  weapons in `attacks`. Equipping moves an item out of its container (equipped gear takes no
+  slots); a taken slot swaps the old item back. Wearables are assigned to a slot by a
+  `Trageplatz:` field, a `Gegenstand/Kleidung/<Platz>` tag, or a magic item's `Art`; armor with a
+  `Trageplatz` (e.g. a helm with `Trageplatz: Kopf`) goes to that slot instead of the body.
+  The silhouette shows the body armor by its `Klasse` (clothing such as `Trageplatz: Kleidung`,
+  `Leicht`, `Mittel`, `Schwer`) and the weapon by its `Gegenstand/Waffe/<Form>` tag or name (sword,
+  dagger, axe, mace, staff, polearm, bow, crossbow); a second one-handed weapon goes into the off
+  hand when no shield is carried.
 - **TP / RP without hit dice**: Nimble characters have no hit dice (a `hit_dice` block is ignored).
   Following the DM's class notes, level 1 grants `(BasisTP + KO) × 2` TP and every further level
   `BasisTP + KO`, so max TP is `(level + 1) × (BasisTP + KO)`; RP likewise with `BasisRP` and half EN

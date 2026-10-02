@@ -494,7 +494,9 @@ function changedFields(change: EquipmentChange): Partial<CharacterFrontmatter> {
   return {
     ...(change.armor !== undefined ? { armor: change.armor ?? undefined } : {}),
     ...(change.shield !== undefined ? { shield: change.shield ?? undefined } : {}),
+    ...(change.head !== undefined ? { head: change.head ?? undefined } : {}),
     ...(change.cloak !== undefined ? { cloak: change.cloak ?? undefined } : {}),
+    ...(change.belt !== undefined ? { belt: change.belt ?? undefined } : {}),
     ...(change.gloves !== undefined ? { gloves: change.gloves ?? undefined } : {}),
     ...(change.boots !== undefined ? { boots: change.boots ?? undefined } : {}),
     ...(change.necklace !== undefined ? { necklace: change.necklace ?? undefined } : {}),

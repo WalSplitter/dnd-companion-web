@@ -44,8 +44,10 @@ nimble_skills:
 armor_class: 6
 armor: "[[Schuppenpanzer]]"
 shield: "[[Holzschild]]"
+head: "[[Lederkappe]]"
 cloak: "[[Reiseumhang]]"
 gloves: "[[Lederhandschuhe]]"
+belt: "[[Ledergürtel]]"
 boots: "[[Reisestiefel]]"
 rings:
   - "[[Ring des Schutzes]]"

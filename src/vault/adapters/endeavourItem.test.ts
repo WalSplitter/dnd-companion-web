@@ -69,6 +69,7 @@ Verfügbarkeit: gewöhnlich
       plaetze: 1,
       kind: 'weapon',
       weapon_kind: 'melee',
+      form: 'sword',
       hands: 'one',
       category: 'Kriegswaffe',
       availability: 'gewöhnlich',
@@ -112,6 +113,7 @@ Verfügbarkeit: ungewöhnlich
       plaetze: 2,
       kind: 'weapon',
       weapon_kind: 'ranged',
+      form: 'bow',
       hands: 'two',
       category: 'Kriegswaffe',
       availability: 'ungewöhnlich',
@@ -309,6 +311,36 @@ MaxGroesse: Groß
   })
 })
 
+describe('weapon form', () => {
+  const form = (name: string, ...tags: string[]) =>
+    normalizeEndeavourItem(raw(`${name}.md`, ['---', 'tags:', ...tags.map((t) => `  - ${t}`), '---', ''].join('\n')))
+
+  it('reads a Gegenstand/Waffe/<Form> tag', () => {
+    const of = (name: string, ...tags: string[]) => {
+      const fm = form(name, 'Gegenstand/Waffe/Nahkampfwaffe', ...tags)
+      return fm.kind === 'weapon' ? fm.form : undefined
+    }
+    expect(of('Säbel', 'Gegenstand/Waffe/Schwert')).toBe('sword')
+    expect(of('Streitaxt', 'Gegenstand/Waffe/Axt')).toBe('axe')
+    expect(of('Kriegshammer', 'Gegenstand/Waffe/Hammer')).toBe('mace')
+    expect(of('Speer', 'Gegenstand/Waffe/Stangenwaffe')).toBe('polearm')
+    expect(of('Dolch', 'Gegenstand/Waffe/Messer')).toBe('dagger')
+    expect(of('Leichte Armbrust', 'Gegenstand/Waffe/Armbrust')).toBe('crossbow')
+    expect(of('Langbogen', 'Gegenstand/Waffe/Bogen')).toBe('bow')
+  })
+
+  it('falls back to the name, and to nothing', () => {
+    const of = (name: string) => {
+      const fm = form(name, 'Gegenstand/Waffe/Nahkampfwaffe')
+      return fm.kind === 'weapon' ? fm.form : undefined
+    }
+    expect(of('Kampfstab')).toBe('staff')
+    expect(of('Wurfmesser')).toBe('dagger')
+    expect(of('Schwere Armbrust')).toBe('crossbow')
+    expect(of('Peitsche')).toBeUndefined()
+  })
+})
+
 describe('wear_slot', () => {
   const slot = (...lines: string[]) => normalizeEndeavourItem(raw('X.md', ['---', ...lines, '---', ''].join('\n'))).wear_slot
 
@@ -316,15 +348,22 @@ describe('wear_slot', () => {
     expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Handschuhe')).toBe('gloves')
     expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Füße')).toBe('boots')
     expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Umhang')).toBe('cloak')
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Kopf')).toBe('head')
+    expect(slot('tags: [Gegenstand/Ausrüstung]', 'Trageplatz: Gürtel')).toBe('belt')
+    expect(slot('tags: [Gegenstand/Rüstung]', 'Trageplatz: Kopf')).toBe('head')
   })
 
   it('reads a Gegenstand/Kleidung/<Platz> tag', () => {
     expect(slot('tags: [Gegenstand/Kleidung/Stiefel]')).toBe('boots')
+    expect(slot('tags: [Gegenstand/Kleidung/Hut]')).toBe('head')
+    expect(slot('tags: [Gegenstand/Kleidung/Robe]')).toBe('body')
+    expect(slot('tags: [Gegenstand/Kleidung]')).toBe('body')
   })
 
   it("reads a magic item's Art as whole words", () => {
     expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Ring')).toBe('ring')
     expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Wundersamer Gegenstand (Amulett)')).toBe('necklace')
+    expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Wundersamer Gegenstand (Gürtel)')).toBe('belt')
     expect(slot('tags: [Gegenstand/Magischer_Gegenstand]', 'Art: Trank')).toBeUndefined()
   })
 

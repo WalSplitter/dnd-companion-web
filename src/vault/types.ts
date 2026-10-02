@@ -197,7 +197,7 @@ export interface CharacterWriteTargets {
    * a character without an inventory yet can still add its first item — see `setInventory`. */
   inventory?: { path: string }
   /** Nimble own schema: the character's own file, which holds what it has equipped (`armor:`,
-   * `shield:`, `cloak:`, `gloves:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
+   * `shield:`, `head:`, `cloak:`, `gloves:`, `belt:`, `boots:`, `necklace:`, `rings:`, `attacks:`) — see `setEquipment`. */
   equipment?: { path: string }
   /** Legacy schema: one scalar target per coin already present on disk (`Geld.GM`, ...). */
   currency?: Partial<Record<keyof Currency, FieldWriteTarget>>
@@ -267,11 +267,13 @@ export interface CharacterFrontmatter {
    * `Schild:`). It never raises the armor class by itself — only reactively via `Blocken`. */
   shield?: string
   /** Own-schema input fields: wikilinks to worn accessories — `cloak:` (`Umhang:`/`Mantel:`),
-   * `gloves:` (`Handschuhe:`), `boots:`
+   * `head:` (`Kopf:`/`Helm:`), `gloves:` (`Handschuhe:`), `belt:` (`Gürtel:`), `boots:`
    * (`Stiefel:`), `necklace:` (`Halskette:`/`Amulett:`) and up to two `rings:` (`Ringe:`). They take
    * no pack slots and derive nothing on the sheet (yet). */
+  head?: string
   cloak?: string
   gloves?: string
+  belt?: string
   boots?: string
   necklace?: string
   rings?: string[]
@@ -393,8 +395,10 @@ export interface EndeavourContainerSlotAssignment {
 export interface EquipmentChange {
   armor?: string | null
   shield?: string | null
+  head?: string | null
   cloak?: string | null
   gloves?: string | null
+  belt?: string | null
   boots?: string | null
   necklace?: string | null
   /** The whole `rings:` list (an empty list deletes it). */
