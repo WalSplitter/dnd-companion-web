@@ -25,8 +25,9 @@ function assertName(raw: RawFile): void {
 }
 
 // Files under a path containing "vorlage" (German for "template") are the vault's blank
-// character-sheet templates, not real characters — skip them even though they structurally
-// match the legacy character format.
+// character-sheet templates (e.g. `Kampagne/Gruppe/_Vorlage Charakter/`), not real characters —
+// skip them as characters and spells even though they carry `type: character` or structurally
+// match the legacy character format. They still load as plain notes, so links to them resolve.
 function isTemplateFile(raw: RawFile): boolean {
   return /vorlage/i.test(raw.path)
 }
@@ -60,7 +61,7 @@ export function buildVaultFromRawFiles(rawFiles: RawFile[], imageAssets?: ImageA
     const { path, body, data } = raw
     const type = typeof data.type === 'string' ? data.type : undefined
 
-    if (type && NATIVE_TYPES.has(type)) {
+    if (type && NATIVE_TYPES.has(type) && !isTemplateFile(raw)) {
       assertName(raw)
       if (type === 'character') vault.characters.push({ path, body, frontmatter: normalizeNativeCharacter(raw, rawFiles, imageAssets) })
       else if (type === 'item') vault.items.push({ path, body, frontmatter: data as unknown as ItemFrontmatter })
