@@ -18,7 +18,6 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
     sprites: [
       { kind: 'glyph', count: 7 },
       { kind: 'scarab', count: 6 },
-      { kind: 'watching-skull', count: 1 },
     ],
     flybys: { kinds: ['android', 'crescent-ship'], gap: [18, 45] },
   },
