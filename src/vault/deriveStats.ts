@@ -181,9 +181,13 @@ export function totalCharacterLevel(character: CharacterFrontmatter): number {
   return character.class.reduce((sum, c) => sum + c.level, 0)
 }
 
+/** The character's class(es) for display. Per-class levels only appear when multiclassing
+ * ("Arkanist 1 / Paladin 4"); a single class shows just its name, since its level is the
+ * character's total level, which every view already shows beside it. */
 export function classSummary(character: CharacterFrontmatter): string {
+  const multiclass = character.class.length > 1
   return character.class
-    .map((c) => `${c.name}${c.subclass ? ` (${c.subclass})` : ''} ${c.level}`)
+    .map((c) => `${c.name}${c.subclass ? ` (${c.subclass})` : ''}${multiclass ? ` ${c.level}` : ''}`)
     .join(' / ')
 }
 

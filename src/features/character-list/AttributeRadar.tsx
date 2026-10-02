@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, type TranslateFn } from '../../i18n/useI18n'
-import { abilityModifier, classSummary, formatModifier, nimbleAttributeValue } from '../../vault/deriveStats'
+import { abilityModifier, classSummary, formatModifier, nimbleAttributeValue, totalCharacterLevel } from '../../vault/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, type CharacterFrontmatter, type VaultFile } from '../../vault/types'
 import { characterFate } from '../character-sheet/vitals'
 import { initials } from './CharacterCard'
@@ -289,7 +289,7 @@ export function PartyRadar({ characters }: { characters: VaultFile<CharacterFron
               </h2>
               <p className="mb-1 text-center text-[0.65rem] uppercase tracking-wider text-fg-muted">
                 {focusedMember
-                  ? classSummary(focusedMember.frontmatter)
+                  ? t('stats.classLevel', { classes: classSummary(focusedMember.frontmatter), level: totalCharacterLevel(focusedMember.frontmatter) })
                   : aggregate
                     ? t('characterList.radarPartyAggregateHint')
                     : t('characterList.radarPartyHint')}
@@ -328,7 +328,7 @@ export function PartyRadar({ characters }: { characters: VaultFile<CharacterFron
                       onClick={(event) => event.stopPropagation()}
                     >
                       <span className="block truncate font-display text-sm font-bold tracking-wide text-fg">{c.frontmatter.name}</span>
-                      <span className="block truncate text-[0.62rem] font-bold uppercase tracking-wider text-trim">{classSummary(c.frontmatter)}</span>
+                      <span className="block truncate text-[0.62rem] font-bold uppercase tracking-wider text-trim">{t('stats.classLevel', { classes: classSummary(c.frontmatter), level: totalCharacterLevel(c.frontmatter) })}</span>
                     </Link>
                     <RadarChart
                       axes={axes}

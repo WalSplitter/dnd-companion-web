@@ -11,6 +11,11 @@ backstory: |
   Seit sie sich der Gruppe angeschlossen hat, füllt sich ihr Zauberbuch mit Randnotizen über jede
   Formel, die im Feld anders wirkte als auf dem Papier. Ihr Kampfstab trägt die Brandspuren eines
   [[Flammenpfeil]]s, der ein wenig zu früh gezündet hat.
+personality:
+  - Notiert alles — auch mitten im Kampf.
+  - Kann einer ungelösten Frage nicht widerstehen.
+ideals: Wissen gehört allen, die danach suchen.
+appearance: Schlank und hochgewachsen, silberblondes Haar, das sie mit einem Federkiel hochsteckt; tintenfleckige Finger.
 class:
   - name: Arkanist
     level: 3

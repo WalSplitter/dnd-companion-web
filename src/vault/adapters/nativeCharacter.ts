@@ -5,6 +5,7 @@ import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey } from '../types'
 import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../vaultLoader'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
+import { resolveBiography } from './biography'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
 import { resolveWeaponAttacks } from './weaponAttacks'
 
@@ -364,6 +365,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     nimble_save_modes: resolveClassSaveModes(notes),
     nimble_class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
+    biography: resolveBiography(raw.data),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }
 }

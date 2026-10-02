@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
-import { classSummary } from '../vault/deriveStats'
+import { classSummary, totalCharacterLevel } from '../vault/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
 import { ArcaneSigil } from './ArcaneSigil'
 
@@ -94,7 +94,8 @@ function CharacterSwitcher({ current, characters }: { current: CharacterFrontmat
                   <Avatar character={c} size="size-8" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-fg">{c.name}</span>
-                    <span className="block truncate text-xs text-fg-muted">{classSummary(c)}</span>
+                    {/* No level badge on this avatar, so the total level goes into the line. */}
+                    <span className="block truncate text-xs text-fg-muted">{t('stats.classLevel', { classes: classSummary(c), level: totalCharacterLevel(c) })}</span>
                   </span>
                   {selected && <span aria-hidden className="size-1.5 rotate-45 bg-trim" />}
                 </button>

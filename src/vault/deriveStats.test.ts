@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   abilityModifier,
+  classSummary,
   evasionValue,
   exhaustionD20Penalty,
   movementSquares,
@@ -237,5 +238,18 @@ describe('exhaustion (rule Erschöpfung)', () => {
     expect(movementSquares(character)).toBe(6)
     expect(movementSquares(exhausted)).toBe(3)
     expect(movementSquares({ ...character, conditions: { exhaustion: 9 } })).toBe(0)
+  })
+})
+
+describe('classSummary', () => {
+  const character = (classes: { name: string; level: number; subclass?: string }[]) => ({ class: classes }) as CharacterFrontmatter
+
+  it('shows just the class name for a single class — its level is the total level', () => {
+    expect(classSummary(character([{ name: 'Arkanist', level: 3 }]))).toBe('Arkanist')
+    expect(classSummary(character([{ name: 'Krieger', level: 4, subclass: 'Champion' }]))).toBe('Krieger (Champion)')
+  })
+
+  it('shows each class level when multiclassing', () => {
+    expect(classSummary(character([{ name: 'Arkanist', level: 1 }, { name: 'Paladin', level: 4 }]))).toBe('Arkanist 1 / Paladin 4')
   })
 })

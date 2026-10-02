@@ -17,6 +17,7 @@ import type {
   WeaponKind,
 } from '../types'
 import { abilityModifier } from '../deriveStats'
+import { resolveBiography } from './biography'
 import { extractItemTable } from './markdownTable'
 import type { ImageAssets } from '../vaultLoader'
 
@@ -559,6 +560,7 @@ export function normalizeLegacyCharacter(
     spells_known: spellsKnown,
     features: collectFeatures(data, allFiles),
     portrait_url: resolvePortraitLink(hintergrund.Bild, imageAssets),
+    biography: resolveBiography(data),
     conditions,
     resource_pools: resourcePools,
     attacks,

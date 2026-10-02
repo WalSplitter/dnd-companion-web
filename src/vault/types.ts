@@ -336,6 +336,9 @@ export interface CharacterFrontmatter {
    * body instead (see `CharacterSheetPage.tsx`).
    */
   backstory?: string
+  /** Derived (`resolveBiography`): personality, ideals, bonds, flaws and appearance for the
+   * "Biography" tab — read from either the own schema or the older German sheet blocks. */
+  biography?: CharacterBiography
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
   /** Optional lineup rank (`front`/`middle`/`back`, or `vorne`/`mitte`/`hinten`) overriding the class
@@ -354,6 +357,21 @@ export interface CharacterFrontmatter {
 
 /** When a feature is used (`Einsatz` on a `#Merkmal` note): `[[Aktion]]`, `[[Reaktion]]`, or
  * `Passiv`/absent. Nimble has no bonus actions, so `[[Bonusaktion]]` counts as an action. */
+/** Appearance fields the "Biography" tab labels itself; anything else keeps the note's own key. */
+export type AppearanceKey = 'gender' | 'age' | 'size' | 'height' | 'weight' | 'eyes' | 'hair' | 'skin'
+
+/** A character's roleplay details — every part optional (see `resolveBiography`). */
+export interface CharacterBiography {
+  personality?: string[]
+  ideals?: string
+  bonds?: string
+  flaws?: string
+  /** Appearance as labelled fields (`key` is an `AppearanceKey` or the note's own key)… */
+  appearance?: { key: string; value: string }[]
+  /** …or as one free text, for a simplified sheet. */
+  appearance_text?: string
+}
+
 export type FeatureUsage = 'action' | 'reaction' | 'passive'
 
 export interface CharacterFeature {

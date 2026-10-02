@@ -6,7 +6,7 @@ import type { VaultIndex } from '../../vault/wikilinks'
 import { InventoryPanel } from '../inventory/InventoryPanel'
 import { SpellsPanel } from '../spells/SpellsPanel'
 import { AbilityScores } from './components/AbilityScores'
-import { About } from './components/About'
+import { BiographyPanel, hasBiography } from './components/BiographyPanel'
 import { Attacks } from './components/Attacks'
 import { AttacksSpellcasting } from './components/AttacksSpellcasting'
 import { ArmorClass, CombatStats, Evasion } from './components/CombatStats'
@@ -21,7 +21,7 @@ import { characterFate } from './vitals'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { evasionValue, exhaustionD20Penalty } from '../../vault/deriveStats'
 
-type Tab = 'sheet' | 'inventory' | 'spells'
+type Tab = 'sheet' | 'inventory' | 'spells' | 'biography'
 
 export function CharacterSheet({
   character,
@@ -43,6 +43,7 @@ export function CharacterSheet({
     { key: 'sheet', label: t('tabs.sheet') },
     { key: 'inventory', label: t('tabs.inventory') },
     ...(hasSpells ? ([{ key: 'spells', label: t('tabs.spells') }] as const) : []),
+    ...(hasBiography(character, body) ? ([{ key: 'biography', label: t('tabs.biography') }] as const) : []),
   ]
 
   return (
@@ -80,11 +81,11 @@ export function CharacterSheet({
           {tab === 'sheet' && (
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
               {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
-                  the attribute medallions, so the three columns come out about equally long. */}
+                  the attribute medallions, so the three columns come out about equally long; the
+                  backstory has its own Biography tab. */}
               <div className="space-y-4">
                 <AbilityScores character={character} characterPath={characterPath} />
                 <SensesLanguages character={character} />
-                <About body={body} />
               </div>
               <Skills character={character} />
               <div className="space-y-4">
@@ -98,6 +99,7 @@ export function CharacterSheet({
 
           {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
           {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
+          {tab === 'biography' && <BiographyPanel character={character} story={body} />}
         </div>
       </D20PenaltyContext>
     </VaultIndexProvider>
