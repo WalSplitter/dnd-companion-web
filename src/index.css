@@ -837,6 +837,88 @@ button.exh-token:hover {
   }
 }
 
+/* Attribute radar (PartyRadar): recessive rings and spokes; the accent series as a 2px outline over
+ * a light fill with ringed vertices; muted series (everyone but the focused character in the party
+ * overlay) as thin translucent outlines — width and fill, not only hue, set them apart. */
+.radar-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-fg-muted) 18%, transparent);
+  stroke-width: 1;
+}
+.radar-ring.is-zero {
+  stroke: color-mix(in srgb, var(--color-fg-muted) 45%, transparent);
+  stroke-dasharray: 3 3;
+}
+.radar-spoke {
+  stroke: color-mix(in srgb, var(--color-fg-muted) 22%, transparent);
+  stroke-width: 1;
+}
+.radar-spoke.is-active {
+  stroke: var(--color-trim);
+}
+.radar-series polygon {
+  stroke-linejoin: round;
+  transition: opacity 200ms ease;
+}
+.radar-series.is-accent polygon {
+  fill: color-mix(in srgb, var(--color-trim) 22%, transparent);
+  stroke: var(--color-trim);
+  stroke-width: 2;
+}
+.radar-series.is-accent circle {
+  fill: var(--color-trim);
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  transition: r 150ms ease;
+}
+.radar-series.is-muted polygon {
+  fill: none;
+  stroke: var(--color-fg-muted);
+  stroke-width: 1.25;
+  opacity: 0.45;
+}
+/* Party aggregate (large parties): the party's best as a soft filled area, the average dashed. */
+.radar-series.is-envelope polygon {
+  fill: color-mix(in srgb, var(--color-fg-muted) 14%, transparent);
+  stroke: var(--color-fg-muted);
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+.radar-series.is-average polygon {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+.radar-label {
+  fill: var(--color-fg-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.radar-label.is-primary {
+  fill: var(--color-trim);
+}
+.radar-label.is-active {
+  fill: var(--color-fg);
+}
+.radar-value {
+  fill: var(--color-fg);
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+}
+
+/* A slim scrollbar in the trim colour, for containers that really do scroll sideways (wide tables on phones). */
+.themed-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-trim) 45%, transparent) transparent;
+}
+
 /* Character comparison: the best value of a row, as a softly lit cell. */
 .compare-best {
   background: color-mix(in srgb, var(--color-trim) 13%, transparent);

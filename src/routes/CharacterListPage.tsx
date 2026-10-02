@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CharacterCard, CharacterRow } from '../features/character-list/CharacterCard'
-import { CharacterComparison } from '../features/character-list/CharacterComparison'
+import { PartyRadar } from '../features/character-list/AttributeRadar'
 import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
@@ -61,7 +61,7 @@ export function CharacterListPage() {
       </div>
 
       {comparing ? (
-        <CharacterComparison characters={characters} />
+        <PartyRadar characters={characters} />
       ) : layout === 'lineup' ? (
         <PartyFormation characters={characters} />
       ) : (

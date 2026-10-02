@@ -154,68 +154,72 @@ export function CharacterComparison({ characters }: { characters: VaultFile<Char
   const sections = useSections(party)
 
   return (
-    <div className="rpg-panel overflow-x-auto p-0">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-trim/25">
-            <th scope="col" className="sticky left-0 z-10 bg-surface px-3 py-2 text-left">
-              <span className="sr-only">{t('characterList.compareStat')}</span>
-            </th>
-            {characters.map((c) => (
-              <th key={c.path} scope="col" className="min-w-24 px-2 py-2.5 align-top font-normal">
-                <Link
-                  to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
-                  className="group flex flex-col items-center gap-2 text-center"
-                >
-                  <Portrait character={c.frontmatter} small />
-                  <span className="max-w-28 font-display text-xs leading-tight font-bold tracking-wide text-balance text-fg group-hover:text-trim">
-                    {c.frontmatter.name}
-                  </span>
-                </Link>
+    // The panel and the scroll container are separate elements: the panel's corner brackets sit 1px
+    // outside its box and would otherwise make the table scroll both ways.
+    <div className="rpg-panel p-0">
+      <div className="themed-scroll overflow-x-auto rounded-lg">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-trim/25">
+              <th scope="col" className="sticky left-0 z-10 bg-surface px-3 py-2 text-left">
+                <span className="sr-only">{t('characterList.compareStat')}</span>
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sections
-            .filter((s) => s.rows.length > 0)
-            .map((section) => (
-              <Fragment key={section.title}>
-                <tr>
-                  <th
-                    scope="colgroup"
-                    colSpan={characters.length + 1}
-                    className="sticky left-0 bg-trim/[0.06] px-3 pb-1 pt-3 text-left font-display text-[0.7rem] font-bold uppercase tracking-[0.18em] text-trim"
+              {characters.map((c) => (
+                <th key={c.path} scope="col" className="min-w-24 px-2 py-2.5 align-top font-normal">
+                  <Link
+                    to={`/characters/${encodeURIComponent(c.frontmatter.name)}`}
+                    className="group flex flex-col items-center gap-2 text-center"
                   >
-                    {section.title}
-                  </th>
-                </tr>
-                {section.rows.map((row) => {
-                  const best = bestValue(party.map((c) => effectiveValue(row, c)))
-                  return (
-                    <tr key={row.key} className="border-t border-trim/10 hover:bg-trim/[0.04]">
-                      <th
-                        scope="row"
-                        title={row.title}
-                        className="sticky left-0 z-10 bg-surface px-3 py-1.5 text-left text-xs font-medium whitespace-nowrap text-fg-muted"
-                      >
-                        {row.label}
-                      </th>
-                      {party.map((c, i) => (
-                        <Cell
-                          key={characters[i].path}
-                          row={row}
-                          character={c}
-                          best={best !== undefined && effectiveValue(row, c) === best && (row.trained?.(c) ?? true)}
-                        />
-                      ))}
-                    </tr>
-                  )
-                })}
-              </Fragment>
-            ))}
-        </tbody>
-      </table>
+                    <Portrait character={c.frontmatter} small />
+                    <span className="max-w-28 font-display text-xs leading-tight font-bold tracking-wide text-balance text-fg group-hover:text-trim">
+                      {c.frontmatter.name}
+                    </span>
+                  </Link>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sections
+              .filter((s) => s.rows.length > 0)
+              .map((section) => (
+                <Fragment key={section.title}>
+                  <tr>
+                    <th
+                      scope="colgroup"
+                      colSpan={characters.length + 1}
+                      className="sticky left-0 bg-trim/[0.06] px-3 pb-1 pt-3 text-left font-display text-[0.7rem] font-bold uppercase tracking-[0.18em] text-trim"
+                    >
+                      {section.title}
+                    </th>
+                  </tr>
+                  {section.rows.map((row) => {
+                    const best = bestValue(party.map((c) => effectiveValue(row, c)))
+                    return (
+                      <tr key={row.key} className="border-t border-trim/10 hover:bg-trim/[0.04]">
+                        <th
+                          scope="row"
+                          title={row.title}
+                          className="sticky left-0 z-10 bg-surface px-3 py-1.5 text-left text-xs font-medium whitespace-nowrap text-fg-muted"
+                        >
+                          {row.label}
+                        </th>
+                        {party.map((c, i) => (
+                          <Cell
+                            key={characters[i].path}
+                            row={row}
+                            character={c}
+                            best={best !== undefined && effectiveValue(row, c) === best && (row.trained?.(c) ?? true)}
+                          />
+                        ))}
+                      </tr>
+                    )
+                  })}
+                </Fragment>
+              ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
