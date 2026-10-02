@@ -231,6 +231,7 @@ export const en = {
 
   // Sheet tabs
   'tabs.sheet': 'Sheet',
+  'tabs.sheetShort': 'Sheet',
   'tabs.inventory': 'Inventory',
   'tabs.spells': 'Spells',
   'tabs.biography': 'Biography',

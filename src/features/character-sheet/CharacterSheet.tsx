@@ -39,8 +39,8 @@ export function CharacterSheet({
   const hasSpells = Boolean(character.spellcasting)
   const evasion = evasionValue(character)
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'sheet', label: t('tabs.sheet') },
+  const tabs: { key: Tab; label: string; shortLabel?: string }[] = [
+    { key: 'sheet', label: t('tabs.sheet'), shortLabel: t('tabs.sheetShort') },
     { key: 'inventory', label: t('tabs.inventory') },
     ...(hasSpells ? ([{ key: 'spells', label: t('tabs.spells') }] as const) : []),
     ...(hasBiography(character, body) ? ([{ key: 'biography', label: t('tabs.biography') }] as const) : []),
@@ -63,17 +63,27 @@ export function CharacterSheet({
             <HitPoints character={character} characterPath={characterPath} stats={<CombatStats character={character} />} />
           </section>
 
-          <div role="tablist" className="flex gap-1 whitespace-nowrap border-b border-trim/25">
+          {/* Phones get the short labels so all four tabs fit one row; should they still not fit
+              (very narrow screens), the row wraps rather than pushing a tab off-screen. */}
+          <div role="tablist" className="flex flex-wrap gap-0.5 whitespace-nowrap border-b border-trim/25 sm:gap-1">
             {tabs.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 role="tab"
                 aria-selected={tab === entry.key}
+                aria-label={entry.shortLabel ? entry.label : undefined}
                 onClick={() => setTab(entry.key)}
                 className="rpg-tab cursor-pointer"
               >
-                {entry.label}
+                {entry.shortLabel ? (
+                  <>
+                    <span className="sm:hidden">{entry.shortLabel}</span>
+                    <span className="hidden sm:inline">{entry.label}</span>
+                  </>
+                ) : (
+                  entry.label
+                )}
               </button>
             ))}
           </div>

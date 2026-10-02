@@ -265,9 +265,9 @@ body::before {
   /* Phones: all tabs must fit one row, so tighter padding and tracking. */
   @media (width < 40rem) {
     .rpg-tab {
-      padding-inline: 0.6rem;
+      padding-inline: 0.5rem;
       font-size: 0.72rem;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
     }
   }
 

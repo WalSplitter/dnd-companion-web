@@ -222,6 +222,7 @@ export const de = {
   'nav.switchCharacter': 'Charakter wechseln',
 
   'tabs.sheet': 'Charakterbogen',
+  'tabs.sheetShort': 'Bogen',
   'tabs.inventory': 'Inventar',
   'tabs.spells': 'Zauber',
   'tabs.biography': 'Biografie',
