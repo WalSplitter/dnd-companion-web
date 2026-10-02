@@ -93,35 +93,38 @@ function StatTile({ label, title, children }: { label: string; title: string; ch
   )
 }
 
-/** Portrait (or a monogram medallion) with the total level as a badge. */
-function Portrait({ character: c }: { character: CharacterFrontmatter }) {
+/** Portrait (or a monogram medallion) with the total level as a badge; `small` for the list rows. */
+function Portrait({ character: c, small = false }: { character: CharacterFrontmatter; small?: boolean }) {
   return (
     <div className="relative shrink-0">
       {c.portrait_url ? (
         <img
           src={c.portrait_url}
           alt=""
-          className="size-16 rounded-md border-2 border-trim object-cover shadow-[0_0_0_2px_var(--color-surface),0_0_16px_-4px_color-mix(in_srgb,var(--color-trim)_60%,transparent)] transition"
+          className={`${small ? 'size-11' : 'size-16'} rounded-md border-2 border-trim object-cover shadow-[0_0_0_2px_var(--color-surface),0_0_16px_-4px_color-mix(in_srgb,var(--color-trim)_60%,transparent)] transition`}
         />
       ) : (
-        <div aria-hidden className="rpg-medallion !size-16 font-display text-xl font-bold text-trim">
+        <div aria-hidden className={`rpg-medallion font-display font-bold text-trim ${small ? '!size-11 text-base' : '!size-16 text-xl'}`}>
           {initials(c.name)}
         </div>
       )}
-      <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full border-2 border-trim bg-surface font-num text-xs font-bold text-trim shadow-[0_0_8px_color-mix(in_srgb,var(--color-trim)_55%,transparent)]">
+      <span
+        className={`absolute -bottom-1.5 -right-1.5 flex items-center justify-center rounded-full border-2 border-trim bg-surface font-num font-bold ${
+          small ? 'size-5 text-[0.6rem]' : 'size-6 text-xs'
+        } text-trim shadow-[0_0_8px_color-mix(in_srgb,var(--color-trim)_55%,transparent)]`}
+      >
         {totalCharacterLevel(c)}
       </span>
     </div>
   )
 }
 
-/** Resilience/HP (and mana, for casters with a pool) bars plus the temp-HP and exhaustion line — same colours and ward as the sheet. */
-function LifeForce({ character: c }: { character: CharacterFrontmatter }) {
+/** Resilience/HP (and mana, for casters with a pool) bars — same colours and ward as the sheet. The
+ * card adds the temp-HP and exhaustion line below; the list row shows it beside the name instead. */
+function LifeForce({ character: c, withStatus = true }: { character: CharacterFrontmatter; withStatus?: boolean }) {
   const t = useT()
   const temp = c.hp.temp ?? 0
   const resilience = resiliencePool(c)
-  const exhaustion = exhaustionLevel(c)
-  const exhaustionMax = maxExhaustion(c)
   const mana = c.spellcasting?.mana
 
   return (
@@ -159,43 +162,53 @@ function LifeForce({ character: c }: { character: CharacterFrontmatter }) {
           warded={false}
         />
       )}
-      {(temp > 0 || exhaustion > 0) && (
-        <div className="flex items-center justify-between gap-2 text-[0.7rem]">
-          {temp > 0 ? (
-            <span className="font-semibold text-accent" title={t('stats.tempHp')}>
-              🛡 +{temp} {t('stats.temp')}
-            </span>
-          ) : (
-            <span />
-          )}
-          {exhaustion > 0 && (
-            <span className="flex items-center gap-1 font-semibold text-danger" title={`${t('stats.exhaustion')}: ${exhaustion}/${exhaustionMax}`}>
-              {t('stats.exhaustion')}
-              <span className="flex">
-                {Array.from({ length: exhaustionMax }, (_, i) => {
-                  const skull = i === exhaustionMax - 1
-                  return (
-                    <span key={i} className={`exh-token size-3.5 ${i < exhaustion ? 'is-filled' : ''} ${skull ? 'is-skull' : ''}`}>
-                      <ExhaustionGlyph skull={skull} />
-                    </span>
-                  )
-                })}
-              </span>
-            </span>
-          )}
-        </div>
+      {withStatus && <VitalStatus character={c} />}
+    </div>
+  )
+}
+
+/** Temp HP and exhaustion tokens; renders nothing while neither applies. `spread` pins exhaustion to
+ * the right edge (card), otherwise both sit side by side (list row). */
+function VitalStatus({ character: c, spread = true, className = '' }: { character: CharacterFrontmatter; spread?: boolean; className?: string }) {
+  const t = useT()
+  const temp = c.hp.temp ?? 0
+  const exhaustion = exhaustionLevel(c)
+  const exhaustionMax = maxExhaustion(c)
+  if (temp === 0 && exhaustion === 0) return null
+
+  return (
+    <div className={`flex items-center gap-2 text-[0.7rem] ${className}`}>
+      {temp > 0 && (
+        <span className="font-semibold text-accent" title={t('stats.tempHp')}>
+          🛡 +{temp} {t('stats.temp')}
+        </span>
+      )}
+      {exhaustion > 0 && (
+        <span className={`flex items-center gap-1 font-semibold text-danger ${spread ? 'ml-auto' : ''}`} title={`${t('stats.exhaustion')}: ${exhaustion}/${exhaustionMax}`}>
+          {t('stats.exhaustion')}
+          <span className="flex">
+            {Array.from({ length: exhaustionMax }, (_, i) => {
+              const skull = i === exhaustionMax - 1
+              return (
+                <span key={i} className={`exh-token size-3.5 ${i < exhaustion ? 'is-filled' : ''} ${skull ? 'is-skull' : ''}`}>
+                  <ExhaustionGlyph skull={skull} />
+                </span>
+              )
+            })}
+          </span>
+        </span>
       )}
     </div>
   )
 }
 
-function HeadlineStats({ character: c }: { character: CharacterFrontmatter }) {
+function HeadlineStats({ character: c, className = '' }: { character: CharacterFrontmatter; className?: string }) {
   const t = useT()
   const evasion = evasionValue(c)
   const squares = movementSquares(c)
 
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className={`grid grid-cols-4 gap-1.5 ${className}`}>
       <StatTile label={t('short.armorClass')} title={t('stats.armorClass')}>
         {c.armor_class}
       </StatTile>
@@ -301,8 +314,17 @@ export function CharacterCard({ character }: { character: CharacterFrontmatter }
   )
 }
 
-function CharacterCardBody({ character: c }: { character: CharacterFrontmatter }) {
+function FallenSeal({ dead }: { dead: boolean }) {
   const t = useT()
+  return (
+    <span className="card-fallen-seal shrink-0">
+      <span aria-hidden>{dead ? '☠' : '🩸'}</span>
+      {dead ? t('characterList.dead') : t('characterList.fallen')}
+    </span>
+  )
+}
+
+function CharacterCardBody({ character: c }: { character: CharacterFrontmatter }) {
   const fate = characterFate(c)
   const fallen = fate !== 'alive'
   const dead = fate === 'dead'
@@ -331,12 +353,7 @@ function CharacterCardBody({ character: c }: { character: CharacterFrontmatter }
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="truncate font-display text-lg font-bold tracking-wide text-fg">{c.name}</div>
-            {fallen && (
-              <span className="card-fallen-seal shrink-0">
-                <span aria-hidden>{dead ? '☠' : '🩸'}</span>
-                {dead ? t('characterList.dead') : t('characterList.fallen')}
-              </span>
-            )}
+            {fallen && <FallenSeal dead={dead} />}
           </div>
           <span className="mt-1 inline-block max-w-full truncate rounded-full border border-trim/40 bg-trim/10 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-trim">
             {classSummary(c)}
@@ -354,6 +371,53 @@ function CharacterCardBody({ character: c }: { character: CharacterFrontmatter }
       <HeadlineStats character={c} />
       <AttributeRow character={c} />
       <Highlights character={c} />
+    </div>
+  )
+}
+
+/** One character as a dense list row — the same vitals and headline stats as the card, without the
+ * attributes and skill highlights, so a large party fits on one screen. Wraps to three lines on phones. */
+export function CharacterRow({ character }: { character: CharacterFrontmatter }) {
+  return (
+    <D20PenaltyContext value={exhaustionD20Penalty(character)}>
+      <CharacterRowBody character={character} />
+    </D20PenaltyContext>
+  )
+}
+
+function CharacterRowBody({ character: c }: { character: CharacterFrontmatter }) {
+  const fate = characterFate(c)
+  const fallen = fate !== 'alive'
+  const dead = fate === 'dead'
+  const origin = [c.species, c.background].filter(Boolean).join(' · ')
+
+  return (
+    <div
+      className={`rpg-panel relative flex flex-wrap items-center gap-x-4 gap-y-2.5 px-3 py-2.5 transition duration-200 ${
+        fallen ? `card-fallen hover:shadow-[0_0_20px_-6px_rgb(200_0_0/0.7)] ${dead ? 'is-dead' : ''}` : 'hover:shadow-[0_0_18px_-6px_var(--color-trim)]'
+      }`}
+    >
+      {fallen && <div aria-hidden className="card-fallen-veil" />}
+
+      <div className="flex min-w-0 flex-1 basis-64 items-center gap-3 lg:w-80 lg:flex-none">
+        <Portrait character={c} small />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-display text-base font-bold tracking-wide text-fg">{c.name}</span>
+            {fallen && <FallenSeal dead={dead} />}
+          </div>
+          <div className="flex min-w-0 items-center gap-2 text-xs text-fg-muted">
+            <span className="shrink-0 text-[0.65rem] font-bold uppercase tracking-wider text-trim">{classSummary(c)}</span>
+            {origin && <span className="truncate">{origin}</span>}
+          </div>
+          <VitalStatus character={c} spread={false} className="mt-0.5" />
+        </div>
+      </div>
+
+      <div className="w-full sm:w-52 sm:flex-none lg:w-auto lg:flex-1">
+        <LifeForce character={c} withStatus={false} />
+      </div>
+      <HeadlineStats character={c} className="w-full sm:w-60 sm:flex-none" />
     </div>
   )
 }

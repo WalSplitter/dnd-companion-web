@@ -1,12 +1,16 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { CharacterCard } from '../features/character-list/CharacterCard'
+import { CharacterCard, CharacterRow } from '../features/character-list/CharacterCard'
+import { resolveLayout, useCharacterViewMode } from '../features/character-list/viewMode'
+import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 
 export function CharacterListPage() {
   const t = useT()
   const characters = useVaultStore((s) => s.vault.characters)
+  const [mode, setMode] = useCharacterViewMode()
+  const layout = resolveLayout(mode, characters.length)
 
   if (characters.length === 0) {
     return (
@@ -19,11 +23,13 @@ export function CharacterListPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="text-2xl font-semibold text-fg">{t('characterList.title')}</h1>
-        <span className="text-sm text-fg-muted">{characters.length}</span>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-fg">
+          {t('characterList.title')} <span className="ml-1 text-sm font-normal text-fg-muted">{characters.length}</span>
+        </h1>
+        <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className={layout === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'}>
         {characters.map((c, i) => (
           <Link
             key={c.path}
@@ -31,7 +37,7 @@ export function CharacterListPage() {
             className="rise-in block"
             style={{ '--i': i } as CSSProperties}
           >
-            <CharacterCard character={c.frontmatter} />
+            {layout === 'list' ? <CharacterRow character={c.frontmatter} /> : <CharacterCard character={c.frontmatter} />}
           </Link>
         ))}
       </div>
