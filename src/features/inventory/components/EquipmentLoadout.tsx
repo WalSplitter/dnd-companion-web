@@ -23,7 +23,7 @@ let deltaSeq = 0
 /**
  * The character's worn and wielded gear, laid out like an RPG character screen: a silhouette in the
  * middle, five slots down each side — head, necklace, armor, belt and boots on its left (top to
- * bottom, roughly where they sit on the body), cloak, shield, gloves and the two rings on its right — and the weapons racked below. The figure lights up where something is worn (and glows
+ * bottom, roughly where they sit on the body), cloak, shield, gloves and the two rings on its right — and the weapons racked beside the stage (below it when the panel is narrow). The figure lights up where something is worn (and glows
  * where the hovered slot sits), and every change to armor class or evasion floats up as a "+2 RK"
  * chip. The whole panel is one drop target — an item dropped anywhere on it goes to the slot its kind
  * belongs in (`onDropPayload`; a ring dropped on a ring slot goes onto that finger); an equipped item
@@ -124,112 +124,124 @@ export function EquipmentLoadout({
         const raw = e.dataTransfer.getData('text/plain')
         if (raw) onDropPayload(raw)
       }}
-      className={`equip-loadout rpg-panel p-3 transition-shadow ${dragOver ? 'equip-loadout-over' : ''}`}
+      className={`equip-loadout @container rpg-panel p-3 transition-shadow ${dragOver ? 'equip-loadout-over' : ''}`}
     >
       <SectionTitle className="mb-2">{t('equipment.title')}</SectionTitle>
 
-      <div className="equip-stage grid grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2 rounded-md p-2 sm:gap-3">
-        <div className="flex flex-col justify-between gap-1.5">
-          {bodySlot('head', { slot: 'head' }, character.head, t('equipment.head'), <HeadIcon />)}
-          {bodySlot('necklace', { slot: 'necklace' }, character.necklace, t('equipment.necklace'), <NecklaceIcon />)}
-          {bodySlot('armor', { slot: 'armor' }, character.armor, t('equipment.armor'), <ArmorIcon />, {
-            badge: armorFm?.rk !== undefined ? t('equipment.rk', { value: armorFm.rk }) : undefined,
-            warn: strengthShort !== undefined ? t('equipment.strengthMissingHint', { st: formatModifier(st), value: formatModifier(strengthShort) }) : undefined,
-            tooltip: armorTooltip || undefined,
-          })}
-          {bodySlot('belt', { slot: 'belt' }, character.belt, t('equipment.belt'), <BeltIcon />)}
-          {bodySlot('boots', { slot: 'boots' }, character.boots, t('equipment.boots'), <BootsIcon />)}
-        </div>
-
-        <PaperDoll
-          parts={{
-            head: Boolean(character.head),
-            cloak: Boolean(character.cloak),
-            armor: Boolean(character.armor),
-            gloves: Boolean(character.gloves),
-            belt: Boolean(character.belt),
-            boots: Boolean(character.boots),
-            necklace: Boolean(character.necklace),
-            ring0: Boolean(rings[0]),
-            ring1: Boolean(rings[1]),
-            shield: Boolean(character.shield),
-            weapon: weapons.length > 0,
-          }}
-          armorLook={character.armor ? armorLookOf(armor?.frontmatter) : undefined}
-          weapons={weapons.map(({ item }) => {
-            const fm = item?.frontmatter.kind === 'weapon' ? item.frontmatter : undefined
-            return { form: fm?.form, twoHanded: fm?.hands === 'two' }
-          })}
-          hovered={hovered}
-          armorClass={armorClass}
-          evasion={evasion}
-          deltas={deltas}
-          onDeltaDone={(id) => setDeltas((d) => d.filter((x) => x.id !== id))}
-        />
-
-        <div className="flex flex-col justify-between gap-1.5">
-          {bodySlot('cloak', { slot: 'cloak' }, character.cloak, t('equipment.cloak'), <CloakIcon />)}
-          {bodySlot('shield', { slot: 'shield' }, character.shield, t('equipment.shield'), <ShieldIcon />, {
-            badge: shieldRk !== undefined ? t('equipment.blockShort', { value: shieldRk }) : undefined,
-            tooltip: shieldRk !== undefined ? t('equipment.blockHint', { value: shieldRk }) : undefined,
-          })}
-          {bodySlot('gloves', { slot: 'gloves' }, character.gloves, t('equipment.gloves'), <GlovesIcon />)}
-          {Array.from({ length: MAX_RINGS }, (_, position) =>
-            bodySlot(position === 0 ? 'ring0' : 'ring1', { slot: 'ring', position }, rings[position], t('equipment.ring', { n: position + 1 }), <RingIcon />),
-          )}
-        </div>
-      </div>
-
-      <div className="mt-3 mb-1.5 flex items-center gap-2 text-[0.6rem] font-bold uppercase tracking-wider text-trim/80">
-        <SwordIcon className="size-3" />
-        {t('equipment.weapons')}
-        <span className="h-px flex-1 bg-trim/20" />
-      </div>
-      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        {weapons.map(({ position, link, item, charges }) => {
-          const fm = item?.frontmatter.kind === 'weapon' ? item.frontmatter : undefined
-          const name = item?.frontmatter.name ?? wikilinkTarget(link)
-          const attack = character.attacks?.find((a) => a.name === name)
-          return (
-            <GearSlot
-              key={`${position}:${link}`}
-              {...slotProps({ slot: 'weapon', position }, link, item)}
-              label={fm?.category ?? t('equipment.weapons')}
-              icon={<WeaponIcon form={fm?.form} />}
-              hover={() => setHovered('weapon')}
-              unhover={() => setHovered((h) => (h === 'weapon' ? undefined : h))}
-              chips={
-                <>
-                  {charges !== undefined && (
-                    <Chip danger={charges === 0} title={t('endeavourInventory.detailCharges')}>
-                      ×{charges}
-                      {fm?.stack_size ? `/${fm.stack_size}` : ''}
-                    </Chip>
-                  )}
-                  {attack && (
-                    <Chip strong>
-                      {formatModifier(attack.attack_bonus)} · {attack.damage_dice}
-                      {attack.damage_bonus ? formatModifier(attack.damage_bonus) : ''}
-                    </Chip>
-                  )}
-                  {attack?.damage_type && <Chip>{attack.damage_type.replace(/schaden/gi, '')}</Chip>}
-                  {fm?.hands && (
-                    <Chip title={t(fm.hands === 'two' ? 'equipment.handsTwoHint' : 'equipment.handsOneHint')}>
-                      {t(fm.hands === 'two' ? 'equipment.handsTwo' : 'equipment.handsOne')}
-                    </Chip>
-                  )}
-                </>
-              }
-            />
-          )
-        })}
-
-        {canEdit && (
-          <div className="equip-socket rpg-slot flex min-h-11 items-center justify-center gap-1.5 px-2 text-center text-[0.65rem] text-fg-muted">
-            <SwordIcon className="size-3.5 shrink-0 opacity-45" />
-            {t('equipment.emptyWeapon')}
+      {/* Wide enough (the panel, not the window: a container query), the weapons rack stands beside the
+          stage, in the room the slot columns leave around the figure; otherwise it sits below. */}
+      <div className="flex flex-col gap-3 @xl:flex-row">
+        <div className="equip-stage grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2 rounded-md p-2 sm:gap-3">
+          <div className="flex flex-col justify-between gap-1.5">
+            {bodySlot('head', { slot: 'head' }, character.head, t('equipment.head'), <HeadIcon />)}
+            {bodySlot('necklace', { slot: 'necklace' }, character.necklace, t('equipment.necklace'), <NecklaceIcon />)}
+            {bodySlot('armor', { slot: 'armor' }, character.armor, t('equipment.armor'), <ArmorIcon />, {
+              badge: armorFm?.rk !== undefined ? t('equipment.rk', { value: armorFm.rk }) : undefined,
+              warn: strengthShort !== undefined ? t('equipment.strengthMissingHint', { st: formatModifier(st), value: formatModifier(strengthShort) }) : undefined,
+              tooltip: armorTooltip || undefined,
+            })}
+            {bodySlot('belt', { slot: 'belt' }, character.belt, t('equipment.belt'), <BeltIcon />)}
+            {bodySlot('boots', { slot: 'boots' }, character.boots, t('equipment.boots'), <BootsIcon />)}
           </div>
-        )}
+
+          <PaperDoll
+            parts={{
+              head: Boolean(character.head),
+              cloak: Boolean(character.cloak),
+              armor: Boolean(character.armor),
+              gloves: Boolean(character.gloves),
+              belt: Boolean(character.belt),
+              boots: Boolean(character.boots),
+              necklace: Boolean(character.necklace),
+              ring0: Boolean(rings[0]),
+              ring1: Boolean(rings[1]),
+              shield: Boolean(character.shield),
+              weapon: weapons.length > 0,
+            }}
+            armorLook={character.armor ? armorLookOf(armor?.frontmatter) : undefined}
+            weapons={weapons.map(({ item }) => {
+              const fm = item?.frontmatter.kind === 'weapon' ? item.frontmatter : undefined
+              return { form: fm?.form, twoHanded: fm?.hands === 'two' }
+            })}
+            hovered={hovered}
+            armorClass={armorClass}
+            evasion={evasion}
+            deltas={deltas}
+            onDeltaDone={(id) => setDeltas((d) => d.filter((x) => x.id !== id))}
+          />
+
+          <div className="flex flex-col justify-between gap-1.5">
+            {bodySlot('cloak', { slot: 'cloak' }, character.cloak, t('equipment.cloak'), <CloakIcon />)}
+            {bodySlot('shield', { slot: 'shield' }, character.shield, t('equipment.shield'), <ShieldIcon />, {
+              badge: shieldRk !== undefined ? t('equipment.blockShort', { value: shieldRk }) : undefined,
+              tooltip: shieldRk !== undefined ? t('equipment.blockHint', { value: shieldRk }) : undefined,
+            })}
+            {bodySlot('gloves', { slot: 'gloves' }, character.gloves, t('equipment.gloves'), <GlovesIcon />)}
+            {Array.from({ length: MAX_RINGS }, (_, position) =>
+              bodySlot(position === 0 ? 'ring0' : 'ring1', { slot: 'ring', position }, rings[position], t('equipment.ring', { n: position + 1 }), <RingIcon />),
+            )}
+          </div>
+        </div>
+
+        <div className="@xl:w-52 @xl:shrink-0">
+          <div className="mb-1.5 flex items-center gap-2 text-[0.6rem] font-bold uppercase tracking-wider text-trim/80">
+            <SwordIcon className="size-3" />
+            {t('equipment.weapons')}
+            <span className="h-px flex-1 bg-trim/20" />
+          </div>
+          <div className="grid grid-cols-1 gap-1.5 @sm:grid-cols-2 @xl:grid-cols-1">
+            {weapons.map(({ position, link, item, charges }) => {
+              const fm = item?.frontmatter.kind === 'weapon' ? item.frontmatter : undefined
+              const name = item?.frontmatter.name ?? wikilinkTarget(link)
+              const attack = character.attacks?.find((a) => a.name === name)
+              return (
+                <GearSlot
+                  key={`${position}:${link}`}
+                  {...slotProps({ slot: 'weapon', position }, link, item)}
+                  label={fm?.category ?? t('equipment.weapons')}
+                  icon={<WeaponIcon form={fm?.form} />}
+                  hover={() => setHovered('weapon')}
+                  unhover={() => setHovered((h) => (h === 'weapon' ? undefined : h))}
+                  chips={
+                    <>
+                      {charges !== undefined && (
+                        <Chip danger={charges === 0} title={t('endeavourInventory.detailCharges')}>
+                          ×{charges}
+                          {fm?.stack_size ? `/${fm.stack_size}` : ''}
+                        </Chip>
+                      )}
+                      {attack && (
+                        <Chip strong>
+                          {formatModifier(attack.attack_bonus)} · {attack.damage_dice}
+                          {attack.damage_bonus ? formatModifier(attack.damage_bonus) : ''}
+                        </Chip>
+                      )}
+                      {attack?.damage_type && <Chip>{attack.damage_type.replace(/schaden/gi, '')}</Chip>}
+                      {fm?.hands && (
+                        <Chip title={t(fm.hands === 'two' ? 'equipment.handsTwoHint' : 'equipment.handsOneHint')}>
+                          {t(fm.hands === 'two' ? 'equipment.handsTwo' : 'equipment.handsOne')}
+                        </Chip>
+                      )}
+                    </>
+                  }
+                />
+              )
+            })}
+
+            {/* The whole panel takes drops, so this socket is only a hint: shown with no weapon, or where it
+                fills the free half of a two-column weapon row — never as an extra row below. */}
+            {canEdit && (weapons.length === 0 || weapons.length % 2 === 1) && (
+              <div
+                className={`equip-socket rpg-slot min-h-11 items-center justify-center gap-1.5 px-2 text-center text-[0.65rem] text-fg-muted ${
+                  weapons.length === 0 ? 'flex' : 'hidden @sm:flex'
+                }`}
+              >
+                <SwordIcon className="size-3.5 shrink-0 opacity-45" />
+                {t('equipment.emptyWeapon')}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -310,20 +322,21 @@ function BodySlot({
           onSelect()
         }
       }}
-      className={`equip-body-slot group relative flex size-[4.25rem] shrink-0 flex-col items-center overflow-hidden rounded-md border text-center transition sm:size-[4.75rem] lg:size-[5.25rem] ${
+      className={`equip-body-slot group relative flex size-[4rem] shrink-0 flex-col items-center overflow-hidden rounded-md border text-center transition sm:size-[4.25rem] ${
         worn
           ? `equip-flash text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_2px_6px_-2px_rgb(0_0_0/0.6)] hover:brightness-125 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${tint}`
           : 'equip-socket rpg-slot'
       } ${selected ? 'ring-2 ring-trim' : ''} ${warn ? 'ring-2 ring-danger/80' : ''} ${over ? 'equip-body-slot-over' : ''}`}
     >
-      <span className={`w-full truncate px-0.5 pt-0.5 text-[0.5rem] font-bold uppercase leading-tight tracking-normal sm:tracking-wider sm:text-[0.55rem] ${worn ? 'bg-black/25 text-trim' : 'text-trim/70'}`}>
+      {/* No letter-spacing: the longest captions ("Handschuhe", "Halskette") must fit the slot unclipped. */}
+      <span className={`w-full truncate px-px pt-0.5 text-[0.5rem] font-bold uppercase leading-tight tracking-normal sm:text-[0.53rem] ${worn ? 'bg-black/25 text-trim' : 'text-trim/70'}`}>
         {label}
       </span>
-      <span className={`mt-0.5 flex min-h-0 flex-1 items-center justify-center [&>svg]:size-full ${worn ? 'size-6 text-trim sm:size-7 lg:size-8' : 'size-7 text-trim opacity-30 sm:size-8 lg:size-9'}`}>
+      <span className={`mt-0.5 flex min-h-0 flex-1 items-center justify-center [&>svg]:size-full ${worn ? 'size-5 text-trim sm:size-6' : 'size-6 text-trim opacity-30 sm:size-7'}`}>
         {icon}
       </span>
       {name && (
-        <span lang="de" className="line-clamp-2 w-full hyphens-auto px-0.5 pb-0.5 font-display text-[0.55rem] font-bold leading-[1.1] [overflow-wrap:anywhere] sm:text-[0.62rem] lg:text-[0.68rem]">
+        <span lang="de" className="line-clamp-2 w-full hyphens-auto px-0.5 pb-0.5 font-display text-[0.55rem] font-bold leading-[1.1] [overflow-wrap:anywhere] sm:text-[0.6rem]">
           {name}
         </span>
       )}
