@@ -413,6 +413,10 @@ export const en = {
   'errorLog.retry': 'Retry',
   'errorLog.hint.rolledBack': 'The change was rolled back; nothing was written to the file.',
   'errorLog.hint.loadFailed': 'The vault was not (fully) loaded.',
+  'errorLog.renderFailed': 'Page could not be displayed',
+  'errorBoundary.title': 'This page could not be displayed',
+  'errorBoundary.hint': 'Something in the vault data or the app tripped it up. The error is in the error log; header and navigation still work.',
+  'errorBoundary.reload': 'Reload page',
 
   // Inventory
   'inventory.nothingEquipped': 'Nothing equipped.',

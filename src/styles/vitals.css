@@ -1,0 +1,331 @@
+/* Vital pools: temp HP ward, pool steppers, resilience, exhaustion tokens and the rest campfire. */
+
+/* Temporary HP as an arcane ward (HitPoints). Tinted with --color-accent so every theme gets its own
+ * ward colour. Motion (shimmer, pulse, drifting runes) only for users who haven't asked to reduce it.
+ * The moving parts are pseudo-elements slid with `translate`, never animated `background-position`
+ * or blend modes: those repaint the whole card every frame, which made scrolling lag on phones. */
+.hp-ward {
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent);
+  opacity: 0.35;
+}
+/* Diagonal stripes, one tile wider than the bar so sliding by a tile loops seamlessly. */
+.hp-ward::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 -11.31px;
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-accent) 55%, white) 0 2px, transparent 2px 8px);
+  background-size: 11.31px 11.31px;
+}
+/* A glint of light sweeping across the ward. */
+.hp-ward::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.4) 50%, transparent 70%);
+  translate: -100% 0;
+}
+.hp-warded {
+  box-shadow:
+    inset 0 2px 6px rgb(0 0 0 / 0.55),
+    0 0 10px color-mix(in srgb, var(--color-accent) 45%, transparent),
+    0 0 1px var(--color-accent);
+}
+.hp-ward-hit {
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgb(255 255 255 / 0.9), color-mix(in srgb, var(--color-accent) 60%, transparent) 60%, transparent);
+  animation: hp-ward-hit 520ms ease-out both;
+}
+
+.hp-ward-chip {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+  opacity: 0.6;
+  transition:
+    opacity 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+.hp-ward-chip:hover,
+.hp-ward-chip:focus-within {
+  opacity: 1;
+}
+.hp-ward-chip.is-active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  background:
+    radial-gradient(ellipse at 15% 50%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--color-accent) 8%, transparent);
+  box-shadow: 0 0 10px -4px color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+.hp-ward-chip.is-active .hp-ward-icon {
+  filter: drop-shadow(0 0 6px var(--color-accent));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hp-ward::before {
+    animation: hp-ward-flow 1.2s linear infinite;
+  }
+  .hp-ward::after {
+    animation: hp-ward-glint 3.4s ease-in-out infinite;
+  }
+}
+/* The glow pulse animates box-shadow, a full repaint each frame; phones keep the glow steady. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .hp-warded {
+    animation: hp-ward-pulse 2.8s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hp-ward-chip.is-active .hp-ward-icon {
+    animation: hp-ward-icon 2.8s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-ward-hit {
+    display: none;
+  }
+}
+
+@keyframes hp-ward-flow {
+  to {
+    translate: 11.31px 0;
+  }
+}
+/* Shared sweep for glints (ward, resilience bar): waits off the left edge, then crosses. */
+@keyframes hp-ward-glint {
+  0%,
+  35% {
+    translate: -100% 0;
+  }
+  100% {
+    translate: 100% 0;
+  }
+}
+@keyframes hp-ward-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 2px 6px rgb(0 0 0 / 0.55),
+      0 0 6px color-mix(in srgb, var(--color-accent) 30%, transparent),
+      0 0 1px var(--color-accent);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 6px rgb(0 0 0 / 0.55),
+      0 0 16px color-mix(in srgb, var(--color-accent) 60%, transparent),
+      0 0 2px var(--color-accent);
+  }
+}
+/* Scale only: the icon's glow stays at the steady `.is-active` drop-shadow, since an animated filter
+ * repaints every frame. */
+@keyframes hp-ward-icon {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes hp-ward-hit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Pool stepper buttons (VitalPools). Each tone tints the glyph and the hover glow. */
+.pool-step {
+  --tone: var(--color-trim);
+  color: var(--color-fg-muted);
+  background: transparent;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    transform 80ms ease;
+}
+.pool-step-accent {
+  --tone: var(--color-accent);
+  color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+.pool-step:hover:not(:disabled),
+.pool-step:focus-visible {
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+.pool-step:active:not(:disabled) {
+  transform: translateY(1px) scale(0.94);
+}
+.pool-step:disabled {
+  cursor: not-allowed;
+  opacity: 0.2;
+}
+
+/* Resilience: a gilded stamina fill with slow rising heat, and a glint sweeping across it. */
+.rp-fill {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(to bottom, rgb(255 255 255 / 0.4), transparent 50%),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-trim) 55%, #7a3b00), var(--color-trim) 60%, color-mix(in srgb, var(--color-trim) 65%, white));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-trim) 50%, transparent);
+}
+.rp-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+  translate: -100% 0;
+}
+
+/* Exhaustion: wound tokens. Empty ones are hollow silhouettes; filled ones bleed. */
+.exh-token {
+  display: inline-block;
+  padding: 1px;
+  color: color-mix(in srgb, var(--color-fg-muted) 22%, transparent);
+  transition:
+    color 250ms ease,
+    filter 250ms ease,
+    transform 150ms ease;
+}
+.exh-token .exh-eye {
+  fill: var(--color-surface);
+}
+.exh-token .exh-shine {
+  opacity: 0;
+}
+button.exh-token:hover {
+  transform: scale(1.15);
+  color: color-mix(in srgb, var(--color-danger) 55%, transparent);
+}
+.exh-token.is-filled {
+  color: #b3121b;
+  filter: drop-shadow(0 0 4px rgb(200 0 0 / 0.7));
+}
+.exh-token.is-filled .exh-shine {
+  opacity: 1;
+}
+.exh-token.is-skull {
+  color: color-mix(in srgb, var(--color-fg-muted) 35%, transparent);
+}
+.exh-token.is-skull.is-filled {
+  color: #e8e0d0;
+  filter: drop-shadow(0 0 6px #d11a1a) drop-shadow(0 0 12px rgb(160 0 0 / 0.8));
+}
+.exh-token.is-skull.is-filled .exh-eye {
+  fill: #d11a1a;
+}
+
+
+@media (prefers-reduced-motion: no-preference) {
+  .rp-fill::after {
+    animation: hp-ward-glint 4.2s ease-in-out infinite;
+  }
+  .exh-track.is-critical .exh-token.is-filled,
+  .exh-track.is-dead .exh-token.is-skull {
+    animation: exh-heartbeat 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes exh-heartbeat {
+  0%,
+  40%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.18);
+  }
+  24% {
+    transform: scale(1.05);
+  }
+  32% {
+    transform: scale(1.14);
+  }
+}
+
+
+/* Rest (RestMenu): a small campfire in the vitals header. The flame flickers gently and flares
+ * while the menu is open. */
+.rest-trigger {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
+  padding: 0.15rem 0.5rem 0.15rem 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease;
+}
+.rest-trigger:hover,
+.rest-trigger:focus-visible,
+.rest-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--color-warning) 70%, transparent);
+  background:
+    radial-gradient(ellipse at 20% 60%, color-mix(in srgb, var(--color-warning) 25%, transparent), transparent 70%),
+    color-mix(in srgb, var(--color-warning) 8%, transparent);
+  box-shadow: 0 0 12px -4px var(--color-warning);
+}
+.rest-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.rest-option {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-trim) 25%, var(--color-border));
+  background: color-mix(in srgb, var(--color-bg) 45%, var(--color-surface-2));
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+.rest-option:hover:not(:disabled),
+.rest-option:focus-visible {
+  border-color: color-mix(in srgb, var(--color-warning) 65%, transparent);
+  box-shadow: 0 0 14px -6px var(--color-warning);
+}
+.rest-option:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rest-flame {
+    animation: rest-flicker 2.4s ease-in-out infinite;
+  }
+  .rest-trigger[aria-expanded="true"] .rest-flame,
+  .rest-trigger:hover .rest-flame {
+    animation-duration: 0.9s;
+  }
+}
+@keyframes rest-flicker {
+  0%,
+  100% {
+    transform: scale(1, 1) skewX(0);
+  }
+  30% {
+    transform: scale(0.92, 1.08) skewX(-3deg);
+  }
+  60% {
+    transform: scale(1.05, 0.94) skewX(2deg);
+  }
+}
+

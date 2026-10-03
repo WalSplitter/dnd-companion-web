@@ -1,0 +1,74 @@
+/* Page basics: viewport, theme backdrop layer and themed scrollbars. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Nothing may widen the page sideways (a swipe would reveal a cut-off strip on phones). `clip`
+ * rather than `hidden`, so no scroll container is created and the sticky header keeps working. */
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+/* The theme backdrop (every theme sets its `background-image` here) sits on its own fixed layer
+ * instead of `background-attachment: fixed` on body: mobile browsers repaint a fixed body
+ * background on every scroll frame, which made the page lag behind the finger. A fixed layer is
+ * composited once and just stays put. Same z-index as `.ambient-layer`, which follows it in the
+ * DOM and so draws on top. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%, color-mix(in srgb, var(--color-trim) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 70%);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+/* Every scrollbar (page, header, lists) is slim and tinted in the theme's trim colour instead of
+ * the OS default, so it blends into all eight themes. Set --scroll-color on an element to tint its
+ * scrollbars differently (the error log uses the danger colour). Chromium/Safari get the
+ * ::-webkit-scrollbar rules, which also drop the arrow buttons; the standard properties are only
+ * applied where those don't exist (Firefox), since setting them makes Chromium ignore the rest. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--scroll-color, var(--color-trim)) 35%, transparent);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--scroll-color, var(--color-trim)) 75%, transparent);
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--scroll-color, var(--color-trim)) 35%, transparent) transparent;
+  }
+}
+

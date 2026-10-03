@@ -1,0 +1,77 @@
+/* The d20 roll button. */
+
+/* The d20 roll button (`D20Icon`): a line-art die that stays quiet at rest — a column of them
+ * shouldn't compete with the values — lights up in trim while its row is hovered, glows under the
+ * pointer, wobbles on hover and tumbles once per roll. */
+.d20-button {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  color: color-mix(in srgb, var(--color-fg-muted) 45%, transparent);
+  transition:
+    color 150ms,
+    filter 150ms;
+}
+.roll-row:hover .d20-button {
+  color: color-mix(in srgb, var(--color-trim) 75%, transparent);
+}
+.d20-button:hover,
+.d20-button:focus-visible {
+  color: var(--color-trim);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-trim) 70%, transparent));
+  outline: none;
+}
+.d20-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  overflow: visible;
+}
+.d20-face-side {
+  fill: currentColor;
+  opacity: 0.08;
+}
+.d20-face-front {
+  fill: currentColor;
+  opacity: 0.22;
+}
+.d20-edges {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .d20-button:hover .d20-icon:not(.is-rolling) {
+    animation: d20-wobble 600ms ease-in-out;
+  }
+  .d20-icon.is-rolling {
+    animation: d20-tumble 650ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+}
+@keyframes d20-wobble {
+  30% {
+    transform: rotate(-14deg);
+  }
+  65% {
+    transform: rotate(9deg);
+  }
+}
+@keyframes d20-tumble {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  40% {
+    transform: translateY(-3px) rotate(300deg) scale(1.3);
+  }
+  75% {
+    transform: rotate(690deg) scale(0.95);
+  }
+  100% {
+    transform: rotate(720deg) scale(1);
+  }
+}
+

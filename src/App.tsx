@@ -1,6 +1,7 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
+import { PageErrorBoundary } from './components/PageErrorBoundary'
 import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
@@ -18,7 +19,8 @@ function App() {
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
   // The start page brings its own vault controls; the header's only matter once a vault is open.
   const vaultOpen = useVaultStore((s) => s.source !== 'none')
-  const onStartPage = useLocation().pathname === '/'
+  const { pathname } = useLocation()
+  const onStartPage = pathname === '/'
   const showVaultControls = vaultOpen && !onStartPage
   const percent = loadingProgress && loadingProgress.total > 0 ? Math.round((loadingProgress.done / loadingProgress.total) * 100) : null
 
@@ -65,14 +67,17 @@ function App() {
 
       <div data-start-scroll={onStartPage || undefined} className={onStartPage ? 'no-scrollbar start-scroll flex min-h-0 flex-1 flex-col overflow-y-auto' : 'flex flex-1 flex-col'}>
         <main className={`mx-auto w-full max-w-6xl flex-1 px-4 pb-4 ${onStartPage ? 'flex flex-col pt-6 short:pt-3' : 'pt-6'}`}>
-          <Routes>
-            <Route path="/" element={<StartPage />} />
-            <Route element={<VaultLayout />}>
-              <Route path="/characters" element={<CharacterListPage />} />
-              <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          {/* Keyed by route: a page that failed to render gets a fresh try once you navigate away. */}
+          <PageErrorBoundary key={pathname}>
+            <Routes>
+              <Route path="/" element={<StartPage />} />
+              <Route element={<VaultLayout />}>
+                <Route path="/characters" element={<CharacterListPage />} />
+                <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </PageErrorBoundary>
         </main>
       </div>
 

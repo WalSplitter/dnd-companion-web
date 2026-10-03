@@ -66,8 +66,17 @@
   filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-trim) 30%, transparent));
 }
 
+/* The gem's glint is a stronger glow on a pseudo-element fading in and out (opacity, no repaint). */
 .start-gem {
-  box-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 70%, transparent);
+  position: relative;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-trim) 50%, transparent);
+}
+.start-gem::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  box-shadow: 0 0 16px 2px color-mix(in srgb, var(--color-trim) 90%, transparent);
+  opacity: 0;
 }
 
 /* Portal cards: 1px gradient rim, tilt toward the pointer, spotlight under it, spinning rim on hover. */
@@ -215,8 +224,18 @@ button.portal-card:focus-visible::before {
   z-index: 1;
   transform: translateY(-3px) scale(1.08);
 }
+/* "Live" dot: a steady ring, plus a second one that swells and fades (scale/opacity, no repaint). */
 .recent-live {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 25%, transparent);
+  position: relative;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+.recent-live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 40%, transparent);
+  opacity: 0;
 }
 
 .current-vault {
@@ -333,7 +352,7 @@ button.portal-card:focus-visible::before {
   .start-title {
     animation: title-sheen 9s ease-in-out infinite;
   }
-  .start-gem {
+  .start-gem::after {
     animation: gem-glint 3.5s ease-in-out infinite;
   }
 
@@ -369,8 +388,8 @@ button.portal-card:focus-visible::before {
     animation: hero-bob 5s ease-in-out infinite;
     animation-delay: calc(var(--i, 0) * -1.6s);
   }
-  .recent-live {
-    animation: live-pulse 2.2s ease-in-out infinite;
+  .recent-live::after {
+    animation: live-pulse 2.2s ease-out infinite;
   }
   .recent-ghost {
     animation: ghost-shimmer 2.4s ease-in-out infinite;
@@ -459,10 +478,10 @@ button.portal-card:focus-visible::before {
 @keyframes gem-glint {
   0%,
   100% {
-    box-shadow: 0 0 6px color-mix(in srgb, var(--color-trim) 50%, transparent);
+    opacity: 0;
   }
   50% {
-    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--color-trim) 90%, transparent);
+    opacity: 1;
   }
 }
 @keyframes rise-in {
@@ -523,12 +542,14 @@ button.portal-card:focus-visible::before {
   }
 }
 @keyframes live-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 30%, transparent);
+  0% {
+    opacity: 1;
+    scale: 1;
   }
-  50% {
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-success) 0%, transparent);
+  70%,
+  100% {
+    opacity: 0;
+    scale: 2;
   }
 }
 @keyframes ghost-shimmer {

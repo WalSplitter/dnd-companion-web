@@ -1,0 +1,24 @@
+/* Scroll helpers: hidden and themed scrollbars. */
+
+/* Scrolls without showing a scrollbar (the start page between header and footer). */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Below `lg` the start page usually scrolls between header and footer; with no scrollbar shown, the
+ * content fading out above the footer is the hint that there's more. */
+@media (max-width: 1023px) {
+  .start-scroll {
+    mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+  }
+}
+
+/* A slim scrollbar in the trim colour, for containers that really do scroll sideways (wide tables on phones). */
+.themed-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-trim) 45%, transparent) transparent;
+}
+

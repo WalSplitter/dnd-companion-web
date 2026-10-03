@@ -395,6 +395,10 @@ export const de = {
   'errorLog.retry': 'Erneut versuchen',
   'errorLog.hint.rolledBack': 'Die Änderung wurde zurückgesetzt, in der Datei wurde nichts geschrieben.',
   'errorLog.hint.loadFailed': 'Der Vault wurde nicht (vollständig) geladen.',
+  'errorLog.renderFailed': 'Seite konnte nicht angezeigt werden',
+  'errorBoundary.title': 'Diese Seite konnte nicht angezeigt werden',
+  'errorBoundary.hint': 'Etwas in den Vault-Daten oder in der App hat das ausgelöst. Der Fehler steht im Fehlerprotokoll; Kopfzeile und Navigation funktionieren weiter.',
+  'errorBoundary.reload': 'Seite neu laden',
 
   'inventory.nothingEquipped': 'Nichts angelegt.',
   'inventory.backpackEmpty': 'Rucksack ist leer.',

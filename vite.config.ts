@@ -18,8 +18,14 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // Logic tests (.ts) run in plain Node; only component tests (.tsx) pay for a jsdom environment,
+    // which cost over 80% of the run time when every file got one. A .ts test that needs browser
+    // APIs opts in with a `// @vitest-environment jsdom` comment.
+    projects: [
+      { extends: true, test: { name: 'unit', environment: 'node', include: ['src/**/*.test.ts'] } },
+      { extends: true, test: { name: 'dom', environment: 'jsdom', include: ['src/**/*.test.tsx'] } },
+    ],
   },
 })
