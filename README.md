@@ -82,7 +82,7 @@ comparison of everyone's values.
 **Themes and languages.** Eight colour themes and seven animated [topic themes](#themes); English
 and German.
 
-**Fast and light.** A static bundle; the sheet loads on first visit.
+**Fast and light.** A static bundle; the start page loads only itself. The vault pages, the sample vault and the GitHub connection are separate chunks, fetched in the background or on first use.
 
 </td>
 </tr>

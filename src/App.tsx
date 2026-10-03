@@ -1,4 +1,3 @@
-import { lazy } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
@@ -8,13 +7,10 @@ import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
-import { CharacterListPage } from './routes/CharacterListPage'
+import { CharacterListPage, CharacterSheetPage } from './routes/lazyPages'
 import { StartPage } from './routes/StartPage'
 import { VaultLayout } from './routes/VaultLayout'
 import { useVaultStore } from './store/vaultStore'
-
-// The sheet (with inventory, spells, markdown rendering) is the heavy part — load it on first visit only.
-const CharacterSheetPage = lazy(() => import('./routes/CharacterSheetPage').then((m) => ({ default: m.CharacterSheetPage })))
 
 function App() {
   const t = useT()

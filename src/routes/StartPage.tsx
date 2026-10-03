@@ -1,18 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArcaneSigil } from '../components/ArcaneSigil'
 import { VaultLoadingScreen } from '../components/VaultLoadingScreen'
 import { useI18n } from '../i18n/useI18n'
-import { sampleVaultImages } from '../sample-vault'
-import { useVaultStore } from '../store/vaultStore'
+import { sampleVaultImages } from '../sample-vault/images'
+import { prefetchSampleVault, useVaultStore } from '../store/vaultStore'
+import { preloadVaultPages } from './lazyPages'
 import type { GitHubErrorKind, GitHubVaultRef } from '../vault/github/githubApi'
-import { GitHubVaultDialog } from '../vault/github/GitHubVaultDialog'
 import { EMPTY_GITHUB_FORM, gitHubFormValues, type GitHubFormValues } from '../vault/github/githubForm'
 import type { RecentVault } from '../vault/handleStore'
 import { isFileSystemAccessSupported } from '../vault/vaultLoader'
 import { ContinueCard } from './start/ContinueCard'
 import { ChestIcon, PartyIcon, RepoIcon } from './start/portalIcons'
 import { CardHead, Emblem, PortalCard } from './start/PortalCard'
+
+// Only GitHub users ever open the form, so it stays out of the start page's bundle until hovered or used.
+const loadGitHubDialog = () => import('../vault/github/GitHubVaultDialog')
+const GitHubVaultDialog = lazy(() => loadGitHubDialog().then((m) => ({ default: m.GitHubVaultDialog })))
+const prefetchGitHubDialog = () => void loadGitHubDialog().catch(() => {})
 
 const EMBER_COUNT = 22
 
@@ -90,6 +95,16 @@ export function StartPage() {
     void refreshRecents()
   }, [refreshRecents])
 
+  // Visitors here are about to open a vault: fetch its pages once the start page has settled.
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(preloadVaultPages, { timeout: 3000 })
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(preloadVaultPages, 1500)
+    return () => clearTimeout(id)
+  }, [])
+
   const openedAt = (ok: boolean, target = '/characters') => {
     if (ok) navigate(target)
   }
@@ -115,9 +130,8 @@ export function StartPage() {
     else fileInputRef.current?.click()
   }
 
-  const openSample = () => {
-    loadSampleVault()
-    navigate('/characters')
+  const openSample = async () => {
+    if (await loadSampleVault()) navigate('/characters')
   }
 
   // Drag a vault folder anywhere onto the page to open it.
@@ -175,6 +189,7 @@ export function StartPage() {
       <PortalCard
         accent="var(--color-success)"
         onActivate={() => setGithubForm({ values: EMPTY_GITHUB_FORM, error: null })}
+        onIntent={prefetchGitHubDialog}
         disabled={loading}
         className="h-full w-full text-left"
       >
@@ -326,7 +341,7 @@ export function StartPage() {
             </div>
 
             <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
-              <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
+              <PortalCard accent="var(--color-accent)" onActivate={() => void openSample()} onIntent={prefetchSampleVault} disabled={loading} className="h-full w-full text-left">
                 <CardHead
                   emblem={
                     <Emblem>
@@ -425,12 +440,14 @@ export function StartPage() {
       )}
 
       {githubForm && (
-        <GitHubVaultDialog
-          initial={githubForm.values}
-          error={githubForm.error}
-          onCancel={() => setGithubForm(null)}
-          onSubmit={(ref, token) => void openGitHub(ref, token)}
-        />
+        <Suspense fallback={null}>
+          <GitHubVaultDialog
+            initial={githubForm.values}
+            error={githubForm.error}
+            onCancel={() => setGithubForm(null)}
+            onSubmit={(ref, token) => void openGitHub(ref, token)}
+          />
+        </Suspense>
       )}
 
       {loading && <VaultLoadingScreen />}

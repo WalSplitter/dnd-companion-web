@@ -101,7 +101,7 @@ function DemoPill() {
       {edited && (
         <button
           type="button"
-          onClick={loadSampleVault}
+          onClick={() => void loadSampleVault()}
           title={t('vaultLoader.resetSampleTooltip')}
           aria-label={t('vaultLoader.resetSample')}
           className="flex items-center gap-1.5 border-l border-warning/40 px-2.5 py-1.5 transition hover:bg-warning/15"
