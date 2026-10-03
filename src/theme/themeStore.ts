@@ -73,6 +73,14 @@ export function isTopicTheme(theme: ThemeName): theme is TopicThemeName {
   return TOPIC_THEMES.some((t) => t.key === theme)
 }
 
+/** Themes with a light page background; keep in sync with their `--color-bg` in the theme CSS. */
+const LIGHT_THEMES: ReadonlySet<ThemeName> = new Set<ThemeName>(['light', 'parchment', 'fluent', 'kleriker', 'moench', 'unicorn', 'summer', 'spring'])
+
+/** Light or dark page, for the few elements that keep their own dark look on any theme (error log). */
+export function themeTone(theme: ThemeName): 'light' | 'dark' {
+  return LIGHT_THEMES.has(theme) ? 'light' : 'dark'
+}
+
 interface ThemeState {
   theme: ThemeName
   /** Ambient particles of topic themes; off keeps the static look (motif, corners). */

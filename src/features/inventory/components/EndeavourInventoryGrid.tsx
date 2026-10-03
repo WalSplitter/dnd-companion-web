@@ -403,22 +403,58 @@ export function EndeavourInventoryGrid({
   }
 
   return (
+    // Two columns from `lg`: the loadout and the containers on the left; quick access, search and
+    // item details on the right, where the left column's height leaves room. On phones the column
+    // wrappers dissolve (`contents`) so `order` can keep quick access right under the loadout.
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
-      <div className="space-y-4">
+      <div className="max-lg:contents lg:space-y-4">
         {canEquip && (
-          <EquipmentLoadout
-            character={character}
-            index={index}
-            canEdit={canEdit}
-            selectedKey={selected?.key}
-            onSelect={(ref, item) => setSelected({ key: equippedKey(ref), item, equipped: ref })}
-            onUnequip={(ref) => unequipRef(ref)}
-            onDropPayload={handleLoadoutDrop}
-          />
+          <div className="max-lg:order-1">
+            <EquipmentLoadout
+              character={character}
+              index={index}
+              canEdit={canEdit}
+              selectedKey={selected?.key}
+              onSelect={(ref, item) => setSelected({ key: equippedKey(ref), item, equipped: ref })}
+              onUnequip={(ref) => unequipRef(ref)}
+              onDropPayload={handleLoadoutDrop}
+            />
+          </div>
         )}
 
+        {resolved.length === 0 && <p className="text-sm text-fg-muted max-lg:order-3">{t('endeavourInventory.noContainers')}</p>}
+
+        {mainContainers.map((r) => (
+          <div key={r.containerIndex} className="max-lg:order-3">
+            <ContainerGrid
+              label={r.name || t('endeavourInventory.backpack')}
+              layout={r.layout}
+              containerIndex={r.containerIndex}
+              selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
+              onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
+              onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
+              onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
+              onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
+              canEdit={canEdit}
+            />
+          </div>
+        ))}
+
+        <div className="flex flex-wrap items-stretch gap-3 max-lg:order-4">
+          <div className="flex min-w-64 flex-1">
+            <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
+          </div>
+          {mainCapacity && (
+            <div className="w-40">
+              <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="max-lg:contents lg:space-y-4">
         {quickContainers.length > 0 && (
-          <div>
+          <div className="max-lg:order-2">
             <SectionTitle className="mb-2">{t('endeavourInventory.quickSlots')}</SectionTitle>
             <div className="flex flex-wrap gap-3">
               {quickContainers.map((r) => (
@@ -442,48 +478,22 @@ export function EndeavourInventoryGrid({
           </div>
         )}
 
-        {resolved.length === 0 && <p className="text-sm text-fg-muted">{t('endeavourInventory.noContainers')}</p>}
-
-        {mainContainers.map((r) => (
-          <ContainerGrid
-            key={r.containerIndex}
-            label={r.name || t('endeavourInventory.backpack')}
-            layout={r.layout}
-            containerIndex={r.containerIndex}
-            selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
-            onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
-            onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
-            onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
-            onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
+        {!canEdit && <div className="max-lg:order-5 rounded-md border border-l-4 border-trim/50 bg-trim/10 px-3 py-2 text-sm text-fg-muted">{t('endeavourInventory.editLocked')}</div>}
+        <div className="max-lg:order-5">
+          <ItemSearchPanel
+            items={searchableItems}
+            containerOptions={containerOptions}
+            onAdd={addEntries}
+            onAddCustom={handleAddCustom}
+            onSelect={setSelected}
+            selectedKey={selected?.key}
             canEdit={canEdit}
           />
-        ))}
-
-        <div className="flex flex-wrap items-stretch gap-3">
-          <div className="flex min-w-64 flex-1">
-            <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
-          </div>
-          {mainCapacity && (
-            <div className="w-40">
-              <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} />
-            </div>
-          )}
         </div>
-      </div>
-
-      <div className="space-y-4">
-        {!canEdit && <div className="rounded-md border border-l-4 border-trim/50 bg-trim/10 px-3 py-2 text-sm text-fg-muted">{t('endeavourInventory.editLocked')}</div>}
-        <ItemSearchPanel
-          items={searchableItems}
-          containerOptions={containerOptions}
-          onAdd={addEntries}
-          onAddCustom={handleAddCustom}
-          onSelect={setSelected}
-          selectedKey={selected?.key}
-          canEdit={canEdit}
-        />
-        {warning && <div role="alert" className="rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
-        <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} equipAction={equipAction} />
+        {warning && <div role="alert" className="max-lg:order-6 rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
+        <div className="max-lg:order-7">
+          <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} equipAction={equipAction} />
+        </div>
       </div>
     </div>
   )

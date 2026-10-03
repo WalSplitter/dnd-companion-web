@@ -7,6 +7,7 @@ import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { hpFillClass, maxExhaustion, percentOf, resiliencePool, stepWithin } from '../vitals'
+import { ManaIcon } from '../../spells/components/ManaIcon'
 import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
 
@@ -256,6 +257,7 @@ export function HitPoints({
   const hpTarget = editable(writeTargets?.hp_current)
   const tempTarget = editable(writeTargets?.hp_temp)
   const resilienceTarget = editable(writeTargets?.resilience_current)
+  const manaTarget = editable(writeTargets?.mana_current)
   const exhaustionTarget = editable(writeTargets?.exhaustion)
 
   const setHp =
@@ -270,12 +272,19 @@ export function HitPoints({
       void updateCharacterField(characterPath, resilienceTarget, next, (c) =>
         c.resilience ? { ...c, resilience: { ...c.resilience, current: next } } : c,
       ))
+  const setMana =
+    manaTarget &&
+    ((next: number) =>
+      void updateCharacterField(characterPath, manaTarget, next, (c) =>
+        c.spellcasting?.mana ? { ...c, spellcasting: { ...c.spellcasting, mana: { ...c.spellcasting.mana, current: next } } } : c,
+      ))
   const setExhaustion =
     exhaustionTarget &&
     ((next: number) =>
       void updateCharacterField(characterPath, exhaustionTarget, next, (c) => ({ ...c, conditions: { ...c.conditions, exhaustion: next } })))
 
   const resilience = resiliencePool(character)
+  const mana = character.spellcasting?.mana
   const exhaustion = character.conditions?.exhaustion ?? 0
   const exhaustionMax = maxExhaustion(character)
   const showExhaustion = Boolean(writeTargets?.exhaustion) || character.conditions?.exhaustion !== undefined
@@ -340,6 +349,22 @@ export function HitPoints({
             warded={warded}
             hitKey={wardHitKey}
           />
+          {/* Mana is spent in play like the two pools above, so it shares the HUD; damage never
+              reaches it, so it stays outside the ward. */}
+          {mana && (
+            <PoolRow
+              icon={<ManaIcon />}
+              label={t('stats.mana')}
+              ariaLabel={t('a11y.currentMana')}
+              current={mana.current}
+              max={mana.max}
+              onSet={setMana}
+              numberClass="text-lg"
+              heightClass="h-2.5"
+              fillClass={() => 'mana-fill'}
+              ticks={mana.max > 0 && mana.max <= 30 ? mana.max : 10}
+            />
+          )}
         </div>
       </div>
 

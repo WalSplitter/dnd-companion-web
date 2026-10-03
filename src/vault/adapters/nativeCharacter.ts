@@ -150,27 +150,33 @@ function parseSaveAttribute(raw: unknown): NimbleAttributeKey | undefined {
 }
 
 /**
- * Class saving throws (`Rettungswürfe: { Vorteil: [...], Nachteil: [...] }` on the class note) are
- * rolled with advantage/disadvantage. When a multiclass character gets both for the same save they
- * cancel out, like any other advantage/disadvantage pair. `undefined` when no class note declares any.
+ * The note of the class with the highest level (the first listed on a tie), or `undefined` when that
+ * class has no note. The vault rules don't cover multiclassing; this follows Nimble, where a
+ * multiclass hero uses the saves of their highest-level class.
  */
-function resolveClassSaveModes(notes: RawFile[]): CharacterFrontmatter['nimble_save_modes'] {
-  const advantage = new Set<NimbleAttributeKey>()
-  const disadvantage = new Set<NimbleAttributeKey>()
-  for (const note of notes) {
-    const saves = note.data.Rettungswürfe
-    if (!isRecord(saves)) continue
-    for (const [list, into] of [
-      [saves.Vorteil, advantage],
-      [saves.Nachteil, disadvantage],
-    ] as const) {
-      if (!Array.isArray(list)) continue
-      for (const raw of list) {
-        const key = parseSaveAttribute(raw)
-        if (key) into.add(key)
-      }
-    }
+function leadingClassNote(classes: unknown, files: RawFile[]): RawFile | undefined {
+  if (!Array.isArray(classes)) return undefined
+  let leading: { name: string; level: number } | undefined
+  for (const c of classes) {
+    if (!isRecord(c) || typeof c.name !== 'string') continue
+    const level = typeof c.level === 'number' ? c.level : 0
+    if (!leading || level > leading.level) leading = { name: c.name, level }
   }
+  return leading ? findRawFileByName(files, leading.name) : undefined
+}
+
+/**
+ * Class saving throws (`Rettungswürfe: { Vorteil: [...], Nachteil: [...] }` on the class note) are
+ * rolled with advantage/disadvantage. A multiclass character only uses its highest-level class's
+ * (see `leadingClassNote`). A save listed under both cancels out, like any other advantage/disadvantage
+ * pair. `undefined` when the note declares none.
+ */
+function resolveClassSaveModes(note: RawFile | undefined): CharacterFrontmatter['nimble_save_modes'] {
+  const saves = note?.data.Rettungswürfe
+  if (!isRecord(saves)) return undefined
+  const collect = (list: unknown) => new Set(Array.isArray(list) ? list.map(parseSaveAttribute).filter((key) => key !== undefined) : [])
+  const advantage = collect(saves.Vorteil)
+  const disadvantage = collect(saves.Nachteil)
   const modes: NonNullable<CharacterFrontmatter['nimble_save_modes']> = {}
   for (const key of advantage) if (!disadvantage.has(key)) modes[key] = 'advantage'
   for (const key of disadvantage) if (!advantage.has(key)) modes[key] = 'disadvantage'
@@ -315,11 +321,12 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * `BasisTP`/`BasisRP`, if it has one, adds to its class's per-level value. A pool stays undefined (the
  * sheet's own `max` is kept) when any class note lacks its base value.
  *
- * TODO: provisional until the DM ships subclass notes and multiclass rules — revisit (1) the subclass
- * bonus (the DM hasn't decided whether subclasses affect TP/RP at all; today no subclass note carries
- * `BasisTP`/`BasisRP`, so it adds 0) counting for every level of that class, (2) no per-level
- * minimum (a negative KO can make a level's gain negative; only the total is clamped at 0) and (3) the
- * doubled level 1 going to the first listed class only.
+ * Decided where the vault rules are silent (2026-10-03): (1) the subclass bonus stays optional and
+ * counts for every level of its class (no subclass note carries `BasisTP`/`BasisRP` yet, so it adds 0;
+ * the DM hasn't decided whether subclasses affect TP/RP at all, issue #3); (2) no per-level minimum,
+ * so a negative KO can make a level's gain zero or negative and only the total is clamped at 0;
+ * (3) multiclassing follows D&D 5e 2024 and Nimble: only the starting class grants the doubled
+ * level 1, a class taken later counts like a level up.
  */
 function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: number; resilience?: number } {
   if (!character.nimble_attributes || !Array.isArray(character.class) || character.class.length === 0) return {}
@@ -373,7 +380,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
     ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),
     nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
-    nimble_save_modes: resolveClassSaveModes(notes),
+    nimble_save_modes: resolveClassSaveModes(leadingClassNote(raw.data.class, files)),
     nimble_class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     biography: resolveBiography(raw.data),

@@ -4,6 +4,7 @@ import { useT, type TranslationKey } from '../i18n/useI18n'
 import {
   CLASS_THEMES,
   isTopicTheme,
+  themeTone,
   SEASON_THEMES,
   THEMES,
   TOPIC_THEMES,
@@ -76,6 +77,7 @@ export function ThemeEffect() {
     const root = document.documentElement
     root.setAttribute('data-theme', theme)
     root.setAttribute('data-theme-kind', isTopicTheme(theme) ? 'topic' : 'color')
+    root.setAttribute('data-theme-tone', themeTone(theme))
   }, [theme])
 
   return null

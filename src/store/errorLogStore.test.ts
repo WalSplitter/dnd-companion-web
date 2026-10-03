@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// The store persists to localStorage, which only the jsdom environment provides.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { formatErrorReport, reportError, useErrorLogStore } from './errorLogStore'
 

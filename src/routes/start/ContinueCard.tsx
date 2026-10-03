@@ -4,6 +4,7 @@ import { formatRelativeTime } from '../../i18n/relativeTime'
 import { useI18n, type TranslateFn } from '../../i18n/useI18n'
 import { useVaultStore } from '../../store/vaultStore'
 import type { RecentVault } from '../../vault/handleStore'
+import { inOwlbear } from '../../owlbear/host'
 import { isFileSystemAccessSupported } from '../../vault/vaultLoader'
 import { characterRoute } from '../paths'
 import { BookIcon } from './portalIcons'
@@ -152,7 +153,7 @@ export function ContinueCard({ onOpen }: { onOpen: (recent: RecentVault, target?
       ) : (
         <div className="mt-3 flex flex-1 flex-col justify-center">
           <p className="text-sm leading-relaxed text-fg-muted">
-            {!supported ? t('start.unsupported') : recentsLoaded ? t('start.noRecents') : ' '}
+            {inOwlbear ? t('owlbear.noRecents') : !supported ? t('start.unsupported') : recentsLoaded ? t('start.noRecents') : ' '}
           </p>
           <div aria-hidden className="mt-4 flex gap-2 opacity-40">
             {[0, 1, 2].map((i) => (

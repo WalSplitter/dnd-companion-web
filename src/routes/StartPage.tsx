@@ -10,6 +10,7 @@ import type { GitHubErrorKind, GitHubVaultRef } from '../vault/github/githubApi'
 import { EMPTY_GITHUB_FORM, gitHubFormValues, type GitHubFormValues } from '../vault/github/githubForm'
 import type { RecentVault } from '../vault/handleStore'
 import { isFileSystemAccessSupported } from '../vault/vaultLoader'
+import { inOwlbear } from '../owlbear/host'
 import { ContinueCard } from './start/ContinueCard'
 import { ChestIcon, PartyIcon, RepoIcon } from './start/portalIcons'
 import { CardHead, Emblem, PortalCard } from './start/PortalCard'
@@ -23,7 +24,7 @@ const EMBER_COUNT = 22
 
 /** Whether folders dropped on the page can be opened (Chromium's `getAsFileSystemHandle`). */
 function supportsFolderDrop(): boolean {
-  return typeof DataTransferItem !== 'undefined' && 'getAsFileSystemHandle' in DataTransferItem.prototype
+  return isFileSystemAccessSupported() && typeof DataTransferItem !== 'undefined' && 'getAsFileSystemHandle' in DataTransferItem.prototype
 }
 
 /** Sparks drifting up behind the page. Positions are derived from the index, so they're stable across renders. */
@@ -255,14 +256,24 @@ export function StartPage() {
             </div>
           </section>
 
-          {!isFileSystemAccessSupported() && (
+          {inOwlbear ? (
             <p
               role="note"
-              className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
+              className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-trim/40 bg-trim/10 px-4 py-2 text-center text-sm text-fg-muted"
               style={{ '--i': 3 } as CSSProperties}
             >
-              {t('start.readOnlyBrowser')}
+              {t('owlbear.startNote')}
             </p>
+          ) : (
+            !isFileSystemAccessSupported() && (
+              <p
+                role="note"
+                className="rise-in mx-auto mb-5 max-w-2xl rounded-2xl border border-warning/40 bg-warning/10 px-4 py-2 text-center text-sm text-warning"
+                style={{ '--i': 3 } as CSSProperties}
+              >
+                {t('start.readOnlyBrowser')}
+              </p>
+            )
           )}
 
           {redirectedFrom && source === 'none' && (
@@ -301,44 +312,48 @@ export function StartPage() {
 
             {!isFileSystemAccessSupported() && githubCard}
 
-            <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
-              <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
-                <CardHead
-                  emblem={
-                    <Emblem>
-                      <ChestIcon />
-                    </Emblem>
-                  }
-                  eyebrow={t('start.openTitle')}
-                  eyebrowClass="text-primary"
-                  title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
+            {/* Owlbear's frame can't hand out folders: a read-only copy that has to be picked again every
+                session would only lure players away from the GitHub vault that works there. */}
+            {!inOwlbear && (
+              <div className="rise-in" style={{ '--i': 5 } as CSSProperties}>
+                <PortalCard accent="var(--color-primary)" onActivate={() => void openFolder()} disabled={loading} className="h-full w-full text-left">
+                  <CardHead
+                    emblem={
+                      <Emblem>
+                        <ChestIcon />
+                      </Emblem>
+                    }
+                    eyebrow={t('start.openTitle')}
+                    eyebrowClass="text-primary"
+                    title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('vaultLoader.openVaultFolder')}</h2>}
+                  />
+                  <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.openBody')}</p>
+                  <div className="mt-auto pt-4">
+                    <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
+                    {supportsFolderDrop() && (
+                      <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
+                        <svg {...ICON} className="size-4 text-primary">
+                          <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                        </svg>
+                        {t('start.dropHint')}
+                      </p>
+                    )}
+                    {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
+                  </div>
+                </PortalCard>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
+                  webkitdirectory=""
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
+                  }}
                 />
-                <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.openBody')}</p>
-                <div className="mt-auto pt-4">
-                  <span className="rpg-button start-cta inline-block">{t('start.openAction')}</span>
-                  {supportsFolderDrop() && (
-                    <p className="mt-2.5 flex items-center gap-2 text-xs text-fg-muted">
-                      <svg {...ICON} className="size-4 text-primary">
-                        <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                      </svg>
-                      {t('start.dropHint')}
-                    </p>
-                  )}
-                  {dropError && <p className="mt-2 text-xs text-danger">{dropError}</p>}
-                </div>
-              </PortalCard>
-              <input
-                ref={fileInputRef}
-                type="file"
-                // @ts-expect-error non-standard attribute, only relevant as a fallback for browsers without FSA
-                webkitdirectory=""
-                multiple
-                hidden
-                onChange={(e) => {
-                  if (e.target.files) void loadFromFileList(e.target.files).then((ok) => openedAt(ok))
-                }}
-              />
-            </div>
+              </div>
+            )}
 
             <div className="rise-in" style={{ '--i': 6 } as CSSProperties}>
               <PortalCard accent="var(--color-accent)" onActivate={() => void openSample()} onIntent={prefetchSampleVault} disabled={loading} className="h-full w-full text-left">

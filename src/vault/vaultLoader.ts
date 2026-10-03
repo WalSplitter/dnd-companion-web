@@ -7,8 +7,19 @@ export function isImageFile(name: string): boolean {
   return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))
 }
 
+/** Whether the page is embedded by a site of another origin, e.g. as an Owlbear Rodeo extension. */
+function inCrossOriginFrame(): boolean {
+  if (window.self === window.top) return false
+  try {
+    return window.top?.location.href === undefined
+  } catch {
+    return true
+  }
+}
+
 export function isFileSystemAccessSupported(): boolean {
-  return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function'
+  // Chromium has the API in cross-origin iframes too, but refuses to show its pickers there.
+  return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function' && !inCrossOriginFrame()
 }
 
 /**

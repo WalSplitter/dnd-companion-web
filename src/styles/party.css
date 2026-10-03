@@ -1,0 +1,240 @@
+/* Party view: lineup, formation stage, attribute radar and comparison. */
+
+/* Party lineup (CharacterListPage, "lineup" view): each member stands on a soft trim-coloured
+ * pedestal like a JRPG party screen. Hovering lifts the figure and brightens its pedestal; fallen
+ * members sink, desaturate and stand on a blood-red one. */
+.lineup-portrait {
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 10px 24px -8px rgb(0 0 0 / 0.8),
+    0 0 22px -6px color-mix(in srgb, var(--color-trim) 70%, transparent);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease,
+    filter 400ms ease;
+}
+.lineup-figure {
+  transition: transform 250ms ease;
+}
+.lineup-member:hover .lineup-figure {
+  transform: translateY(-6px);
+}
+.lineup-member:hover .lineup-portrait {
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    0 16px 28px -8px rgb(0 0 0 / 0.85),
+    0 0 30px -4px color-mix(in srgb, var(--color-trim) 85%, transparent);
+}
+.lineup-pedestal {
+  margin-top: 0.85rem;
+  height: 0.6rem;
+  width: 7rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-trim) 45%, transparent), transparent 70%);
+  filter: blur(1.5px);
+  transition:
+    opacity 250ms ease,
+    transform 250ms ease;
+  opacity: 0.75;
+}
+.lineup-member:hover .lineup-pedestal {
+  opacity: 1;
+  transform: scaleX(0.82);
+}
+.lineup-member.is-fallen .lineup-portrait {
+  filter: grayscale(0.9) brightness(0.7);
+  border-color: #b3121b;
+}
+.lineup-member.is-fallen .lineup-figure {
+  transform: translateY(4px);
+}
+.lineup-member.is-fallen:hover .lineup-portrait {
+  filter: grayscale(0.4) brightness(0.9);
+}
+.lineup-member.is-fallen .lineup-pedestal {
+  background: radial-gradient(ellipse at center, rgb(179 18 27 / 0.55), transparent 70%);
+}
+/* Formation stage (PartyFormation): a dim hall with a pool of torchlight on the floor and a
+ * receding flagstone grid, so the absolutely placed party reads as standing in one space. A faint
+ * crimson haze along the top edge marks the enemy's side, where the front line faces. */
+.formation-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 18rem;
+  background:
+    linear-gradient(to bottom, rgb(140 10 20 / 0.16), transparent 22%),
+    radial-gradient(ellipse 55% 45% at 50% 58%, color-mix(in srgb, var(--color-trim) 13%, transparent), transparent 75%),
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgb(0 0 0 / 0.35), transparent 70%),
+    var(--color-surface);
+}
+.formation-floor {
+  position: absolute;
+  inset: 35% -30% -10%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-trim) 14%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-trim) 14%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+  transform: perspective(520px) rotateX(58deg);
+  transform-origin: center top;
+  mask-image: radial-gradient(ellipse 50% 70% at 50% 30%, black, transparent 75%);
+}
+/* The enemy (FormationEnemy) across the top edge: dark silhouettes against a crimson glow, with
+ * smouldering eyes, so the side the front line faces is unmistakable. */
+.formation-foe {
+  position: absolute;
+  inset: 0 0 auto;
+  padding-top: 0.75rem;
+  pointer-events: auto;
+  color: color-mix(in srgb, #050102 80%, #6b0d14);
+  background:
+    radial-gradient(ellipse 22% 70% at 50% 62%, rgb(255 70 30 / 0.28), transparent 70%),
+    radial-gradient(ellipse 42% 100% at 50% 100%, rgb(190 24 32 / 0.34), transparent 72%);
+  mask-image: linear-gradient(to bottom, black 75%, transparent);
+}
+/* Backlit by the fire behind them: a thin hot rim along the top edges, then a wide red bloom. */
+.formation-foe svg {
+  filter: drop-shadow(0 -1.5px 0 rgb(255 110 70 / 0.55)) drop-shadow(0 0 14px rgb(170 14 24 / 0.55));
+}
+.formation-foe-eye {
+  fill: #ff4a2e;
+  filter: drop-shadow(0 0 2px #ff2a10);
+}
+.formation-foe-tusk {
+  fill: #cbbfa4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .formation-foe-eye {
+    animation: foe-glare 3.6s ease-in-out infinite;
+  }
+}
+@keyframes foe-glare {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  54% {
+    opacity: 0.8;
+  }
+}
+/* Name and vitals sit on a soft dark plate so the floor grid never runs through the text. Opaque
+ * enough to need no `backdrop-filter` blur, which phones recompute on every scroll frame. */
+.lineup-plate {
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.5rem 0.45rem;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  box-shadow: 0 6px 18px -10px rgb(0 0 0 / 0.9);
+}
+/* Idle breathing: each figure bobs gently, out of step with the others. */
+@media (prefers-reduced-motion: no-preference) {
+  .lineup-breath {
+    animation: lineup-breath 5s ease-in-out infinite;
+  }
+}
+@keyframes lineup-breath {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Attribute radar (PartyRadar): recessive rings and spokes; the accent series as a 2px outline over
+ * a light fill with ringed vertices; muted series (everyone but the focused character in the party
+ * overlay) as thin translucent outlines — width and fill, not only hue, set them apart. */
+.radar-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-fg-muted) 18%, transparent);
+  stroke-width: 1;
+}
+.radar-ring.is-zero {
+  stroke: color-mix(in srgb, var(--color-fg-muted) 45%, transparent);
+  stroke-dasharray: 3 3;
+}
+.radar-spoke {
+  stroke: color-mix(in srgb, var(--color-fg-muted) 22%, transparent);
+  stroke-width: 1;
+}
+.radar-spoke.is-active {
+  stroke: var(--color-trim);
+}
+.radar-series polygon {
+  stroke-linejoin: round;
+  transition: opacity 200ms ease;
+}
+.radar-series.is-accent polygon {
+  fill: color-mix(in srgb, var(--color-trim) 22%, transparent);
+  stroke: var(--color-trim);
+  stroke-width: 2;
+}
+.radar-series.is-accent circle {
+  fill: var(--color-trim);
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  transition: r 150ms ease;
+}
+.radar-series.is-muted polygon {
+  fill: none;
+  stroke: var(--color-fg-muted);
+  stroke-width: 1.25;
+  opacity: 0.45;
+}
+/* Party aggregate (large parties): the party's best as a soft filled area, the average dashed. */
+.radar-series.is-envelope polygon {
+  fill: color-mix(in srgb, var(--color-fg-muted) 14%, transparent);
+  stroke: var(--color-fg-muted);
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+.radar-series.is-average polygon {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+.radar-label {
+  fill: var(--color-fg-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.radar-label.is-primary {
+  fill: var(--color-trim);
+}
+.radar-label.is-active {
+  fill: var(--color-fg);
+}
+.radar-value {
+  fill: var(--color-fg);
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+}
+
+
+/* Character comparison: the best value of a row, as a softly lit cell. */
+.compare-best {
+  background: color-mix(in srgb, var(--color-trim) 13%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lineup-figure,
+  .lineup-portrait,
+  .lineup-pedestal {
+    transition: none;
+  }
+}

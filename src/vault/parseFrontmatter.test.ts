@@ -307,6 +307,19 @@ Rettungswürfe:
       expect(vault.characters[0].frontmatter.resilience?.max).toBe(6)
     })
 
+    it('applies no per-level minimum for a negative KO, only clamping the total at 0', () => {
+      const withKo = (ko: number) => {
+        const sheet = asClass('  - name: Arkanist\n    level: 2\n')
+        const content = sheet.content.replace('ko: 2', `ko: ${ko}`)
+        return buildVault([{ ...sheet, content }, arkanistNote]).characters[0].frontmatter.hp.max
+      }
+      // 3 × (2 BasisTP − 2 KO): a level gains nothing (no minimum of 1)
+      expect(withKo(-2)).toBe(0)
+      // 3 × (2 − 3) = −3, clamped
+      expect(withKo(-3)).toBe(0)
+      expect(withKo(-1)).toBe(3)
+    })
+
     describe('weapon attacks', () => {
       const bow = {
         path: 'Gegenstände/Waffen/Waffen/Kurzbogen.md',
@@ -354,11 +367,19 @@ Rettungswürfe:
       expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen'], armor: [] })
     })
 
-    it('cancels a save that one class grants advantage and another disadvantage, and merges training', () => {
-      const vault = buildVault([asClass('  - name: Arkanist\n    level: 2\n  - name: Taktiker\n    level: 1\n'), arkanistNote, taktikerNote])
-      const c = vault.characters[0].frontmatter
-      expect(c.nimble_save_modes).toEqual({ en: 'advantage', ko: 'disadvantage' })
+    it("takes a multiclass character's saves from its highest-level class only (Nimble), and merges training", () => {
+      const arkanistLeads = buildVault([asClass('  - name: Arkanist\n    level: 2\n  - name: Taktiker\n    level: 1\n'), arkanistNote, taktikerNote])
+      const c = arkanistLeads.characters[0].frontmatter
+      expect(c.nimble_save_modes).toEqual({ vs: 'advantage', en: 'advantage', st: 'disadvantage', ko: 'disadvantage' })
       expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen', 'Kriegswaffen'], armor: ['Schwere Rüstung'] })
+
+      const taktikerLeads = buildVault([asClass('  - name: Arkanist\n    level: 1\n  - name: Taktiker\n    level: 3\n'), arkanistNote, taktikerNote])
+      expect(taktikerLeads.characters[0].frontmatter.nimble_save_modes).toEqual({ st: 'advantage', vs: 'disadvantage' })
+    })
+
+    it('uses the first listed class for saves when two classes share the highest level', () => {
+      const vault = buildVault([asClass('  - name: Taktiker\n    level: 2\n  - name: Arkanist\n    level: 2\n'), arkanistNote, taktikerNote])
+      expect(vault.characters[0].frontmatter.nimble_save_modes).toEqual({ st: 'advantage', vs: 'disadvantage' })
     })
 
     it("keeps the sheet's own max when the class note declares no per-level values", () => {

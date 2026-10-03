@@ -5,6 +5,7 @@ import { exhaustionLevel, totalCharacterLevel } from '../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../vault/types'
 import { ExhaustionGlyph } from '../character-sheet/components/VitalPools'
 import { hpFillClass, maxExhaustion, percentOf, resiliencePool } from '../character-sheet/vitals'
+import { ManaIcon } from '../spells/components/ManaIcon'
 
 // Pieces of a party member shared by the card, the list row, the lineup and the comparison table.
 
@@ -99,12 +100,7 @@ export function LifeForce({ character: c, withStatus = true }: { character: Char
       />
       {mana && (
         <MiniBar
-          icon={
-            <svg aria-hidden viewBox="0 0 16 16" className="mana-caption size-3.5">
-              <circle cx="8" cy="8.5" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M3.1 9.1q2.4-1.2 4.9 0t4.9 0A4.9 4.9 0 0 1 3.1 9.1Z" fill="currentColor" />
-            </svg>
-          }
+          icon={<ManaIcon />}
           label={t('stats.mana')}
           current={mana.current}
           max={mana.max}

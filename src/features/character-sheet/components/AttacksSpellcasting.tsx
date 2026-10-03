@@ -6,11 +6,10 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
 import { spellAttackBonus } from '../../../vault/deriveStats'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
-import { ManaVessel } from '../../spells/components/ManaVessel'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
 
 /** Spellcasting at a glance: ability, save DC, attack and the casting resources. The spells
- * themselves (cantrips included) live on the spells tab. */
+ * themselves (cantrips included) live on the spells tab; the mana pool sits in the vitals HUD. */
 export function AttacksSpellcasting({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const t = useT()
   if (!character.spellcasting) return null
@@ -25,7 +24,7 @@ export function AttacksSpellcasting({ character, characterPath }: { character: C
     : character.spellcasting.ability.toUpperCase()
 
   return (
-    <Card title={t('cards.attacksSpellcasting')}>
+    <Card title={t('cards.spellcasting')}>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-2">
           <StatPlate label={t('stats.ability')} value={abilityAbbr} />
@@ -42,13 +41,6 @@ export function AttacksSpellcasting({ character, characterPath }: { character: C
             )}
           </StatPlate>
         </div>
-
-        {character.spellcasting.mana && (
-          <div>
-            <div className="mb-1 text-xs font-medium uppercase tracking-wider text-fg-muted">{t('stats.mana')}</div>
-            <ManaVessel mana={character.spellcasting.mana} characterPath={characterPath} writeTarget={character._write?.mana_current} />
-          </div>
-        )}
 
         {character.spellcasting.slots && (
           <div>
