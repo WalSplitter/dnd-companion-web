@@ -11,7 +11,7 @@ import { EMPTY_GITHUB_FORM, gitHubFormValues, type GitHubFormValues } from '../v
 import type { RecentVault } from '../vault/handleStore'
 import { isFileSystemAccessSupported } from '../vault/vaultLoader'
 import { ContinueCard } from './start/ContinueCard'
-import { ChestIcon, RepoIcon } from './start/portalIcons'
+import { ChestIcon, PartyIcon, RepoIcon } from './start/portalIcons'
 import { CardHead, Emblem, PortalCard } from './start/PortalCard'
 
 const EMBER_COUNT = 22
@@ -329,23 +329,26 @@ export function StartPage() {
               <PortalCard accent="var(--color-accent)" onActivate={openSample} disabled={loading} className="h-full w-full text-left">
                 <CardHead
                   emblem={
-                    <div className="flex h-12 shrink-0 items-center">
-                      {samplePortraits.map((src, i) => (
-                        <img
-                          key={src}
-                          src={src}
-                          alt=""
-                          className="sample-hero size-11 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
-                          style={{ '--i': i } as CSSProperties}
-                        />
-                      ))}
-                    </div>
+                    <Emblem>
+                      <PartyIcon />
+                    </Emblem>
                   }
                   eyebrow={t('vaultLoader.sampleData')}
                   eyebrowClass="text-accent"
                   title={<h2 className="font-display text-xl font-bold tracking-wide text-fg">{t('start.sampleTitle')}</h2>}
                 />
                 <p className="mt-2.5 text-sm leading-relaxed text-fg-muted tall:text-base">{t('start.sampleBody')}</p>
+                <div className="mt-4 flex items-center">
+                  {samplePortraits.map((src, i) => (
+                    <img
+                      key={src}
+                      src={src}
+                      alt=""
+                      className="sample-hero size-10 rounded-xl border-2 border-accent/70 bg-surface-2 object-cover"
+                      style={{ '--i': i, '--n': samplePortraits.length } as CSSProperties}
+                    />
+                  ))}
+                </div>
                 <div className="mt-auto pt-4">
                   <span className="start-cta-accent inline-flex items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3.5 py-1.5 font-display text-[0.72rem] font-bold uppercase tracking-[0.1em] text-accent transition group-hover:bg-accent/20">
                     {t('start.sampleAction')}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CharacterFrontmatter } from '../../vault/types'
-import { formationRank, formationRanks, layoutFormation, RANK_FOOTPRINT, type FormationRank, type PlacedMember } from './formation'
+import { ENEMY_BAND_HEIGHT, formationRank, formationRanks, layoutFormation, RANK_FOOTPRINT, type FormationRank, type PlacedMember } from './formation'
 
 const character = (classes: [string, number][], extra: Partial<CharacterFrontmatter> = {}) =>
   ({ name: classes[0]?.[0] ?? 'X', class: classes.map(([name, level]) => ({ name, level })), ...extra }) as CharacterFrontmatter
@@ -82,5 +82,13 @@ describe('layoutFormation', () => {
     expect(Math.abs(back.x - front.x)).toBeLessThan(20)
     // Staggered lines slide into each other instead of stacking as full rows.
     expect(back.y - front.y).toBeLessThan(RANK_FOOTPRINT.front.height + RANK_FOOTPRINT.middle.height)
+  })
+
+  it('keeps the enemy band at the top of the stage clear of the front line', () => {
+    for (const width of [1100, 360]) {
+      const { placed, enemyBand } = layoutFormation(party({ front: 2, middle: 2, back: 2 }), width, (m) => m.id)
+      expect(enemyBand).toBe(ENEMY_BAND_HEIGHT * (width < 560 ? 0.8 : 1))
+      for (const m of placed) expect(m.y, `${width}px ${m.entry.id}`).toBeGreaterThanOrEqual(enemyBand)
+    }
   })
 })

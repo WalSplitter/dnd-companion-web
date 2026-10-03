@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#8a7a3c"/>
+      <stop offset="0.55" stop-color="#3f3618"/>
+      <stop offset="1" stop-color="#16120a"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff1b8" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#fff1b8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="robe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ece6d6"/>
+      <stop offset="1" stop-color="#a99f88"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f1d2b4"/>
+      <stop offset="1" stop-color="#d4a988"/>
+    </linearGradient>
+    <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#faf6ea"/>
+      <stop offset="1" stop-color="#cfc6ae"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- halo of light -->
+  <circle cx="128" cy="100" r="92" fill="url(#glow)"/>
+  <g stroke="#fff1b8" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round">
+    <path d="M128 8v18M128 196v14M36 100h16M204 100h16M62 34l11 11M183 155l11 11M62 166l11-11M183 45l11-11"/>
+  </g>
+
+  <!-- spirit stag, faint, behind -->
+  <g fill="none" stroke="#e8f4ff" stroke-opacity="0.35" stroke-width="2.5" stroke-linecap="round">
+    <path d="M62 70c-8-14-6-28 2-36M62 70c-14-6-22-16-24-28M62 70c4-12 12-20 22-22"/>
+    <path d="M194 70c8-14 6-28-2-36M194 70c14-6 22-16 24-28M194 70c-4-12-12-20-22-22"/>
+  </g>
+
+  <!-- veil behind -->
+  <path d="M80 92c-6 46 0 92 8 124h80c8-32 14-78 8-124-8-40-88-40-96 0Z" fill="url(#veil)"/>
+
+  <!-- robe / shoulders -->
+  <path d="M40 256c4-46 34-72 88-72s84 26 88 72Z" fill="url(#robe)"/>
+  <path d="M128 190v66" stroke="#c9a54a" stroke-width="4"/>
+
+  <!-- neck + face -->
+  <path d="M114 150h28v36h-28Z" fill="#d4a988"/>
+  <path d="M128 64c-25 0-38 21-38 46 0 29 17 50 38 50s38-21 38-50c0-25-13-46-38-46Z" fill="url(#skin)"/>
+
+  <!-- hair under veil -->
+  <path d="M92 104c2-24 16-38 36-38s34 14 36 38c-10-12-22-18-36-18s-26 6-36 18Z" fill="#b89a5c"/>
+  <!-- veil front edge -->
+  <path d="M84 104c0-40 20-56 44-56s44 16 44 56c-6-24-22-40-44-40s-38 16-44 40Z" fill="url(#veil)"/>
+
+  <!-- eyes, brows, mouth -->
+  <path d="M105 108q8-4 15 0M136 108q8-4 15 0" fill="none" stroke="#7a5a3a" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="112" cy="116" rx="4.6" ry="3" fill="#8a5a1c"/>
+  <ellipse cx="144" cy="116" rx="4.6" ry="3" fill="#8a5a1c"/>
+  <path d="M118 140q10 6 20 0" fill="none" stroke="#b06a5e" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- holy symbol -->
+  <circle cx="128" cy="222" r="13" fill="none" stroke="#c9a54a" stroke-width="3"/>
+  <path d="M128 210v24M116 222h24" stroke="#c9a54a" stroke-width="3"/>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

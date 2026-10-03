@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#2f5f8f"/>
+      <stop offset="0.55" stop-color="#16304d"/>
+      <stop offset="1" stop-color="#070f1b"/>
+    </radialGradient>
+    <linearGradient id="mail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9bec6"/>
+      <stop offset="1" stop-color="#555a62"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecc3a0"/>
+      <stop offset="1" stop-color="#c99674"/>
+    </linearGradient>
+    <linearGradient id="tabard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2efe6"/>
+      <stop offset="1" stop-color="#bdb6a4"/>
+    </linearGradient>
+    <pattern id="rings" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.6" fill="none" stroke="#3a3e45" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- rising sun behind -->
+  <circle cx="128" cy="112" r="70" fill="#f5d27a" opacity="0.18"/>
+  <g stroke="#f5d27a" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round">
+    <path d="M128 22v20M62 50l13 13M194 50l-13 13M38 112h20M198 112h20"/>
+  </g>
+
+  <!-- chain mail shoulders -->
+  <path d="M34 256c4-50 38-78 94-78s90 28 94 78Z" fill="url(#mail)"/>
+  <path d="M34 256c4-50 38-78 94-78s90 28 94 78Z" fill="url(#rings)" opacity="0.6"/>
+  <!-- tabard with sun -->
+  <path d="M96 190h64l-6 66h-52Z" fill="url(#tabard)"/>
+  <circle cx="128" cy="222" r="12" fill="#d8b25a"/>
+  <g stroke="#d8b25a" stroke-width="2.5" stroke-linecap="round">
+    <path d="M128 202v-6M128 242v6M108 222h-6M148 222h6M114 208l-4-4M142 208l4-4"/>
+  </g>
+
+  <!-- neck + face -->
+  <path d="M112 150h32v34h-32Z" fill="#c99674"/>
+  <path d="M128 62c-27 0-40 22-40 48 0 30 18 52 40 52s40-22 40-52c0-26-13-48-40-48Z" fill="url(#skin)"/>
+
+  <!-- short black hair, grey temples -->
+  <path d="M88 104c0-30 16-46 40-46s40 16 40 46c-4-14-10-24-18-28-8 4-36 4-44 0-8 4-14 14-18 28Z" fill="#1c1c22"/>
+  <path d="M88 104c0-8 2-14 4-20l4 22ZM168 104c0-8-2-14-4-20l-4 22Z" fill="#9ea2a8"/>
+
+  <!-- eyes, brows, mouth, jaw stubble -->
+  <path d="M102 104l16 2M138 106l16-2" stroke="#1c1c22" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="111" cy="114" rx="4.6" ry="3" fill="#4a7db5"/>
+  <ellipse cx="145" cy="114" rx="4.6" ry="3" fill="#4a7db5"/>
+  <path d="M117 141h22" stroke="#9a5f50" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M96 128c4 24 18 34 32 34s28-10 32-34c-6 14-18 22-32 22s-26-8-32-22Z" fill="#3a3436" opacity="0.35"/>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

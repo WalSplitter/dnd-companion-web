@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#4a3a5c"/>
+      <stop offset="0.55" stop-color="#221a2e"/>
+      <stop offset="1" stop-color="#0b080f"/>
+    </radialGradient>
+    <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4450"/>
+      <stop offset="1" stop-color="#1f1b24"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8c4a0"/>
+      <stop offset="1" stop-color="#c49a78"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- moon over rooftops -->
+  <circle cx="196" cy="56" r="22" fill="#e8e4d4" opacity="0.8"/>
+  <circle cx="186" cy="50" r="20" fill="#2c2238" opacity="0.9"/>
+  <path d="M0 190l30-26 22 18 28-30 26 22v72H0Z M176 256v-70l26-24 24 20 30-24v98Z" fill="#120d18" opacity="0.8"/>
+
+  <!-- dagger -->
+  <g transform="rotate(-30 196 196)">
+    <path d="M196 140l6 50h-12Z" fill="#d3d7dd"/>
+    <path d="M184 190h24" stroke="#c9a54a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M196 192v18" stroke="#5a3a22" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- hooded cloak, shoulders -->
+  <path d="M48 256c4-44 32-68 80-68s76 24 80 68Z" fill="url(#hood)"/>
+  <path d="M78 128c-6-58 18-88 50-88s56 30 50 88c-8-34-26-56-50-56s-42 22-50 56Z" fill="url(#hood)"/>
+
+  <!-- neck + round face -->
+  <path d="M116 154h24v34h-24Z" fill="#c49a78"/>
+  <path d="M128 72c-24 0-36 20-36 44 0 26 16 46 36 46s36-20 36-46c0-24-12-44-36-44Z" fill="url(#skin)"/>
+
+  <!-- curly black hair -->
+  <g fill="#1a1418">
+    <circle cx="102" cy="96" r="10"/><circle cx="116" cy="86" r="11"/><circle cx="132" cy="84" r="11"/>
+    <circle cx="148" cy="90" r="10"/><circle cx="157" cy="102" r="8"/><circle cx="96" cy="108" r="7"/>
+  </g>
+
+  <!-- pointed halfling ears -->
+  <path d="M94 120c-8-2-12-8-12-14 6 0 12 4 14 8Z" fill="#d6ad88"/>
+  <path d="M162 120c8-2 12-8 12-14-6 0-12 4-14 8Z" fill="#d6ad88"/>
+
+  <!-- eyes (one wink), brows, grin -->
+  <path d="M106 110q7-4 14 0M136 106l14 4" stroke="#1a1418" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <ellipse cx="113" cy="118" rx="4.4" ry="3" fill="#6b4420"/>
+  <path d="M137 119q6-3 12 0" fill="none" stroke="#1a1418" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M116 140q14 10 26-2" fill="none" stroke="#a0564a" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- coin -->
+  <circle cx="64" cy="212" r="10" fill="#d8b25a" stroke="#8a6a24" stroke-width="2"/>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

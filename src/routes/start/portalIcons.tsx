@@ -37,3 +37,15 @@ export function RepoIcon() {
     </svg>
   )
 }
+
+export function PartyIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="portal-float size-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+      <circle cx="13" cy="17" r="4" strokeOpacity="0.6" />
+      <circle cx="35" cy="17" r="4" strokeOpacity="0.6" />
+      <path d="M5 36c0-5 3.5-9 8-9 2 0 3.8.8 5.2 2M43 36c0-5-3.5-9-8-9-2 0-3.8.8-5.2 2" strokeOpacity="0.6" />
+      <circle cx="24" cy="14" r="5" fill="color-mix(in srgb, currentColor 18%, transparent)" />
+      <path d="M14 39c0-7 4.5-12 10-12s10 5 10 12Z" fill="color-mix(in srgb, currentColor 12%, transparent)" />
+    </svg>
+  )
+}

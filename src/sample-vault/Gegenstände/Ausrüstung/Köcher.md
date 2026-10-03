@@ -1,0 +1,17 @@
+---
+tags:
+  - Gegenstand/Ausrüstung
+Kosten: 1 GM
+Plaetze: 1
+Stapelgroesse: 1
+---
+# `=this.file.name`
+> [!infobox]
+> # `=this.file.name`
+> |  |  |
+> | ---- | ---- |
+> | Kosten | `=this.Kosten` |
+> | Plätze | `=this.Plaetze` |
+> | Stapelgröße | `=this.Stapelgroesse` |
+
+Ein Köcher für bis zu 20 Pfeile oder Bolzen. Die Munition darin belegt keinen eigenen Platz (siehe [[Gegenstandsgrößen]]).

@@ -22,8 +22,15 @@ const character = (name: string) => {
 const INTENTIONALLY_UNRESOLVED = /^(embed |.*schaden$)/i
 
 describe('sample vault', () => {
-  it('parses as an Endeavour vault with two characters', () => {
-    expect(vault.characters.map((c) => c.frontmatter.name).sort()).toEqual(['Borin Eisenfaust', 'Elandra Windrider'])
+  it('parses as an Endeavour vault with a full party of six characters', () => {
+    expect(vault.characters.map((c) => c.frontmatter.name).sort()).toEqual([
+      'Aldric von Hohenwacht',
+      'Borin Eisenfaust',
+      'Elandra Windrider',
+      'Fenn Flinkfinger',
+      'Ilsa Morgentau',
+      'Kaelen Dornwacht',
+    ])
     expect(detectRuleset(sampleVaultFiles).ruleset).toBe('endeavour')
   })
 
@@ -43,6 +50,15 @@ describe('sample vault', () => {
     expect(evasionValue(borin)).toBe(12)
     // 7.5 m = 5 squares, minus 1 for exhaustion level 1.
     expect(movementSquares(borin)).toBe(4)
+
+    const pools = (name: string) => {
+      const c = character(name)
+      return [c.hp.max, c.resilience?.max, c.nimble_primary_attributes, evasionValue(c), movementSquares(c)]
+    }
+    expect(pools('Aldric von Hohenwacht')).toEqual([30, 15, ['st', 'en'], 11, 6])
+    expect(pools('Ilsa Morgentau')).toEqual([12, 4, ['in', 'en'], 10, 6])
+    expect(pools('Kaelen Dornwacht')).toEqual([20, 5, ['ge', 'in'], 12, 7])
+    expect(pools('Fenn Flinkfinger')).toEqual([12, 8, ['ge', 'vs'], 13, 5])
   })
 
   it('builds attacks from the linked weapon notes, with the bonus from ST or (Finesse) GE', () => {

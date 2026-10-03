@@ -98,6 +98,8 @@ export interface PlacedMember<T> {
 
 const STAGE_PAD_X = 16
 const STAGE_PAD_TOP = 28
+/** Height of the band across the top of the stage where the enemy stands, facing the front line. */
+export const ENEMY_BAND_HEIGHT = 132
 const STAGE_PAD_BOTTOM = 16
 const MIN_GAP_X = 12
 const GAP_Y = 18
@@ -131,8 +133,8 @@ function collides<T>(a: Line<T>, b: Line<T>): boolean {
 }
 
 /**
- * Places the party on the formation stage, seen from behind: the front line at the top, facing the
- * enemy (furthest from the viewer, smallest), the back line at the bottom (closest, largest). Each line spreads its members wide and, where that avoids
+ * Places the party on the formation stage, seen from behind: the front line at the top, below the
+ * enemy band (`enemyBand` px tall) and facing it (furthest from the viewer, smallest), the back line at the bottom (closest, largest). Each line spreads its members wide and, where that avoids
  * a clash, shifts sideways into the gaps of the line before, so consecutive lines can slide halfway
  * into each other — a diamond for 1/2/1, a diagonal for two lone members. Lines that would still
  * overlap keep their full distance. A small per-character offset keeps it from looking gridded.
@@ -141,8 +143,9 @@ export function layoutFormation<T>(
   ranks: { rank: FormationRank; members: T[] }[],
   stageWidth: number,
   seedOf: (entry: T) => string,
-): { placed: PlacedMember<T>[]; height: number } {
+): { placed: PlacedMember<T>[]; height: number; enemyBand: number } {
   const scale = stageWidth < NARROW_STAGE ? NARROW_SCALE : 1
+  const enemyBand = ENEMY_BAND_HEIGHT * scale
   const usable = Math.max(0, stageWidth - 2 * STAGE_PAD_X)
   const lines: Line<T>[] = []
 
@@ -156,7 +159,7 @@ export function layoutFormation<T>(
       const slot = Math.min(width * SLOT_FACTOR, usable / chunk.length)
       const first = (stageWidth - slot * chunk.length) / 2 + slot / 2
       const centred = chunk.map((_, i) => first + i * slot)
-      const line: Line<T> = { rank, members: chunk, xs: centred, y: STAGE_PAD_TOP, width, height }
+      const line: Line<T> = { rank, members: chunk, xs: centred, y: enemyBand + STAGE_PAD_TOP, width, height }
 
       const previous = lines.at(-1)
       if (previous && collides(previous, line)) {
@@ -203,5 +206,5 @@ export function layoutFormation<T>(
     }),
   )
   const height = lines.reduce((max, line) => Math.max(max, line.y + line.height), 0) + STAGE_PAD_BOTTOM
-  return { placed, height }
+  return { placed, height, enemyBand }
 }

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#3f6b3a"/>
+      <stop offset="0.55" stop-color="#1d3520"/>
+      <stop offset="1" stop-color="#0a140b"/>
+    </radialGradient>
+    <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f6b34"/>
+      <stop offset="1" stop-color="#25361a"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3bf98"/>
+      <stop offset="1" stop-color="#bf9370"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a5530"/>
+      <stop offset="1" stop-color="#4f2e18"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- tree silhouettes -->
+  <g fill="#0f1f10" opacity="0.7">
+    <path d="M18 256V150l-14 0 22-40-14 0 24-44 24 44-14 0 22 40-14 0v106Z"/>
+    <path d="M206 256V160l-12 0 20-36-12 0 22-40 22 40-12 0 20 36-12 0v96Z"/>
+  </g>
+
+  <!-- bow behind the shoulder -->
+  <path d="M190 30c40 50 40 150 0 200" fill="none" stroke="#8a5a2a" stroke-width="6" stroke-linecap="round"/>
+  <path d="M190 30v200" stroke="#e8e0c8" stroke-width="1.2" opacity="0.8"/>
+
+  <!-- hair behind -->
+  <path d="M86 98c-6 40 0 84 8 112h68c8-28 14-72 8-112-6-34-78-34-84 0Z" fill="url(#hair)"/>
+
+  <!-- hooded cloak -->
+  <path d="M38 256c4-46 34-72 90-72s86 26 90 72Z" fill="url(#hood)"/>
+  <path d="M74 120c-4-60 22-90 54-90s58 30 54 90c-8-36-28-58-54-58s-46 22-54 58Z" fill="url(#hood)"/>
+  <path d="M120 200l8 10 8-10" fill="none" stroke="#c9a54a" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- neck + face -->
+  <path d="M114 150h28v36h-28Z" fill="#bf9370"/>
+  <path d="M128 62c-25 0-38 21-38 47 0 30 17 51 38 51s38-21 38-51c0-26-13-47-38-47Z" fill="url(#skin)"/>
+
+  <!-- elven ears -->
+  <path d="M92 106c-10-6-18-16-22-28 10 4 20 12 26 20Z" fill="#d9b08c"/>
+  <path d="M164 106c10-6 18-16 22-28-10 4-20 12-26 20Z" fill="#d9b08c"/>
+
+  <!-- hair front with feather -->
+  <path d="M90 104c2-28 16-42 38-42s36 14 38 42c-10-14-22-22-38-24-16 2-28 10-38 24Z" fill="url(#hair)"/>
+  <path d="M164 96c10 10 14 26 10 42-6-12-10-26-10-42Z" fill="#d8d0b0"/>
+
+  <!-- eyes, brows, mouth -->
+  <path d="M104 106l15 1M137 107l15-1" stroke="#4f2e18" stroke-width="2.4" stroke-linecap="round"/>
+  <ellipse cx="112" cy="115" rx="4.6" ry="3" fill="#3f8a3a"/>
+  <ellipse cx="144" cy="115" rx="4.6" ry="3" fill="#3f8a3a"/>
+  <path d="M120 141h16" stroke="#9a6450" stroke-width="2.2" stroke-linecap="round"/>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

@@ -132,8 +132,9 @@ one of the three cards on the start page:
 3. **Open from a repository** for a vault [on GitHub](#from-a-github-repository).
 
 > [!TIP]
-> The sample is a small German "Endeavour" player vault: an Arkanistin with a spell sheet and a
-> Krieger with exhaustion and temporary HP, with inventories, portraits, class, rule and item notes
+> The sample is a small German "Endeavour" player vault with a balanced party of six: an Arkanistin
+> and a Klerikerin with spell sheets, a Krieger with exhaustion and temporary HP, a Paladin, a
+> Waldläufer and a Gauner, with inventories, portraits, class, rule and item notes
 > ([`src/sample-vault/`](src/sample-vault)). Editing is always on there so every control can be tried,
 > but nothing is saved: a reload or the **Reset** button next to the "Demo" badge restores it.
 

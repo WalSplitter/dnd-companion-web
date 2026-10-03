@@ -9,6 +9,7 @@ import type { CharacterFrontmatter, VaultFile } from '../../vault/types'
 import { characterFate } from '../character-sheet/vitals'
 import { FallenSeal, LifeForce, VitalStatus } from './CharacterParts'
 import { formationRanks, layoutFormation, type FormationRank } from './formation'
+import { FormationEnemy } from './FormationEnemy'
 
 /** Portraits shrink towards the front line (furthest from the viewer), so the formation reads as
  * standing in depth. */
@@ -44,7 +45,7 @@ function useWidth(ref: RefObject<HTMLElement | null>): number {
 
 /**
  * The party standing in battle formation on a lit stage, seen over their shoulders — the front line
- * (armored melee) at the top facing the enemy, the back line (full casters) at the bottom nearest
+ * (armored melee) at the top facing the enemy drawn across the stage's top edge (`FormationEnemy`), the back line (full casters) at the bottom nearest
  * the viewer, the middle in between (see `formationRank`). `layoutFormation` places everyone freely: staggered into each other's gaps,
  * a little off-grid, never overlapping.
  */
@@ -53,13 +54,14 @@ export function PartyFormation({ characters }: { characters: VaultFile<Character
   const stageRef = useRef<HTMLDivElement>(null)
   const width = useWidth(stageRef)
   const ranks = formationRanks(characters, (c) => c.frontmatter)
-  const { placed, height } = layoutFormation(ranks, width, (c) => c.path)
+  const { placed, height, enemyBand } = layoutFormation(ranks, width, (c) => c.path)
   // Entrance stagger runs front to back.
   const order = [...placed].sort((a, b) => a.depth - b.depth || a.x - b.x)
 
   return (
     <div ref={stageRef} className="formation-stage rpg-panel" style={{ height: width ? height : undefined }}>
       <div aria-hidden className="formation-floor" />
+      {width > 0 && <FormationEnemy height={enemyBand} />}
       {width > 0 &&
         placed.map((member) => (
           <div
