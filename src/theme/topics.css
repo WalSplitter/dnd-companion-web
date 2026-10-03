@@ -78,6 +78,13 @@
 .ambient-flyby.is-rtl > .ambient-flyby-art {
   scale: -1 1;
 }
+/* A flyby's limbs animate inside its svg, so a glow or shadow around it is redrawn every frame.
+ * Touch devices drop it; the figure itself stays. Specific enough to beat each kind's `filter`. */
+@media (hover: none) {
+  [data-theme] .ambient-flybys > .ambient-flyby {
+    filter: none;
+  }
+}
 @keyframes flyby-ltr {
   from {
     translate: -100% 0;
@@ -679,10 +686,11 @@
   left: 0;
   width: calc(80px + var(--r2) * 70px);
   opacity: 0.95;
-  filter: drop-shadow(0 4px 10px rgb(157 91 210 / 0.18));
   animation: cloud-drift calc(70s + var(--r2) * 50s) linear calc(var(--r3) * -120s) infinite;
 }
+/* The shadow rides on the bobbing svg, so it is drawn once instead of around a moving child. */
 [data-theme='unicorn'] .ambient-cloud > svg {
+  filter: drop-shadow(0 4px 10px rgb(157 91 210 / 0.18));
   animation: cloud-bob calc(3s + var(--r1) * 2s) ease-in-out infinite alternate;
 }
 @keyframes cloud-drift {

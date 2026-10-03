@@ -357,11 +357,13 @@
   left: calc(var(--r3) * 92%);
   width: calc(40px + var(--r2) * 50px);
   color: var(--color-trim);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-trim) 60%, transparent));
   opacity: 0;
   animation: rune-fade calc(14s + var(--r2) * 10s) ease-in-out calc(var(--r1) * -24s) infinite;
 }
+/* The glow sits on the turning svg, not its parent: a filter around a moving child is redrawn every
+ * frame, while one on the moving layer itself is drawn once (a centred glow looks the same turned). */
 [data-theme='arkanist'] .ambient-rune > svg {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-trim) 60%, transparent));
   animation: rune-turn 40s linear infinite;
 }
 @keyframes rune-fade {
@@ -928,15 +930,15 @@
   left: calc(var(--r3) * 92%);
   width: calc(36px + var(--r2) * 40px);
   color: var(--color-primary);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-primary) 70%, transparent));
   opacity: 0;
   animation: sigil-flare calc(12s + var(--r2) * 10s) ease-in-out calc(var(--r1) * -22s) infinite;
 }
 [data-theme='fluchwirker'] .ambient-sigil:nth-child(odd) {
   color: var(--color-accent);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 70%, transparent));
 }
+/* Glow on the turning svg itself, as with the arkanist runes; it follows the sigil's colour. */
 [data-theme='fluchwirker'] .ambient-sigil > svg {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 70%, transparent));
   animation: rune-turn 50s linear infinite reverse;
 }
 @keyframes sigil-flare {

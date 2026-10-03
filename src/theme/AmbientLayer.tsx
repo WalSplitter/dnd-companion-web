@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { AMBIENT_ART, type AmbientArtKind } from './ambientArt'
 import { useThemeStore, type ThemeName } from './themeStore'
 
@@ -57,6 +57,24 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
 
 /** Seconds until the first flyby after switching to a theme, so it shows up soon. */
 const FIRST_FLYBY: [number, number] = [4, 12]
+
+/** Touch devices (phones, tablets) without a hovering pointer: weaker GPUs that also scroll the page
+ * over the scene, so they get half the particles. */
+const TOUCH_QUERY = '(hover: none)'
+
+function subscribeTouch(onChange: () => void) {
+  const query = window.matchMedia(TOUCH_QUERY)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+function useIsTouch(): boolean {
+  return useSyncExternalStore(
+    subscribeTouch,
+    () => window.matchMedia(TOUCH_QUERY).matches,
+    () => false,
+  )
+}
 
 /** Deterministic 0..1 noise, so particles keep their spots across re-renders. */
 function noise(seed: number): number {
@@ -134,13 +152,16 @@ function Flybys({ kinds, gap }: NonNullable<AmbientScene['flybys']>) {
 export function AmbientLayer() {
   const theme = useThemeStore((s) => s.theme)
   const effects = useThemeStore((s) => s.effects)
+  const touch = useIsTouch()
   const scene = effects ? SCENES[theme] : undefined
   if (!scene) return null
+  // Keeping the first half preserves each theme's `nth-child` mix of particle kinds.
+  const particles = Math.ceil((scene.particles ?? 0) / (touch ? 2 : 1))
 
   return (
     <>
       <div className="ambient-layer" aria-hidden>
-        {Array.from({ length: scene.particles ?? 0 }, (_, i) => (
+        {Array.from({ length: particles }, (_, i) => (
           <span key={`${theme}-${i}`} className="ambient-particle" style={randomVars(i + 1)} />
         ))}
         {scene.sprites?.map(({ kind, count }, k) =>
