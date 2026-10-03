@@ -661,5 +661,4 @@ export const en = {
   'a11y.luckPoint': 'Luck point {{n}}',
   'a11y.exhaustionLevel': 'Exhaustion level {{n}}',
   'a11y.spellSlot': 'Level {{level}} slot {{n}}',
-  'a11y.manaPoint': 'Mana point {{n}}',
 } as const

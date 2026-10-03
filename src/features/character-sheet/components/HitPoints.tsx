@@ -7,7 +7,7 @@ import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { hpFillClass, maxExhaustion, percentOf, resiliencePool, stepWithin } from '../vitals'
-import { ManaIcon } from '../../spells/components/ManaVessel'
+import { ManaIcon } from '../../spells/components/ManaIcon'
 import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
 

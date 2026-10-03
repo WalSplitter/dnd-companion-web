@@ -5,7 +5,7 @@ import { exhaustionLevel, totalCharacterLevel } from '../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../vault/types'
 import { ExhaustionGlyph } from '../character-sheet/components/VitalPools'
 import { hpFillClass, maxExhaustion, percentOf, resiliencePool } from '../character-sheet/vitals'
-import { ManaIcon } from '../spells/components/ManaVessel'
+import { ManaIcon } from '../spells/components/ManaIcon'
 
 // Pieces of a party member shared by the card, the list row, the lineup and the comparison table.
 

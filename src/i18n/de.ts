@@ -636,5 +636,4 @@ export const de = {
   'a11y.luckPoint': 'Glückspunkt {{n}}',
   'a11y.exhaustionLevel': 'Erschöpfungsstufe {{n}}',
   'a11y.spellSlot': 'Zauberplatz Grad {{level}}, Platz {{n}}',
-  'a11y.manaPoint': 'Manapunkt {{n}}',
 } satisfies Record<keyof typeof en, string>
