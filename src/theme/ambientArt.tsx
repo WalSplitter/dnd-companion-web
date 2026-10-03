@@ -4,90 +4,6 @@ import type { ReactNode } from 'react'
  * colours live in `topics.css`: parts that move carry a class, colours that follow the palette
  * come in as `currentColor` or a custom property. */
 
-/** A column of tomb glyphs: circles, crescents, bars and dots in a thin frame, glowing green. */
-const glyph = (
-  <svg viewBox="0 0 24 72" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
-    <path d="M3 2h18v68H3Z" strokeWidth="1" opacity="0.5" />
-    <circle cx="12" cy="11" r="5" />
-    <circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none" />
-    <path d="M6 22q6 8 12 0" />
-    <path d="M7 30h10M9 34h6" />
-    <path d="M12 38l6 9H6Z" />
-    <path d="M12 52v8M7 56h10" />
-    <circle cx="8" cy="65" r="1.2" fill="currentColor" stroke="none" />
-    <circle cx="16" cy="65" r="1.2" fill="currentColor" stroke="none" />
-  </svg>
-)
-
-/** A scarab drone seen from above, heading right: metal shell, green eye, clicking legs. */
-const scarab = (
-  <svg viewBox="0 0 40 30">
-    <g className="scarab-legs" stroke="#6f7d7b" strokeWidth="1.6" strokeLinecap="round" fill="none">
-      <path d="M14 8l-4-6M20 7l0-6M26 8l4-6M14 22l-4 6M20 23l0 6M26 22l4 6" />
-    </g>
-    <ellipse cx="18" cy="15" rx="13" ry="9" fill="#9aa8a6" stroke="#3b4b49" strokeWidth="1.2" />
-    <path d="M6 15h24" stroke="#3b4b49" strokeWidth="1.2" />
-    <path d="M10 10q8-3 16 0M10 20q8 3 16 0" stroke="#dfe7e6" strokeWidth="0.8" fill="none" opacity="0.7" />
-    <path d="M30 9l7 6-7 6Z" fill="#6f7d7b" stroke="#3b4b49" strokeWidth="1" />
-    <circle className="scarab-eye" cx="33" cy="15" r="1.8" fill="var(--color-primary)" />
-  </svg>
-)
-
-/** A living-metal warrior marching to the right, rifle levelled, spine and eyes aglow. */
-const android = (
-  <svg viewBox="0 0 84 120" fill="none" strokeLinecap="square" strokeLinejoin="round">
-    <g className="android-body">
-      <path d="M24 4h16l4 6v10l-4 6H26l-4-6V10Z" fill="#aab6b4" stroke="#3b4b49" strokeWidth="1" />
-      <path d="M26 20h12M26 23h12" stroke="#3b4b49" strokeWidth="1" />
-      <g className="android-eyes" fill="var(--color-primary)">
-        <path d="M27 11h6v3h-6Z" />
-        <path d="M35 11h6v3h-6Z" />
-      </g>
-      <path d="M32 26v5" stroke="#6f7d7b" strokeWidth="3" />
-      <path d="M18 32h28" stroke="#aab6b4" strokeWidth="4" />
-      <path d="M22 39h20M23 45h18M25 51h14" stroke="#8d9a98" strokeWidth="3" />
-      <path d="M32 31v31" stroke="var(--color-primary)" strokeWidth="2" className="android-core" />
-      <path d="M24 62h16l-4 7h-8Z" fill="#8d9a98" stroke="#3b4b49" strokeWidth="1" />
-      <path d="M20 33l8 16 10 4M44 33l8 12 8 4" stroke="#aab6b4" strokeWidth="3" />
-      <path d="M30 51h52" stroke="#2b3533" strokeWidth="6" />
-      <path d="M36 51h42" stroke="var(--color-primary)" strokeWidth="1.4" className="android-core" />
-      <path d="M78 46l6 5-6 5Z" fill="#aab6b4" />
-    </g>
-    <g className="android-leg-back">
-      <path d="M28 68l-2 22 1 22h7" stroke="#8d9a98" strokeWidth="3.4" />
-    </g>
-    <g className="android-leg-front">
-      <path d="M36 68l2 22-1 22h7" stroke="#aab6b4" strokeWidth="3.4" />
-    </g>
-  </svg>
-)
-
-/** A crescent tomb ship gliding to the right, hull spines and lights aglow. */
-const crescentShip = (
-  <svg viewBox="0 0 200 80">
-    <path d="M26 30l-4-16 10 12M60 44l-2-18 8 16M100 50l0-22 6 21M140 48l4-20 2 19" fill="#2b3533" />
-    <path d="M6 14C30 72 150 84 196 30 150 60 70 58 6 14Z" fill="#141b1c" stroke="#6f7d7b" strokeWidth="1.2" />
-    <path
-      d="M18 30C50 62 140 70 186 38"
-      fill="none"
-      stroke="var(--color-primary)"
-      strokeWidth="1"
-      strokeDasharray="2 6"
-      opacity="0.9"
-    />
-    <ellipse
-      className="ship-engine"
-      cx="16"
-      cy="26"
-      rx="8"
-      ry="4"
-      fill="var(--color-primary)"
-      opacity="0.8"
-      transform="rotate(35 16 26)"
-    />
-  </svg>
-)
-
 /** Pixel art from rows of palette keys ('.' stays empty), one crisp path per colour. */
 function pixels(rows: string[], palette: Record<string, string>): ReactNode {
   const runs: Record<string, string> = {}
@@ -401,11 +317,132 @@ const glint = (
   </svg>
 )
 
+/* ---------- class themes ---------- */
+
+/** A curse sigil: a thorned ring around a slit-pupilled eye. */
+const sigil = (
+  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeLinejoin="round">
+    <circle cx="24" cy="24" r="17" strokeWidth="1.2" />
+    <path d="M24 3l2.5 4h-5zM24 45l-2.5-4h5zM3 24l4-2.5v5zM45 24l-4 2.5v-5z" fill="currentColor" stroke="none" />
+    <path d="M12 24q12-11 24 0q-12 11-24 0z" strokeWidth="1.4" />
+    <ellipse cx="24" cy="24" rx="1.8" ry="4.4" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+/** One hooded minion of the horde, facing right, eyes aglow. */
+function minion(x: number, scale: number, extra?: ReactNode) {
+  return (
+    <g transform={`translate(${x} ${60 - 36 * scale}) scale(${scale})`}>
+      <g className="minion">
+        <path d="M2 36q0-22 8-30l3-6 2 7q7 6 7 29z" fill="var(--minion-cloak)" />
+        <path d="M9 14q4-3 9 0v6q-4 3-9 0z" fill="#07050a" />
+        <circle className="minion-eyes" cx="12" cy="17" r="1.3" fill="var(--color-primary)" />
+        <circle className="minion-eyes" cx="16" cy="17" r="1.3" fill="var(--color-primary)" />
+        {extra}
+      </g>
+    </g>
+  )
+}
+
+/** The horde shuffling along: four minions, one dragging a shovel, the little one at the back
+ * holding a flower (absolutely NOT evil). */
+const horde = (
+  <svg viewBox="0 0 150 62" overflow="visible">
+    {minion(
+      0,
+      0.62,
+      <g>
+        <path d="M14 25L19 13" stroke="#6fbf5a" strokeWidth="1.4" />
+        <circle cx="19.5" cy="11.5" r="2.6" fill="#f472b6" />
+        <circle cx="19.5" cy="11.5" r="1" fill="#fde047" />
+      </g>,
+    )}
+    {minion(26, 1)}
+    {minion(56, 0.9, <path d="M20 24l14 12M32 34l4 2-1 3-4-2z" stroke="#9a8fa8" strokeWidth="1.8" fill="none" strokeLinecap="round" />)}
+    {minion(96, 1.05)}
+    {minion(124, 0.82)}
+  </svg>
+)
+
+/** An arcane circle: two rings, a triangle of the three elements and tick marks, slowly turning. */
+const rune = (
+  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <circle cx="24" cy="24" r="21" />
+    <circle cx="24" cy="24" r="16" strokeDasharray="3 2.5" />
+    <path d="M24 9L37 31.5H11Z" />
+    <circle cx="24" cy="24" r="4.5" />
+    <path d="M24 1v4M24 43v4M1 24h4M43 24h4" strokeWidth="1.6" />
+  </svg>
+)
+
+/** A pair of eyes glinting in the dark, blinking now and then. */
+const eyes = (
+  <svg viewBox="0 0 40 12">
+    <g className="eyes-lids" fill="currentColor">
+      <path d="M2 6q6-6 12 0q-6 4-12 0Z" />
+      <path d="M26 6q6-6 12 0q-6 4-12 0Z" />
+    </g>
+  </svg>
+)
+
+/** A soul wisp: a glowing head trailing a wavering tail. */
+const wisp = (
+  <svg viewBox="0 0 60 24" overflow="visible">
+    <path
+      className="wisp-tail"
+      d="M44 12C34 4 24 18 14 10S2 12 0 14C8 16 20 22 30 16S42 16 44 12Z"
+      fill="currentColor"
+      opacity="0.35"
+    />
+    <circle cx="48" cy="12" r="7" fill="currentColor" opacity="0.35" />
+    <circle cx="48" cy="12" r="4" fill="currentColor" />
+  </svg>
+)
+
+/** A gust of wind: three curling brush strokes. */
+const gust = (
+  <svg viewBox="0 0 120 40" fill="none" stroke="currentColor" strokeLinecap="round">
+    <path d="M2 14H70q14 0 14-8t-8-6q-6 1-6 6" strokeWidth="2.2" />
+    <path d="M18 24H96q12 0 12 7t-8 6" strokeWidth="1.6" />
+    <path d="M30 32H62" strokeWidth="1.2" />
+  </svg>
+)
+
+/** A forked lightning bolt for the storm overhead. */
+const bolt = (
+  <svg viewBox="0 0 40 120" fill="none" stroke="currentColor" strokeLinejoin="round" strokeLinecap="round">
+    <path d="M24 0L16 30L26 36L12 70L20 74L8 120" strokeWidth="2.6" />
+    <path d="M26 36L34 56M12 70L4 84" strokeWidth="1.4" />
+  </svg>
+)
+
+/** A troop marker on the battle map: a chevron heading right. */
+const marker = (
+  <svg viewBox="0 0 20 20">
+    <path d="M4 3L16 10L4 17L7 10Z" fill="currentColor" />
+  </svg>
+)
+
+/** A ping on the map: an order given somewhere. */
+const ping = (
+  <svg viewBox="0 0 40 40" fill="none" stroke="currentColor">
+    <circle className="ping-ring" cx="20" cy="20" r="18" strokeWidth="1.4" />
+    <circle cx="20" cy="20" r="2.5" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+/** A hawk gliding to the right, wings beating now and then. */
+const hawk = (
+  <svg viewBox="0 0 80 40" fill="currentColor">
+    <g className="hawk-wings">
+      <path d="M36 20C28 8 14 4 2 6c10 4 18 9 24 16Z" />
+      <path d="M44 20C48 8 56 2 66 0c-6 6-10 12-12 20Z" />
+    </g>
+    <path d="M22 22q14-6 34-3l8-2 6 3-6 2q-8 4-20 4l-10 6-4-1 4-6q-8 0-12-3Z" />
+  </svg>
+)
+
 export const AMBIENT_ART = {
-  glyph,
-  scarab,
-  android,
-  'crescent-ship': crescentShip,
   glint,
   'pixel-cloud': pixelCloud,
   'pixel-dragon': pixelDragon,
@@ -414,6 +451,16 @@ export const AMBIENT_ART = {
   heart,
   cloud,
   santa,
+  rune,
+  eyes,
+  wisp,
+  gust,
+  bolt,
+  marker,
+  ping,
+  hawk,
+  sigil,
+  horde,
 } satisfies Record<string, ReactNode>
 
 export type AmbientArtKind = keyof typeof AMBIENT_ART

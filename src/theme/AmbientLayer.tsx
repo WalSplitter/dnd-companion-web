@@ -13,13 +13,24 @@ interface AmbientScene {
 
 /** What each topic theme puts on screen; the look and motion of each piece lives in `topics.css`. */
 const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
-  necromancer: {
-    particles: 18,
+  arkanist: { particles: 24, sprites: [{ kind: 'rune', count: 5 }] },
+  berserker: { particles: 34 },
+  gauner: { particles: 7, sprites: [{ kind: 'eyes', count: 4 }] },
+  kleriker: { particles: 18, flybys: { kinds: ['wisp'], gap: [16, 40] } },
+  moench: { particles: 14, sprites: [{ kind: 'gust', count: 3 }] },
+  naturalist: { particles: 40, sprites: [{ kind: 'bolt', count: 2 }] },
+  paladin: { particles: 22, sprites: [{ kind: 'glint', count: 7 }] },
+  taktiker: {
     sprites: [
-      { kind: 'glyph', count: 7 },
-      { kind: 'scarab', count: 6 },
+      { kind: 'marker', count: 6 },
+      { kind: 'ping', count: 3 },
     ],
-    flybys: { kinds: ['android', 'crescent-ship'], gap: [18, 45] },
+  },
+  waldlaeufer: { particles: 20, flybys: { kinds: ['hawk'], gap: [18, 45] } },
+  fluchwirker: {
+    particles: 22,
+    sprites: [{ kind: 'sigil', count: 5 }],
+    flybys: { kinds: ['horde'], gap: [16, 40] },
   },
   pixelquest: {
     particles: 16,

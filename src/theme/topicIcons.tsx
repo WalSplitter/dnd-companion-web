@@ -108,3 +108,92 @@ export function SparklesIcon(props: IconProps) {
     </Icon>
   )
 }
+
+/* ---------- class themes ---------- */
+
+export function OrbIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="13" r="7" />
+      <path d="M13 8.5l-2.6 4.5h3.2l-2.6 4.5" />
+      <path d="M18.5 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" />
+    </Icon>
+  )
+}
+
+export function AxeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3v18" />
+      <path d="M12 5.5C8.5 3.5 5 4.5 4 8.5c1 4 4.5 5 8 3" />
+      <path d="M12 5.5c3.5-2 7-1 8 3-1 4-4.5 5-8 3" />
+    </Icon>
+  )
+}
+
+export function DaggerIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2.5l2 3.5v9h-4V6z" />
+      <path d="M7 15h10M12 15v4.5" />
+      <circle cx="12" cy="21" r="1.2" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+export function ScalesIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5v15M8 20h8M5 7h14" />
+      <circle cx="12" cy="4" r="1" fill="currentColor" stroke="none" />
+      <path d="M5 7l-2.5 6h5zM19 7l-2.5 6h5z" />
+    </Icon>
+  )
+}
+
+export function EnsoIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19.5 9.5A8 8 0 1 0 17.6 17.8" strokeWidth="2.2" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+export function StormLeafIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 19.5C4.5 10 10.5 4 20 4c0 9.5-6 15.5-15.5 15.5z" />
+      <path d="M14.5 8l-3 4.5h3l-3.5 4.5" />
+    </Icon>
+  )
+}
+
+export function ShieldCrossIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z" />
+      <path d="M12 7.5v9M8.5 11h7" />
+    </Icon>
+  )
+}
+
+export function BannerIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 3v18" />
+      <path d="M6 4.5h12l-3 4 3 4H6" />
+      <path d="M4 21h4" />
+    </Icon>
+  )
+}
+
+export function BowIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 3c8 3 8 15 0 18" />
+      <path d="M7 3v18" strokeWidth="1" />
+      <path d="M3 12h17M17 9.5l3.5 2.5-3.5 2.5M4.5 10.5L6 12l-1.5 1.5" />
+    </Icon>
+  )
+}

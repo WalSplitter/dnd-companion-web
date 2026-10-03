@@ -44,6 +44,11 @@ export const en = {
 
   // Theme switcher
   'theme.ariaLabelSuffix': 'theme',
+  'theme.choose': 'Choose theme',
+  'theme.group.basic': 'Basics',
+  'theme.group.class': 'Classes',
+  'theme.group.world': 'Worlds',
+  'theme.group.season': 'Seasons',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
   'theme.parchment': 'Parchment',
@@ -53,7 +58,16 @@ export const en = {
   'theme.red': 'Red',
   'theme.green': 'Green',
   'theme.blue': 'Blue',
-  'theme.necromancer': 'Necromancer',
+  'theme.arkanist': 'Arcanist',
+  'theme.berserker': 'Berserker',
+  'theme.fluchwirker': 'Hexweaver',
+  'theme.gauner': 'Rogue',
+  'theme.kleriker': 'Cleric',
+  'theme.moench': 'Monk',
+  'theme.naturalist': 'Naturalist',
+  'theme.paladin': 'Paladin',
+  'theme.taktiker': 'Tactician',
+  'theme.waldlaeufer': 'Ranger',
   'theme.halloween': 'Halloween',
   'theme.pixelquest': 'Pixel Quest',
   'theme.dragon': 'Dragon Hoard',
@@ -61,7 +75,7 @@ export const en = {
   'theme.christmas': 'Christmas',
   'theme.summer': 'Summer',
   'theme.spring': 'Spring',
-  'theme.effects': 'Animated effects of topic themes',
+  'theme.effects': 'Animated effects',
 
   // Language switcher
   'language.ariaLabel': 'Language',
