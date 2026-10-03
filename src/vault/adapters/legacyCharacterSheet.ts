@@ -19,7 +19,7 @@ import type {
 import { abilityModifier } from '../deriveStats'
 import { resolveBiography } from './biography'
 import { extractItemTable } from './markdownTable'
-import type { ImageAssets } from '../vaultLoader'
+import type { ImageAssets } from '../types'
 
 /**
  * Adapter for the "Character Sheet Vorlage" format used by an existing campaign vault

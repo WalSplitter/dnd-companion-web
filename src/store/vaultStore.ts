@@ -21,12 +21,11 @@ import {
   readVaultFromDirectoryHandle,
   readVaultFromFileList,
   showVaultDirectoryPicker,
-  type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
 import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */

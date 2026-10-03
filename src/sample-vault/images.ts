@@ -1,4 +1,4 @@
-import type { ImageAssets } from '../vault/vaultLoader'
+import type { ImageAssets } from '../vault/types'
 
 const images = import.meta.glob('./**/*.{svg,png,jpg,jpeg,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 
