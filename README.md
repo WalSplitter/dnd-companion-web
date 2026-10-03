@@ -7,7 +7,7 @@
 
 # D&D Companion
 
-**A D&D character sheet that lives inside your Obsidian vault.**
+**A D&D character sheet that lives inside your Obsidian vault, and at your Owlbear Rodeo table.**
 
 Point it at your vault, a folder on your device or your group's GitHub repository,<br>
 and your characters, items and spells turn into an interactive sheet.<br>
@@ -20,16 +20,17 @@ No server · no database · no account.
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
 
-[Features](#features) · [Themes](#themes) · [Quick start](#quick-start) · [Opening your vault](#opening-your-vault) ·
-[Syncing with GitHub](#syncing-with-github) · [Browser support](#browser-support) ·
-[Vault formats](#vault-formats) · [Development](#development) · [Roadmap](#roadmap)
+[Features](#features) · [Quick start](#quick-start) · [Opening your vault](#opening-your-vault) ·
+[Syncing with GitHub](#syncing-with-github) · [Owlbear Rodeo](#playing-in-owlbear-rodeo) ·
+[Browser support](#browser-support) · [Vault formats](#vault-formats) · [Look and feel](#look-and-feel) ·
+[Development](#development) · [Roadmap](#roadmap)
 
 </div>
 
 <br>
 
 <p align="center">
-  <img src="docs/media/themes-showcase.webp" width="900" alt="The D&D Companion start page cycling through the dark, light, Shadow Master, Halloween, Unicorn, Spring and Summer themes" />
+  <img src="docs/media/theme-dark.webp" width="720" alt="The D&D Companion start page: continue with the last vault, open a vault folder, or explore the sample vault" />
 </p>
 
 ## Features
@@ -38,7 +39,7 @@ No server · no database · no account.
 <tr>
 <th width="33%">🎲 On the sheet</th>
 <th width="33%">📜 With your vault</th>
-<th width="33%">🏰 Around it</th>
+<th width="33%">🏰 At the table</th>
 </tr>
 <tr>
 <td valign="top">
@@ -72,54 +73,23 @@ Failed writes are rolled back.
 </td>
 <td valign="top">
 
-**Picks up where you left off.** Reopen a recent vault straight at the last character.
+**In Owlbear Rodeo.** Runs as an extension next to the map. HP, temp HP, resilience and AC of
+linked tokens are live for the whole group, in sync with the Clash! combat tracker
+([details](#playing-in-owlbear-rodeo)).
 
 **The whole party.** Cards, a compact list or a lineup by front, middle and back line, plus a
 comparison of everyone's values.
 
-**Easy navigation.** Breadcrumbs to the list and start page; step between characters.
+**Picks up where you left off.** Reopen a recent vault straight at the last character; step
+between characters from the breadcrumbs.
 
-**Themes and languages.** Eight colour themes and seven animated [topic themes](#themes); English
-and German.
+**Yours to style.** Colour palettes, class and topic [themes](#look-and-feel); English and German.
 
-**Fast and light.** A static bundle; the start page loads only itself. The vault pages, the sample vault and the GitHub connection are separate chunks, fetched in the background or on first use.
+**Fast and light.** A static bundle; the start page loads only itself. Everything else is fetched
+in the background or on first use.
 
 </td>
 </tr>
-</table>
-
-## Themes
-
-Pick a theme from the swatch button in the header. Besides eight colour palettes there are seven
-**topic themes** that bring their own backdrop, panel ornaments and a subtle ambient animation:
-drifting souls, bats, snow, falling petals, an 8-bit knight. The sparkle button next to them switches the animation
-off; it also stays off for anyone who has *reduce motion* set in their system.
-
-<table>
-  <tr>
-    <td width="25%"><img src="docs/media/theme-dark.webp" alt="Dark theme" /></td>
-    <td width="25%"><img src="docs/media/theme-light.webp" alt="Light theme" /></td>
-    <td width="25%"><img src="docs/media/theme-pixelquest.webp" alt="Pixel Quest theme with pixel type, console-RPG panels and drifting 8-bit storm clouds" /></td>
-    <td width="25%"><img src="docs/media/theme-halloween.webp" alt="Halloween theme with a full moon and bats" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Dark</sub></td>
-    <td align="center"><sub>Light</sub></td>
-    <td align="center"><sub>🏰 Pixel Quest</sub></td>
-    <td align="center"><sub>🎃 Halloween</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/media/theme-unicorn.webp" alt="Unicorn theme with twinkling rainbow sparkles" /></td>
-    <td><img src="docs/media/theme-spring.webp" alt="Spring theme with falling cherry blossom petals" /></td>
-    <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
-    <td><img src="docs/media/theme-more.svg" alt="Ten more themes: the Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus the Necromancer, Dragon Hoard and Christmas topic themes" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>🦄 Unicorn</sub></td>
-    <td align="center"><sub>🌸 Spring</sub></td>
-    <td align="center"><sub>☀️ Summer</sub></td>
-    <td align="center"><sub>✨ …and ten more</sub></td>
-  </tr>
 </table>
 
 ## Quick start
@@ -305,6 +275,80 @@ Via: D&D Companion <https://github.com/WalSplitter/dnd-companion-web>
 - **Remove from list** on the start page forgets the repository and its token. Revoke a token on
   GitHub when you no longer need it.
 
+## Playing in Owlbear Rodeo
+
+Many groups play on [Owlbear Rodeo](https://www.owlbear.rodeo): the GM prepares the scenes, and
+everyone moves their own token on the map. The companion runs there as an **extension**, so the
+character sheets sit right next to the map
+([#23](https://github.com/WalSplitter/dnd-companion-web/issues/23)).
+
+**The goal:** one place for the numbers that change round by round. The GM tracks the fight in the
+combat tracker, the players keep their sheets, nobody types a change twice, and nobody waits for
+the next GitHub commit to see a teammate's HP. The room shares the live values with everyone at
+once, and each player's companion saves their own character back to the vault.
+
+```mermaid
+flowchart LR
+  S["📜 Player's sheet"] <--> R[("Owlbear room<br>live values")]
+  C["⚔️ Clash! combat tracker"] <--> R
+  R --> T["👥 Game table<br>for everyone"]
+  S -->|"commit"| G[("GitHub vault")]
+```
+
+### Add the extension
+
+1. In Owlbear Rodeo, open **Extensions → Manage Extensions → Add custom extension** and enter:
+
+   ```
+   https://walsplitter.github.io/dnd-companion-web/owlbear-manifest.json
+   ```
+
+2. Turn the extension on for your room with the switch next to it, when creating the room or by
+   editing it.
+3. A **d20** appears in the toolbar at the top left.
+
+The first click on the d20 opens the companion as a panel at the right edge. It stays open while
+you use the map, the players list or other extensions. A second click offers to dock it left or
+right, narrow or wide, or to close it. Owlbear doesn't let extensions be dragged around freely.
+
+> [!NOTE]
+> Inside Owlbear, vaults open **from GitHub** (or the sample). Browsers don't let embedded pages
+> open folders on your device, so the folder options are hidden there. Owlbear also keeps its own
+> storage, so enter your access token there once even if you already use the app elsewhere.
+
+### At the table
+
+| | What to do |
+| --- | --- |
+| **GM** | Open **Game table** in the breadcrumbs, select a token on the map, choose the character and click **Link**. Its HP, temp HP, resilience and AC from the vault become the room's live values. **Reset from vault** starts a session from the vault's values again. |
+| **Player** | Open your character and tick **My character**, then switch on **Edit**. Changes made in Owlbear (by the GM in Clash, or on your sheet) are saved to your vault and committed [as usual](#saving-changes). |
+| **Everyone** | **Game table → Party, live** and the sheets of linked characters show the live values, even while the vault on GitHub lags behind. |
+
+Who writes what:
+
+- **Only the player saves their character to the vault**, and only while their companion is open.
+  Without it, keep the sheet up to date by hand later. The GM never writes to the vault.
+- Sheets of linked characters you haven't claimed are **read-only**, so two people never write the
+  same file.
+- If the room and your vault differ when you open your character (say, you edited the note in
+  Obsidian between sessions), the companion asks which values to keep instead of overwriting either.
+
+### With Clash!
+
+If a linked token is also in the [Clash!](https://extensions.owlbear.rodeo/clash) combat tracker:
+
+- **Linking fills Clash** with the character's HP, max HP and AC.
+- **HP changed in Clash** shows up for everyone at once and is saved by the player's companion.
+- **HP changed on the sheet** shows up in Clash.
+
+This runs on the extension's background page for everyone in the room, so it also works while all
+companions are closed. Clash has no temp HP or resilience, so those stay on the sheet.
+
+> [!WARNING]
+> Clash doesn't document how it stores its values; the companion reads the keys of the current
+> version. A Clash update may break the sync until the companion follows. The **token data** panel
+> on the game table shows everything Owlbear keeps on a selected token.
+
 ## Browser support
 
 | Feature | Chrome, Edge, Opera | Firefox, Safari |
@@ -323,6 +367,9 @@ only Chromium-based browsers have.
   may ask to re-grant folder access). Links to a character reopen the last vault automatically.
 - **Firefox and Safari** open folders read-only, through a picker that must be used again each
   session. The header marks such a vault **Read-only**. Vaults from GitHub work fully.
+
+Inside [Owlbear Rodeo](#playing-in-owlbear-rodeo) no browser can open folders; GitHub vaults work
+in all of them.
 
 > [!NOTE]
 > **Brave** is Chromium-based but turns the API off by default. Enable it under
@@ -479,6 +526,47 @@ This adapter is best-effort, not full fidelity:
 
 </details>
 
+## Look and feel
+
+Pick a theme from the swatch button in the header: colour palettes, one theme for each Endeavour
+class, and topic themes with their own backdrop, panel ornaments and a subtle ambient animation
+(drifting souls, bats, snow, falling petals, an 8-bit knight). The switch in the picker turns the
+animation off; it also stays off for anyone who has *reduce motion* set in their system. The app
+speaks English and German.
+
+<details>
+<summary><b>Some of the themes</b></summary>
+<br>
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/media/theme-dark.webp" alt="Dark theme" /></td>
+    <td width="25%"><img src="docs/media/theme-light.webp" alt="Light theme" /></td>
+    <td width="25%"><img src="docs/media/theme-pixelquest.webp" alt="Pixel Quest theme with pixel type, console-RPG panels and drifting 8-bit storm clouds" /></td>
+    <td width="25%"><img src="docs/media/theme-halloween.webp" alt="Halloween theme with a full moon and bats" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Dark</sub></td>
+    <td align="center"><sub>Light</sub></td>
+    <td align="center"><sub>🏰 Pixel Quest</sub></td>
+    <td align="center"><sub>🎃 Halloween</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/theme-unicorn.webp" alt="Unicorn theme with twinkling rainbow sparkles" /></td>
+    <td><img src="docs/media/theme-spring.webp" alt="Spring theme with falling cherry blossom petals" /></td>
+    <td><img src="docs/media/theme-summer.webp" alt="Summer theme with a golden sun and rising light motes" /></td>
+    <td><img src="docs/media/theme-more.svg" alt="Ten more themes: the Parchment, Fluent, Purple, Orange, Red, Green and Blue palettes, plus the Necromancer, Dragon Hoard and Christmas topic themes" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🦄 Unicorn</sub></td>
+    <td align="center"><sub>🌸 Spring</sub></td>
+    <td align="center"><sub>☀️ Summer</sub></td>
+    <td align="center"><sub>✨ …and ten more</sub></td>
+  </tr>
+</table>
+
+</details>
+
 ## Development
 
 Requires [Node.js](https://nodejs.org) 20+.
@@ -498,6 +586,22 @@ npm run dev -- --host    # also reachable from a phone in the same network
 | `npm run preview` | serve the production build |
 | `npm run test` / `test:watch` | run the tests (Vitest), once or on every change |
 | `npm run lint` | lint (oxlint) |
+
+<details>
+<summary><b>Testing the Owlbear Rodeo extension locally</b></summary>
+<br>
+
+With `npm run dev` running, add `http://localhost:5173/owlbear-manifest.json` as a custom extension
+in Owlbear Rodeo (Chrome or Edge; some browsers block `localhost` inside other sites). The manifest
+is generated by the Vite config, with paths matching the base the app is served under. The dev
+server allows Owlbear's origin, which the toolbar icon needs. Owlbear reads the manifest only when
+the extension is added, so after changing it, remove the extension and add it again.
+
+The extension has three pages: the app itself as the panel, `owlbear-action.html` behind the
+toolbar button, and `owlbear-background.html`, which runs unseen for everyone in the room and keeps
+Clash in sync. A second browser profile or a private window can join the room as a player.
+
+</details>
 
 <details>
 <summary><b>Production build and self-hosting</b></summary>
@@ -530,11 +634,13 @@ src/
 │   └── writeback/ surgical YAML patching, so edits keep the note's formatting
 ├── store/        zustand stores: vault (load, recent vaults, optimistic edits + rollback) and error log
 ├── features/     character-list, character-sheet, inventory (slot grid), spells
+├── owlbear/      Owlbear Rodeo extension: panel, live values in the room, token links, Clash sync
 ├── components/   shared UI building blocks
 ├── dice/         dice notation parser and roll button
 ├── i18n/         English / German dictionaries
 ├── theme/        theme tokens, topic themes and switcher
-├── routes/       start page, vault layout (breadcrumbs, deep-link restore), character list and sheet
+├── routes/       start page, vault layout (breadcrumbs, deep-link restore), character list and sheet,
+│                  game table (Owlbear only)
 └── sample-vault/ bundled demo vault (notes + portraits), opened from the start page
 ```
 
@@ -563,6 +669,8 @@ oxlint.
 
 Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues):
 
+- [#23](https://github.com/WalSplitter/dnd-companion-web/issues/23) Owlbear Rodeo: share dice
+  rolls with the room, initiative into the tracker, conditions on tokens, hand out loot.
 - [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) Offline use as a PWA
   (`vite-plugin-pwa`), including the last vault opened from GitHub.
 
