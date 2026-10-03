@@ -355,6 +355,7 @@ export const de = {
   'stats.initiativeActionsNote': 'Beweglichkeitswurf zu Kampfbeginn: 1–9 = 1 AP, 10–19 = 2 AP, 20+ = 3 AP in der ersten Runde.',
   'stats.initiativeActionsResult': '{{count}} AP in der ersten Runde',
   'a11y.currentResilience': 'Aktuelle Resilienzpunkte',
+  'a11y.currentMana': 'Aktuelles Mana',
   'stats.luckPoints': 'Glückspunkte',
   'stats.exhaustion': 'Erschöpfung',
   'stats.passivePerception': 'Passive Wahrnehmung',

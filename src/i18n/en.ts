@@ -370,6 +370,7 @@ export const en = {
   'stats.initiativeActionsNote': 'Agility roll at the start of combat: 1–9 = 1 AP, 10–19 = 2 AP, 20+ = 3 AP in the first round.',
   'stats.initiativeActionsResult': '{{count}} AP in the first round',
   'a11y.currentResilience': 'Current resilience points',
+  'a11y.currentMana': 'Current mana',
   'stats.luckPoints': 'Luck Points',
   'stats.exhaustion': 'Exhaustion',
   'stats.passivePerception': 'Passive Perception',

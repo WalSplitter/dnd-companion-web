@@ -12,6 +12,16 @@ const MAX_SHARDS = 20
 /** Wave surface two periods wide (48 units each), so sliding it by one period loops seamlessly. */
 const WAVE = 'M0 0q12 -3.2 24 0t24 0t24 0t24 0V60H0Z'
 
+/** Mana as a small caption icon: a round flask, half full. Takes the mana colour from `.mana-caption`. */
+export function ManaIcon() {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" className="mana-caption size-3.5 shrink-0">
+      <circle cx="8" cy="8.5" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M3.1 9.1q2.4-1.2 4.9 0t4.9 0A4.9 4.9 0 0 1 3.1 9.1Z" fill="currentColor" />
+    </svg>
+  )
+}
+
 /**
  * A glass sphere of mana: the liquid level follows the pool, its surface rolls in two offset waves,
  * a ring of runes slowly orbits the glass, and the whole orb breathes with light while charged.
