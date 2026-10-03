@@ -318,8 +318,9 @@ export interface CharacterFrontmatter {
    * named like the character's classes (see `resolveClassPrimaryAttributes`). Every other attribute
    * counts as secondary. Absent when no class note declares any — the UI then shows no distinction. */
   nimble_primary_attributes?: NimbleAttributeKey[]
-  /** Derived from the class notes' `Rettungswürfe.Vorteil`/`.Nachteil`: saves the class rolls with
-   * advantage or disadvantage by default (see `resolveClassSaveModes`). Absent = none declared. */
+  /** Derived from the class note's `Rettungswürfe.Vorteil`/`.Nachteil`: saves the class rolls with
+   * advantage or disadvantage by default; a multiclass character uses its highest-level class's (see
+   * `resolveClassSaveModes`). Absent = none declared. */
   nimble_save_modes?: Partial<Record<NimbleAttributeKey, 'advantage' | 'disadvantage'>>
   /** Derived from the class notes' `Übung.Waffen`/`.Rüstungen`: display names of the weapon and armor
    * groups the character is trained with. Absent when no class note declares any. */

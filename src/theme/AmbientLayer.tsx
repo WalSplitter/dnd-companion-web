@@ -62,16 +62,21 @@ const FIRST_FLYBY: [number, number] = [4, 12]
  * over the scene, so they get half the particles. */
 const TOUCH_QUERY = '(hover: none)'
 
+/** Absent in jsdom (tests), so treated as "not touch" there. */
+function touchQuery(): MediaQueryList | undefined {
+  return typeof window.matchMedia === 'function' ? window.matchMedia(TOUCH_QUERY) : undefined
+}
+
 function subscribeTouch(onChange: () => void) {
-  const query = window.matchMedia(TOUCH_QUERY)
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
+  const query = touchQuery()
+  query?.addEventListener('change', onChange)
+  return () => query?.removeEventListener('change', onChange)
 }
 
 function useIsTouch(): boolean {
   return useSyncExternalStore(
     subscribeTouch,
-    () => window.matchMedia(TOUCH_QUERY).matches,
+    () => touchQuery()?.matches ?? false,
     () => false,
   )
 }

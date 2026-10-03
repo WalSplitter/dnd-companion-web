@@ -359,6 +359,13 @@ body::before {
  * and title play once when HP hits 0. Reduced motion gets the static vignette only. */
 .fallen-vignette {
   backdrop-filter: grayscale(0.65) brightness(0.85);
+}
+/* The blood vignette is its own layer so only it pulses; pulsing the filtered layer itself would
+ * recompute the backdrop filter every frame. */
+.fallen-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, rgb(110 0 0 / 0.55) 100%);
 }
 .fallen-drop {
@@ -380,7 +387,7 @@ body::before {
   animation: fallen-title 6s ease-in-out both;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .fallen-vignette {
+  .fallen-vignette::after {
     animation: fallen-pulse 3.2s ease-in-out infinite;
   }
 }
@@ -510,7 +517,7 @@ body::before {
   box-shadow: 0 0 10px -4px color-mix(in srgb, var(--color-accent) 60%, transparent);
 }
 .hp-ward-chip.is-active .hp-ward-icon {
-  filter: drop-shadow(0 0 5px var(--color-accent));
+  filter: drop-shadow(0 0 6px var(--color-accent));
 }
 @media (prefers-reduced-motion: no-preference) {
   .hp-ward::before {
@@ -567,14 +574,14 @@ body::before {
       0 0 2px var(--color-accent);
   }
 }
+/* Scale only: the icon's glow stays at the steady `.is-active` drop-shadow, since an animated filter
+ * repaints every frame. */
 @keyframes hp-ward-icon {
   0%,
   100% {
-    filter: drop-shadow(0 0 3px var(--color-accent));
     transform: scale(1);
   }
   50% {
-    filter: drop-shadow(0 0 8px var(--color-accent));
     transform: scale(1.08);
   }
 }
@@ -673,7 +680,21 @@ button.exh-token:hover {
 /* Being dead deepens the 0 HP vignette to near black. */
 .fallen-vignette.is-dead {
   backdrop-filter: grayscale(0.9) brightness(0.7);
+}
+.fallen-vignette.is-dead::after {
   background: radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgb(40 0 0 / 0.8) 100%);
+}
+/* Touch devices: a full-screen backdrop-filter is recomputed on every scroll frame there, so the
+ * colour stays and a plain darkening takes over the dimming. */
+@media (hover: none) {
+  .fallen-vignette,
+  .fallen-vignette.is-dead {
+    backdrop-filter: none;
+    background: rgb(0 0 0 / 0.15);
+  }
+  .fallen-vignette.is-dead {
+    background: rgb(0 0 0 / 0.3);
+  }
 }
 
 /* A fallen/dead character's card in the list (CharacterListPage): the sheet's grey veil and blood
@@ -1242,10 +1263,13 @@ button.exh-token:hover {
   color: #b3121b;
   filter: drop-shadow(0 0 3px rgb(220 0 0 / 0.8));
 }
-@media (prefers-reduced-motion: no-preference) {
+/* The ember flare animates text-shadow, a repaint every frame; phones keep the glow steady. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
   .exhausted-value.is-loud {
     animation: exhausted-ember 4s ease-in-out var(--exhausted-sync, 0s) infinite;
   }
+}
+@media (prefers-reduced-motion: no-preference) {
   .exhausted-value.is-loud .exhausted-drop {
     transform-origin: 50% 0;
     animation: exhausted-drip 4s ease-in var(--exhausted-sync, 0s) infinite;
@@ -1313,12 +1337,14 @@ button.exh-token:hover {
   height: 1.3rem;
   margin-left: -0.65rem;
   pointer-events: none;
-  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.45)) drop-shadow(0 0 5px color-mix(in srgb, var(--color-trim) 85%, transparent));
 }
+/* The glow sits on the twinkling svg itself, so it is drawn once and turns with the star instead of
+ * being redrawn around it every frame. */
 .core-crest svg {
   width: 100%;
   height: 100%;
   overflow: visible;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.45)) drop-shadow(0 0 5px color-mix(in srgb, var(--color-trim) 85%, transparent));
 }
 .core-crest-star {
   fill: var(--color-trim);
@@ -1351,7 +1377,6 @@ button.exh-token:hover {
   }
   80% {
     transform: scale(1.3) rotate(45deg);
-    filter: brightness(1.35);
   }
   90% {
     transform: scale(0.95) rotate(90deg);
@@ -1376,7 +1401,9 @@ button.exh-token:hover {
   background: linear-gradient(180deg, #c0141e, #6a070c 90%);
   box-shadow: inset 0 6px 8px -6px rgb(255 190 190 / 0.35);
 }
-/* Two offset waves (a lighter one behind) ride the surface; they scroll in opposite directions. */
+/* Two offset waves (a lighter one behind) ride the surface; they scroll in opposite directions. Each
+ * is one wave period (22px) wider than the pool and slides with `translate`, which loops seamlessly
+ * without the per-frame repaint an animated `background-position` costs. */
 .exhausted-pool::before,
 .exhausted-pool::after {
   content: '';
@@ -1392,9 +1419,11 @@ button.exh-token:hover {
 .exhausted-pool::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 8 20 4T40 4V8H0Z' fill='%23e0454b'/%3E%3C/svg%3E");
   opacity: 0.55;
+  right: -22px;
   background-position: 11px 0;
 }
 .exhausted-pool::after {
+  left: -22px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0Z' fill='%23c0141e'/%3E%3C/svg%3E");
 }
 .exhausted-pool-value {
@@ -1418,15 +1447,12 @@ button.exh-token:hover {
 }
 @keyframes exhausted-wave {
   to {
-    background-position: 22px 0;
+    translate: 22px 0;
   }
 }
 @keyframes exhausted-wave-back {
-  from {
-    background-position: 33px 0;
-  }
   to {
-    background-position: 11px 0;
+    translate: -22px 0;
   }
 }
 
@@ -1692,13 +1718,26 @@ button.exh-token:hover {
   display: grid;
   flex-shrink: 0;
   place-items: center;
+  isolation: isolate;
+}
+/* The orb's glow is a halo behind it rather than a drop-shadow on the svg: the svg's waves, runes and
+ * bubbles move every frame, and a filter around them would be redrawn with them. The halo only
+ * breathes in opacity and scale, which costs no repaint. */
+.mana-orb-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -12.5%;
+  z-index: -1;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--mana) 55%, transparent) 60%, transparent);
+  opacity: 0.7;
+}
+.mana-row.is-empty .mana-orb-wrap::before {
+  display: none;
 }
 .mana-orb {
   overflow: visible;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mana) 55%, transparent));
-}
-.mana-orb.is-empty {
-  filter: none;
 }
 .mana-orb-runes {
   stroke: color-mix(in srgb, var(--color-trim) 80%, var(--mana));
@@ -1880,7 +1919,7 @@ button.exh-token:hover {
   .mana-orb-sparkle {
     animation: mana-twinkle 2.8s ease-in-out infinite;
   }
-  .mana-orb:not(.is-empty) {
+  .mana-orb-wrap::before {
     animation: mana-breathe 3.6s ease-in-out infinite;
   }
   .mana-orb-flash.is-rising {
@@ -1951,10 +1990,12 @@ button.exh-token:hover {
 @keyframes mana-breathe {
   0%,
   100% {
-    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--mana) 45%, transparent));
+    opacity: 0.5;
+    scale: 0.94;
   }
   50% {
-    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mana) 75%, transparent));
+    opacity: 1;
+    scale: 1.08;
   }
 }
 @keyframes mana-flare {
