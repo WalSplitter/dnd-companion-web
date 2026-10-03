@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react'
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
@@ -153,6 +154,23 @@ function revokeActiveImageAssets() {
   if (!activeImageAssets) return
   for (const url of activeImageAssets.values()) URL.revokeObjectURL(url)
   activeImageAssets = null
+}
+
+type CharacterEditListener = (characterPath: string, character: CharacterFrontmatter) => void
+const characterEditListeners = new Set<CharacterEditListener>()
+
+/**
+ * Follows every edit made to a character in this browser (and its rollback, should the write fail)
+ * — not vault loads. The Owlbear Rodeo live sync uses it to share changes made on the sheet.
+ */
+export function onCharacterEdit(listener: CharacterEditListener): () => void {
+  characterEditListeners.add(listener)
+  return () => characterEditListeners.delete(listener)
+}
+
+function notifyCharacterEdit(vault: Vault, characterPath: string) {
+  const character = findCharacter(vault, characterPath)
+  if (character) for (const listener of characterEditListeners) listener(characterPath, character)
 }
 
 // The GitHub vault's write-back queue, if one is open. Replaced along with the vault: the old one
@@ -383,6 +401,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
   ) {
     const previous = findCharacter(get().vault, characterPath)
     set({ vault: mapCharacter(get().vault, characterPath, mutate), writeError: null })
+    notifyCharacterEdit(get().vault, characterPath)
     if (!write) return
 
     try {
@@ -401,6 +420,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
         vault: previous ? mapCharacter(get().vault, characterPath, () => previous) : get().vault,
         writeError: errorMessage(err),
       })
+      notifyCharacterEdit(get().vault, characterPath)
     }
   }
 
@@ -755,8 +775,14 @@ export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
 }
 
+/** True around a sheet that stays read-only whatever the vault allows — in Owlbear Rodeo, the
+ * character of another player, who alone writes it back to the vault. */
+export const SheetLockContext = createContext(false)
+
 /** Whether vault edits are currently written back to disk (the user granted `readwrite` access), or —
- * for the sample vault — applied in memory only. */
+ * for the sample vault — applied in memory only. False inside a `SheetLockContext`. */
 export function useCanEdit(): boolean {
-  return useVaultStore((s) => s.editPermission === 'granted')
+  const locked = useContext(SheetLockContext)
+  const granted = useVaultStore((s) => s.editPermission === 'granted')
+  return granted && !locked
 }

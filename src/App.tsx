@@ -5,10 +5,12 @@ import { PageErrorBoundary } from './components/PageErrorBoundary'
 import { TooltipLayer } from './components/TooltipLayer'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
+import { inOwlbear } from './owlbear/host'
+import { OwlbearBadge } from './owlbear/OwlbearBadge'
 import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
-import { CharacterListPage, CharacterSheetPage } from './routes/lazyPages'
+import { CharacterListPage, CharacterSheetPage, TablePage } from './routes/lazyPages'
 import { StartPage } from './routes/StartPage'
 import { VaultLayout } from './routes/VaultLayout'
 import { useVaultStore } from './store/vaultStore'
@@ -51,6 +53,7 @@ function App() {
                 <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
               </>
             )}
+            {inOwlbear && <OwlbearBadge />}
             <LanguageSwitcher />
             <ThemeSwitcher />
           </div>
@@ -74,6 +77,7 @@ function App() {
               <Route element={<VaultLayout />}>
                 <Route path="/characters" element={<CharacterListPage />} />
                 <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
+                {inOwlbear && <Route path="/table" element={<TablePage />} />}
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

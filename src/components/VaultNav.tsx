@@ -5,6 +5,7 @@ import { useVaultStore } from '../store/vaultStore'
 import { classSummary, totalCharacterLevel } from '../vault/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
 import { characterRoute } from '../routes/paths'
+import { inOwlbear } from '../owlbear/host'
 import { ArcaneSigil } from './ArcaneSigil'
 
 function Avatar({ character, size = 'size-6' }: { character: CharacterFrontmatter; size?: string }) {
@@ -118,6 +119,21 @@ function StepButton({ to, label, children }: { to: string; label: string; childr
   )
 }
 
+/** Inside Owlbear Rodeo: the way to the game table (linked tokens, the party's live values). */
+function TableCrumb() {
+  const t = useT()
+  const current = useMatch('/table') !== null
+  return (
+    <Crumb to="/table" current={current}>
+      <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-trim" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
+        <path d="M12 2 20.66 7v10L12 22l-8.66-5V7Z" />
+        <path d="M12 7.2 16.6 15.2H7.4Z" />
+      </svg>
+      <span className="sr-only sm:not-sr-only">{t('owlbear.tableNav')}</span>
+    </Crumb>
+  )
+}
+
 /**
  * Breadcrumb bar above every vault page: Start › vault (character list) › character. On a sheet the
  * last crumb switches characters, and the arrows on the right step through the party.
@@ -159,6 +175,8 @@ export function VaultNav() {
           </li>
         )}
       </ol>
+
+      {inOwlbear && <TableCrumb />}
 
       {current && characters.length > 1 && (
         <div className="flex shrink-0 items-center gap-1.5 pr-1">

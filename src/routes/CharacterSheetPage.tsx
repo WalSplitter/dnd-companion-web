@@ -1,8 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
+import { SheetLockContext, useVaultStore } from '../store/vaultStore'
 import { CharacterSheet } from '../features/character-sheet/CharacterSheet'
+import { inOwlbear } from '../owlbear/host'
+import { withLiveVitals } from '../owlbear/live'
+import { OwlbearSheetBar } from '../owlbear/OwlbearSheetBar'
+import { useOwlbearStore } from '../owlbear/owlbearStore'
 
 export function CharacterSheetPage() {
   const t = useT()
@@ -12,6 +16,11 @@ export function CharacterSheetPage() {
   const index = useVaultStore((s) => s.index)
   const noteCharacterVisit = useVaultStore((s) => s.noteCharacterVisit)
   const found = Boolean(character)
+  // In Owlbear, a linked character shows the room's live values; only the player who claimed it may
+  // edit it here (they alone save it to the vault), so two people never write the same file.
+  const live = useOwlbearStore((s) => (inOwlbear && characterName ? s.roster[characterName] : undefined))
+  const claimed = useOwlbearStore((s) => characterName !== undefined && s.claimed.includes(characterName))
+  const shown = useMemo(() => character && withLiveVitals(character.frontmatter, live), [character, live])
 
   // Lets the start page offer "continue with <name>" for this vault next time.
   useEffect(() => {
@@ -30,11 +39,14 @@ export function CharacterSheetPage() {
   }
 
   return (
-    <CharacterSheet
-      character={character.frontmatter}
-      characterPath={character.path}
-      index={index}
-      body={character.frontmatter.backstory ?? character.body}
-    />
+    <SheetLockContext value={Boolean(live) && !claimed}>
+      {live && <OwlbearSheetBar character={character.frontmatter} />}
+      <CharacterSheet
+        character={shown ?? character.frontmatter}
+        characterPath={character.path}
+        index={index}
+        body={character.frontmatter.backstory ?? character.body}
+      />
+    </SheetLockContext>
   )
 }

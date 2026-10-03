@@ -7,6 +7,8 @@ const loadCharacterSheet = () => import('./CharacterSheetPage')
 /** The vault pages, split off the start page's bundle: a first visit only needs the start page. */
 export const CharacterListPage = lazy(() => loadCharacterList().then((m) => ({ default: m.CharacterListPage })))
 export const CharacterSheetPage = lazy(() => loadCharacterSheet().then((m) => ({ default: m.CharacterSheetPage })))
+/** Only reachable inside Owlbear Rodeo. */
+export const TablePage = lazy(() => import('./TablePage').then((m) => ({ default: m.TablePage })))
 
 /** Downloads the vault pages in the background, so opening a vault from the start page never waits on them. */
 export function preloadVaultPages(): void {

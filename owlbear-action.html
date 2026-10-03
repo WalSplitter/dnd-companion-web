@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D&amp;D Companion</title>
+    <!-- The toolbar button's popover in Owlbear Rodeo: opens the companion panel, then offers where to dock it.
+         Colours follow Owlbear's theme (set by the script); these are the dark-theme fallbacks. -->
+    <style>
+      :root {
+        --paper: #222639;
+        --text: #fff;
+        --muted: rgba(255, 255, 255, 0.7);
+        --primary: #bb99ff;
+        --line: rgba(255, 255, 255, 0.14);
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 12px 14px;
+        font: 13px/1.4 system-ui, sans-serif;
+        color: var(--text);
+        background: transparent;
+      }
+      [hidden] { display: none !important; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .label { color: var(--muted); }
+      .segment { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+      .segment button { border: 0; background: none; color: var(--text); padding: 4px 11px; font: inherit; cursor: pointer; }
+      .segment button[aria-pressed='true'] { background: var(--primary); color: #000; font-weight: 600; }
+      .close {
+        width: 100%; margin-top: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 8px;
+        background: none; color: var(--text); font: inherit; cursor: pointer;
+      }
+      .close:hover, .segment button:hover:not([aria-pressed='true']) { background: var(--line); }
+      .hint { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div id="controls" hidden>
+      <div class="row">
+        <span class="label" data-t="owlbear.dockLabel"></span>
+        <span class="segment">
+          <button type="button" data-side="left" data-t="owlbear.dockLeft"></button>
+          <button type="button" data-side="right" data-t="owlbear.dockRight"></button>
+        </span>
+      </div>
+      <div class="row">
+        <span class="label" data-t="owlbear.sizeLabel"></span>
+        <span class="segment">
+          <button type="button" data-size="narrow" data-t="owlbear.sizeNarrow"></button>
+          <button type="button" data-size="wide" data-t="owlbear.sizeWide"></button>
+        </span>
+      </div>
+      <button type="button" class="close" id="close" data-t="owlbear.closePanel"></button>
+      <p class="hint" data-t="owlbear.reloadHint"></p>
+    </div>
+    <script type="module" src="/src/owlbear/action.ts"></script>
+  </body>
+</html>
