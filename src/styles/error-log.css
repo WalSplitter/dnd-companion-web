@@ -1,0 +1,16 @@
+/* Error log toasts (ErrorToaster) on light themes. */
+
+/* The toasts are dark glass on every theme. On a light page the see-through glass turned grey, and
+ * the theme's dark text and deep red (tuned for a light background) sank into it. There the glass
+ * goes nearly opaque, and the toasts bring their own light text and a bright red. */
+[data-theme-tone='light'] .error-toaster {
+  --color-danger: #f87171;
+  --color-fg: #f1ecee;
+  --color-fg-muted: #b9adb2;
+}
+[data-theme-tone='light'] .error-toast-card {
+  background: color-mix(in srgb, var(--color-danger) 10%, rgb(12 4 6 / 0.96));
+}
+[data-theme-tone='light'] .error-toast-clear {
+  background: rgb(12 4 6 / 0.9);
+}

@@ -29,7 +29,7 @@ export function ErrorToaster() {
       role="log"
       aria-live="assertive"
       aria-relevant="additions"
-      className={`pointer-events-none fixed bottom-0 right-0 z-[60] flex max-h-screen w-[min(30rem,100vw)] flex-col-reverse gap-6 overflow-y-auto [--scroll-color:var(--color-danger)] ${
+      className={`error-toaster pointer-events-none fixed bottom-0 right-0 z-[60] flex max-h-screen w-[min(30rem,100vw)] flex-col-reverse gap-6 overflow-y-auto [--scroll-color:var(--color-danger)] ${
         entries.length > 0 ? 'p-5' : ''
       }`}
     >
@@ -40,7 +40,7 @@ export function ErrorToaster() {
         <button
           type="button"
           onClick={clear}
-          className="pointer-events-auto cursor-pointer self-end rounded-full border border-danger/40 bg-black/50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-danger backdrop-blur hover:border-danger hover:shadow-[0_0_12px_-2px_var(--color-danger)]"
+          className="error-toast-clear pointer-events-auto cursor-pointer self-end rounded-full border border-danger/40 bg-black/50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-danger backdrop-blur hover:border-danger hover:shadow-[0_0_12px_-2px_var(--color-danger)]"
         >
           {t('errorLog.clearAll')} ({entries.length})
         </button>
@@ -89,7 +89,7 @@ function ErrorCard({ entry, onClose }: { entry: ErrorLogEntry; onClose: () => vo
     'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-danger/40 text-danger transition hover:border-danger hover:bg-danger/15 hover:shadow-[0_0_10px_-2px_var(--color-danger)]'
 
   return (
-    <div className="error-toast-in pointer-events-auto relative shrink-0 overflow-hidden rounded-lg border border-danger/70 bg-[color-mix(in_srgb,var(--color-danger)_10%,rgb(12_4_6/0.82))] p-3 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-danger)_25%,transparent),0_0_22px_-2px_color-mix(in_srgb,var(--color-danger)_60%,transparent),inset_0_0_24px_-14px_var(--color-danger)] backdrop-blur-md">
+    <div className="error-toast-in error-toast-card pointer-events-auto relative shrink-0 overflow-hidden rounded-lg border border-danger/70 bg-[color-mix(in_srgb,var(--color-danger)_10%,rgb(12_4_6/0.82))] p-3 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-danger)_25%,transparent),0_0_22px_-2px_color-mix(in_srgb,var(--color-danger)_60%,transparent),inset_0_0_24px_-14px_var(--color-danger)] backdrop-blur-md">
       <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-danger to-transparent" />
       <div className="flex items-start gap-2">
         <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-danger shadow-[0_0_8px_2px_var(--color-danger)]" />
