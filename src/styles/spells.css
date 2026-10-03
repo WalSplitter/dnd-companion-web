@@ -331,8 +331,16 @@
 }
 
 /* The shards. */
+/* The shards line up like words in a balanced line: in a wide row they all fit on one line, and
+ * when they must wrap the lines come out even (12 in a narrow column: 6 + 6, not 8 + 4). */
+.mana-shards {
+  line-height: 0;
+  text-wrap: balance;
+}
 .mana-shard {
   position: relative;
+  margin: 1px;
+  vertical-align: middle;
   display: inline-grid;
   width: 0.95rem;
   height: 1.6rem;

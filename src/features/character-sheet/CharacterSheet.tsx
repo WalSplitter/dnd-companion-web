@@ -93,15 +93,17 @@ export function CharacterSheet({
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
               {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
                   the attribute medallions, so the three columns come out about equally long; the
-                  backstory has its own Biography tab. */}
+                  backstory has its own Biography tab. Spellcasting sits under the attributes it is
+                  derived from: in the right column, under attacks and above the features, it made
+                  a caster's right column far longer than the other two. */}
               <div className="space-y-4">
                 <AbilityScores character={character} characterPath={characterPath} />
+                {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <SensesLanguages character={character} />
               </div>
               <Skills character={character} />
               <div className="space-y-4">
                 <Attacks character={character} />
-                {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
                 <Conditions character={character} characterPath={characterPath} />
                 <FeaturesTraits character={character} />
               </div>

@@ -312,7 +312,6 @@ export const de = {
   'fallen.deadTitle': 'Du bist gestorben',
   'fallen.deadSubtitle': 'Nur ein Wunder – und ein hoher Preis – kann dich jetzt noch zurückholen.',
   'cards.conditions': 'Zustände',
-  'cards.attacksSpellcasting': 'Angriffe & Zauberwirken',
   'cards.attacks': 'Angriffe',
   'attack.attributeHint': 'Angriff und Schaden mit {{attribute}}',
   'cards.sensesLanguages': 'Sinne & Sprachen',

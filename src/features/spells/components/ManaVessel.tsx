@@ -122,7 +122,7 @@ export function ManaVessel({
       </span>
 
       {max <= MAX_SHARDS ? (
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={current}>
+        <div className="mana-shards min-w-0 flex-1" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={current}>
           {Array.from({ length: max }, (_, i) => {
             const lit = i < current
             const touched = change.id > 0 && i >= lo && i < hi

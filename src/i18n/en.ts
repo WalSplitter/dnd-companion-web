@@ -326,7 +326,6 @@ export const en = {
   'fallen.deadTitle': 'You have died',
   'fallen.deadSubtitle': 'Only a miracle — at a steep price — can bring you back now.',
   'cards.conditions': 'Conditions',
-  'cards.attacksSpellcasting': 'Attacks & Spellcasting',
   'cards.attacks': 'Attacks',
   'attack.attributeHint': 'Attack and damage use {{attribute}}',
   'cards.sensesLanguages': 'Senses & Languages',

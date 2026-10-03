@@ -25,7 +25,7 @@ export function AttacksSpellcasting({ character, characterPath }: { character: C
     : character.spellcasting.ability.toUpperCase()
 
   return (
-    <Card title={t('cards.attacksSpellcasting')}>
+    <Card title={t('cards.spellcasting')}>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-2">
           <StatPlate label={t('stats.ability')} value={abilityAbbr} />
