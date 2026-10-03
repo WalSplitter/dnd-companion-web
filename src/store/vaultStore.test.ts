@@ -40,8 +40,8 @@ describe('vaultStore vault lifecycle', () => {
     expect(initial.vault.characters).toHaveLength(0)
   })
 
-  it('opens the sample vault on request and closes back to the empty state', () => {
-    useVaultStore.getState().loadSampleVault()
+  it('opens the sample vault on request and closes back to the empty state', async () => {
+    expect(await useVaultStore.getState().loadSampleVault()).toBe(true)
     expect(useVaultStore.getState().source).toBe('sample')
     expect(useVaultStore.getState().vault.characters.length).toBeGreaterThan(0)
 
@@ -51,7 +51,7 @@ describe('vaultStore vault lifecycle', () => {
   })
 
   it('lets the sample vault be edited in memory only, and restores it when opened again', async () => {
-    useVaultStore.getState().loadSampleVault()
+    await useVaultStore.getState().loadSampleVault()
     expect(useVaultStore.getState().editPermission).toBe('granted')
     const { path, frontmatter } = useVaultStore.getState().vault.characters.find((c) => c.frontmatter.name === 'Borin Eisenfaust')!
     const original = frontmatter.hp.current
@@ -61,7 +61,7 @@ describe('vaultStore vault lifecycle', () => {
     expect(borin().hp.current).toBe(1)
     expect(useVaultStore.getState().writeError).toBeNull()
 
-    useVaultStore.getState().loadSampleVault()
+    await useVaultStore.getState().loadSampleVault()
     expect(borin().hp.current).toBe(original)
     useVaultStore.getState().closeVault()
   })

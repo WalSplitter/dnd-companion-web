@@ -1,5 +1,6 @@
 import type { VaultSourceFile } from '../types'
-import { isIgnoredPath, isImageFile, type ImageAssets } from '../vaultLoader'
+import type { ImageAssets } from '../types'
+import { isIgnoredPath, isImageFile } from '../vaultLoader'
 import type { BlobCache } from './blobCache'
 import { fetchBlob, fetchSnapshot, GitHubError, type GitHubSnapshot, type GitHubVaultRef } from './githubApi'
 

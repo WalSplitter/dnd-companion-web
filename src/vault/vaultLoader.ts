@@ -1,8 +1,4 @@
-import type { VaultSourceFile } from './types'
-
-/** Filename (lowercase) -> displayable URL (object URL or data URL), for resolving attachment
- * references like a character's `Bild: "[[Portrait.jpg]]"` field. */
-export type ImageAssets = Map<string, string>
+import type { ImageAssets, VaultSourceFile } from './types'
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.avif']
 

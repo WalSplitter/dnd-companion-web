@@ -199,13 +199,12 @@ button.portal-card:focus-visible::before {
   transition: transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .sample-hero + .sample-hero {
-  margin-left: -0.75rem;
+  margin-left: -0.5rem;
 }
-.portal-card:hover .sample-hero:nth-child(1) {
-  transform: rotate(-8deg) translateX(-4px);
-}
-.portal-card:hover .sample-hero:nth-child(2) {
-  transform: rotate(7deg) translateX(6px) translateY(-3px);
+/* On hover the lineup fans out from its middle: outer heroes tilt away, everyone steps apart. */
+.portal-card:hover .sample-hero {
+  --off: calc(var(--i, 0) - (var(--n, 1) - 1) / 2);
+  transform: translateX(calc(var(--off) * 4px)) rotate(calc(var(--off) * 3deg));
 }
 
 .recent-medallion {

@@ -10,7 +10,11 @@
 | --- | --- | --- | --- |
 | [[Elandra Windrider]] | [[Arkanist]] 3 | Hochelfe | Fernkampf / Kontrolle |
 | [[Borin Eisenfaust]] | [[Krieger]] 4 | Bergzwerg | Frontlinie |
+| [[Aldric von Hohenwacht]] | [[Paladin]] 4 | Mensch | Frontlinie / Schutz |
+| [[Ilsa Morgentau]] | [[Kleriker]] 3 | Mensch | Heilung / Unterstützung |
+| [[Kaelen Dornwacht]] | [[Waldläufer]] 4 | Waldelf | Fernkampf / Späher |
+| [[Fenn Flinkfinger]] | [[Gauner]] 3 | Halbling | Heimlichkeit / Schaden |
 
 Die Regeln unter `Regeln/` und die Gegenstände unter `Gegenstände/` folgen demselben Schema wie im
 Spielervault (Tags `Regeln/Endeavour` bzw. `Gegenstand/...`), sind aber auf das beschränkt, was die
-beiden Beispielcharaktere verlinken.
+sechs Beispielcharaktere verlinken.

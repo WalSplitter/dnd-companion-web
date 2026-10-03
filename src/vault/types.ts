@@ -1,6 +1,6 @@
-import type { EndeavourItemFrontmatter } from './adapters/endeavourItem'
+import type { EndeavourItemFrontmatter } from './endeavourItemTypes'
 
-export type { EndeavourItemFrontmatter } from './adapters/endeavourItem'
+export type { EndeavourItemFrontmatter } from './endeavourItemTypes'
 
 export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 
@@ -535,6 +535,10 @@ export interface VaultSourceFile {
   path: string
   content: string
 }
+
+/** Filename (lowercase) -> displayable URL (object URL or data URL), for resolving attachment
+ * references like a character's `Bild: "[[Portrait.jpg]]"` field. */
+export type ImageAssets = Map<string, string>
 
 /** A vault markdown file that doesn't match any structured schema (rule pages, class/feature lore,
  * etc.) — kept only so `[[Wikilink]]`s pointing at it can still resolve to *something* in the UI. */

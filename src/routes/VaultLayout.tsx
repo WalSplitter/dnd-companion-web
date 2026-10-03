@@ -18,14 +18,16 @@ export function VaultLayout() {
 
   useEffect(() => {
     if (useVaultStore.getState().source !== 'none') return
-    // Loads synchronously, so the source is set before the next render and `restoring` no longer matters.
-    if (wasSampleVaultActive()) return useVaultStore.getState().loadSampleVault()
     let active = true
     void (async () => {
       const store = useVaultStore.getState()
-      await store.refreshRecents()
-      const last = useVaultStore.getState().recents[0]
-      if (last) await store.openRecentVault(last.id, { silent: true })
+      if (wasSampleVaultActive()) {
+        await store.loadSampleVault()
+      } else {
+        await store.refreshRecents()
+        const last = useVaultStore.getState().recents[0]
+        if (last) await store.openRecentVault(last.id, { silent: true })
+      }
       if (active) setRestoring(false)
     })()
     return () => {

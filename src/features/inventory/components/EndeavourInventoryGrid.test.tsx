@@ -43,9 +43,9 @@ function drop(target: HTMLElement, payload: unknown) {
 
 const alert = () => screen.queryByRole('alert')
 
-beforeEach(() => {
+beforeEach(async () => {
   // Reopening the sample vault restores its pristine state and grants (in-memory) editing.
-  useVaultStore.getState().loadSampleVault()
+  await useVaultStore.getState().loadSampleVault()
 })
 
 describe('EndeavourInventoryGrid', () => {

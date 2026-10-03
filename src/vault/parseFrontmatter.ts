@@ -4,7 +4,7 @@ import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/l
 import { normalizeNativeCharacter } from './adapters/nativeCharacter'
 import { parseRawFile, type RawFile } from './rawFile'
 import type { ItemFrontmatter, SpellFrontmatter, Vault, VaultSourceFile } from './types'
-import type { ImageAssets } from './vaultLoader'
+import type { ImageAssets } from './types'
 
 export class FrontmatterValidationError extends Error {
   readonly path: string

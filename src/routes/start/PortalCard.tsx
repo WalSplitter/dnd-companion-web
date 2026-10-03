@@ -2,17 +2,20 @@ import { useRef, type CSSProperties, type PointerEvent, type ReactNode, type Ref
 
 /**
  * A card that tilts toward the pointer and lights up where it is, with a spinning gilded rim on
- * hover. `accent` tints it (any CSS colour). Rendered as a button when it has a single action.
+ * hover. `accent` tints it (any CSS colour). Rendered as a button when it has a single action;
+ * `onIntent` fires once the pointer or focus lands on it, to prefetch what that action needs.
  */
 export function PortalCard({
   accent,
   onActivate,
+  onIntent,
   disabled,
   className = '',
   children,
 }: {
   accent: string
   onActivate?: () => void
+  onIntent?: () => void
   disabled?: boolean
   className?: string
   children: ReactNode
@@ -41,6 +44,8 @@ export function PortalCard({
     style: { '--portal': accent } as CSSProperties,
     onPointerMove: track,
     onPointerLeave: reset,
+    onPointerEnter: onIntent,
+    onFocus: onIntent,
   }
   const inner = <div className="portal-card-inner flex h-full flex-col p-5 tall:p-7">{children}</div>
 

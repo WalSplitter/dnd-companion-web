@@ -1,14 +1,11 @@
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
-import { sampleVaultFiles, sampleVaultImages } from '../sample-vault'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
 import { deriveEquipment, equipmentChangeFields } from '../vault/adapters/nativeCharacter'
 import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
 import type { RawFile } from '../vault/rawFile'
-import { openBlobCache } from '../vault/github/blobCache'
 import { GitHubError, gitHubVaultKey, gitHubVaultName, type GitHubErrorKind, type GitHubVaultRef } from '../vault/github/githubApi'
-import { GitHubSync, type SyncStatus } from '../vault/github/githubSync'
-import { readVaultFromGitHub } from '../vault/github/githubVaultLoader'
+import type { GitHubSync, SyncStatus } from '../vault/github/githubSync'
 import {
   forgetRecentVault,
   listRecentVaults,
@@ -24,12 +21,11 @@ import {
   readVaultFromDirectoryHandle,
   readVaultFromFileList,
   showVaultDirectoryPicker,
-  type ImageAssets,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
 import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, Vault, VaultSourceFile } from '../vault/types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
@@ -72,8 +68,9 @@ interface VaultState {
   editPermission: EditPermission
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
-  /** Opens the bundled sample vault — always in its original state, so this also discards any demo edits. */
-  loadSampleVault: () => void
+  /** Opens the bundled sample vault — always in its original state, so this also discards any demo edits.
+   * The first call downloads the vault's notes (a separate chunk); every later one switches synchronously. */
+  loadSampleVault: () => Promise<boolean>
   /** The load actions resolve `true` once the new vault is showing (false: cancelled, failed or superseded). */
   loadFromDirectoryPicker: () => Promise<boolean>
   /** Opens a folder handle obtained some other way (dragged onto the start page). */
@@ -198,6 +195,13 @@ function mapCharacter(vault: Vault, characterPath: string, mutate: (character: C
   return { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) }
 }
 
+/** The GitHub vault's reader, write-back queue and blob cache — only downloaded once a repository is opened. */
+function loadGitHubRuntime() {
+  return Promise.all([import('../vault/github/blobCache'), import('../vault/github/githubVaultLoader'), import('../vault/github/githubSync')]).then(
+    ([{ openBlobCache }, { readVaultFromGitHub }, { GitHubSync }]) => ({ openBlobCache, readVaultFromGitHub, GitHubSync }),
+  )
+}
+
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
 const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable' } as const
 
@@ -244,9 +248,18 @@ const EMPTY_STATE = (() => {
   } satisfies Partial<VaultState>
 })()
 
+type SampleVaultModule = typeof import('../sample-vault')
+
+/** Starts downloading the sample vault's notes ahead of a likely click (hover/focus on its card). */
+export function prefetchSampleVault(): void {
+  void import('../sample-vault').catch(() => {
+    // Only a head start — `loadSampleVault` retries and reports a real failure.
+  })
+}
+
 /** Editable so visitors can try every control, but through `sandboxWriter`: edits change only the
  * in-memory vault and are gone on reload or the next `loadSampleVault`. */
-function buildSampleState() {
+function buildSampleState({ sampleVaultFiles, sampleVaultImages }: SampleVaultModule) {
   const rawFiles = parseVaultFiles(sampleVaultFiles)
   const vault = buildVaultFromRawFiles(rawFiles, sampleVaultImages)
   return {
@@ -396,12 +409,22 @@ export const useVaultStore = create<VaultState>((set, get) => {
     recents: [],
     recentsLoaded: false,
 
-    loadSampleVault: () => {
-      loadSeq++
+    loadSampleVault: async () => {
+      const seq = ++loadSeq
+      if (!sampleState) {
+        set({ status: 'loading', error: null, loadingProgress: null })
+        try {
+          sampleState = buildSampleState(await import('../sample-vault'))
+        } catch (err) {
+          if (seq === loadSeq) loadFailed('vault.loadSampleVault', err)
+          return false
+        }
+        if (seq !== loadSeq) return false
+      }
       replaceSync(null)
       revokeActiveImageAssets()
-      sampleState ??= buildSampleState()
       set(sampleState)
+      return true
     },
 
     loadFromDirectoryPicker: async () => {
@@ -454,6 +477,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const seq = ++loadSeq
       set({ status: 'loading', error: null, githubError: null, loadingProgress: null })
       try {
+        const { openBlobCache, readVaultFromGitHub, GitHubSync } = await loadGitHubRuntime()
         const cache = await openBlobCache()
         const { files, imageAssets, snapshot } = await readVaultFromGitHub(token, ref, {
           cache,

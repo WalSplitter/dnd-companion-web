@@ -1,4 +1,4 @@
-import type { ImageAssets } from './vaultLoader'
+import type { ImageAssets } from './types'
 import { linkFile } from './wikilinkSyntax'
 
 /**
