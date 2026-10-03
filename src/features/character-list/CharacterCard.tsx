@@ -184,6 +184,7 @@ function CharacterCardBody({ character: c }: { character: CharacterFrontmatter }
             </span>
           )}
           <div aria-hidden className="card-fallen-veil" />
+          <div aria-hidden className="card-fallen-shade" />
         </>
       )}
 
@@ -236,7 +237,12 @@ function CharacterRowBody({ character: c }: { character: CharacterFrontmatter })
         fallen ? `card-fallen hover:shadow-[0_0_20px_-6px_rgb(200_0_0/0.7)] ${dead ? 'is-dead' : ''}` : 'hover:shadow-[0_0_18px_-6px_var(--color-trim)]'
       }`}
     >
-      {fallen && <div aria-hidden className="card-fallen-veil" />}
+      {fallen && (
+        <>
+          <div aria-hidden className="card-fallen-veil" />
+          <div aria-hidden className="card-fallen-shade" />
+        </>
+      )}
 
       <div className="flex min-w-0 flex-1 basis-64 items-center gap-3 lg:w-80 lg:flex-none">
         <Portrait character={c} small />
