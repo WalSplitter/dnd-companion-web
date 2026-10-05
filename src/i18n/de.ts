@@ -49,6 +49,8 @@ export const de = {
   'owlbear.liveOnSheet': 'Live in Owlbear',
   'owlbear.claim': 'Mein Charakter – Änderungen aus Owlbear in meinem Vault speichern',
   'owlbear.lockedHint': 'Wird von seinem Spieler gepflegt – hier nur lesbar.',
+  'owlbear.gmPoolsHint': 'Wird von seinem Spieler gepflegt. TP, temporäre TP und RP änderst du hier nur im Raum – gespeichert werden sie im Vault des Spielers.',
+  'owlbear.shareRolls': 'Würfe im Raum zeigen (Meldung und Effekt am Token)',
   'owlbear.mismatch': 'Owlbear und dein Vault weichen ab: live {{live}}, im Vault {{vault}}.',
   'owlbear.saveLive': 'Owlbear-Werte speichern',
   'owlbear.sendVault': 'Vault-Werte an Owlbear senden',

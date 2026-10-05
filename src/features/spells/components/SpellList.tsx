@@ -335,7 +335,7 @@ function SpellRow({
   const steps = [
     flow === 'attack' && attackBonus !== undefined && (
       <CaptionedRoll key="attack" caption={t('roll.attackCaption')}>
-        <D20RollButton label={t('roll.attackSuffix', { name: fm.name })} modifier={attackBonus} note={t('spells.attackNote')} className={ROLL_BUTTON}>
+        <D20RollButton attack label={t('roll.attackSuffix', { name: fm.name })} modifier={attackBonus} note={t('spells.attackNote')} className={ROLL_BUTTON}>
           <HitIcon />
           <D20Modifier value={attackBonus} hint={false} />
         </D20RollButton>

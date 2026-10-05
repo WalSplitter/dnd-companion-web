@@ -1,6 +1,6 @@
 import type OBRType from '@owlbear-rodeo/sdk'
 import type { Item } from '@owlbear-rodeo/sdk'
-import { clashDiffers, readClash, writeClash } from './clash'
+import { clashDiffers, readClash, writeClash, type ClashVitals } from './clash'
 import { readLink, readRoster, type LiveRoster } from './live'
 import { writeRoster } from './roster'
 
@@ -13,8 +13,8 @@ const CLASH_SOURCE = 'clash'
 /**
  * Keeps Clash's values on linked tokens and the room's roster in step, in both directions:
  *
- * - HP changed in Clash → into the roster, so the companions show (and the owner saves) it;
- * - a roster change (a sheet edit, linking a token) → onto the tokens in Clash: HP, max HP, AC.
+ * - HP or temp HP changed in Clash → into the roster, so the companions show (and the owner saves) it;
+ * - a roster change (a sheet edit, linking a token) → onto the tokens in Clash: HP, temp HP, max HP, AC.
  *
  * Runs on everyone's background page, so it works while every companion is closed. Several bridges
  * may act on one change; the writes are idempotent, and a player whose role may not change tokens
@@ -24,8 +24,8 @@ const CLASH_SOURCE = 'clash'
 export function startClashBridge(obr: Obr) {
   let roster: LiveRoster = {}
   let items: Item[] = []
-  /** Clash HP per token as last seen or written here — tells a change made in Clash from our own write. */
-  const seen = new Map<string, number>()
+  /** Clash HP and temp HP per token as last seen or written here — tells a change made in Clash from our own write. */
+  const seen = new Map<string, Pick<ClashVitals, 'hp' | 'temp'>>()
 
   const linkedClashTokens = () =>
     items.flatMap((item) => {
@@ -49,7 +49,7 @@ export function startClashBridge(obr: Obr) {
           }
         },
       )
-      for (const { item, name } of stale) seen.set(item.id, roster[name].hp)
+      for (const { item, name, clash } of stale) seen.set(item.id, { hp: roster[name].hp, temp: clash.temp === undefined ? undefined : roster[name].temp })
     } catch {
       // This player may not change tokens; the GM's bridge writes them.
     }
@@ -62,13 +62,17 @@ export function startClashBridge(obr: Obr) {
       const entry = roster[name]
       if (!entry) continue
       const before = seen.get(item.id)
-      seen.set(item.id, clash.hp)
-      if (before === undefined || before === clash.hp || clash.hp === entry.hp) continue
-      // Changed in Clash: only HP — temp HP and resilience aren't there, so they stay as they are.
+      seen.set(item.id, { hp: clash.hp, temp: clash.temp })
+      if (before === undefined) continue
+      // Changed in Clash: HP and temp HP — max HP and AC belong to the sheet, resilience isn't in Clash.
+      const hpChanged = before.hp !== clash.hp && clash.hp !== entry.hp
+      const tempChanged = clash.temp !== undefined && before.temp !== undefined && before.temp !== clash.temp && clash.temp !== entry.temp
+      if (!hpChanged && !tempChanged) continue
+      const change = { ...(hpChanged ? { hp: clash.hp } : {}), ...(tempChanged ? { temp: clash.temp } : {}) }
       fromClash.add(name)
-      roster = { ...roster, [name]: { ...entry, hp: clash.hp } }
+      roster = { ...roster, [name]: { ...entry, ...change } }
       void writeRoster(obr, (current) =>
-        current[name] ? { ...current, [name]: { ...current[name], hp: clash.hp, by: CLASH_SOURCE, byName: 'Clash', at: Date.now() } } : current,
+        current[name] ? { ...current, [name]: { ...current[name], ...change, by: CLASH_SOURCE, byName: 'Clash', at: Date.now() } } : current,
       )
     }
     void mirror(fromClash)

@@ -15,9 +15,12 @@ interface OwlbearState {
   roster: LiveRoster
   /** Characters this browser looks after: changes made in Owlbear are saved to their vault files here. */
   claimed: string[]
+  /** Whether rolls on the sheets of linked characters go to the room (see `rolls.ts`). */
+  shareRolls: boolean
 }
 
 const CLAIMS_KEY = 'dnd-companion-owlbear-claims'
+const SHARE_ROLLS_KEY = 'dnd-companion-owlbear-share-rolls'
 
 function loadClaims(): string[] {
   try {
@@ -35,7 +38,25 @@ export const useOwlbearStore = create<OwlbearState>(() => ({
   connectionId: null,
   roster: {},
   claimed: loadClaims(),
+  shareRolls: loadShareRolls(),
 }))
+
+function loadShareRolls(): boolean {
+  try {
+    return localStorage.getItem(SHARE_ROLLS_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
+export function setShareRolls(shareRolls: boolean) {
+  useOwlbearStore.setState({ shareRolls })
+  try {
+    localStorage.setItem(SHARE_ROLLS_KEY, String(shareRolls))
+  } catch {
+    // Not remembered beyond this visit then.
+  }
+}
 
 /** Marks `name` as this player's own character, or stops doing so. */
 export function setClaimed(name: string, claimed: boolean) {

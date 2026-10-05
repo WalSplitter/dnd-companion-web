@@ -74,8 +74,8 @@ Failed writes are rolled back.
 <td valign="top">
 
 **In Owlbear Rodeo.** Runs as an extension next to the map. HP, temp HP, resilience and AC of
-linked tokens are live for the whole group, in sync with the Clash! combat tracker
-([details](#playing-in-owlbear-rodeo)).
+linked tokens are live for the whole group, in sync with the Clash! combat tracker; rolls show up
+for everyone, with an effect on the token ([details](#playing-in-owlbear-rodeo)).
 
 **The whole party.** Cards, a compact list or a lineup by front, middle and back line, plus a
 comparison of everyone's values.
@@ -320,7 +320,7 @@ right, narrow or wide, or to close it. Owlbear doesn't let extensions be dragged
 
 | | What to do |
 | --- | --- |
-| **GM** | Open **Game table** in the breadcrumbs, select a token on the map, choose the character and click **Link**. Its HP, temp HP, resilience and AC from the vault become the room's live values. **Reset from vault** starts a session from the vault's values again. |
+| **GM** | Open **Game table** in the breadcrumbs, select a token on the map, choose the character and click **Link**. The token takes the character's name, and its HP, temp HP, resilience and AC from the vault become the room's live values. **Reset from vault** starts a session from the vault's values again. |
 | **Player** | Open your character and tick **My character**, then switch on **Edit**. Changes made in Owlbear (by the GM in Clash, or on your sheet) are saved to your vault and committed [as usual](#saving-changes). |
 | **Everyone** | **Game table → Party, live** and the sheets of linked characters show the live values, even while the vault on GitHub lags behind. |
 
@@ -329,7 +329,8 @@ Who writes what:
 - **Only the player saves their character to the vault**, and only while their companion is open.
   Without it, keep the sheet up to date by hand later. The GM never writes to the vault.
 - Sheets of linked characters you haven't claimed are **read-only**, so two people never write the
-  same file.
+  same file. The GM may still change HP, temp HP and resilience there: those go to the room only,
+  and the player's companion saves them.
 - If the room and your vault differ when you open your character (say, you edited the note in
   Obsidian between sessions), the companion asks which values to keep instead of overwriting either.
 
@@ -337,12 +338,24 @@ Who writes what:
 
 If a linked token is also in the [Clash!](https://extensions.owlbear.rodeo/clash) combat tracker:
 
-- **Linking fills Clash** with the character's HP, max HP and AC.
-- **HP changed in Clash** shows up for everyone at once and is saved by the player's companion.
-- **HP changed on the sheet** shows up in Clash.
+- **Linking fills Clash** with the character's name, HP, temp HP, max HP and AC.
+- **HP and temp HP changed in Clash** show up for everyone at once and are saved by the player's
+  companion.
+- **HP and temp HP changed on the sheet** show up in Clash.
 
 This runs on the extension's background page for everyone in the room, so it also works while all
-companions are closed. Clash has no temp HP or resilience, so those stay on the sheet.
+companions are closed. Temp HP are an optional column in Clash: turn it on in Clash's settings to
+sync them. Clash has no resilience, so that stays on the sheet.
+
+### Rolls
+
+Rolls on the sheet of a linked character go to the whole room, as effects on the character's
+token. An **attack** (weapon or spell) closes a reticle in on the token, its total on the left:
+turquoise, gold on a natural 20, grey and off target on a 1. **Damage** flares out of the token,
+its total on the right, coloured by the damage type and red on a critical hit. Checks and saves
+come as a notification, and so do attacks and damage of a character without a token on the map.
+Each player can switch this off on the bar
+above the sheet.
 
 > [!WARNING]
 > Clash doesn't document how it stores its values; the companion reads the keys of the current

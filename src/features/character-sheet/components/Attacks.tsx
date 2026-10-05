@@ -47,7 +47,7 @@ export function Attacks({ character }: { character: CharacterFrontmatter }) {
               </span>
               <span className="flex items-start gap-1.5">
                 <CaptionedRoll caption={t('roll.attackCaption')}>
-                  <D20RollButton label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus} note={attackNote} className={ROLL_BUTTON}>
+                  <D20RollButton attack label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus} note={attackNote} className={ROLL_BUTTON}>
                     <HitIcon />
                     <D20Modifier value={attack.attack_bonus} hint={false} />
                   </D20RollButton>

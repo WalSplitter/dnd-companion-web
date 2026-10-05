@@ -5,7 +5,8 @@ import { closePanel, isPanelOpen, loadPanelPrefs, openPanel, savePanelPrefs, typ
 
 /**
  * Script of `owlbear-action.html`, the popover of the toolbar button. A click while the companion
- * is closed opens it and gets out of the way; a click while it's open shows where to dock it.
+ * is closed opens it and gets out of the way (the page says to wait meanwhile); a click while it's
+ * open shows where to dock it.
  */
 
 function lang(): 'en' | 'de' {
@@ -61,5 +62,6 @@ OBR.onReady(async () => {
     void closePanel(OBR).then(() => OBR.action.close())
   })
   showPrefs(loadPanelPrefs())
+  document.getElementById('loading')!.hidden = true
   document.getElementById('controls')!.hidden = false
 })
