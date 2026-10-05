@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
+import { useShareRoll } from '../owlbear/rolls'
 import { formatModifier } from '../vault/deriveStats'
 import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
@@ -25,6 +26,7 @@ export function D20RollButton({
   note,
   mode: defaultMode = 'normal',
   effect,
+  attack = false,
   children,
 }: {
   label: string
@@ -32,6 +34,8 @@ export function D20RollButton({
   className?: string
   /** What the result means in play, shown under it (e.g. the action points an initiative roll grants). */
   effect?: (result: D20RollResult) => string
+  /** An attack roll (weapon or spell) — in Owlbear Rodeo it plays the attack effect on the token. */
+  attack?: boolean
   /** Mode a plain click rolls with (e.g. a class's save advantage); Shift/Alt still force advantage/disadvantage. */
   mode?: RollMode
   /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
@@ -46,6 +50,7 @@ export function D20RollButton({
 }) {
   const t = useT()
   const penalty = useD20Penalty()
+  const share = useShareRoll()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
   const [rolls, setRolls] = useState(0)
 
@@ -56,6 +61,15 @@ export function D20RollButton({
     setRolls((n) => n + 1)
     const result = rollD20({ mode, modifier: modifier - penalty })
     setOutcome({ kind: 'd20', label, result, penalty, effect: effect?.(result) })
+    share?.({
+      kind: attack ? 'attack' : 'd20',
+      label,
+      total: result.total,
+      rolls: result.rolls,
+      modifier: result.modifier,
+      critical: result.isCriticalHit,
+      fumble: result.isCriticalMiss,
+    })
   }
 
   const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note))
@@ -94,6 +108,7 @@ export function DamageRollButton({
   children?: React.ReactNode
 }) {
   const t = useT()
+  const share = useShareRoll()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
 
   function roll(e: React.MouseEvent) {
@@ -101,12 +116,13 @@ export function DamageRollButton({
     e.stopPropagation()
     const critical = e.shiftKey
     const result = rollDamage(`${dice}${bonus ? formatModifier(bonus) : ''}`, { critical })
-    if (result)
-      setOutcome({
-        kind: 'damage',
-        label: `${label}${critical ? t('roll.critSuffix') : ''}${damageType ? ` · ${damageType}` : ''}`,
-        result,
-      })
+    if (!result) return
+    setOutcome({
+      kind: 'damage',
+      label: `${label}${critical ? t('roll.critSuffix') : ''}${damageType ? ` · ${damageType}` : ''}`,
+      result,
+    })
+    share?.({ kind: 'damage', label, total: result.total, rolls: result.rolls, modifier: result.modifier, critical, damageType })
   }
 
   return (

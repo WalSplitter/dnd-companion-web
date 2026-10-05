@@ -51,7 +51,7 @@ export function SpellsPanel({
       </CastingStat>
       <CastingStat label={t('stats.attack')}>
         {attack !== undefined ? (
-          <D20RollButton label={t('roll.spellAttack')} modifier={attack} className="cursor-pointer transition hover:text-trim">
+          <D20RollButton attack label={t('roll.spellAttack')} modifier={attack} className="cursor-pointer transition hover:text-trim">
             <D20Modifier value={attack} hint={false} />
           </D20RollButton>
         ) : (

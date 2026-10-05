@@ -4,7 +4,7 @@ import type { CharacterFrontmatter } from '../vault/types'
 import { formatPools } from './formatVitals'
 import { samePools, vitalsOf } from './live'
 import { pushVitals, saveToVault } from './liveSync'
-import { setClaimed, useOwlbearStore } from './owlbearStore'
+import { setClaimed, setShareRolls, useOwlbearStore } from './owlbearStore'
 
 const BUTTON = 'rounded-md border border-trim/40 px-3 py-1.5 text-sm font-medium text-fg transition hover:border-trim hover:bg-trim/10'
 
@@ -17,6 +17,7 @@ export function OwlbearSheetBar({ character }: { character: CharacterFrontmatter
   const live = useOwlbearStore((s) => s.roster[character.name])
   const claimed = useOwlbearStore((s) => s.claimed.includes(character.name))
   const isGM = useOwlbearStore((s) => s.role === 'GM')
+  const shareRolls = useOwlbearStore((s) => s.shareRolls)
   const canSave = useVaultStore((s) => s.editPermission === 'granted')
   const requestEditPermission = useVaultStore((s) => s.requestEditPermission)
   if (!live) return null
@@ -49,7 +50,17 @@ export function OwlbearSheetBar({ character }: { character: CharacterFrontmatter
         )}
       </div>
 
-      {!claimed && <p className="text-xs text-fg-muted">{t('owlbear.lockedHint')}</p>}
+      <label className="flex w-fit cursor-pointer items-center gap-2 text-xs text-fg-muted">
+        <input
+          type="checkbox"
+          checked={shareRolls}
+          onChange={(e) => setShareRolls(e.target.checked)}
+          className="size-3.5 accent-[var(--color-trim)]"
+        />
+        {t('owlbear.shareRolls')}
+      </label>
+
+      {!claimed && <p className="text-xs text-fg-muted">{t(isGM ? 'owlbear.gmPoolsHint' : 'owlbear.lockedHint')}</p>}
 
       {claimed && differs && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2">

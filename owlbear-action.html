@@ -35,9 +35,36 @@
       }
       .close:hover, .segment button:hover:not([aria-pressed='true']) { background: var(--line); }
       .hint { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+      .loading { display: flex; gap: 12px; align-items: flex-start; padding-top: 6px; }
+      .loading strong { display: block; margin-bottom: 4px; }
+      .loading span { color: var(--muted); font-size: 12px; }
+      .spinner {
+        flex: none; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%;
+        border: 3px solid var(--line); border-top-color: var(--primary); animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
+    <!-- Shown at once, before the SDK has loaded: opening the companion takes a moment, and a second
+         click on the toolbar button would close this popover and cancel it. -->
+    <div id="loading" class="loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <div role="status"><strong></strong><span></span></div>
+    </div>
+    <script>
+      // Inline so it shows before the module loads; same language choice as `action.ts`.
+      ;(() => {
+        let lang = null
+        try { lang = localStorage.getItem('dnd-companion-lang') } catch {}
+        const de = lang ? lang === 'de' : navigator.language.toLowerCase().startsWith('de')
+        const [title, hint] = de
+          ? ['Companion wird geöffnet …', 'Bitte einen Moment warten und nicht erneut auf das Symbol klicken.']
+          : ['Opening the companion …', 'Please wait a moment and don’t click the icon again.']
+        document.querySelector('#loading strong').textContent = title
+        document.querySelector('#loading span').textContent = hint
+      })()
+    </script>
     <div id="controls" hidden>
       <div class="row">
         <span class="label" data-t="owlbear.dockLabel"></span>

@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
+import { useContext, useState, type ReactNode } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { DamageRollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
+import { LivePoolsEditContext } from '../../../owlbear/liveEdit'
 import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
 import { abilityModifier } from '../../../vault/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
@@ -260,18 +261,24 @@ export function HitPoints({
   const manaTarget = editable(writeTargets?.mana_current)
   const exhaustionTarget = editable(writeTargets?.exhaustion)
 
-  const setHp =
-    hpTarget &&
-    ((next: number) => void updateCharacterField(characterPath, hpTarget, next, (c) => ({ ...c, hp: { ...c.hp, current: next } })))
-  const setTemp =
-    tempTarget &&
-    ((next: number) => void updateCharacterField(characterPath, tempTarget, next, (c) => ({ ...c, hp: { ...c.hp, temp: next } })))
-  const setResilience =
-    resilienceTarget &&
-    ((next: number) =>
-      void updateCharacterField(characterPath, resilienceTarget, next, (c) =>
-        c.resilience ? { ...c, resilience: { ...c.resilience, current: next } } : c,
-      ))
+  // The GM in Owlbear changes the live pools of a player's character in the room only.
+  const editLive = useContext(LivePoolsEditContext)
+
+  const setHp = editLive
+    ? (next: number) => editLive({ hp: next })
+    : hpTarget &&
+      ((next: number) => void updateCharacterField(characterPath, hpTarget, next, (c) => ({ ...c, hp: { ...c.hp, current: next } })))
+  const setTemp = editLive
+    ? (next: number) => editLive({ temp: next })
+    : tempTarget &&
+      ((next: number) => void updateCharacterField(characterPath, tempTarget, next, (c) => ({ ...c, hp: { ...c.hp, temp: next } })))
+  const setResilience = editLive
+    ? character.resilience && ((next: number) => editLive({ resilience: next }))
+    : resilienceTarget &&
+      ((next: number) =>
+        void updateCharacterField(characterPath, resilienceTarget, next, (c) =>
+          c.resilience ? { ...c, resilience: { ...c.resilience, current: next } } : c,
+        ))
   const setMana =
     manaTarget &&
     ((next: number) =>

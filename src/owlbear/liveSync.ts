@@ -1,7 +1,9 @@
 import type OBRType from '@owlbear-rodeo/sdk'
 import { onCharacterEdit, useVaultStore } from '../store/vaultStore'
 import type { CharacterFrontmatter } from '../vault/types'
+import { renameInClash } from './clash'
 import { LINK_KEY, readRoster, samePools, vitalsOf, type LiveRoster, type Vitals } from './live'
+import type { PoolChange } from './liveEdit'
 import { useOwlbearStore } from './owlbearStore'
 import { stamp, writeRoster } from './roster'
 
@@ -64,6 +66,12 @@ export function pushVitals(name: string, vitals: Vitals): Promise<void> {
   return changeRoster((roster) => ({ ...roster, [name]: stamp(vitals, connectionId ?? '', playerName ?? '') }))
 }
 
+/** Changes some of the live pools of `name` in the room, leaving the vault alone (the GM's edits). */
+export function changePools(name: string, change: PoolChange): Promise<void> {
+  const entry = useOwlbearStore.getState().roster[name]
+  return entry ? pushVitals(name, { ...entry, ...change }) : Promise.resolve()
+}
+
 /** Drops `name` from the room; its tokens stay linked, but show nothing live until linked again. */
 export function removeVitals(name: string): Promise<void> {
   return changeRoster(({ [name]: _removed, ...rest }) => rest)
@@ -97,14 +105,21 @@ export async function saveToVault(name: string): Promise<void> {
 }
 
 /**
- * Links a token on the map to a character. The room gets the character's values from this vault,
- * unless it already has live values for it (from another token, or earlier in the session). A token
- * in Clash then takes those values over (see `clashBridge.ts`).
+ * Links a token on the map to a character and names it after them — in Owlbear, in Clash, and on the
+ * label the token shows on the map (none is added). The room gets the character's values from this
+ * vault, unless it already has live values for it (from another token, or earlier in the session).
+ * A token in Clash then takes those values over (see `clashBridge.ts`).
  */
 export async function linkToken(itemId: string, character: CharacterFrontmatter): Promise<void> {
   if (!obr) return
   await obr.scene.items.updateItems([itemId], (items) => {
-    for (const item of items) item.metadata[LINK_KEY] = { character: character.name }
+    for (const item of items) {
+      item.metadata[LINK_KEY] = { character: character.name }
+      item.name = character.name
+      renameInClash(item.metadata, character.name)
+      const label = (item as { text?: { plainText: string } }).text
+      if (label?.plainText) label.plainText = character.name
+    }
   })
   if (!useOwlbearStore.getState().roster[character.name]) await pushVitals(character.name, vitalsOf(character))
 }

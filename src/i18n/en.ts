@@ -53,6 +53,8 @@ export const en = {
   'owlbear.liveOnSheet': 'Live in Owlbear',
   'owlbear.claim': 'My character — save changes made in Owlbear to my vault',
   'owlbear.lockedHint': 'Looked after by its player — read-only here.',
+  'owlbear.gmPoolsHint': 'Looked after by its player. HP, temp HP and RP you change here go to the room only — they are saved in the player’s vault.',
+  'owlbear.shareRolls': 'Show rolls in the room (notification and effect on the token)',
   'owlbear.mismatch': 'Owlbear and your vault differ: {{live}} live, {{vault}} in the vault.',
   'owlbear.saveLive': 'Save Owlbear values',
   'owlbear.sendVault': 'Send vault values to Owlbear',
