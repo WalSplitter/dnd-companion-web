@@ -62,8 +62,12 @@ async function changeRoster(change: (roster: LiveRoster) => LiveRoster) {
 
 /** Puts `vitals` into the room as the current values of `name`. */
 export function pushVitals(name: string, vitals: Vitals): Promise<void> {
-  const { connectionId, playerName } = useOwlbearStore.getState()
-  return changeRoster((roster) => ({ ...roster, [name]: stamp(vitals, connectionId ?? '', playerName ?? '') }))
+  const { connectionId, playerName, roster } = useOwlbearStore.getState()
+  const entry = stamp(vitals, connectionId ?? '', playerName ?? '')
+  // Shown at once, in the same render as the sheet edit: waiting for the room would flash the
+  // sheet bar's "room and vault differ" for a moment.
+  useOwlbearStore.setState({ roster: { ...roster, [name]: entry } })
+  return changeRoster((current) => ({ ...current, [name]: entry }))
 }
 
 /** Changes some of the live pools of `name` in the room, leaving the vault alone (the GM's edits). */

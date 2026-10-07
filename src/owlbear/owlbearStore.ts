@@ -1,5 +1,6 @@
 import type OBRType from '@owlbear-rodeo/sdk'
 import { create } from 'zustand'
+import { CLAIMS_KEY, loadClaims } from './claims'
 import type { LiveRoster } from './live'
 
 export type OwlbearRole = 'GM' | 'PLAYER'
@@ -19,17 +20,7 @@ interface OwlbearState {
   shareRolls: boolean
 }
 
-const CLAIMS_KEY = 'dnd-companion-owlbear-claims'
 const SHARE_ROLLS_KEY = 'dnd-companion-owlbear-share-rolls'
-
-function loadClaims(): string[] {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(CLAIMS_KEY) ?? '[]')
-    return Array.isArray(stored) ? stored.filter((name): name is string => typeof name === 'string') : []
-  } catch {
-    return []
-  }
-}
 
 export const useOwlbearStore = create<OwlbearState>(() => ({
   ready: false,

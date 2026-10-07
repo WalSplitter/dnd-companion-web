@@ -35,22 +35,117 @@
       }
       .close:hover, .segment button:hover:not([aria-pressed='true']) { background: var(--line); }
       .hint { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
-      .loading { display: flex; gap: 12px; align-items: flex-start; padding-top: 6px; }
-      .loading strong { display: block; margin-bottom: 4px; }
-      .loading span { color: var(--muted); font-size: 12px; }
-      .spinner {
-        flex: none; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%;
-        border: 3px solid var(--line); border-top-color: var(--primary); animation: spin 0.8s linear infinite;
+      /* The loading screen: a d20 tumbling in a ring of runes, in the companion's gold — whatever
+         Owlbear's theme, it's the companion's own moment. */
+      .loading {
+        --gold: #e3c27a;
+        --gold-deep: #a8823f;
+        --ember: #ffdf9e;
+        position: fixed; inset: 0; overflow: hidden;
+        display: grid; grid-template-columns: 64px 1fr; grid-template-rows: 1fr auto;
+        column-gap: 12px; row-gap: 8px; align-items: center;
+        padding: 14px 14px 12px;
+        animation: fade-in 0.35s ease-out both;
+      }
+      /* A warm glow behind the die, breathing. */
+      .loading::before {
+        content: ''; position: absolute; left: -30px; top: -26px; width: 150px; height: 150px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(227, 194, 122, 0.28), rgba(227, 194, 122, 0.06) 45%, transparent 70%);
+        animation: breathe 2.6s ease-in-out infinite; pointer-events: none;
+      }
+      .sigil { position: relative; width: 64px; height: 64px; }
+      .sigil svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .ring { animation: spin 14s linear infinite; }
+      .ring-inner { animation: spin 9s linear infinite reverse; }
+      .die { animation: tumble 3.2s cubic-bezier(0.55, 0.05, 0.35, 1) infinite; transform-origin: 32px 32px;
+             filter: drop-shadow(0 0 6px rgba(227, 194, 122, 0.55)); }
+      .spark { animation: spin 2.4s linear infinite; transform-origin: 32px 32px; }
+      .spark circle { filter: drop-shadow(0 0 3px var(--ember)); }
+      .text { position: relative; min-width: 0; }
+      .eyebrow {
+        display: block; font: 600 9px/1 system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--gold-deep); margin-bottom: 5px;
+      }
+      .title {
+        display: block; font: 700 15px/1.15 Cinzel, 'Trajan Pro', Georgia, serif; letter-spacing: 0.02em;
+        background: linear-gradient(100deg, var(--gold-deep) 0%, var(--gold) 30%, #fff6dc 50%, var(--gold) 70%, var(--gold-deep) 100%);
+        background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+        animation: shimmer 2.8s linear infinite;
+      }
+      .dots::after { content: ''; animation: dots 1.4s steps(4, end) infinite; }
+      .bar {
+        position: relative; height: 2px; margin-top: 9px; border-radius: 2px; overflow: hidden;
+        background: rgba(227, 194, 122, 0.15);
+      }
+      .bar::after {
+        content: ''; position: absolute; inset: 0; width: 40%; border-radius: inherit;
+        background: linear-gradient(90deg, transparent, var(--gold), var(--ember), transparent);
+        animation: sweep 1.6s ease-in-out infinite;
+      }
+      .wait {
+        grid-column: 1 / -1; position: relative; margin: 0; padding-top: 8px;
+        border-top: 1px solid rgba(227, 194, 122, 0.16);
+        font-size: 11px; line-height: 1.35; color: var(--muted);
       }
       @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes tumble {
+        0% { transform: rotate(0deg) scale(1); }
+        45% { transform: rotate(200deg) scale(0.86); }
+        60% { transform: rotate(360deg) scale(1.06); }
+        100% { transform: rotate(360deg) scale(1); }
+      }
+      @keyframes breathe { 50% { opacity: 0.55; transform: scale(0.9); } }
+      @keyframes shimmer { from { background-position: 125% 0; } to { background-position: -125% 0; } }
+      @keyframes sweep { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+      @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
+      @media (prefers-reduced-motion: reduce) {
+        .loading *, .loading::before, .loading *::after { animation-duration: 0s !important; animation-iteration-count: 1 !important; }
+      }
     </style>
   </head>
   <body>
     <!-- Shown at once, before the SDK has loaded: opening the companion takes a moment, and a second
          click on the toolbar button would close this popover and cancel it. -->
     <div id="loading" class="loading">
-      <div class="spinner" aria-hidden="true"></div>
-      <div role="status"><strong></strong><span></span></div>
+      <div class="sigil" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <defs>
+            <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff1c9" />
+              <stop offset="0.5" stop-color="#e3c27a" />
+              <stop offset="1" stop-color="#9a7535" />
+            </linearGradient>
+          </defs>
+          <!-- Rune ring: ticks outside, a dashed circle inside, turning against each other. -->
+          <g class="ring" style="transform-origin: 32px 32px">
+            <circle cx="32" cy="32" r="30" fill="none" stroke="#e3c27a" stroke-opacity="0.35" stroke-width="0.8"
+                    stroke-dasharray="1 4.2" />
+          </g>
+          <g class="ring-inner" style="transform-origin: 32px 32px">
+            <circle cx="32" cy="32" r="26.5" fill="none" stroke="#e3c27a" stroke-opacity="0.22" stroke-width="0.6"
+                    stroke-dasharray="10 3 2 3" />
+          </g>
+          <g class="spark">
+            <circle cx="32" cy="2" r="1.6" fill="#ffdf9e" />
+          </g>
+          <!-- The d20, as in the toolbar icon. -->
+          <g class="die" fill="none" stroke="url(#gold)" stroke-linejoin="round">
+            <path d="M32 13 48.5 22.5v19L32 51 15.5 41.5v-19Z" stroke-width="1.8" fill="#e3c27a" fill-opacity="0.07" />
+            <path d="M32 22.6 40.8 37.8H23.2Z" stroke-width="1.3" fill="#e3c27a" fill-opacity="0.28" />
+            <path d="M32 22.6V13M32 22.6 15.5 22.5M32 22.6 48.5 22.5M23.2 37.8 15.5 22.5M23.2 37.8 15.5 41.5M23.2 37.8 32 51M40.8 37.8 48.5 22.5M40.8 37.8 48.5 41.5M40.8 37.8 32 51"
+                  stroke-width="0.9" stroke-opacity="0.8" />
+            <text x="32" y="34.6" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="7"
+                  fill="#fff1c9" stroke="none">20</text>
+          </g>
+        </svg>
+      </div>
+      <div class="text" role="status">
+        <span class="eyebrow">D&amp;D Companion</span>
+        <span class="title"><span class="title-text"></span><span class="dots" aria-hidden="true"></span></span>
+        <div class="bar" aria-hidden="true"></div>
+      </div>
+      <p class="wait"></p>
     </div>
     <script>
       // Inline so it shows before the module loads; same language choice as `action.ts`.
@@ -59,10 +154,10 @@
         try { lang = localStorage.getItem('dnd-companion-lang') } catch {}
         const de = lang ? lang === 'de' : navigator.language.toLowerCase().startsWith('de')
         const [title, hint] = de
-          ? ['Companion wird geöffnet …', 'Bitte einen Moment warten und nicht erneut auf das Symbol klicken.']
-          : ['Opening the companion …', 'Please wait a moment and don’t click the icon again.']
-        document.querySelector('#loading strong').textContent = title
-        document.querySelector('#loading span').textContent = hint
+          ? ['Wird geöffnet', 'Einen Moment – bitte nicht erneut auf das Symbol klicken.']
+          : ['Opening', 'One moment – please don’t click the icon again.']
+        document.querySelector('#loading .title-text').textContent = title
+        document.querySelector('#loading .wait').textContent = hint
       })()
     </script>
     <div id="controls" hidden>

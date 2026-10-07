@@ -69,8 +69,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      // The app, and Owlbear Rodeo's pages: the toolbar button's popover and the background page
-      input: ['index.html', 'owlbear-action.html', 'owlbear-background.html'],
+      // The app, and Owlbear Rodeo's pages: the toolbar button's popover, the minimized companion's
+      // button and the background page
+      input: ['index.html', 'owlbear-action.html', 'owlbear-mini.html', 'owlbear-background.html'],
       output: {
         // Third-party code changes rarely, so keep it in its own cacheable chunk
         manualChunks(id) {

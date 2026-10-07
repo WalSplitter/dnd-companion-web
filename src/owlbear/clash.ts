@@ -44,12 +44,29 @@ export function clashDiffers(clash: ClashVitals, vitals: Pick<Vitals, 'hp' | 'hp
 /** Keeps the type Clash used for a value (it stores some numbers as strings). */
 const sameType = (previous: unknown, value: number) => (typeof previous === 'number' ? value : String(value))
 
-/** Writes `vitals` into a token's metadata in Clash's shape. Temp HP only where Clash tracks them. */
-export function writeClash(metadata: Record<string, unknown>, vitals: Pick<Vitals, 'hp' | 'hpMax' | 'ac' | 'temp'>): void {
+/**
+ * Whether Clash shows its temp HP column. Clash keeps no such setting on the tokens; it adds the key
+ * to a token only once its temp HP were entered, and shows 0 for the others. So one token with the
+ * key tells the column is on.
+ */
+export function clashTracksTemp(tokens: Record<string, unknown>[]): boolean {
+  return tokens.some((metadata) => metadata[CLASH_KEYS.member] === true && CLASH_KEYS.temp in metadata)
+}
+
+/** The token's Clash values, with temp HP as 0 where the key is still missing although Clash shows the column. */
+export function readClashTracked(metadata: Record<string, unknown>, tracksTemp: boolean): ClashVitals | undefined {
+  const clash = readClash(metadata)
+  return clash && tracksTemp && clash.temp === undefined ? { ...clash, temp: 0 } : clash
+}
+
+/** Writes `vitals` into a token's metadata in Clash's shape. Temp HP only where Clash tracks them —
+ * on this token, or (`tracksTemp`) in its column. */
+export function writeClash(metadata: Record<string, unknown>, vitals: Pick<Vitals, 'hp' | 'hpMax' | 'ac' | 'temp'>, tracksTemp = false): void {
   metadata[CLASH_KEYS.hp] = sameType(metadata[CLASH_KEYS.hp], vitals.hp)
   metadata[CLASH_KEYS.hpMax] = vitals.hpMax
   metadata[CLASH_KEYS.ac] = vitals.ac
-  if (CLASH_KEYS.temp in metadata) metadata[CLASH_KEYS.temp] = sameType(metadata[CLASH_KEYS.temp], vitals.temp)
+  // Clash stores temp HP as a string, like the current HP.
+  if (CLASH_KEYS.temp in metadata || tracksTemp) metadata[CLASH_KEYS.temp] = sameType(metadata[CLASH_KEYS.temp] ?? '', vitals.temp)
 }
 
 /** Renames a token in Clash, if it's there. */

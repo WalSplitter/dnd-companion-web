@@ -1,6 +1,6 @@
 import type OBRType from '@owlbear-rodeo/sdk'
 import type { Item } from '@owlbear-rodeo/sdk'
-import { clashDiffers, readClash, writeClash, type ClashVitals } from './clash'
+import { clashDiffers, clashTracksTemp, readClashTracked, writeClash, type ClashVitals } from './clash'
 import { readLink, readRoster, type LiveRoster } from './live'
 import { writeRoster } from './roster'
 
@@ -27,17 +27,23 @@ export function startClashBridge(obr: Obr) {
   /** Clash HP and temp HP per token as last seen or written here — tells a change made in Clash from our own write. */
   const seen = new Map<string, Pick<ClashVitals, 'hp' | 'temp'>>()
 
-  const linkedClashTokens = () =>
-    items.flatMap((item) => {
+  /** Whether Clash shows temp HP — then they go onto every linked token, also where Clash hasn't stored any yet. */
+  const tracksTemp = () => clashTracksTemp(items.map((item) => item.metadata))
+
+  const linkedClashTokens = () => {
+    const temp = tracksTemp()
+    return items.flatMap((item) => {
       const link = readLink(item.metadata)
-      const clash = readClash(item.metadata)
+      const clash = readClashTracked(item.metadata, temp)
       return link && clash ? [{ item, name: link.character, clash }] : []
     })
+  }
 
   /** Writes the roster onto the Clash tokens that show something else — except for `skip`, just taken from Clash. */
   const mirror = async (skip = new Set<string>()) => {
     const stale = linkedClashTokens().filter(({ name, clash }) => !skip.has(name) && roster[name] && clashDiffers(clash, roster[name]))
     if (stale.length === 0) return
+    const temp = tracksTemp()
     try {
       await obr.scene.items.updateItems(
         stale.map(({ item }) => item.id),
@@ -45,7 +51,7 @@ export function startClashBridge(obr: Obr) {
           for (const draft of drafts) {
             const link = readLink(draft.metadata)
             const entry = link && roster[link.character]
-            if (entry) writeClash(draft.metadata, entry)
+            if (entry) writeClash(draft.metadata, entry, temp)
           }
         },
       )

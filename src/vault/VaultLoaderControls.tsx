@@ -1,4 +1,5 @@
 import { useT } from '../i18n/useI18n'
+import { inOwlbear } from '../owlbear/host'
 import { useSampleVaultEdited, useVaultStore } from '../store/vaultStore'
 import { SyncSegment } from './github/SyncSegment'
 
@@ -128,7 +129,10 @@ export function VaultLoaderControls() {
     <div className="flex flex-nowrap items-center gap-2">
       {/* The vault's name, with the detected ruleset in its tooltip (a best-effort guess, see `detectRuleset.ts`). */}
       <span
-        className="hidden max-w-[12rem] shrink-0 items-center gap-1.5 rounded-full border border-trim/30 bg-trim/5 px-2.5 py-1 text-xs text-trim sm:inline-flex"
+        className={`hidden max-w-[12rem] shrink-0 items-center gap-1.5 rounded-full border border-trim/30 bg-trim/5 px-2.5 py-1 text-xs text-trim ${
+          // In Owlbear's panel by the panel's width (the header is a container there), not the window's.
+          inOwlbear ? '@min-[46rem]:inline-flex' : 'sm:inline-flex'
+        }`}
         title={[
           `${t('vaultLoader.label')} ${source === 'sample' ? t('vaultLoader.sampleData') : vaultName}`,
           `${t('ruleset.badgeLabel')}: ${t(`ruleset.${ruleset.ruleset}`)} — ${t('ruleset.tooltipHeuristic')}`,

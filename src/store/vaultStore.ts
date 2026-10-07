@@ -544,6 +544,9 @@ export const useVaultStore = create<VaultState>((set, get) => {
           ...loaded,
         })
         sync.start()
+        // Unlike a folder, a repository needs no click to grant writing: whether the token may push is
+        // asked right away, and editing is on if it may.
+        if (!stillEditing) void get().requestEditPermission()
         void remember({ kind: 'github', github, token }, loaded.vault, loaded.ruleset.ruleset, () => get().github === github)
         return true
       } catch (err) {

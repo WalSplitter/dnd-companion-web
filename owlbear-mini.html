@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D&amp;D Companion</title>
+    <!-- The minimized companion in Owlbear Rodeo: a round d20 button beside Owlbear's collapse button,
+         ringed by the player's HP. Owlbear shows it without its card, so the page stays transparent
+         around the circle. -->
+    <style>
+      html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+      .mini {
+        position: absolute; inset: 2px; padding: 0; border-radius: 50%; cursor: pointer;
+        border: 1px solid rgba(227, 194, 122, 0.35);
+        background: radial-gradient(circle at 50% 45%, rgba(227, 194, 122, 0.22), transparent 62%), #15161c;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        animation: mini-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+        transition: border-color 0.2s ease;
+      }
+      .mini:hover, .mini:focus-visible { border-color: rgba(227, 194, 122, 0.8); outline: none; }
+      .mini svg { display: block; width: 100%; height: 100%; overflow: visible; }
+      .glow { transform-origin: 26px 26px; animation: breathe 3s ease-in-out infinite; }
+      .die { transform-origin: 26px 26px; filter: drop-shadow(0 0 4px rgba(227, 194, 122, 0.6));
+             transition: transform 0.6s cubic-bezier(0.3, 1.5, 0.5, 1); }
+      .spark { transform-origin: 26px 26px; animation: spin 6s linear infinite; }
+      .arc { transition: stroke-dasharray 0.6s ease, stroke 0.6s ease; }
+      /* Hovered, the die rolls a turn and the glow quickens — it's a button, after all. */
+      .mini:hover .die, .mini:focus-visible .die { transform: rotate(360deg) scale(1.12); }
+      .mini:hover .glow { animation-duration: 1.2s; }
+      [hidden] { display: none; }
+      @keyframes mini-in { from { opacity: 0; transform: scale(0.5) rotate(-40deg); } }
+      @keyframes breathe { 50% { opacity: 0.45; transform: scale(0.88); } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .mini, .mini * { animation: none !important; transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <button type="button" class="mini" id="restore">
+      <svg viewBox="0 0 52 52" aria-hidden="true">
+        <defs>
+          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff1c9" />
+            <stop offset="0.5" stop-color="#e3c27a" />
+            <stop offset="1" stop-color="#9a7535" />
+          </linearGradient>
+        </defs>
+        <circle class="glow" cx="26" cy="26" r="15" fill="#e3c27a" fill-opacity="0.16" />
+        <!-- Track, HP and temp HP arcs; the script sets their lengths. Without a character of
+             one's own, a dotted rune ring with a spark circling it. -->
+        <circle id="track" cx="26" cy="26" r="21" fill="none" stroke="#e3c27a" stroke-opacity="0.22" stroke-width="2"
+                stroke-dasharray="1 3.2" />
+        <circle id="hp" class="arc" cx="26" cy="26" r="21" fill="none" stroke-width="3" stroke-linecap="round"
+                transform="rotate(-90 26 26)" hidden />
+        <circle id="temp" class="arc" cx="26" cy="26" r="24" fill="none" stroke="#5eead4" stroke-width="1.4"
+                stroke-linecap="round" transform="rotate(-90 26 26)" hidden />
+        <g id="spark" class="spark"><circle cx="26" cy="5" r="1.4" fill="#ffdf9e" /></g>
+        <g class="die">
+          <g transform="translate(26 26) scale(0.6) translate(-32 -32)" fill="none" stroke="url(#gold)" stroke-linejoin="round">
+            <path d="M32 13 48.5 22.5v19L32 51 15.5 41.5v-19Z" stroke-width="2.2" fill="#e3c27a" fill-opacity="0.08" />
+            <path d="M32 22.6 40.8 37.8H23.2Z" stroke-width="1.6" fill="#e3c27a" fill-opacity="0.3" />
+            <path d="M32 22.6V13M32 22.6 15.5 22.5M32 22.6 48.5 22.5M23.2 37.8 15.5 22.5M23.2 37.8 15.5 41.5M23.2 37.8 32 51M40.8 37.8 48.5 22.5M40.8 37.8 48.5 41.5M40.8 37.8 32 51"
+                  stroke-width="1.1" stroke-opacity="0.8" />
+          </g>
+        </g>
+      </svg>
+    </button>
+    <script type="module" src="/src/owlbear/mini.ts"></script>
+  </body>
+</html>

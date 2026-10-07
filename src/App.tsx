@@ -7,6 +7,7 @@ import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { inOwlbear } from './owlbear/host'
 import { OwlbearBadge } from './owlbear/OwlbearBadge'
+import { OwlbearWindowControls } from './owlbear/OwlbearWindowControls'
 import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './vault/VaultLoaderControls'
@@ -38,25 +39,30 @@ function App() {
       <TooltipLayer />
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
       <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
+        {/* In Owlbear the panel can be narrow, and the header stays one row there: as the panel narrows,
+            the role becomes an icon, the language switcher one button, and finally the brand goes. */}
+        <div
+          className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 ${inOwlbear ? '@container gap-x-2' : 'flex-wrap gap-x-3 gap-y-2'}`}
+        >
           <Link
             to="/"
-            className="shrink-0 font-display text-xl font-bold tracking-wide text-fg [text-shadow:0_0_16px_color-mix(in_srgb,var(--color-trim)_35%,transparent)]"
+            className={`shrink-0 font-display text-xl font-bold tracking-wide text-fg [text-shadow:0_0_16px_color-mix(in_srgb,var(--color-trim)_35%,transparent)] ${inOwlbear ? '@max-[23rem]:hidden' : ''}`}
           >
-            <span className="sm:hidden">{t('app.brandShort')}</span>
-            <span className="hidden sm:inline">{t('app.brand')}</span>
+            <span className={inOwlbear ? '' : 'sm:hidden'}>{t('app.brandShort')}</span>
+            {!inOwlbear && <span className="hidden sm:inline">{t('app.brand')}</span>}
           </Link>
-          <div className="ml-auto flex shrink-0 items-center justify-end gap-2.5">
+          <div className={`ml-auto flex items-center justify-end ${inOwlbear ? 'min-w-0 gap-2' : 'shrink-0 gap-2.5'}`}>
             {showVaultControls && (
               <>
                 <VaultLoaderControls />
-                <div className="mx-0.5 h-6 w-px bg-trim/20" aria-hidden />
+                <div className={`mx-0.5 h-6 w-px shrink-0 bg-trim/20 ${inOwlbear ? '@max-[23rem]:hidden' : ''}`} aria-hidden />
               </>
             )}
             {inOwlbear && <OwlbearBadge />}
-            <LanguageSwitcher />
+            <LanguageSwitcher collapsible={inOwlbear} />
             <ThemeSwitcher />
           </div>
+          {inOwlbear && <OwlbearWindowControls />}
         </div>
         {isLoading && (
           <div className="h-1 w-full overflow-hidden bg-surface-2">
