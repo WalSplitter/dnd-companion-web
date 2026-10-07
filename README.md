@@ -142,7 +142,8 @@ Click **Open from a repository** and fill in:
 | **Access token** | see [For each player](#for-each-player-create-an-access-token) |
 
 The vault then appears on the start page with a **GitHub** badge and reopens without the token,
-until the token expires. Set it up once per browser and device.
+until the token expires. Set it up once per browser and device. Editing is on right away if the
+token may push to the repository; there is no lock to click.
 
 ## Syncing with GitHub
 
@@ -310,6 +311,12 @@ flowchart LR
 The first click on the d20 opens the companion as a panel at the right edge. It stays open while
 you use the map, the players list or other extensions. A second click offers to dock it left or
 right, narrow or wide, or to close it. Owlbear doesn't let extensions be dragged around freely.
+**–** at the top right of the panel minimizes it to a round d20 button next to the arrow that
+collapses Owlbear's tools, ringed by your character's HP; a click on it (or on the d20 in the
+toolbar) brings the panel back as it was. **✕** closes it. The panel follows the window's size without reloading. Drag its inner edge, its
+bottom edge or the corner between them to size it for your screen (the arrow keys work on a focused
+grip, too); a double click on a grip returns to the default. Narrow or wide in the d20's menu also
+resets a dragged width.
 
 > [!NOTE]
 > Inside Owlbear, vaults open **from GitHub** (or the sample). Browsers don't let embedded pages

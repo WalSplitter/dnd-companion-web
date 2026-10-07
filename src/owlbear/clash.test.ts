@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CLASH_KEYS, clashDiffers, readClash, renameInClash, writeClash } from './clash'
+import { CLASH_KEYS, clashDiffers, clashTracksTemp, readClash, readClashTracked, renameInClash, writeClash } from './clash'
 
 // Trimmed from a real token in Clash: current HP is a string there, the rest are numbers.
 const token = () => ({
@@ -71,6 +71,17 @@ describe('temp HP', () => {
     const untracked: Record<string, unknown> = token()
     writeClash(untracked, { hp: 4, hpMax: 4, ac: 10, temp: 3 })
     expect(untracked).not.toHaveProperty(CLASH_KEYS.temp)
+  })
+
+  it('count as on for every token once one of them has them, and are written there as a string', () => {
+    expect(clashTracksTemp([token(), withTemp('7')])).toBe(true)
+    expect(clashTracksTemp([token(), token()])).toBe(false)
+    expect(readClashTracked(token(), true)).toEqual({ hp: 4, hpMax: 4, ac: 10, temp: 0 })
+    expect(readClashTracked(token(), false)).not.toHaveProperty('temp')
+
+    const untracked: Record<string, unknown> = token()
+    writeClash(untracked, { hp: 4, hpMax: 4, ac: 10, temp: 3 }, true)
+    expect(untracked[CLASH_KEYS.temp]).toBe('3')
   })
 })
 
