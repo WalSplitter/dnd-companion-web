@@ -13,6 +13,18 @@ export async function writeRoster(obr: Obr, change: (roster: LiveRoster) => Live
 
 /** `vitals` as a roster entry written by `by` (a connection, or a tracker such as Clash) just now. */
 export function stamp(vitals: Vitals, by: string, byName: string): LiveVitals {
-  const { hp, hpMax, temp, resilience, resilienceMax, ac } = vitals
-  return { hp, hpMax, temp, ...(resilience !== undefined ? { resilience, resilienceMax } : {}), ac, by, byName, at: Date.now() }
+  const { hp, hpMax, temp, resilience, resilienceMax, ac, mana, manaMax, exhaustion, exhaustionMax, perception } = vitals
+  return {
+    hp,
+    hpMax,
+    temp,
+    ...(resilience !== undefined ? { resilience, resilienceMax } : {}),
+    ac,
+    ...(mana !== undefined ? { mana, manaMax } : {}),
+    ...(exhaustion ? { exhaustion, exhaustionMax } : {}),
+    ...(perception !== undefined ? { perception } : {}),
+    by,
+    byName,
+    at: Date.now(),
+  }
 }

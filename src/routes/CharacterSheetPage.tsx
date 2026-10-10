@@ -6,7 +6,7 @@ import { SheetLockContext } from '../store/canEdit'
 import { CharacterSheet } from '../features/character-sheet/CharacterSheet'
 import { inOwlbear } from '../owlbear/host'
 import { withLiveVitals } from '../owlbear/live'
-import { LivePoolsEditContext, type PoolChange } from '../owlbear/liveEdit'
+import { LiveCharacterContext, LivePoolsEditContext, type PoolChange } from '../owlbear/liveEdit'
 import { changePools } from '../owlbear/liveSync'
 import { OwlbearSheetBar } from '../owlbear/OwlbearSheetBar'
 import { useOwlbearStore } from '../owlbear/owlbearStore'
@@ -52,15 +52,17 @@ export function CharacterSheetPage() {
   return (
     <SheetLockContext value={isLive && !claimed}>
       <LivePoolsEditContext value={editLive}>
-        <RollSourceContext value={live ? character.frontmatter.name : null}>
-          {live && <OwlbearSheetBar character={character.frontmatter} />}
-          <CharacterSheet
-            character={shown ?? character.frontmatter}
-            characterPath={character.path}
-            index={index}
-            body={character.frontmatter.backstory ?? character.body}
-          />
-        </RollSourceContext>
+        <LiveCharacterContext value={isLive}>
+          <RollSourceContext value={live ? character.frontmatter.name : null}>
+            {live && <OwlbearSheetBar character={character.frontmatter} />}
+            <CharacterSheet
+              character={shown ?? character.frontmatter}
+              characterPath={character.path}
+              index={index}
+              body={character.frontmatter.backstory ?? character.body}
+            />
+          </RollSourceContext>
+        </LiveCharacterContext>
       </LivePoolsEditContext>
     </SheetLockContext>
   )

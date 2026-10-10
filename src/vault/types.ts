@@ -182,6 +182,8 @@ export interface CharacterWriteTargets {
   /** One target per luck pip, index-aligned with `conditions.luck_points` (length === max). */
   luck_points?: FieldWriteTarget[]
   exhaustion?: FieldWriteTarget
+  /** Own schema: the file holding `conditions.active`, rewritten as a whole list. */
+  conditions_active?: { path: string }
   /** Keyed by spell grade (same keys as `spellcasting.slots`). */
   spell_slots?: Record<string, FieldWriteTarget>
   /** `spellcasting.mana.current`, on whichever file owns `spellcasting`. */
@@ -213,6 +215,9 @@ export interface ConditionsInfo {
   luck_points?: { max: number; current: number; held: boolean[] }
   exhaustion?: number
   exhaustion_max?: number
+  /** Conditions of rule `Zustände` the character currently has (`conditions.active`, own schema) —
+   * set at the table, e.g. in Owlbear Rodeo; read through `activeConditions`. */
+  active?: string[]
   notes?: string
 }
 

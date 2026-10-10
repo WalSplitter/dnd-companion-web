@@ -255,7 +255,12 @@ export function patchFrontmatterBlock(content: string, keyPath: string[], value:
   const targetLine = findKeyLineOrNull(lines, keyPath)
   if (targetLine === null) {
     if (value === undefined) return content
-    if (!createIfMissing || keyPath.length !== 1) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+    if (!createIfMissing) throw new YamlPatchError(`key path not found: ${keyPath.join('.')}`)
+    // A nested key goes under its parent the way a missing scalar does — on one line, so as a flow value.
+    if (keyPath.length > 1) {
+      insertMissingPath(lines, keyPath, dump(value, { flowLevel: 0, lineWidth: -1 }).trim())
+      return openDelim + lines.join(newline) + closeDelim + rest
+    }
     let insertAt = lines.length
     while (insertAt > 0 && lines[insertAt - 1].trim() === '') insertAt--
     lines.splice(insertAt, 0, render(0))

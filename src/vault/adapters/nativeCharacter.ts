@@ -41,6 +41,7 @@ function ownFileWriteTargets(path: string, data: Record<string, unknown>): Chara
 
   // Exhaustion starts at 0 and is written on first use, creating `conditions:` if needed.
   targets.exhaustion = { path, keyPath: ['conditions', 'exhaustion'], createIfMissing: true }
+  targets.conditions_active = { path }
 
   // Nimble has no hit dice (see `resolveLevelPools`), so a leftover `hit_dice:` block is ignored there.
   if (!isRecord(data.nimble_attributes) && isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import pkg from './package.json' with { type: 'json' }
+import { ringFiles } from './src/owlbear/rings.ts'
 
 const OWLBEAR_MANIFEST = 'owlbear-manifest.json'
 
@@ -57,9 +58,39 @@ function owlbearManifest(): Plugin {
   }
 }
 
+const RINGS_DIR = 'owlbear-rings'
+
+/**
+ * The condition rings drawn on tokens in Owlbear Rodeo (see `src/owlbear/rings.ts`), generated from
+ * the same list the app uses rather than kept as files — served under `<base>owlbear-rings/`.
+ */
+function owlbearRings(): Plugin {
+  let base = '/'
+  return {
+    name: 'owlbear-rings',
+    configResolved(config) {
+      base = config.base
+    },
+    configureServer(server) {
+      const files = ringFiles()
+      server.middlewares.use(`${base}${RINGS_DIR}/`, (req, res, next) => {
+        const svg = files[decodeURIComponent((req.url ?? '').replace(/^\//, '').split('?')[0])]
+        if (!svg) return next()
+        // Owlbear draws them with WebGL, which needs CORS.
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Content-Type', 'image/svg+xml')
+        res.end(svg)
+      })
+    },
+    generateBundle() {
+      for (const [file, svg] of Object.entries(ringFiles())) this.emitFile({ type: 'asset', fileName: `${RINGS_DIR}/${file}`, source: svg })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), owlbearManifest()],
+  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings()],
   // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
   base: process.env.BASE_PATH ?? '/',
   server: {

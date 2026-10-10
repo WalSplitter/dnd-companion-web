@@ -10,3 +10,9 @@ export type PoolChange = Partial<Pick<Vitals, 'hp' | 'temp' | 'resilience'>>
  * of the sheet stays locked for them.
  */
 export const LivePoolsEditContext = createContext<((change: PoolChange) => void) | null>(null)
+
+/**
+ * True around the sheet of a character linked in Owlbear Rodeo. Its conditions are the room's then,
+ * shown and changed in the bar above the sheet (`OwlbearSheetBar`) — the sheet leaves them out.
+ */
+export const LiveCharacterContext = createContext(false)

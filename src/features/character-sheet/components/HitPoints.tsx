@@ -416,6 +416,7 @@ export function HitPoints({
                 caption={<RowCaption>{t('stats.exhaustion')}</RowCaption>}
               />
             )}
+
           </div>
         )}
       </div>

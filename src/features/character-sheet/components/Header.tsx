@@ -1,11 +1,35 @@
+import { useContext } from 'react'
+import { ConditionChips } from '../../../components/ConditionChips'
 import { StatPlate } from '../../../components/StatPlate'
 import { useT } from '../../../i18n/useI18n'
+import { LiveCharacterContext } from '../../../owlbear/liveEdit'
+import { useCanEdit } from '../../../store/canEdit'
+import { useVaultStore } from '../../../store/vaultStore'
+import { activeConditions } from '../../../rules/conditions'
 import { classSummary, totalCharacterLevel } from '../../../rules/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
+/**
+ * The conditions the character has, from its file — set and removed here in edit mode. While the
+ * character is live in Owlbear Rodeo, the bar above the sheet shows the room's instead.
+ */
+function SheetConditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
+  const live = useContext(LiveCharacterContext)
+  const canEdit = useCanEdit()
+  const setConditions = useVaultStore((s) => s.setConditions)
+  const conditions = activeConditions(character)
+  const editable = canEdit && Boolean(character._write?.conditions_active)
+  if (live || (!editable && conditions.length === 0)) return null
+  return (
+    <div className="mt-3">
+      <ConditionChips conditions={conditions} onChange={editable ? (next) => void setConditions(characterPath, next) : undefined} />
+    </div>
+  )
+}
+
 /** Hero banner: framed portrait (or a monogram medallion when there's none), name, class/species
- * chips and the level/XP plate. */
-export function Header({ character }: { character: CharacterFrontmatter }) {
+ * chips, the conditions and the level/XP plate. */
+export function Header({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const t = useT()
   const level = totalCharacterLevel(character)
   const details = [character.species, character.background, character.alignment].filter(Boolean)
@@ -44,6 +68,7 @@ export function Header({ character }: { character: CharacterFrontmatter }) {
               </span>
             ))}
           </div>
+          <SheetConditions character={character} characterPath={characterPath} />
         </div>
 
         <StatPlate label={t('stats.level')} value={String(level)} />

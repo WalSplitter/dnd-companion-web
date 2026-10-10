@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
 import { useShareRoll } from '../owlbear/rolls'
-import { formatModifier } from '../rules/deriveStats'
+import { formatModifier, initiativeActionPoints } from '../rules/deriveStats'
 import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
 import { d20RollHint, damageRollHint } from './rollHint'
@@ -27,6 +27,7 @@ export function D20RollButton({
   mode: defaultMode = 'normal',
   effect,
   attack = false,
+  initiative,
   children,
 }: {
   label: string
@@ -36,6 +37,9 @@ export function D20RollButton({
   effect?: (result: D20RollResult) => string
   /** An attack roll (weapon or spell) — in Owlbear Rodeo it plays the attack effect on the token. */
   attack?: boolean
+  /** An initiative roll — in Owlbear Rodeo it goes to the room's initiative: the turn order roll, or
+   * (Endeavour) the action roll, whose action points come along. */
+  initiative?: 'order' | 'actions'
   /** Mode a plain click rolls with (e.g. a class's save advantage); Shift/Alt still force advantage/disadvantage. */
   mode?: RollMode
   /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
@@ -69,6 +73,12 @@ export function D20RollButton({
       modifier: result.modifier,
       critical: result.isCriticalHit,
       fumble: result.isCriticalMiss,
+      initiative:
+        initiative === 'order'
+          ? { order: result.total }
+          : initiative === 'actions'
+            ? { actions: result.total, ap: initiativeActionPoints(result.total, result.kept) }
+            : undefined,
     })
   }
 

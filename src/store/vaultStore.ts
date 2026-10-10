@@ -23,7 +23,7 @@ import {
   showVaultDirectoryPicker,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
 import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, Vault, VaultSourceFile } from '../vault/types'
 
@@ -129,6 +129,11 @@ interface VaultState {
    * rollback shape as `setEndeavourInventory`. No-op without edit permission or a write target.
    */
   setInventory: (characterPath: string, inventory: NonNullable<CharacterFrontmatter['inventory']>) => Promise<void>
+  /**
+   * Replaces the conditions a character has (`conditions.active`, own schema), with the same
+   * optimistic-write + rollback shape as the other writers. No-op without edit permission or a write target.
+   */
+  setConditions: (characterPath: string, active: string[]) => Promise<void>
   /**
    * Replaces a character's coin purse. Same optimistic-write + rollback shape as the other writers;
    * disk write goes to the whole `currency` block (own schema, `_write.currency_block`) or, for the
@@ -657,6 +662,23 @@ export const useVaultStore = create<VaultState>((set, get) => {
           source: 'vault.setInventory',
           context: { characterPath, writePath: target.path, inventory },
           retry: () => void get().setInventory(characterPath, inventory),
+        },
+      )
+    },
+
+    setConditions: async (characterPath, active) => {
+      const { vault, writer, editPermission } = get()
+      const target = findCharacter(vault, characterPath)?._write?.conditions_active
+      if (editPermission !== 'granted' || !target || !writer?.canWrite(target.path)) return
+
+      await editCharacter(
+        characterPath,
+        (c) => ({ ...c, conditions: { ...c.conditions, active } }),
+        () => writer.write(target.path, conditionsPatch(active), characterContext(vault, characterPath)),
+        {
+          source: 'vault.setConditions',
+          context: { characterPath, writePath: target.path, active },
+          retry: () => void get().setConditions(characterPath, active),
         },
       )
     },
