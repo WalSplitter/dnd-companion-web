@@ -2,8 +2,13 @@ import type OBRType from '@owlbear-rodeo/sdk'
 import { create } from 'zustand'
 import { CLAIMS_KEY, loadClaims } from './claims'
 import type { LiveRoster } from './live'
+import type { LootDrop } from './loot'
+import type { TableState } from './table'
 
 export type OwlbearRole = 'GM' | 'PLAYER'
+
+/** Who sees the rolls made on a linked character's sheet: everyone, the GM only, or no one. */
+export type RollVisibility = 'all' | 'gm' | 'off'
 
 interface OwlbearState {
   /** Set once Owlbear has answered: the SDK can be used from then on. */
@@ -14,13 +19,18 @@ interface OwlbearState {
   connectionId: string | null
   /** The room's live values per character (see `live.ts`). */
   roster: LiveRoster
+  /** Conditions and initiative per character (see `table.ts`). */
+  table: TableState
+  /** Loot waiting for its character's player (see `loot.ts`). */
+  loot: LootDrop[]
   /** Characters this browser looks after: changes made in Owlbear are saved to their vault files here. */
   claimed: string[]
-  /** Whether rolls on the sheets of linked characters go to the room (see `rolls.ts`). */
-  shareRolls: boolean
+  /** Where rolls on the sheets of linked characters go (see `rolls.ts`). */
+  rollVisibility: RollVisibility
 }
 
-const SHARE_ROLLS_KEY = 'dnd-companion-owlbear-share-rolls'
+/** Held `'false'` while rolls could only be shown to everyone or no one. */
+const ROLL_VISIBILITY_KEY = 'dnd-companion-owlbear-share-rolls'
 
 export const useOwlbearStore = create<OwlbearState>(() => ({
   ready: false,
@@ -28,22 +38,26 @@ export const useOwlbearStore = create<OwlbearState>(() => ({
   playerName: null,
   connectionId: null,
   roster: {},
+  table: {},
+  loot: [],
   claimed: loadClaims(),
-  shareRolls: loadShareRolls(),
+  rollVisibility: loadRollVisibility(),
 }))
 
-function loadShareRolls(): boolean {
+function loadRollVisibility(): RollVisibility {
   try {
-    return localStorage.getItem(SHARE_ROLLS_KEY) !== 'false'
+    const stored = localStorage.getItem(ROLL_VISIBILITY_KEY)
+    if (stored === 'false') return 'off'
+    return stored === 'gm' || stored === 'off' ? stored : 'all'
   } catch {
-    return true
+    return 'all'
   }
 }
 
-export function setShareRolls(shareRolls: boolean) {
-  useOwlbearStore.setState({ shareRolls })
+export function setRollVisibility(rollVisibility: RollVisibility) {
+  useOwlbearStore.setState({ rollVisibility })
   try {
-    localStorage.setItem(SHARE_ROLLS_KEY, String(shareRolls))
+    localStorage.setItem(ROLL_VISIBILITY_KEY, rollVisibility)
   } catch {
     // Not remembered beyond this visit then.
   }

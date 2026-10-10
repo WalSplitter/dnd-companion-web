@@ -11,12 +11,17 @@ type Obr = typeof OBRType
  * flaring out of it — with the total beside the token: an attack's on the left, damage on the right.
  * Other rolls, and attacks or damage of a character without a token on the map, come as a
  * notification. The effects are drawn with local items, so each player's background page draws its
- * own copy and nothing is saved in the scene.
+ * own copy and nothing is saved in the scene. A hidden roll shows on the GM's screen only.
  */
 export function startRollFx(obr: Obr) {
+  let isGM = false
+  void obr.player.getRole().then((role) => (isGM = role === 'GM'))
+  obr.player.onChange((player) => (isGM = player.role === 'GM'))
+
   const notify = (roll: SharedRoll) => void obr.notification.show(describe(roll), roll.critical ? 'SUCCESS' : roll.fumble ? 'ERROR' : 'DEFAULT')
   obr.broadcast.onMessage(ROLL_CHANNEL, ({ data }) => {
     if (!isSharedRoll(data)) return
+    if (data.hidden && !isGM) return
     if (data.kind === 'd20') return notify(data)
     const play = data.kind === 'attack' ? playAim : playBurst
     void linkedTokens(obr, data.character)

@@ -241,3 +241,23 @@ describe('patchFrontmatterBlock: equipment keys', () => {
     expect(out).toContain("attacks:\n  - '[[Dolch]]'\n  - '[[Kampfstab]]'\nspeed: 9 m")
   })
 })
+
+describe('patchFrontmatterBlock: conditions.active', () => {
+  const write = (content: string, active: string[] | undefined) => patchFrontmatterBlock(content, ['conditions', 'active'], active, 1, true)
+
+  it('adds the list under an existing conditions block, on one line', () => {
+    const content = '---\nname: Brann\nconditions:\n  exhaustion: 1\nhp:\n  current: 3\n---\nBody\n'
+    expect(write(content, ['Liegend', 'Blind'])).toBe('---\nname: Brann\nconditions:\n  exhaustion: 1\n  active: [Liegend, Blind]\nhp:\n  current: 3\n---\nBody\n')
+  })
+
+  it('creates the conditions block where there is none', () => {
+    const patched = write('---\nname: Brann\n---\n', ['Verängstigt'])
+    expect(load(patched.split('---')[1])).toEqual({ name: 'Brann', conditions: { active: ['Verängstigt'] } })
+  })
+
+  it('replaces the list, and removes it once empty', () => {
+    const content = '---\nconditions:\n  active: [Liegend]\n  exhaustion: 2\n---\n'
+    expect(write(content, ['Taub'])).toBe('---\nconditions:\n  active: [Taub]\n  exhaustion: 2\n---\n')
+    expect(write(content, undefined)).toBe('---\nconditions:\n  exhaustion: 2\n---\n')
+  })
+})

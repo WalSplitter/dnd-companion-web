@@ -7,6 +7,7 @@ import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { inOwlbear } from './owlbear/host'
 import { OwlbearBadge } from './owlbear/OwlbearBadge'
+import { OwlbearNavigator } from './owlbear/OwlbearNavigator'
 import { OwlbearWindowControls } from './owlbear/OwlbearWindowControls'
 import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
@@ -37,6 +38,7 @@ function App() {
       <AmbientLayer />
       <ErrorToaster />
       <TooltipLayer />
+      {inOwlbear && <OwlbearNavigator />}
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
       <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
         {/* In Owlbear the panel can be narrow, and the header stays one row there: as the panel narrows,

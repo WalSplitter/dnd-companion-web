@@ -1,3 +1,5 @@
+import { exhaustionLevel, passivePerception } from '../rules/deriveStats'
+import { maxExhaustion } from '../rules/vitals'
 import type { CharacterFrontmatter } from '../vault/types'
 
 /**
@@ -23,6 +25,14 @@ export interface Vitals {
   resilience?: number
   resilienceMax?: number
   ac: number
+  /** Mana (Endeavour casters) — absent for characters without a mana pool. */
+  mana?: number
+  manaMax?: number
+  /** Exhaustion level and the level that kills — absent at 0. */
+  exhaustion?: number
+  exhaustionMax?: number
+  /** Passive perception, already lowered by exhaustion — for the GM's overview. */
+  perception?: number
 }
 
 export interface LiveVitals extends Vitals {
@@ -48,12 +58,28 @@ export function vitalsOf(character: CharacterFrontmatter): Vitals {
     temp: hp.temp ?? 0,
     ...(resilience ? { resilience: resilience.current, resilienceMax: resilience.max } : {}),
     ac: character.armor_class,
+    ...(character.spellcasting?.mana ? { mana: character.spellcasting.mana.current, manaMax: character.spellcasting.mana.max } : {}),
+    ...(exhaustionLevel(character) > 0 ? { exhaustion: exhaustionLevel(character), exhaustionMax: maxExhaustion(character) } : {}),
+    perception: passivePerception(character),
   }
 }
 
 /** Whether the values a session changes — current HP, temp HP and resilience — are the same. */
 export function samePools(a: Vitals, b: Vitals): boolean {
   return a.hp === b.hp && a.temp === b.temp && (a.resilience ?? null) === (b.resilience ?? null)
+}
+
+/** Whether everything the room shows of a character is the same — the pools, and what only the sheet changes. */
+export function sameVitals(a: Vitals, b: Vitals): boolean {
+  return (
+    samePools(a, b) &&
+    a.hpMax === b.hpMax &&
+    a.ac === b.ac &&
+    (a.mana ?? null) === (b.mana ?? null) &&
+    (a.manaMax ?? null) === (b.manaMax ?? null) &&
+    (a.exhaustion ?? 0) === (b.exhaustion ?? 0) &&
+    (a.perception ?? null) === (b.perception ?? null)
+  )
 }
 
 /** `character` showing the live pools from the room instead of the (possibly stale) vault values. */

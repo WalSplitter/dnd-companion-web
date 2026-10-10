@@ -92,6 +92,12 @@ export function equipmentPatches(change: Omit<EquipmentChange, 'containers' | 'f
   return patches
 }
 
+/** Rewrites the character's `conditions.active` list as one line (`active: [Liegend, Blind]`); an empty
+ * list removes the key. */
+export function conditionsPatch(active: string[]): FrontmatterPatch {
+  return { kind: 'block', keyPath: ['conditions', 'active'], value: active.length > 0 ? active : undefined, flowLevel: 1, createIfMissing: true }
+}
+
 /** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how
  * the vault's inventory notes hand-write it. */
 export function currencyBlockPatch(currency: Currency): FrontmatterPatch {

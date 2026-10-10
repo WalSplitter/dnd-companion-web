@@ -317,6 +317,109 @@ const glint = (
   </svg>
 )
 
+/** A glowing jellyfish: a translucent bell (`.jelly-bell` pulses) trailing wavy tentacles. */
+const jellyfish = (
+  <svg viewBox="0 0 40 70">
+    <g className="jelly-tentacles" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.55">
+      <path d="M10 24q-4 8 0 16t0 16" />
+      <path d="M16 25q4 9 0 18t1 18" />
+      <path d="M24 25q-4 9 0 18t-1 18" />
+      <path d="M30 24q4 8 0 16t0 16" />
+    </g>
+    <g className="jelly-bell">
+      <path d="M4 24C4 6 36 6 36 24q-4 3-8 0-4 3-8 0-4 3-8 0-4 3-8 0Z" fill="currentColor" opacity="0.45" />
+      <path d="M10 20C11 11 22 9 28 14" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
+    </g>
+  </svg>
+)
+
+/** One little fish facing right. */
+function fish(x: number, y: number, scale: number, fill: string) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <g className="fish">
+        <path d="M0 0l7 5-7 5 2-5Z" fill={fill} opacity="0.8" />
+        <path d="M5 5q8-8 18-3 4 2 5 3-1 1-5 3-10 5-18-3Z" fill={fill} />
+        <circle cx="22.5" cy="4.2" r="1.1" fill="#04161b" />
+      </g>
+    </g>
+  )
+}
+
+/** A small school of fish swimming right, each wiggling on its own beat. */
+const fishSchool = (
+  <svg viewBox="0 0 130 64" overflow="visible">
+    {fish(0, 26, 0.8, '#5eead4')}
+    {fish(24, 6, 1, '#fda4af')}
+    {fish(36, 40, 1.1, '#fbbf24')}
+    {fish(62, 20, 1.2, '#5eead4')}
+    {fish(78, 46, 0.85, '#fda4af')}
+    {fish(98, 8, 0.9, '#7dd3fc')}
+  </svg>
+)
+
+/** A shooting star: a bright head with a fading streak behind it, heading right. */
+const shootingStar = (
+  <svg viewBox="0 0 120 8">
+    <defs>
+      <linearGradient id="shooting-star-tail">
+        <stop offset="0" stopColor="currentColor" stopOpacity="0" />
+        <stop offset="1" stopColor="currentColor" stopOpacity="0.9" />
+      </linearGradient>
+    </defs>
+    <path d="M0 4L114 2.6v2.8Z" fill="url(#shooting-star-tail)" />
+    <circle cx="114" cy="4" r="3" fill="#fff" />
+  </svg>
+)
+
+/** A comet sailing right: an icy head in a glowing coma, a long split tail. */
+const comet = (
+  <svg viewBox="0 0 220 60" overflow="visible">
+    <defs>
+      <linearGradient id="comet-tail">
+        <stop offset="0" stopColor="#c4b5fd" stopOpacity="0" />
+        <stop offset="1" stopColor="#e9e3ff" stopOpacity="0.85" />
+      </linearGradient>
+      <radialGradient id="comet-coma">
+        <stop offset="0" stopColor="#fff" />
+        <stop offset="0.35" stopColor="#dcd3ff" stopOpacity="0.8" />
+        <stop offset="1" stopColor="#a78bfa" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <path className="comet-tail" d="M0 18Q110 22 196 28 110 40 0 44Q90 32 0 18Z" fill="url(#comet-tail)" />
+    <path d="M20 52Q120 38 196 30" fill="none" stroke="#7dd3fc" strokeWidth="1.5" opacity="0.5" />
+    <circle cx="198" cy="30" r="16" fill="url(#comet-coma)" />
+    <circle cx="198" cy="30" r="4" fill="#fff" />
+  </svg>
+)
+
+/** A snowy owl gliding right, wings beating now and then (`.owl-wings`). */
+const owl = (
+  <svg viewBox="0 0 90 50">
+    <g className="owl-wings" fill="#f8fbff" stroke="#b9cfe2" strokeWidth="1.2">
+      <path d="M40 24C30 10 16 4 2 6c8 6 14 12 22 22Z" />
+      <path d="M50 24C54 10 62 2 74 0c-6 8-10 16-12 24Z" />
+    </g>
+    <g fill="#9fb8cf">
+      <circle cx="16" cy="10" r="1.2" />
+      <circle cx="24" cy="15" r="1.2" />
+      <circle cx="64" cy="8" r="1.2" />
+    </g>
+    <path d="M22 28q16-8 36-6 10 1 16 4l2 6q-6 6-18 6l-10 5-4-1 2-5q-14 0-24-9Z" fill="#fff" stroke="#b9cfe2" strokeWidth="1.2" />
+    <circle cx="70" cy="26" r="9" fill="#fff" stroke="#b9cfe2" strokeWidth="1.2" />
+    <circle cx="69.5" cy="24.5" r="2.4" fill="#f5c542" />
+    <circle cx="74.5" cy="24.5" r="2.4" fill="#f5c542" />
+    <circle cx="70" cy="24.5" r="1.1" fill="#1c2a38" />
+    <circle cx="75" cy="24.5" r="1.1" fill="#1c2a38" />
+    <path d="M72 27.5l1 2.5 1-2.5Z" fill="#3b4a5a" />
+    <g fill="#9fb8cf">
+      <circle cx="44" cy="30" r="1.1" />
+      <circle cx="52" cy="33" r="1.1" />
+      <circle cx="36" cy="32" r="1.1" />
+    </g>
+  </svg>
+)
+
 /* ---------- class themes ---------- */
 
 /** A curse sigil: a thorned ring around a slit-pupilled eye. */
@@ -451,6 +554,11 @@ export const AMBIENT_ART = {
   heart,
   cloud,
   santa,
+  jellyfish,
+  'fish-school': fishSchool,
+  'shooting-star': shootingStar,
+  comet,
+  owl,
   rune,
   eyes,
   wisp,

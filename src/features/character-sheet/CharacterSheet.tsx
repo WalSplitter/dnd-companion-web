@@ -53,7 +53,7 @@ export function CharacterSheet({
       <D20PenaltyContext value={exhaustionD20Penalty(character)}>
         <div className="space-y-5">
           <FallenOverlay fate={characterFate(character)} characterPath={characterPath} />
-          <Header character={character} />
+          <Header character={character} characterPath={characterPath} />
 
           {/* Vitals stay visible on every tab, like a game HUD. */}
           <section className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-3">

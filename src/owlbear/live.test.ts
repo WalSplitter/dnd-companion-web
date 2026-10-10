@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CharacterFrontmatter } from '../vault/types'
-import { LINK_KEY, LIVE_KEY, readLink, readRoster, samePools, vitalsOf, withLiveVitals, type LiveVitals } from './live'
+import { LINK_KEY, LIVE_KEY, readLink, readRoster, samePools, sameVitals, vitalsOf, withLiveVitals, type LiveVitals } from './live'
 
 function character(overrides: Partial<CharacterFrontmatter> = {}): CharacterFrontmatter {
   return {
@@ -26,11 +26,26 @@ const live = (overrides: Partial<LiveVitals> = {}): LiveVitals => ({ ...vitalsOf
 
 describe('vitalsOf', () => {
   it('takes HP, temp HP, resilience and armor class from the sheet', () => {
-    expect(vitalsOf(character())).toEqual({ hp: 14, hpMax: 21, temp: 5, resilience: 3, resilienceMax: 12, ac: 15 })
+    expect(vitalsOf(character())).toEqual({ hp: 14, hpMax: 21, temp: 5, resilience: 3, resilienceMax: 12, ac: 15, perception: 10 })
   })
 
   it('counts missing temp HP as 0 and leaves out a missing resilience pool', () => {
-    expect(vitalsOf(character({ hp: { current: 8, max: 10 }, resilience: undefined }))).toEqual({ hp: 8, hpMax: 10, temp: 0, ac: 15 })
+    expect(vitalsOf(character({ hp: { current: 8, max: 10 }, resilience: undefined }))).toEqual({ hp: 8, hpMax: 10, temp: 0, ac: 15, perception: 10 })
+  })
+
+  it('takes mana and exhaustion along where the character has them', () => {
+    const caster = character({ spellcasting: { ability: 'int', mana: { current: 5, max: 8 } }, conditions: { exhaustion: 2 } })
+    expect(vitalsOf(caster)).toMatchObject({ mana: 5, manaMax: 8, exhaustion: 2 })
+  })
+})
+
+describe('sameVitals', () => {
+  it('tells a mana or exhaustion change apart, which samePools ignores', () => {
+    const base = vitalsOf(character())
+    expect(sameVitals(base, { ...base })).toBe(true)
+    expect(sameVitals(base, { ...base, mana: 3, manaMax: 8 })).toBe(false)
+    expect(sameVitals(base, { ...base, exhaustion: 1 })).toBe(false)
+    expect(samePools(base, { ...base, exhaustion: 1 })).toBe(true)
   })
 })
 

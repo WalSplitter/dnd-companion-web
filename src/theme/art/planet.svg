@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="surface" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#8f7ad8"/>
+      <stop offset="0.55" stop-color="#4b3a8f"/>
+      <stop offset="1" stop-color="#1a1440"/>
+    </radialGradient>
+    <clipPath id="disc">
+      <circle cx="100" cy="100" r="52"/>
+    </clipPath>
+  </defs>
+  <!-- the back half of the ring, hidden behind the planet -->
+  <ellipse cx="100" cy="100" rx="92" ry="20" transform="rotate(-18 100 100)" fill="none" stroke="#b9a8f0" stroke-width="5" opacity="0.35"/>
+  <circle cx="100" cy="100" r="52" fill="url(#surface)"/>
+  <!-- cloud bands -->
+  <g clip-path="url(#disc)" fill="none" stroke-linecap="round">
+    <path d="M40 82q60-14 120 0" stroke="#a594e6" stroke-width="5" opacity="0.35"/>
+    <path d="M44 104q56-10 116 4" stroke="#2c2266" stroke-width="7" opacity="0.5"/>
+    <path d="M50 124q50-8 104 2" stroke="#a594e6" stroke-width="3" opacity="0.3"/>
+  </g>
+  <!-- the front half of the ring, crossing in front of the planet -->
+  <path d="M8 100a92 20 0 0 0 184 0" transform="rotate(-18 100 100)" fill="none" stroke="#d8ccff" stroke-width="5" opacity="0.75"/>
+  <!-- a small moon -->
+  <circle cx="176" cy="34" r="9" fill="#6f6aa0"/>
+  <circle cx="173" cy="31" r="2" fill="#585384"/>
+</svg>

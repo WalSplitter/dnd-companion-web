@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 140">
+  <!-- kelp swaying up from the sea floor (back row, dim) -->
+  <g fill="none" stroke="#0f3b40" stroke-width="7" stroke-linecap="round">
+    <path d="M60 140C50 110 74 92 62 64S70 30 64 14"/>
+    <path d="M250 140C262 116 240 98 254 76S244 48 252 30"/>
+    <path d="M470 140C460 118 482 100 470 80S480 52 472 38"/>
+    <path d="M690 140C700 112 678 94 692 66S682 34 690 18"/>
+  </g>
+  <g fill="#0f3b40">
+    <ellipse cx="68" cy="88" rx="10" ry="4" transform="rotate(-30 68 88)"/>
+    <ellipse cx="56" cy="52" rx="9" ry="3.5" transform="rotate(25 56 52)"/>
+    <ellipse cx="246" cy="92" rx="10" ry="4" transform="rotate(30 246 92)"/>
+    <ellipse cx="478" cy="96" rx="9" ry="3.5" transform="rotate(-25 478 96)"/>
+    <ellipse cx="698" cy="80" rx="10" ry="4" transform="rotate(-30 698 80)"/>
+    <ellipse cx="684" cy="46" rx="9" ry="3.5" transform="rotate(25 684 46)"/>
+  </g>
+  <!-- branching corals -->
+  <g fill="none" stroke="#5a2f3c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 124V96l-14-16m14 16 12-22m-12 10-22-4m34-6 10-10"/>
+    <path d="M560 126V100l16-18m-16 18-12-20m28 2 4-14m-32-2-8-10"/>
+  </g>
+  <g fill="none" stroke="#2f5b63" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M370 126V104l-10-12m10 12 12-16m-22 4-6-10m28-6 6-8"/>
+    <path d="M760 126V108l-12-10m12 10 10-14"/>
+  </g>
+  <!-- brain coral and fan coral domes -->
+  <path d="M196 128a22 18 0 0 1 44 0Z" fill="#4a2a36"/>
+  <path d="M204 126q8-12 16 0m-6-4q6-10 14 2" fill="none" stroke="#6b3b4a" stroke-width="2"/>
+  <path d="M600 128a28 30 0 0 1 56 0Z" fill="#183f45"/>
+  <path d="M628 128V102m0 10-12-12m12 6 14-12m-14 22-18-6m18 0 20-4" fill="none" stroke="#24575e" stroke-width="2"/>
+  <!-- the sea floor: sand ridges and rocks, the same height at both ends so it tiles -->
+  <path d="M0 140V126c40-6 70 4 110 0s80-10 130-4 70 8 120 2 90-8 140-2 80 6 120 0 80-8 120 0 40 4 60 4V140Z" fill="#0a2329"/>
+  <g fill="#0d2c33">
+    <path d="M300 128q6-14 22-14 18 0 22 14Z"/>
+    <path d="M520 130q4-10 16-10 12 0 14 10Z"/>
+    <path d="M20 130q4-8 12-8 10 0 12 8Z"/>
+  </g>
+  <!-- a starfish and a scallop shell on the sand -->
+  <path d="M430 124l2.5 5.5 6 .5-4.5 4 1.5 6-5.5-3-5.5 3 1.5-6-4.5-4 6-.5Z" fill="#7a3a33"/>
+  <path d="M110 134a8 8 0 0 1 16 0Z" fill="#6b5a48"/>
+  <path d="M118 134l-5-6m5 6v-8m0 8 5-6" stroke="#4a3e32" stroke-width="1.2"/>
+</svg>

@@ -21,6 +21,8 @@ export interface SharedRoll {
   /** A natural 1. */
   fumble?: boolean
   damageType?: string
+  /** Shown to the GM only (and played on their screen only). */
+  hidden?: boolean
 }
 
 export function isSharedRoll(value: unknown): value is SharedRoll {
@@ -37,7 +39,7 @@ export function describe(roll: SharedRoll): string {
   const flag = roll.critical ? ' ✦' : roll.fumble ? ' ✗' : ''
   const detail = `[${roll.rolls.join(', ')}]${roll.modifier ? signed(roll.modifier) : ''}`
   const type = roll.damageType ? ` · ${roll.damageType}` : ''
-  return `${icon} ${roll.character} · ${roll.label}${type}: ${roll.total}${flag}  ${detail}`
+  return `${roll.hidden ? '🔒 ' : ''}${icon} ${roll.character} · ${roll.label}${type}: ${roll.total}${flag}  ${detail}`
 }
 
 /** Damage types by the words the vault uses for them (German and English). */

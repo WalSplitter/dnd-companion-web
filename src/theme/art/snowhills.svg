@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 140">
+  <!-- a far ridge in the night, dark pines on it -->
+  <path d="M0 140V92c60-14 120-22 190-12s110 18 180 6 130-28 210-16 150 22 220 22V140Z" fill="#16243a"/>
+  <g fill="#0f1a2b">
+    <path d="M120 86l9-24 9 24Z"/><path d="M131 84l6-16 6 16Z"/>
+    <path d="M420 78l8-22 8 22Z"/><path d="M434 80l6-15 6 15Z"/>
+    <path d="M640 82l9-24 9 24Z"/>
+  </g>
+  <!-- the near hills, snow catching the moonlight; the same height at both ends so it tiles -->
+  <path d="M0 140V112c50-10 110-16 170-8s100 16 170 10 120-22 200-18 140 18 200 14 50-8 60-8V140Z" fill="#22344d"/>
+  <path d="M0 140V124c80-4 140 6 230 2s150-12 240-8 150 10 230 6 80-4 100-4V140Z" fill="#2c4361"/>
+  <!-- moonlit crests -->
+  <path d="M0 112c50-10 110-16 170-8" fill="none" stroke="#5f7fa6" stroke-width="1.5" opacity="0.6"/>
+  <path d="M340 114c50-4 120-22 200-18" fill="none" stroke="#5f7fa6" stroke-width="1.5" opacity="0.6"/>
+  <path d="M0 124c80-4 140 6 230 2s150-12 240-8 150 10 230 6 80-4 100-4" fill="none" stroke="#7896bb" stroke-width="1.5" opacity="0.5"/>
+  <path d="M170 104c60 8 100 16 170 10-50 10-110 8-170-10Z" fill="#1b2b42"/>
+  <path d="M540 96c80-4 140 18 200 14-70 8-130-2-200-14Z" fill="#1b2b42"/>
+</svg>

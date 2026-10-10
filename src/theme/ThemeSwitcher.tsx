@@ -26,10 +26,13 @@ import {
   FirTreeIcon,
   HornIcon,
   OrbIcon,
+  PlanetIcon,
   PumpkinIcon,
   ScalesIcon,
+  ShellIcon,
   ShieldCrossIcon,
   SkullIcon,
+  SnowflakeIcon,
   SparklesIcon,
   StormLeafIcon,
   SunIcon,
@@ -50,10 +53,13 @@ const TOPIC_ICONS: Record<TopicThemeName, ComponentType<IconProps>> = {
   pixelquest: CastleIcon,
   dragon: DragonIcon,
   unicorn: HornIcon,
+  deepsea: ShellIcon,
+  astral: PlanetIcon,
   halloween: PumpkinIcon,
   christmas: FirTreeIcon,
   summer: SunIcon,
   spring: BlossomIcon,
+  winter: SnowflakeIcon,
 }
 
 const TOPIC_GROUPS: { title: TranslationKey; themes: ThemeEntry<TopicThemeName>[] }[] = [

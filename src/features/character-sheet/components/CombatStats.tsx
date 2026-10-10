@@ -113,10 +113,22 @@ export function Evasion({ value, character }: { value: number; character: Charac
 }
 
 /** A stat plate whose number rolls a d20 with that modifier. */
-function InitiativePlate({ label, modifier, note, effect }: { label: string; modifier: number; note?: string; effect?: (result: D20RollResult) => string }) {
+function InitiativePlate({
+  label,
+  modifier,
+  note,
+  effect,
+  initiative = 'order',
+}: {
+  label: string
+  modifier: number
+  note?: string
+  effect?: (result: D20RollResult) => string
+  initiative?: 'order' | 'actions'
+}) {
   return (
     <StatPlate label={label}>
-      <D20RollButton label={label} modifier={modifier} note={note} effect={effect} className="cursor-pointer transition hover:text-trim">
+      <D20RollButton label={label} modifier={modifier} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
         <D20Modifier value={modifier} hint={false} className="is-loud" />
       </D20RollButton>
     </StatPlate>
@@ -138,6 +150,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
             label={t('stats.initiativeActions')}
             modifier={nimble.actions}
             note={t('stats.initiativeActionsNote')}
+            initiative="actions"
             effect={(result) => t('stats.initiativeActionsResult', { count: initiativeActionPoints(result.total, result.kept) })}
           />
         </>
