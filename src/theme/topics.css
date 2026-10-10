@@ -201,7 +201,8 @@
   --pixel-ink: #0b0906;
   --pixel-font: 'Pixelify Sans', ui-monospace, 'Cascadia Mono', monospace;
   --font-display: var(--pixel-font);
-  --font-numeric: var(--pixel-font);
+  /* Pixelify's 2, 3 and 8 blur together at small sizes; Silkscreen's blocky digits stay readable. */
+  --font-numeric: 'Silkscreen', var(--pixel-font);
   --font-sans: var(--pixel-font);
   --topic-corner-size: 1.25rem;
   /* A blocky bracket with a notch and a gem pixel, drawn on a 16px grid. */
@@ -241,7 +242,6 @@
 /* Pixel type everywhere, including the display and number faces. */
 [data-theme='pixelquest'] body,
 [data-theme='pixelquest'] .font-display,
-[data-theme='pixelquest'] .font-num,
 [data-theme='pixelquest'] .rpg-tab,
 [data-theme='pixelquest'] .rpg-button {
   font-family: var(--pixel-font);

@@ -7,6 +7,8 @@
 @import '@fontsource/cinzel/700.css';
 @import '@fontsource/pixelify-sans/400.css';
 @import '@fontsource/pixelify-sans/700.css';
+@import '@fontsource/silkscreen/400.css';
+@import '@fontsource/silkscreen/700.css';
 
 /* App styles by area, in cascade order (see each file's header). */
 @import './styles/base.css';
