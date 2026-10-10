@@ -58,16 +58,17 @@
     radial-gradient(ellipse 120% 100% at 50% 45%, transparent 55%, rgb(110 70 25 / 0.35));
 }
 
+/* Fluent: a light theme, but in muted blue-grey instead of white, so large panels don't glare. */
 [data-theme='fluent'] {
-  --color-bg: #eaf1fb;
-  --color-surface: #f7fafe;
-  --color-surface-2: #e1ebfa;
-  --color-border: #c4d6ef;
+  --color-bg: #cfdbe8;
+  --color-surface: #dfe7f0;
+  --color-surface-2: #d2dde9;
+  --color-border: #aebfd4;
   --color-fg: #0f2440;
-  --color-fg-muted: #4c6079;
-  --color-primary: #38bdf8;
-  --color-primary-fg: #0f2440;
-  --color-accent: #7dd3fc;
+  --color-fg-muted: #46586f;
+  --color-primary: #0f6cbd;
+  --color-primary-fg: #ffffff;
+  --color-accent: #1a8fd6;
   --color-danger: #d13438;
   --color-success: #107c10;
   --color-trim: #2f7fc1;
@@ -122,6 +123,22 @@
   --color-warning: #f59e0b;
 }
 
+[data-theme='rose'] {
+  --color-bg: #1c0f17;
+  --color-surface: #25141f;
+  --color-surface-2: #2f1928;
+  --color-border: #4d2840;
+  --color-fg: #fbe4f0;
+  --color-fg-muted: #c98fae;
+  --color-primary: #ec4899;
+  --color-primary-fg: #1c0f17;
+  --color-accent: #f9a8d4;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-trim: #f5b6d3;
+  --color-warning: #f59e0b;
+}
+
 [data-theme='green'] {
   --color-bg: #0f1c12;
   --color-surface: #16241a;
@@ -135,6 +152,22 @@
   --color-danger: #f87171;
   --color-success: #86efac;
   --color-trim: #b8d67a;
+  --color-warning: #f59e0b;
+}
+
+[data-theme='teal'] {
+  --color-bg: #0d1a1a;
+  --color-surface: #132424;
+  --color-surface-2: #192e2e;
+  --color-border: #284a49;
+  --color-fg: #e0f8f5;
+  --color-fg-muted: #8cc4bd;
+  --color-primary: #14b8a6;
+  --color-primary-fg: #0d1a1a;
+  --color-accent: #2dd4bf;
+  --color-danger: #f87171;
+  --color-success: #86efac;
+  --color-trim: #8fe0d4;
   --color-warning: #f59e0b;
 }
 

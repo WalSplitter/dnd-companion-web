@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type ColorThemeName = 'light' | 'dark' | 'parchment' | 'fluent' | 'purple' | 'orange' | 'red' | 'green' | 'blue'
+export type ColorThemeName = 'light' | 'dark' | 'parchment' | 'fluent' | 'purple' | 'orange' | 'red' | 'rose' | 'green' | 'teal' | 'blue'
 /** One theme per Endeavour class (see `classes.css`). */
 export type ClassThemeName =
   | 'arkanist'
@@ -14,8 +14,8 @@ export type ClassThemeName =
   | 'paladin'
   | 'taktiker'
   | 'waldlaeufer'
-export type WorldThemeName = 'pixelquest' | 'dragon' | 'unicorn'
-export type SeasonThemeName = 'halloween' | 'christmas' | 'summer' | 'spring'
+export type WorldThemeName = 'pixelquest' | 'dragon' | 'unicorn' | 'deepsea' | 'astral'
+export type SeasonThemeName = 'halloween' | 'christmas' | 'summer' | 'spring' | 'winter'
 /** Topic themes go beyond a palette: a backdrop motif, themed panel corners and ambient particles
  * (see `classes.css`, `topics.css` and `AmbientLayer`). */
 export type TopicThemeName = ClassThemeName | WorldThemeName | SeasonThemeName
@@ -37,7 +37,9 @@ export const THEMES: ThemeEntry<ColorThemeName>[] = [
   { key: 'purple', swatch: '#a855f7' },
   { key: 'orange', swatch: '#f97316' },
   { key: 'red', swatch: '#ef4444' },
+  { key: 'rose', swatch: '#ec4899' },
   { key: 'green', swatch: '#22c55e' },
+  { key: 'teal', swatch: '#14b8a6' },
   { key: 'blue', swatch: '#3b82f6' },
 ]
 
@@ -58,6 +60,8 @@ export const WORLD_THEMES: ThemeEntry<WorldThemeName>[] = [
   { key: 'pixelquest', swatch: '#e8742a' },
   { key: 'dragon', swatch: '#f25c1f' },
   { key: 'unicorn', swatch: '#e879f9' },
+  { key: 'deepsea', swatch: '#22d3ee' },
+  { key: 'astral', swatch: '#a78bfa' },
 ]
 
 export const SEASON_THEMES: ThemeEntry<SeasonThemeName>[] = [
@@ -65,6 +69,7 @@ export const SEASON_THEMES: ThemeEntry<SeasonThemeName>[] = [
   { key: 'christmas', swatch: '#dc2626' },
   { key: 'summer', swatch: '#facc15' },
   { key: 'spring', swatch: '#f472b6' },
+  { key: 'winter', swatch: '#7dd3fc' },
 ]
 
 export const TOPIC_THEMES: ThemeEntry<TopicThemeName>[] = [...CLASS_THEMES, ...WORLD_THEMES, ...SEASON_THEMES]

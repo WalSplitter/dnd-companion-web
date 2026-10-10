@@ -49,10 +49,25 @@ const SCENES: Partial<Record<ThemeName, AmbientScene>> = {
     ],
     flybys: { kinds: ['unicorn'], gap: [12, 30] },
   },
+  deepsea: {
+    particles: 26,
+    sprites: [{ kind: 'jellyfish', count: 4 }],
+    flybys: { kinds: ['fish-school'], gap: [12, 32] },
+  },
+  astral: {
+    particles: 40,
+    sprites: [{ kind: 'shooting-star', count: 3 }],
+    flybys: { kinds: ['comet'], gap: [20, 50] },
+  },
   halloween: { particles: 6 },
   christmas: { particles: 34, flybys: { kinds: ['santa'], gap: [25, 70] } },
   summer: { particles: 14 },
   spring: { particles: 18 },
+  winter: {
+    particles: 26,
+    sprites: [{ kind: 'glint', count: 6 }],
+    flybys: { kinds: ['owl'], gap: [20, 50] },
+  },
 }
 
 /** Seconds until the first flyby after switching to a theme, so it shows up soon. */

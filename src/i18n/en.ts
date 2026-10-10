@@ -109,7 +109,9 @@ export const en = {
   'theme.purple': 'Purple',
   'theme.orange': 'Orange',
   'theme.red': 'Red',
+  'theme.rose': 'Rose',
   'theme.green': 'Green',
+  'theme.teal': 'Teal',
   'theme.blue': 'Blue',
   'theme.arkanist': 'Arcanist',
   'theme.berserker': 'Berserker',
@@ -125,9 +127,12 @@ export const en = {
   'theme.pixelquest': 'Pixel Quest',
   'theme.dragon': 'Dragon Hoard',
   'theme.unicorn': 'Unicorn',
+  'theme.deepsea': 'Deep Sea',
+  'theme.astral': 'Astral Sea',
   'theme.christmas': 'Christmas',
   'theme.summer': 'Summer',
   'theme.spring': 'Spring',
+  'theme.winter': 'Winter',
   'theme.effects': 'Animated effects',
 
   // Language switcher

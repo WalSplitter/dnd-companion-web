@@ -100,6 +100,35 @@ export function BlossomIcon(props: IconProps) {
   )
 }
 
+export function ShellIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 20.5L3.5 11a8.5 8.5 0 0 1 17 0z" />
+      <path d="M12 20.5L7 6.2M12 20.5V3.5M12 20.5L17 6.2" />
+      <path d="M10 20.5h4" />
+    </Icon>
+  )
+}
+
+export function PlanetIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="5.5" />
+      <path d="M7.4 9.6C3.6 11.4 1.6 13.4 2.3 14.6c1 1.8 7.2.5 13.6-3S22.6 5.2 21.7 3.6c-.5-.9-2.3-.8-4.8.2" />
+      <path d="M19 18.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" />
+    </Icon>
+  )
+}
+
+export function SnowflakeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5" />
+      <path d="M9.5 3.8L12 6.3l2.5-2.5M9.5 20.2l2.5-2.5 2.5 2.5M3.4 10.7l3.4-.9-.9-3.4M20.6 13.3l-3.4.9.9 3.4M5.9 17.6l.9-3.4-3.4-.9M18.1 6.4l-.9 3.4 3.4.9" />
+    </Icon>
+  )
+}
+
 export function SparklesIcon(props: IconProps) {
   return (
     <Icon {...props}>
