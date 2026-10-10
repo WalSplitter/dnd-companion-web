@@ -37,7 +37,7 @@ jobs:
       # Pages has no SPA fallback; serving index.html as the 404 page lets deep links load the app
       - run: cp dist/index.html dist/404.html
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -49,4 +49,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
