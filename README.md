@@ -436,7 +436,7 @@ features: [{ name: Arcane Recovery, source: Wizard 1, description: "..." }]
 ---
 ```
 
-Derived numbers are computed from these raw values (`src/vault/deriveStats.ts`). `speed` accepts
+Derived numbers are computed from these raw values (`src/rules/deriveStats.ts`). `speed` accepts
 feet (`30 ft`), metres (`9 m`, 1.5 m per square) or squares (`6 Felder`). See
 [`src/sample-vault/`](src/sample-vault) for complete, Endeavour-flavoured examples.
 
@@ -647,15 +647,18 @@ work.
 
 ```
 src/
-├── vault/        parsing pipeline: raw frontmatter -> adapters -> normalised Vault, wikilink index,
-│   │              derived stats, ruleset detection
+├── vault/        data layer, no React: raw frontmatter -> adapters -> normalised Vault, wikilink
+│   │              index, ruleset detection
 │   ├── adapters/  one detect()/normalize() pair per format (native, legacy, Endeavour items)
 │   ├── github/    GitHub repository as a vault source: REST client, loader, blob cache, commit sync
 │   └── writeback/ surgical YAML patching, so edits keep the note's formatting
-├── store/        zustand stores: vault (load, recent vaults, optimistic edits + rollback) and error log
-├── features/     character-list, character-sheet, inventory (slot grid), spells
+├── rules/        game rules shared by every view: derived stats, exhaustion, HP/RP pools, fate
+├── store/        zustand stores: vault (load, recent vaults, optimistic edits + rollback) and error
+│                  log; `canEdit` for whether the sheet on screen may be edited
+├── features/     character-list, character-sheet, inventory (slot grid), spells, vault-access
+│                  (open/sync controls, GitHub dialog)
 ├── owlbear/      Owlbear Rodeo extension: panel, live values in the room, token links, Clash sync
-├── components/   shared UI building blocks
+├── components/   shared UI building blocks; obsidian/ renders note bodies and wikilink previews
 ├── dice/         dice notation parser and roll button
 ├── i18n/         English / German dictionaries
 ├── theme/        theme tokens, topic themes and switcher

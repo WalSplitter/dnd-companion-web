@@ -14,9 +14,9 @@ import {
   isSkillTrained,
   movementSquares,
   nimbleAttributeValue,
-} from '../../vault/deriveStats'
+} from '../../rules/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type VaultFile } from '../../vault/types'
-import { resiliencePool } from '../character-sheet/vitals'
+import { resiliencePool } from '../../rules/vitals'
 import { Portrait } from './CharacterParts'
 import { bestValue } from './partyStats'
 

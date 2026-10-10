@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { basename } from '../wikilinkSyntax'
+import { basename } from '../../vault/wikilinkSyntax'
 import { WikiLink } from './WikiLink'
 
 /** Matches `[[Target]]` / `[[Target|Alias]]`, or an inline-code span (`Target`) — notes commonly mark

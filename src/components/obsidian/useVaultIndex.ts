@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { VaultIndex } from './wikilinks'
+import type { VaultIndex } from '../../vault/wikilinks'
 
 export const VaultIndexContext = createContext<VaultIndex | null>(null)
 

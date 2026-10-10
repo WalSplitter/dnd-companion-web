@@ -1,5 +1,5 @@
 import type { TranslateFn } from '../i18n/useI18n'
-import { formatModifier } from '../vault/deriveStats'
+import { formatModifier } from '../rules/deriveStats'
 
 /**
  * The one tooltip text every d20 roll button shares, so each says what it rolls, how exhaustion

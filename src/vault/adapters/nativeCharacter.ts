@@ -1,4 +1,4 @@
-import { nimbleAttributeValue } from '../deriveStats'
+import { nimbleAttributeValue } from '../../rules/deriveStats'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { resolveEntry } from '../features/inventory/grid'
 import { detectRuleset } from '../vault/detectRuleset'
-import { evasionValue, movementSquares } from '../vault/deriveStats'
+import { evasionValue, movementSquares } from '../rules/deriveStats'
 import { equippedWeapons, equipNew } from '../features/inventory/equipment'
 import { deriveEquipment } from '../vault/adapters/nativeCharacter'
 import { buildVault, parseVaultFiles } from '../vault/parseFrontmatter'

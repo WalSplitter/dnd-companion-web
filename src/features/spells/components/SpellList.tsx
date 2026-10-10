@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { renderObsidianBody } from '../../../vault/components/renderObsidian'
-import { spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../vault/deriveStats'
+import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
+import { spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../rules/deriveStats'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter, type SpellFrontmatter, type SpellTargetKind, type VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
@@ -8,7 +8,8 @@ import { resolveSpellLink } from '../../../vault/wikilinks'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
 import { AreaIcon, AutoHitIcon, CaptionedRoll, DieIcon, DmIcon, HitIcon, ROLL_BUTTON, StepArrow } from '../../../dice/RollGlyphs'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import { highestTier, isAreaSpell, isUtilitySpell, spellCost, spellDamage, spellRollFlow, type SpellCost } from '../spellRolls'
 
 /** Group key for the utility spells, listed after every tier. */

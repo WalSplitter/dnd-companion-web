@@ -1,5 +1,5 @@
 import { formatDiceExpression, parseDiceExpression } from '../../dice/notation'
-import { spellcastingValue, totalCharacterLevel } from '../../vault/deriveStats'
+import { spellcastingValue, totalCharacterLevel } from '../../rules/deriveStats'
 import type { CharacterFrontmatter, SpellFrontmatter } from '../../vault/types'
 
 /**

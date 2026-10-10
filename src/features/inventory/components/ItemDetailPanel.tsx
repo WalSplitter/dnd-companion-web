@@ -1,7 +1,7 @@
 import { endeavourItemSummary, resolveSlotCost, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { renderObsidianBody } from '../../../vault/components/renderObsidian'
+import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
 import type { VaultFile } from '../../../vault/types'
 import type { EquippedRef } from '../equipment'
 

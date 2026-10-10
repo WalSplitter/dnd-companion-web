@@ -20,7 +20,7 @@ import {
   spellAttackBonus,
   spellSaveDC,
 } from './deriveStats'
-import type { CharacterFrontmatter } from './types'
+import type { CharacterFrontmatter } from '../vault/types'
 
 const character: CharacterFrontmatter = {
   type: 'character',

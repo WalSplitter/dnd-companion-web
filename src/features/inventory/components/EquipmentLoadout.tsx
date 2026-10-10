@@ -2,21 +2,15 @@ import { useState, type ReactNode } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT } from '../../../i18n/useI18n'
 import type { EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
-import { evasionValue, formatModifier, nimbleAttributeValue } from '../../../vault/deriveStats'
+import { evasionValue, formatModifier, nimbleAttributeValue } from '../../../rules/deriveStats'
 import type { CharacterFrontmatter, VaultFile } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
+import { encodeDragPayload } from '../dragPayload'
 import { armorLookOf, equippedKey, equippedWeapons, MAX_RINGS, type EquippedRef } from '../equipment'
 import { KIND_TILE_CLASSES } from '../itemColors'
 import { ArmorIcon, BeltIcon, BootsIcon, CloakIcon, GlovesIcon, HeadIcon, NecklaceIcon, RingIcon, ShieldIcon, SwordIcon, UnequipIcon, WeaponIcon } from './equipmentIcons'
 import { PaperDoll, type DollPart, type StatDelta } from './PaperDoll'
-
-/** Native-DnD payload for dragging an equipped item off the loadout onto a container, which takes it
- * off and stows it there — see `EndeavourInventoryGrid.handleDrop`. */
-export interface EquippedDragPayload {
-  type: 'equipped'
-  ref: EquippedRef
-}
 
 let deltaSeq = 0
 
@@ -82,7 +76,7 @@ export function EquipmentLoadout({
     selected: selectedKey === equippedKey(ref),
     onSelect: () => onSelect(ref, item, link),
     onUnequip: () => onUnequip(ref),
-    dragPayload: JSON.stringify({ type: 'equipped', ref } satisfies EquippedDragPayload),
+    dragPayload: encodeDragPayload({ type: 'equipped', ref }),
     canEdit,
   })
 

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { applyRestChange, planRest, restChangeWrite, restKinds, type RestChange, type RestKind } from '../rest'
 

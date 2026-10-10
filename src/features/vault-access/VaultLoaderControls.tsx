@@ -1,7 +1,7 @@
-import { useT } from '../i18n/useI18n'
-import { inOwlbear } from '../owlbear/host'
-import { useSampleVaultEdited, useVaultStore } from '../store/vaultStore'
-import { SyncSegment } from './github/SyncSegment'
+import { useT } from '../../i18n/useI18n'
+import { inOwlbear } from '../../owlbear/host'
+import { useSampleVaultEdited, useVaultStore } from '../../store/vaultStore'
+import { SyncSegment } from './SyncSegment'
 
 const ICON = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
 

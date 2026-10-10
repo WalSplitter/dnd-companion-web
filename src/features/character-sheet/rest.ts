@@ -1,5 +1,5 @@
 import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget } from '../../vault/types'
-import { resiliencePool } from './vitals'
+import { resiliencePool } from '../../rules/vitals'
 
 /**
  * Rests and what they restore. Endeavour characters (those with resilience points or Nimble

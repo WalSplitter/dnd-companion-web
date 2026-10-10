@@ -1,6 +1,6 @@
 import { Card } from '../../../components/Card'
 import { useT } from '../../../i18n/useI18n'
-import { renderObsidianLine } from '../../../vault/components/renderObsidian'
+import { renderObsidianLine } from '../../../components/obsidian/renderObsidian'
 import type { CharacterFeature, CharacterFrontmatter, FeatureUsage } from '../../../vault/types'
 
 const USAGES: FeatureUsage[] = ['action', 'reaction', 'passive']

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { formatModifier } from '../../vault/deriveStats'
+import { formatModifier } from '../../rules/deriveStats'
 
 /** One spoke of a radar: its key, the short label drawn at its tip and the full name for tooltips. */
 export interface Axis {

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useD20Penalty } from '../dice/d20Penalty'
 import { useT } from '../i18n/useI18n'
-import { exhaustionStaticPenalty, formatModifier, passivePerception, spellSaveDC } from '../vault/deriveStats'
+import { exhaustionStaticPenalty, formatModifier, passivePerception, spellSaveDC } from '../rules/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
 import { useExhaustedSync } from './exhaustedSync'
 

@@ -1,9 +1,10 @@
+import { percentOf } from '../rules/vitals'
 import type { ResourcePool } from '../vault/types'
 
 /** A slim labeled progress bar for a per-class resource pool (e.g. sorcery points) — scales cleanly
  * to any max, unlike a pip row, which gets unwieldy once a pool goes past a handful of points. */
 export function ResourcePoolBar({ pool }: { pool: ResourcePool }) {
-  const pct = pool.max > 0 ? Math.max(0, Math.min(100, (pool.current / pool.max) * 100)) : 0
+  const pct = percentOf(pool.current, pool.max)
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">
