@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { useT } from '../../../i18n/useI18n'
 import type { EndeavourWeaponForm } from '../../../vault/adapters/endeavourItem'
-import { formatModifier } from '../../../vault/deriveStats'
+import { formatModifier } from '../../../rules/deriveStats'
 import type { ArmorLook } from '../equipment'
 
 /** A stat the loadout just changed, floated up over the paper doll for a moment. */

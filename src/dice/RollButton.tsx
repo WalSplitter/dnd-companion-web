@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
 import { useShareRoll } from '../owlbear/rolls'
-import { formatModifier } from '../vault/deriveStats'
+import { formatModifier } from '../rules/deriveStats'
 import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
 import { d20RollHint, damageRollHint } from './rollHint'

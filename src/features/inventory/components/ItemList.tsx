@@ -1,20 +1,15 @@
 import type { ReactNode } from 'react'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT, type TranslateFn, type TranslationKey } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import { endeavourItemSummary, type EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
-import { renderObsidianBody } from '../../../vault/components/renderObsidian'
+import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
 import type { CharacterFrontmatter, InlineItem, InventoryEntry, ItemFrontmatter, VaultFile } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveEndeavourItemLink, resolveItemLink } from '../../../vault/wikilinks'
-
-/** Native-DnD payload for dragging a row onto the other list — see `InventoryPanel`. */
-export interface ListMovePayload {
-  type: 'list-move'
-  section: 'equipped' | 'carried'
-  position: number
-}
+import { encodeDragPayload } from '../dragPayload'
 
 /** Row controls while the list inventory is editable: move to the other list, remove. */
 export interface ItemListActions {
@@ -71,7 +66,7 @@ export function ItemList({
           <li
             key={`${typeof entry === 'string' ? entry : entry.name}-${i}`}
             draggable={Boolean(actions)}
-            onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list-move', section, position: i } satisfies ListMovePayload))}
+            onDragStart={(e) => e.dataTransfer.setData('text/plain', encodeDragPayload({ type: 'list-move', section, position: i }))}
             className={`flex items-start gap-2 ${actions ? 'cursor-grab' : ''}`}
           >
             <div className="min-w-0 flex-1">{row}</div>

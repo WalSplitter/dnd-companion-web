@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useT, type TranslationKey } from '../../i18n/useI18n'
 import { characterRoute } from '../../routes/paths'
-import { endeavourItemSummary } from '../adapters/endeavourItem'
-import { useVaultIndex } from '../useVaultIndex'
-import { resolveWikilink, type ResolvedWikilink } from '../wikilinks'
+import { endeavourItemSummary } from '../../vault/adapters/endeavourItem'
+import { useVaultIndex } from './useVaultIndex'
+import { resolveWikilink, type ResolvedWikilink } from '../../vault/wikilinks'
 import { renderObsidianBody } from './renderObsidian'
 
 const HOVER_OPEN_DELAY_MS = 350

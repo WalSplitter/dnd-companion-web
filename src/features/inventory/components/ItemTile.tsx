@@ -1,17 +1,7 @@
 import { useT } from '../../../i18n/useI18n'
 import type { ContainerTile } from '../grid'
+import { encodeDragPayload } from '../dragPayload'
 import { CUSTOM_TILE_CLASSES, KIND_TILE_CLASSES } from '../itemColors'
-
-/** Native-DnD payload for picking up an already-placed tile and dropping it onto a *different*
- * container's `ContainerGrid` — see `EndeavourInventoryGrid.handleDrop`'s `move` branch. Distinct
- * `type` from the search panel's `{ type: 'new' }` payload so a drop target can tell "move this
- * existing item" apart from "place a fresh one". Carries only source indices: the entry itself
- * (wikilink or temporary custom item) is looked up from the character's data on drop. */
-export interface MoveTilePayload {
-  type: 'move'
-  sourceContainerIndex: number
-  sourceLinkIndex: number
-}
 
 /** The round remove/equip buttons in a tile's corners: a 20px circle, with an invisible `::before`
  * that widens the clickable area to ~32px so it doesn't take careful aiming. With a mouse they only
@@ -62,8 +52,7 @@ export function ItemTile({
       tabIndex={0}
       draggable={canEdit}
       onDragStart={(e) => {
-        const payload: MoveTilePayload = { type: 'move', sourceContainerIndex: containerIndex, sourceLinkIndex: tile.linkIndex }
-        e.dataTransfer.setData('text/plain', JSON.stringify(payload))
+        e.dataTransfer.setData('text/plain', encodeDragPayload({ type: 'move', sourceContainerIndex: containerIndex, sourceLinkIndex: tile.linkIndex }))
       }}
       onClick={onSelect}
       onDoubleClick={onEquip}

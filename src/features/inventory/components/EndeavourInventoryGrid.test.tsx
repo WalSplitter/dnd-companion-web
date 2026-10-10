@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { DICTIONARIES, I18nContext, interpolate, type I18nContextValue } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import type { EndeavourInventoryEntry } from '../../../vault/types'
-import { VaultIndexProvider } from '../../../vault/VaultIndexContext'
+import { VaultIndexProvider } from '../../../components/obsidian/VaultIndexContext'
 import { EndeavourInventoryGrid } from './EndeavourInventoryGrid'
 
 // Runs against the bundled sample vault through the real store: edits go to its in-memory sandbox

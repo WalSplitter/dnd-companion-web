@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import { I18nProvider } from '../../i18n/I18nContext'
-import { buildVault } from '../parseFrontmatter'
-import { VaultIndexProvider } from '../VaultIndexContext'
-import { buildVaultIndex } from '../wikilinks'
+import { buildVault } from '../../vault/parseFrontmatter'
+import { VaultIndexProvider } from './VaultIndexContext'
+import { buildVaultIndex } from '../../vault/wikilinks'
 import { renderObsidianBody } from './renderObsidian'
 
 const index = buildVaultIndex(buildVault([{ path: 'Regeln/Gepäck.md', content: '---\ntags: [Regeln/Endeavour]\n---\nGepäckregeln.' }]))

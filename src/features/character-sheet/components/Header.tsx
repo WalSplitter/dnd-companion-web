@@ -1,6 +1,6 @@
 import { StatPlate } from '../../../components/StatPlate'
 import { useT } from '../../../i18n/useI18n'
-import { classSummary, totalCharacterLevel } from '../../../vault/deriveStats'
+import { classSummary, totalCharacterLevel } from '../../../rules/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 /** Hero banner: framed portrait (or a monogram medallion when there's none), name, class/species

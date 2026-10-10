@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import type { CharacterFrontmatter, Currency } from '../../../vault/types'
 
 type Coin = keyof Currency

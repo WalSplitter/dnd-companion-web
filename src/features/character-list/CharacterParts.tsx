@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { initials } from '../../components/initials'
 import { useT } from '../../i18n/useI18n'
-import { exhaustionLevel, totalCharacterLevel } from '../../vault/deriveStats'
+import { exhaustionLevel, totalCharacterLevel } from '../../rules/deriveStats'
 import type { CharacterFrontmatter } from '../../vault/types'
-import { ExhaustionGlyph } from '../character-sheet/components/VitalPools'
-import { hpFillClass, maxExhaustion, percentOf, resiliencePool } from '../character-sheet/vitals'
-import { ManaIcon } from '../spells/components/ManaIcon'
+import { ExhaustionGlyph } from '../../components/ExhaustionGlyph'
+import { maxExhaustion, percentOf, resiliencePool } from '../../rules/vitals'
+import { hpFillClass } from '../../components/vitalsDisplay'
+import { ManaIcon } from '../../components/ManaIcon'
 
 // Pieces of a party member shared by the card, the list row, the lineup and the comparison table.
 

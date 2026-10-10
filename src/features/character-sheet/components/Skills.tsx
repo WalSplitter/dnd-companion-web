@@ -2,7 +2,7 @@ import { Card } from '../../../components/Card'
 import { D20Modifier } from '../../../components/ExhaustedValue'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { formatModifier, nimbleAttributeValue, nimbleSkillBonus, nimbleSkillValue, skillBonus, skillProficiencyLevel } from '../../../vault/deriveStats'
+import { formatModifier, nimbleAttributeValue, nimbleSkillBonus, nimbleSkillValue, skillBonus, skillProficiencyLevel } from '../../../rules/deriveStats'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
 

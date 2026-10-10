@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../../../i18n/useI18n'
-import type { Fate } from '../vitals'
+import type { Fate } from '../../../rules/vitals'
 
 type Drop = { left: number; delay: number; duration: number; width: number; height: number; opacity: number }
 

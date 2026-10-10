@@ -11,9 +11,9 @@ import {
   type GitHubErrorKind,
   type GitHubRepoSummary,
   type GitHubVaultRef,
-} from './githubApi'
-import { listRecentVaults } from '../handleStore'
-import type { GitHubFormValues } from './githubForm'
+} from '../../vault/github/githubApi'
+import { listRecentVaults } from '../../vault/handleStore'
+import type { GitHubFormValues } from '../../vault/github/githubForm'
 
 /** Token names must be unique per account — the date keeps a second token from clashing with the first. */
 function tokenName(): string {

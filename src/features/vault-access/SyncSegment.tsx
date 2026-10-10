@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useT } from '../../i18n/useI18n'
 import { useVaultStore } from '../../store/vaultStore'
-import type { SyncConflict, SyncStatus } from './githubSync'
+import type { SyncConflict, SyncStatus } from '../../vault/github/githubSync'
 
 function formatValue(value: unknown): string {
   if (value === undefined) return '–'

@@ -14,10 +14,10 @@ import {
   nimbleAttributeValue,
   nimbleInitiative,
   proficiencyBonus,
-} from '../../../vault/deriveStats'
+} from '../../../rules/deriveStats'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
-import { movementHint } from '../vitals'
+import { movementHint } from '../../../components/vitalsDisplay'
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
 export function ArmorClass({ character }: { character: CharacterFrontmatter }) {

@@ -3,6 +3,7 @@ import { SectionTitle } from '../../../components/SectionTitle'
 import { useT } from '../../../i18n/useI18n'
 import type { EndeavourItemFrontmatter } from '../../../vault/adapters/endeavourItem'
 import type { VaultFile } from '../../../vault/types'
+import { encodeDragPayload } from '../dragPayload'
 import { KIND_DOT_CLASSES } from '../itemColors'
 import type { SelectedGridItem } from './ItemDetailPanel'
 
@@ -80,7 +81,7 @@ export function ItemSearchPanel({
               <li
                 key={result.path}
                 draggable={canEdit}
-                onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'new', link }))}
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', encodeDragPayload({ type: 'new', link }))}
                 onClick={() => onSelect({ key: link, item: result })}
                 className={`flex items-center gap-2 rounded-sm px-1.5 py-1.5 text-sm transition hover:bg-trim/10 ${canEdit ? 'cursor-grab' : 'cursor-pointer'} ${selectedKey === link ? 'bg-trim/15 font-medium text-trim' : 'text-fg'}`}
               >

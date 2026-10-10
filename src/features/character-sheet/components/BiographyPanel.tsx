@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { Card } from '../../../components/Card'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { classSummary, totalCharacterLevel } from '../../../vault/deriveStats'
+import { classSummary, totalCharacterLevel } from '../../../rules/deriveStats'
 import type { AppearanceKey, CharacterFrontmatter } from '../../../vault/types'
-import { renderObsidianBody } from '../../../vault/components/renderObsidian'
+import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
 
 const APPEARANCE_LABEL: Record<AppearanceKey, TranslationKey> = {
   gender: 'bio.appearance.gender',

@@ -1,13 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Card } from '../../components/Card'
 import { useT } from '../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../store/vaultStore'
+import { useVaultStore } from '../../store/vaultStore'
+import { useCanEdit } from '../../store/canEdit'
 import type { CharacterFrontmatter, InventoryEntry } from '../../vault/types'
 import { wikilinkTarget } from '../../vault/wikilinkSyntax'
 import { resolveItemLink, type VaultIndex } from '../../vault/wikilinks'
 import { CurrencyDisplay } from './components/CurrencyDisplay'
 import { EndeavourInventoryGrid } from './components/EndeavourInventoryGrid'
-import { ItemList, type ListMovePayload } from './components/ItemList'
+import { ItemList } from './components/ItemList'
+import { encodeDragPayload, parseListDrop } from './dragPayload'
 import { addEntry, hasEntry, moveEntry, removeEntry, type InventorySection, type ListInventory } from './listInventory'
 
 function entryWeight(entry: InventoryEntry, index: VaultIndex): number {
@@ -18,23 +20,6 @@ function entryWeight(entry: InventoryEntry, index: VaultIndex): number {
   }
   if (!entry.weight_lb) return 0
   return entry.weight_lb * (entry.quantity ?? 1)
-}
-
-/** A search result dragged onto a list carries its wikilink; a row dragged from the other list a
- * `ListMovePayload` (see `ItemList`). */
-type ListDropPayload = { type: 'list-new'; link: string } | ListMovePayload
-
-function parseListDrop(raw: string): ListDropPayload | undefined {
-  try {
-    const p = JSON.parse(raw) as Record<string, unknown>
-    if (p.type === 'list-new' && typeof p.link === 'string') return { type: 'list-new', link: p.link }
-    if (p.type === 'list-move' && (p.section === 'equipped' || p.section === 'carried') && typeof p.position === 'number') {
-      return { type: 'list-move', section: p.section, position: p.position }
-    }
-  } catch {
-    // Not one of ours — ignore the drop.
-  }
-  return undefined
 }
 
 export function InventoryPanel({
@@ -184,7 +169,7 @@ function ItemSearchCard({ onAdd }: { onAdd: (section: InventorySection, link: st
               <li
                 key={name}
                 draggable
-                onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list-new', link }))}
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', encodeDragPayload({ type: 'list-new', link }))}
                 className="flex cursor-grab items-center gap-2 px-1.5 py-1.5 text-sm text-fg"
               >
                 <span className="min-w-0 flex-1 truncate">{name}</span>

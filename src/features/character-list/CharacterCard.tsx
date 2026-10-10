@@ -16,10 +16,11 @@ import {
   nimbleSkillValue,
   proficiencyBonus,
   skillProficiencyLevel,
-} from '../../vault/deriveStats'
+} from '../../rules/deriveStats'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../vault/types'
-import { characterFate, movementHint } from '../character-sheet/vitals'
-import { CrystalGradient, SlotCrystal } from '../spells/components/SpellSlotTracker'
+import { characterFate } from '../../rules/vitals'
+import { movementHint } from '../../components/vitalsDisplay'
+import { CrystalGradient, SlotCrystal } from '../../components/SlotCrystal'
 import { FallenSeal, LifeForce, Portrait, VitalStatus } from './CharacterParts'
 
 /** How many of a character's best skills the card lists. */

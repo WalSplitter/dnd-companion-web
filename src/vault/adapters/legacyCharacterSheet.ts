@@ -16,7 +16,7 @@ import type {
   WeaponAttack,
   WeaponKind,
 } from '../types'
-import { abilityModifier } from '../deriveStats'
+import { abilityModifier } from '../../rules/deriveStats'
 import { resolveBiography } from './biography'
 import { extractItemTable } from './markdownTable'
 import type { ImageAssets } from '../types'

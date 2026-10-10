@@ -4,7 +4,7 @@ import { StatPlate } from '../../../components/StatPlate'
 import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { spellAttackBonus } from '../../../vault/deriveStats'
+import { spellAttackBonus } from '../../../rules/deriveStats'
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
 

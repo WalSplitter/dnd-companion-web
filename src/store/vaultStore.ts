@@ -1,4 +1,3 @@
-import { createContext, useContext } from 'react'
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
@@ -223,26 +222,11 @@ function loadGitHubRuntime() {
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
 const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable' } as const
 
-/** What each GitHub failure means for the user, shown in the error log. */
-const GITHUB_ERROR_HINTS: Record<GitHubErrorKind, TranslationKey> = {
-  unauthorized: 'github.error.unauthorized',
-  'write-forbidden': 'github.error.write-forbidden',
-  'not-fast-forward': 'github.error.not-fast-forward',
-  forbidden: 'github.error.forbidden',
-  'rate-limited': 'github.error.rate-limited',
-  'repo-not-found': 'github.error.repo-not-found',
-  'branch-not-found': 'github.error.branch-not-found',
-  'subpath-not-found': 'github.error.subpath-not-found',
-  'too-large': 'github.error.too-large',
-  network: 'github.error.network',
-  other: 'github.error.other',
-}
-
 const NO_FILES: VaultSourceFile[] = []
 
 /** The error-log hint for a GitHub failure — what it means and what to do. */
 function githubHint(err: unknown): TranslationKey {
-  return err instanceof GitHubError ? GITHUB_ERROR_HINTS[err.kind] : 'github.sync.failedHint'
+  return err instanceof GitHubError ? `github.error.${err.kind}` : 'github.sync.failedHint'
 }
 
 /** Nothing opened: the store's initial state, so a returning visitor never sees the sample flash by. */
@@ -776,16 +760,4 @@ export function wasSampleVaultActive(): boolean {
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
-}
-
-/** True around a sheet that stays read-only whatever the vault allows — in Owlbear Rodeo, the
- * character of another player, who alone writes it back to the vault. */
-export const SheetLockContext = createContext(false)
-
-/** Whether vault edits are currently written back to disk (the user granted `readwrite` access), or —
- * for the sample vault — applied in memory only. False inside a `SheetLockContext`. */
-export function useCanEdit(): boolean {
-  const locked = useContext(SheetLockContext)
-  const granted = useVaultStore((s) => s.editPermission === 'granted')
-  return granted && !locked
 }

@@ -1,4 +1,4 @@
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from './types'
+import { ABILITY_TO_NIMBLE_ATTRIBUTE, NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from '../vault/types'
 
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2)

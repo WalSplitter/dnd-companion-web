@@ -1,57 +1,27 @@
 import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
 import { deriveEquipment, equipmentChangeFields } from '../../../vault/adapters/nativeCharacter'
-import { evasionValue, formatModifier } from '../../../vault/deriveStats'
+import { evasionValue, formatModifier } from '../../../rules/deriveStats'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
-import { equipFromInventory, equipNew, equippedKey, equippedLink, equipSlotOf, isEquippedStack, isWornSlot, setEquippedCharges, unequip, type EquippedRef, type EquipResult } from '../equipment'
+import { parseGridDrop } from '../dragPayload'
+import { equipFromInventory, equipNew, equippedKey, equippedLink, equipSlotOf, isEquippedStack, setEquippedCharges, unequip, type EquippedRef, type EquipResult } from '../equipment'
 import { isCustomEntry, isStackEntry, resolveContainers, resolveEntry, tryPlaceEntry, type PlaceFailure, type ResolvedContainer } from '../grid'
-import type { MoveTilePayload } from './ItemTile'
 import { CapacityBar } from './CapacityBar'
 import { ContainerGrid } from './ContainerGrid'
 import { CurrencyDisplay } from './CurrencyDisplay'
-import { EquipmentLoadout, type EquippedDragPayload } from './EquipmentLoadout'
+import { EquipmentLoadout } from './EquipmentLoadout'
 import { ItemDetailPanel, type EquipAction, type EquipPreviewLine, type SelectedGridItem } from './ItemDetailPanel'
 import { ItemSearchPanel, type ContainerOption } from './ItemSearchPanel'
 
 /** The most slots an item of each size category takes (rule `Gegenstandsgrößen`: Klein 1, Mittel 2,
  * Groß 3; Sehr groß is 4 and up, so it caps nothing). */
 const MAX_SLOTS_FOR_SIZE: Record<EndeavourItemSize, number | undefined> = { klein: 1, mittel: 2, gross: 3, sehr_gross: undefined }
-
-/** A search result drop carries just the wikilink; a tile dragged from another container carries a
- * `MoveTilePayload` instead — see `ItemTile.tsx` — and an item dragged off the loadout an
- * `EquippedDragPayload`. */
-type DropPayload = { type: 'new'; link: string } | MoveTilePayload | EquippedDragPayload
-
-function parseEquippedRef(raw: unknown): EquippedRef | undefined {
-  if (!raw || typeof raw !== 'object') return undefined
-  const ref = raw as Record<string, unknown>
-  if (isWornSlot(ref.slot)) return { slot: ref.slot }
-  return (ref.slot === 'weapon' || ref.slot === 'ring') && typeof ref.position === 'number' ? { slot: ref.slot, position: ref.position } : undefined
-}
-
-function parseDropPayload(raw: string): DropPayload {
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (parsed && typeof parsed === 'object') {
-      const p = parsed as Record<string, unknown>
-      if (p.type === 'move' && typeof p.sourceContainerIndex === 'number' && typeof p.sourceLinkIndex === 'number') {
-        return { type: 'move', sourceContainerIndex: p.sourceContainerIndex, sourceLinkIndex: p.sourceLinkIndex }
-      }
-      if (p.type === 'new' && typeof p.link === 'string') return { type: 'new', link: p.link }
-      const ref = p.type === 'equipped' ? parseEquippedRef(p.ref) : undefined
-      if (ref) return { type: 'equipped', ref }
-    }
-  } catch {
-    // Not JSON — treat the raw string itself as a wikilink (defensive; every drag source in this
-    // feature sets JSON, but a drop from somewhere unexpected shouldn't crash the handler).
-  }
-  return { type: 'new', link: raw }
-}
 
 /**
  * The Resident-Evil-style slot-grid inventory for characters using the new "Endeavour"
@@ -200,7 +170,7 @@ export function EndeavourInventoryGrid({
       setWarning(t('endeavourInventory.editLocked'))
       return
     }
-    const payload = parseDropPayload(raw)
+    const payload = parseGridDrop(raw)
     if (payload.type === 'move') equipTile(payload.sourceContainerIndex, payload.sourceLinkIndex, ringPosition)
     else if (payload.type === 'new') equipLinkNew(payload.link, ringPosition)
   }
@@ -271,7 +241,7 @@ export function EndeavourInventoryGrid({
       setWarning(t('endeavourInventory.editLocked'))
       return
     }
-    const payload = parseDropPayload(raw)
+    const payload = parseGridDrop(raw)
     if (payload.type === 'move') moveTile(payload.sourceContainerIndex, payload.sourceLinkIndex, containerIndex)
     else if (payload.type === 'equipped') unequipRef(payload.ref, containerIndex)
     else placeNew(payload.link, containerIndex)
@@ -402,6 +372,20 @@ export function EndeavourInventoryGrid({
     return lines
   }
 
+  /** What every container's grid gets, main backpack or quick-access pouch alike. */
+  function containerGridProps(r: ResolvedContainer) {
+    return {
+      layout: r.layout,
+      containerIndex: r.containerIndex,
+      selectedLinkIndex: r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex,
+      onSelectTile: (linkIndex: number) => selectTile(r, linkIndex),
+      onRemoveTile: (linkIndex: number) => removeTile(r.containerIndex, linkIndex),
+      onEquipTile: canEquip ? (linkIndex: number) => equipTile(r.containerIndex, linkIndex) : undefined,
+      onDropPayload: (raw: string) => handleDrop(raw, r.containerIndex),
+      canEdit,
+    }
+  }
+
   return (
     // Two columns from `lg`: the loadout and the containers on the left; quick access, search and
     // item details on the right, where the left column's height leaves room. On phones the column
@@ -426,17 +410,7 @@ export function EndeavourInventoryGrid({
 
         {mainContainers.map((r) => (
           <div key={r.containerIndex} className="max-lg:order-3">
-            <ContainerGrid
-              label={r.name || t('endeavourInventory.backpack')}
-              layout={r.layout}
-              containerIndex={r.containerIndex}
-              selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
-              onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
-              onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
-              onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
-              onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
-              canEdit={canEdit}
-            />
+            <ContainerGrid label={r.name || t('endeavourInventory.backpack')} {...containerGridProps(r)} />
           </div>
         ))}
 
@@ -459,19 +433,7 @@ export function EndeavourInventoryGrid({
             <div className="flex flex-wrap gap-3">
               {quickContainers.map((r) => (
                 <div key={r.containerIndex} className="w-32">
-                  <ContainerGrid
-                    label={r.name}
-                    layout={r.layout}
-                    containerIndex={r.containerIndex}
-                    columns={1}
-                    compact
-                    selectedLinkIndex={r.layout.tiles.find((tile) => tile.key === selected?.key)?.linkIndex}
-                    onSelectTile={(linkIndex) => selectTile(r, linkIndex)}
-                    onRemoveTile={(linkIndex) => removeTile(r.containerIndex, linkIndex)}
-                    onEquipTile={canEquip ? (linkIndex) => equipTile(r.containerIndex, linkIndex) : undefined}
-                    onDropPayload={(raw) => handleDrop(raw, r.containerIndex)}
-                    canEdit={canEdit}
-                  />
+                  <ContainerGrid label={r.name} columns={1} compact {...containerGridProps(r)} />
                 </div>
               ))}
             </div>

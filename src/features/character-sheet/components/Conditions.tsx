@@ -1,6 +1,7 @@
 import { Card } from '../../../components/Card'
 import { useT } from '../../../i18n/useI18n'
-import { useCanEdit, useVaultStore } from '../../../store/vaultStore'
+import { useVaultStore } from '../../../store/vaultStore'
+import { useCanEdit } from '../../../store/canEdit'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 export function Conditions({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
