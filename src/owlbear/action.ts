@@ -2,7 +2,7 @@ import '@fontsource/cinzel/700.css'
 import OBR, { type Theme } from '@owlbear-rodeo/sdk'
 import type { en } from '../i18n/en'
 import { pageDictionary } from './pageLang'
-import { closePanel, isPanelOpen, loadPanelPrefs, openPanel, restorePanel, savePanelPrefs, type PanelPrefs } from './panel'
+import { closePanel, isPanelOpen, loadPanelPrefs, openPanel, PANEL_ID, restorePanel, savePanelPrefs, type PanelPrefs } from './panel'
 
 /**
  * Script of `owlbear-action.html`, the popover of the toolbar button. A click while the companion
@@ -27,10 +27,13 @@ function showPrefs(prefs: PanelPrefs) {
 const dictionary = pageDictionary()
 for (const el of document.querySelectorAll<HTMLElement>('[data-t]')) el.textContent = dictionary[el.dataset.t as keyof typeof en]
 
-OBR.onReady(async () => {
-  void OBR.theme.getTheme().then(applyTheme)
-  OBR.theme.onChange(applyTheme)
+function showLoading(loading: boolean) {
+  document.getElementById('loading')!.hidden = !loading
+  document.getElementById('controls')!.hidden = loading
+}
 
+/** Opens the companion, brings it back from minimized, or — when it's open — shows the controls. */
+async function handleClick() {
   if (!(await isPanelOpen(OBR))) {
     await openPanel(OBR, savePanelPrefs({ minimized: false }))
     await OBR.action.close()
@@ -42,6 +45,37 @@ OBR.onReady(async () => {
     await OBR.action.close()
     return
   }
+  showPrefs(loadPanelPrefs())
+  showLoading(false)
+}
+
+/**
+ * `handleClick`, but never leaves the popover stuck on its loading screen: should Owlbear fail a
+ * request (e.g. still holding on to a panel that closed itself), the panel is cleared away and
+ * opened afresh; failing that, the popover closes, so the next click starts over.
+ */
+let handling = false
+async function handleClickSafely() {
+  if (handling) return
+  handling = true
+  showLoading(true)
+  try {
+    await handleClick()
+  } catch {
+    try {
+      await OBR.popover.close(PANEL_ID).catch(() => undefined)
+      await openPanel(OBR, savePanelPrefs({ minimized: false }))
+    } finally {
+      await OBR.action.close().catch(() => undefined)
+    }
+  } finally {
+    handling = false
+  }
+}
+
+OBR.onReady(async () => {
+  void OBR.theme.getTheme().then(applyTheme)
+  OBR.theme.onChange(applyTheme)
 
   const redock = async (change: Partial<PanelPrefs>) => {
     const prefs = savePanelPrefs(change)
@@ -56,9 +90,12 @@ OBR.onReady(async () => {
     button.addEventListener('click', () => void redock({ size: button.dataset.size as PanelPrefs['size'], width: null }))
   }
   document.getElementById('close')!.addEventListener('click', () => {
-    void closePanel(OBR).then(() => OBR.action.close())
+    void closePanel(OBR).finally(() => OBR.action.close())
   })
-  showPrefs(loadPanelPrefs())
-  document.getElementById('loading')!.hidden = true
-  document.getElementById('controls')!.hidden = false
+
+  // Owlbear may keep this page loaded between clicks, so each opening is handled anew.
+  OBR.action.onOpenChange((open) => {
+    if (open) void handleClickSafely()
+  })
+  await handleClickSafely()
 })
