@@ -36,7 +36,7 @@ const MARGIN = 16
 const INSET: Record<PanelSide, number> = { left: MARGIN, right: 76 }
 /**
  * Where the panel starts. Docked right, level with the top of Owlbear's button that collapses its
- * tools (its top about 11 px below the window's, its centre about 29 px); docked left, below the
+ * tools (its top about 11 px below the window's); docked left, below the
  * action bar in the top left corner.
  */
 const TOP: Record<PanelSide, number> = { left: 72, right: 11 }
@@ -51,8 +51,8 @@ const EDGE = 8
 export const MINI_ID = 'dnd-companion/mini'
 /** The button's frame: a 40 px circle with room for its glow. */
 const MINI_SIZE = 44
-/** Centred on Owlbear's collapse button. */
-const MINI_TOP = 7
+/** Centred on Owlbear's collapse button (its centre about 27 px below the window's top). */
+const MINI_TOP = 5
 /** The circle's right edge in line with the panel's. */
 const MINI_RIGHT = INSET.right - 2
 /** The smallest the panel can be dragged to — the sheet still reads at this size. */
@@ -249,9 +249,12 @@ export async function restorePanel(obr: Obr): Promise<void> {
   await obr.popover.close(MINI_ID)
 }
 
+/** Closes the panel and its minimized button. The panel last: called from the panel itself, its
+ * page is gone once it closes. */
 export async function closePanel(obr: Obr): Promise<void> {
   savePanelPrefs({ minimized: false })
-  await Promise.all([obr.popover.close(PANEL_ID), obr.popover.close(MINI_ID)])
+  await obr.popover.close(MINI_ID).catch(() => undefined)
+  await obr.popover.close(PANEL_ID)
 }
 
 /**
