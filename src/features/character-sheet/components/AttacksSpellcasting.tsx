@@ -4,8 +4,8 @@ import { StatPlate } from '../../../components/StatPlate'
 import { ResourcePoolBar } from '../../../components/ResourcePoolBar'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { spellAttackBonus } from '../../../rules/deriveStats'
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../../vault/types'
+import { abilityAbbreviation, spellAttackBonus } from '../../../rules/deriveStats'
+import type { CharacterFrontmatter } from '../../../vault/types'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
 
 /** Spellcasting at a glance: ability, save DC, attack and the casting resources. The spells
@@ -16,12 +16,7 @@ export function AttacksSpellcasting({ character, characterPath }: { character: C
 
   const attack = spellAttackBonus(character)
 
-  // On a Nimble-flavored sheet, `spellcasting.ability` is still the untouched D&D bridge ability
-  // (see `CharacterFrontmatter.nimble_attributes`'s doc comment) — shown as its Nimble equivalent
-  // here so this plate doesn't show a stray D&D letter amid an otherwise all-Nimble sheet.
-  const abilityAbbr = character.nimble_attributes
-    ? ABILITY_TO_NIMBLE_ATTRIBUTE[character.spellcasting.ability].toUpperCase()
-    : character.spellcasting.ability.toUpperCase()
+  const abilityAbbr = abilityAbbreviation(character, character.spellcasting.ability)
 
   return (
     <Card title={t('cards.spellcasting')}>

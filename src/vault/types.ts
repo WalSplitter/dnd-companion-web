@@ -243,9 +243,22 @@ export interface WeaponAttack {
   properties?: string[]
 }
 
+/**
+ * The rules a character is played by — the one switch every rules- or display decision branches on
+ * (read it through `isEndeavour` in `rules/ruleset.ts`). Set by the adapter that read the character,
+ * independent of the vault format it came from:
+ * - `dnd5e`: D&D 5e 2024 — six abilities, proficiency bonus, hit dice, spell slots, one long rest.
+ *   The legacy campaign sheets (`adapters/legacyCharacterSheet.ts`) are always this.
+ * - `endeavour`: the DM's Nimble-based rules — eight attributes, resilience, mana, evasion, three rests.
+ */
+export type CharacterRuleset = 'dnd5e' | 'endeavour'
+
+export const CHARACTER_RULESETS: readonly CharacterRuleset[] = ['dnd5e', 'endeavour']
+
 export interface CharacterFrontmatter {
   type: 'character'
   name: string
+  ruleset: CharacterRuleset
   class: CharacterClass[]
   species: string
   background: string
@@ -257,9 +270,13 @@ export interface CharacterFrontmatter {
   saving_throw_proficiencies: AbilityKey[]
   skill_proficiencies: SkillKey[]
   skill_expertise?: SkillKey[]
-  /** Nimble: derived from the worn `armor` note's `RK` (0 without armor, rule `Rüstungsklasse`) —
-   * damage reduction, not a to-hit target. A value typed onto a Nimble sheet is ignored. */
+  /** Endeavour: derived from the worn `armor` note's `RK` (0 without armor, rule `Rüstungsklasse`) —
+   * damage reduction, not a to-hit target. A value typed onto an Endeavour sheet is ignored.
+   * D&D: the to-hit target; the legacy adapter derives it from the worn armor (see `legacyDefense.ts`). */
   armor_class: number
+  /** D&D legacy sheets only (house rule `Schadensreduktion`): flat damage reduction from the worn
+   * armor's and shield's `SR` plus `Verteidigung.Zusätzliche_SR`. Absent when it adds up to nothing. */
+  damage_reduction?: number
   speed: string
   hp: { current: number; max: number; temp?: number }
   /** Resilience points (Nimble/Endeavour rules): the fast-swinging combat pool that absorbs damage
@@ -311,11 +328,10 @@ export interface CharacterFrontmatter {
   spells_known?: string[]
   features?: CharacterFeature[]
   /**
-   * Real "Endeavour"/Nimble ruleset attributes/skills (see `NIMBLE_ATTRIBUTES`/`NIMBLE_SKILL_ATTRIBUTES`)
-   * — present only for characters using that vault's actual rules instead of this schema's default
-   * D&D-shaped `abilities`/`skill_proficiencies`. When present, the Ability Scores/Skills/Saving
-   * Throws cards render these instead, and armor class, initiative and spell DC/attack are computed
-   * from them (see `deriveStats.ts`) rather than from `abilities`/`proficiency_bonus`.
+   * Endeavour attributes/skills (see `NIMBLE_ATTRIBUTES`/`NIMBLE_SKILL_ATTRIBUTES`), read when
+   * `ruleset` is `endeavour` instead of the D&D-shaped `abilities`/`skill_proficiencies`: the Ability
+   * Scores/Skills/Saving Throws cards render these, and initiative and spell DC/attack are computed
+   * from them (see `rules/endeavour.ts`). Plain data — whether they apply is `ruleset`'s call.
    */
   nimble_attributes?: Record<NimbleAttributeKey, number>
   nimble_skills?: Partial<Record<SkillKey, number>>
@@ -327,9 +343,10 @@ export interface CharacterFrontmatter {
    * advantage or disadvantage by default; a multiclass character uses its highest-level class's (see
    * `resolveClassSaveModes`). Absent = none declared. */
   nimble_save_modes?: Partial<Record<NimbleAttributeKey, 'advantage' | 'disadvantage'>>
-  /** Derived from the class notes' `Übung.Waffen`/`.Rüstungen`: display names of the weapon and armor
-   * groups the character is trained with. Absent when no class note declares any. */
-  nimble_class_proficiencies?: { weapons: string[]; armor: string[] }
+  /** Display names of the weapon and armor groups the character is trained with — from the class
+   * notes' `Übung.Waffen`/`.Rüstungen` (Endeavour) or the legacy sheet's own `Übung` block (D&D).
+   * Absent when neither declares any. */
+  class_proficiencies?: { weapons: string[]; armor: string[] }
   /** Own-schema input field: a `"[[Name.jpg]]"` wikilink to a portrait attachment, resolved into
    * `portrait_url` below by `buildVault` (`parseFrontmatter.ts`). Not itself read by the UI. */
   portrait?: string

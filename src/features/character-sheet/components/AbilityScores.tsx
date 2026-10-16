@@ -9,9 +9,12 @@ import { d20RollHint } from '../../../dice/rollHint'
 import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
-import { abilityModifier, formatModifier, isSavingThrowProficient, nimbleAttributeValue, savingThrowBonus } from '../../../rules/deriveStats'
+import { formatModifier } from '../../../rules/deriveStats'
+import { abilityModifier, isSavingThrowProficient, savingThrowBonus } from '../../../rules/dnd5e'
+import { nimbleAttributeValue } from '../../../rules/endeavour'
 import { ABILITIES, NIMBLE_ATTRIBUTES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+import { isEndeavour } from '../../../rules/ruleset'
 
 /** A medallion + caption plate, shared by the D&D-shaped `abilities` and Nimble `nimble_attributes`
  * branches below. The value itself is never edited here (attributes are set by the DM), but the
@@ -148,7 +151,7 @@ export function AbilityScores({ character, characterPath }: { character: Charact
   const t = useT()
   const canEdit = useCanEdit()
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
-  const nimble = character.nimble_attributes
+  const nimble = isEndeavour(character)
   const primary = character.nimble_primary_attributes
 
   return (

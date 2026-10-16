@@ -1,3 +1,5 @@
+import { nimbleAttributeValue } from '../../rules/endeavour'
+import { isEndeavour } from '../../rules/ruleset'
 import { hasTag, tagList } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type { CharacterFrontmatter, NimbleAttributeKey, WeaponAttack, WeaponKind } from '../types'
@@ -43,10 +45,8 @@ function meters(parts: unknown[]): string | undefined {
 }
 
 function attributeFor(kind: WeaponKind, finesse: boolean, character: CharacterFrontmatter): NimbleAttributeKey {
-  const st = character.nimble_attributes?.st ?? 0
-  const ge = character.nimble_attributes?.ge ?? 0
   if (kind === 'ranged') return 'ge'
-  return finesse && ge > st ? 'ge' : 'st'
+  return finesse && nimbleAttributeValue(character, 'ge') > nimbleAttributeValue(character, 'st') ? 'ge' : 'st'
 }
 
 function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFrontmatter): WeaponAttack[] {
@@ -61,7 +61,7 @@ function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFron
     const damageDice = linksToText(dice)
     if (!damageDice) return
     const attribute = attributeFor(kind, finesse, character)
-    const bonus = character.nimble_attributes?.[attribute] ?? 0
+    const bonus = nimbleAttributeValue(character, attribute)
     attacks.push({
       name: label,
       kind,
@@ -89,7 +89,7 @@ export function resolveWeaponAttacks(raw: unknown, character: CharacterFrontmatt
     const stack = entry && typeof entry === 'object' && typeof (entry as { link?: unknown }).link === 'string' ? (entry as { link: string }).link : undefined
     if (typeof entry !== 'string' && stack === undefined) return entry && typeof entry === 'object' ? [entry as WeaponAttack] : []
     const name = linkFile(stack ?? entry)
-    const note = character.nimble_attributes && name ? findRawFileByName(files, name) : undefined
+    const note = isEndeavour(character) && name ? findRawFileByName(files, name) : undefined
     return note && looksLikeEndeavourItem(note.data) ? weaponNoteAttacks(note, name, character) : []
   })
   return attacks.length > 0 ? attacks : undefined

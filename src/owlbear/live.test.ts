@@ -6,6 +6,7 @@ function character(overrides: Partial<CharacterFrontmatter> = {}): CharacterFron
   return {
     type: 'character',
     name: 'Brann',
+    ruleset: 'endeavour',
     class: [{ name: 'Krieger', level: 3 }],
     species: '',
     background: '',

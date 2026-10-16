@@ -2,6 +2,7 @@ import { Card } from '../../../components/Card'
 import { useT } from '../../../i18n/useI18n'
 import { renderObsidianLine } from '../../../components/obsidian/renderObsidian'
 import type { CharacterFeature, CharacterFrontmatter, FeatureUsage } from '../../../vault/types'
+import { isEndeavour } from '../../../rules/ruleset'
 
 const USAGES: FeatureUsage[] = ['action', 'reaction', 'passive']
 
@@ -22,7 +23,7 @@ function FeatureList({ features }: { features: CharacterFeature[] }) {
 }
 
 /**
- * The character's features. Nimble characters get them split by when they're used — actions,
+ * The character's features. Endeavour characters get them split by when they're used — actions,
  * reactions, passive (the DM's call in #9, matching the vault sheet's `Merkmale` embeds) — each
  * group only when it has any; D&D characters keep one plain list.
  */
@@ -31,7 +32,7 @@ export function FeaturesTraits({ character }: { character: CharacterFrontmatter 
   const features = character.features ?? []
   if (features.length === 0) return null
 
-  if (!character.nimble_attributes) {
+  if (!isEndeavour(character)) {
     return (
       <Card title={t('cards.featuresTraits')}>
         <FeatureList features={features} />

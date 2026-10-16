@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom'
 import { initials } from '../../components/initials'
 import { useT, type TranslateFn } from '../../i18n/useI18n'
 import { characterRoute } from '../../routes/paths'
-import { abilityModifier, classSummary, formatModifier, nimbleAttributeValue, totalCharacterLevel } from '../../rules/deriveStats'
+import { classSummary, formatModifier, totalCharacterLevel } from '../../rules/deriveStats'
+import { abilityModifier } from '../../rules/dnd5e'
+import { nimbleAttributeValue } from '../../rules/endeavour'
+import { isEndeavour } from '../../rules/ruleset'
 import { ABILITIES, NIMBLE_ATTRIBUTES, type CharacterFrontmatter, type VaultFile } from '../../vault/types'
 import { characterFate } from '../../rules/vitals'
 import { CharacterComparison } from './CharacterComparison'
@@ -13,7 +16,7 @@ import { LegendSwatch, RadarChart, type Axis, type Emphasis, type Series } from 
 type AttributeSystem = 'nimble' | 'dnd'
 
 function systemOf(c: CharacterFrontmatter): AttributeSystem {
-  return c.nimble_attributes ? 'nimble' : 'dnd'
+  return isEndeavour(c) ? 'nimble' : 'dnd'
 }
 
 function axesFor(system: AttributeSystem, t: TranslateFn): Axis[] {

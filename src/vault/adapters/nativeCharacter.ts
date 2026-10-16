@@ -1,8 +1,9 @@
-import { nimbleAttributeValue } from '../../rules/deriveStats'
+import { nimbleAttributeValue } from '../../rules/endeavour'
+import { isEndeavour, parseRuleset } from '../../rules/ruleset'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
-import type { CharacterFeature, CharacterFrontmatter, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
+import type { CharacterFeature, CharacterFrontmatter, CharacterRuleset, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../types'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { resolveBiography } from './biography'
@@ -16,6 +17,15 @@ import { resolveWeaponAttacks } from './weaponAttacks'
  * editable field lives on disk.
  */
 
+/**
+ * The rules the sheet is played by: an explicit `ruleset: dnd5e|endeavour` wins; without one, a sheet
+ * carrying Endeavour's own blocks (`nimble_attributes`, `resilience`) is Endeavour, anything else D&D.
+ * Decided once here — everything downstream reads `ruleset`, never these fields' presence.
+ */
+export function resolveRuleset(data: Record<string, unknown>): CharacterRuleset {
+  return parseRuleset(data.ruleset) ?? (isRecord(data.nimble_attributes) || isRecord(data.resilience) ? 'endeavour' : 'dnd5e')
+}
+
 /** A frontmatter block and the file it was read from, so edits can be written back to the same place. */
 interface Sourced {
   path: string
@@ -26,7 +36,7 @@ interface Sourced {
  * Write targets for fields that always live on the character's own file, at the same key names the
  * frontmatter already uses.
  */
-function ownFileWriteTargets(path: string, data: Record<string, unknown>): CharacterWriteTargets {
+function ownFileWriteTargets(path: string, data: Record<string, unknown>, ruleset: CharacterRuleset): CharacterWriteTargets {
   const targets: CharacterWriteTargets = {}
 
   if (isRecord(data.hp)) {
@@ -36,15 +46,15 @@ function ownFileWriteTargets(path: string, data: Record<string, unknown>): Chara
 
   if (isRecord(data.resilience)) targets.resilience_current = { path, keyPath: ['resilience', 'current'] }
 
-  // Armor, shield and weapons are equipped from the inventory, which only Nimble characters have.
-  if (isRecord(data.nimble_attributes)) targets.equipment = { path }
+  // Armor, shield and weapons are equipped from the inventory, which only Endeavour characters have.
+  if (ruleset === 'endeavour') targets.equipment = { path }
 
   // Exhaustion starts at 0 and is written on first use, creating `conditions:` if needed.
   targets.exhaustion = { path, keyPath: ['conditions', 'exhaustion'], createIfMissing: true }
   targets.conditions_active = { path }
 
-  // Nimble has no hit dice (see `resolveLevelPools`), so a leftover `hit_dice:` block is ignored there.
-  if (!isRecord(data.nimble_attributes) && isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
+  // Endeavour has no hit dice (see `resolveLevelPools`), so a leftover `hit_dice:` block is ignored there.
+  if (ruleset === 'dnd5e' && isRecord(data.hit_dice) && typeof data.hit_dice.total === 'number') {
     // Own schema stores `used`, not remaining — the UI edits remaining, so this is written inverted.
     targets.hit_dice_remaining = { path, keyPath: ['hit_dice', 'used'], createIfMissing: true, encode: 'invert-from-max', max: data.hit_dice.total }
   }
@@ -186,7 +196,7 @@ function resolveClassSaveModes(note: RawFile | undefined): CharacterFrontmatter[
 
 /** Display names of the class notes' `Übung.Waffen`/`Übung.Rüstungen` links, merged across classes;
  * a literal `keine` ("none") is dropped. `undefined` when no class note declares any. */
-function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['nimble_class_proficiencies'] {
+function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['class_proficiencies'] {
   const collect = (field: 'Waffen' | 'Rüstungen') => {
     const names = new Set<string>()
     for (const note of notes) {
@@ -254,9 +264,9 @@ export function deriveEquipment(character: CharacterFrontmatter, files: RawFile[
   return {
     shield_block: shield?.kind === 'shield' ? shield.rk : undefined,
     // Always derived from the armor — a `bw_cap:` typed onto the sheet itself is ignored, and so is
-    // a Nimble sheet's own `armor_class` (a leftover D&D bridge value).
+    // an Endeavour sheet's own `armor_class` (a leftover D&D bridge value).
     bw_cap: worn.bwCap,
-    armor_class: character.nimble_attributes ? worn.armorClass : character.armor_class,
+    armor_class: isEndeavour(character) ? worn.armorClass : character.armor_class,
     attacks: resolveWeaponAttacks(character.attack_entries, character, files),
   }
 }
@@ -330,7 +340,7 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * level 1, a class taken later counts like a level up.
  */
 function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: number; resilience?: number } {
-  if (!character.nimble_attributes || !Array.isArray(character.class) || character.class.length === 0) return {}
+  if (!isEndeavour(character) || !Array.isArray(character.class) || character.class.length === 0) return {}
   const perLevelBonus = { hp: nimbleAttributeValue(character, 'ko'), resilience: Math.floor(nimbleAttributeValue(character, 'en') / 2) }
 
   const total = (pool: 'hp' | 'resilience', field: string): number | undefined => {
@@ -350,7 +360,8 @@ function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): {
 
 /** Normalizes a `type: character` note (already validated to carry a `name`). */
 export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAssets?: ImageAssets): CharacterFrontmatter {
-  const character = raw.data as unknown as CharacterFrontmatter
+  const ruleset = resolveRuleset(raw.data)
+  const character: CharacterFrontmatter = { ...(raw.data as unknown as CharacterFrontmatter), ruleset }
   const linked = resolveLinkedFields(raw, files)
   const equipped: CharacterFrontmatter = {
     ...character,
@@ -367,7 +378,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   }
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
-  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data), ...linked.writeTargets }
+  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets }
 
   return {
     ...equipped,
@@ -377,12 +388,12 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     abilities: isRecord(raw.data.abilities) ? character.abilities : { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     ...deriveEquipment(equipped, files),
     features: resolveFeatures(raw.data, files),
-    hit_dice: character.nimble_attributes ? undefined : character.hit_dice,
+    hit_dice: isEndeavour(character) ? undefined : character.hit_dice,
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
     ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),
     nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
     nimble_save_modes: resolveClassSaveModes(leadingClassNote(raw.data.class, files)),
-    nimble_class_proficiencies: resolveClassProficiencies(notes),
+    class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     biography: resolveBiography(raw.data),
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,

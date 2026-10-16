@@ -56,6 +56,30 @@ describe('buildVault — native schema', () => {
   })
 })
 
+describe('buildVault — native schema ruleset', () => {
+  const rulesetOf = (extra: string) =>
+    buildVault([{ ...characterFile, content: characterFile.content.replace('type: character\n', `type: character\n${extra}`) }]).characters[0].frontmatter
+      .ruleset
+
+  it('plays a plain D&D-shaped sheet by D&D rules', () => {
+    expect(rulesetOf('')).toBe('dnd5e')
+  })
+
+  it('infers Endeavour from its own blocks when the sheet names no ruleset', () => {
+    expect(rulesetOf('nimble_attributes: { st: 1, bw: 0, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 }\n')).toBe('endeavour')
+    expect(rulesetOf('resilience: { current: 4, max: 4 }\n')).toBe('endeavour')
+  })
+
+  it('lets an explicit ruleset win over the inference, in any case', () => {
+    expect(rulesetOf('ruleset: Endeavour\n')).toBe('endeavour')
+    expect(rulesetOf('ruleset: dnd5e\nresilience: { current: 4, max: 4 }\n')).toBe('dnd5e')
+  })
+
+  it('ignores an unknown ruleset value and falls back to the inference', () => {
+    expect(rulesetOf('ruleset: pathfinder\n')).toBe('dnd5e')
+  })
+})
+
 describe('buildVault', () => {
   it('buckets files by type and skips non-markdown / unrecognized files', () => {
     const vault = buildVault([characterFile, itemFile, notesFile, { path: 'readme.txt', content: 'ignore me' }])
@@ -364,14 +388,14 @@ Rettungswürfe:
       const c = vault.characters[0].frontmatter
       expect(c.nimble_primary_attributes).toEqual(['vs', 'en'])
       expect(c.nimble_save_modes).toEqual({ vs: 'advantage', en: 'advantage', st: 'disadvantage', ko: 'disadvantage' })
-      expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen'], armor: [] })
+      expect(c.class_proficiencies).toEqual({ weapons: ['Einfache Waffen'], armor: [] })
     })
 
     it("takes a multiclass character's saves from its highest-level class only (Nimble), and merges training", () => {
       const arkanistLeads = buildVault([asClass('  - name: Arkanist\n    level: 2\n  - name: Taktiker\n    level: 1\n'), arkanistNote, taktikerNote])
       const c = arkanistLeads.characters[0].frontmatter
       expect(c.nimble_save_modes).toEqual({ vs: 'advantage', en: 'advantage', st: 'disadvantage', ko: 'disadvantage' })
-      expect(c.nimble_class_proficiencies).toEqual({ weapons: ['Einfache Waffen', 'Kriegswaffen'], armor: ['Schwere Rüstung'] })
+      expect(c.class_proficiencies).toEqual({ weapons: ['Einfache Waffen', 'Kriegswaffen'], armor: ['Schwere Rüstung'] })
 
       const taktikerLeads = buildVault([asClass('  - name: Arkanist\n    level: 1\n  - name: Taktiker\n    level: 3\n'), arkanistNote, taktikerNote])
       expect(taktikerLeads.characters[0].frontmatter.nimble_save_modes).toEqual({ st: 'advantage', vs: 'disadvantage' })
