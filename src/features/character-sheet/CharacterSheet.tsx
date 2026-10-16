@@ -20,7 +20,8 @@ import { Skills } from './components/Skills'
 import { characterFate } from '../../rules/vitals'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { hasBiography } from '../../vault/adapters/biography'
-import { evasionValue, exhaustionD20Penalty } from '../../rules/deriveStats'
+import { exhaustionD20Penalty } from '../../rules/deriveStats'
+import { evasionValue } from '../../rules/endeavour'
 
 type Tab = 'sheet' | 'inventory' | 'spells' | 'biography'
 

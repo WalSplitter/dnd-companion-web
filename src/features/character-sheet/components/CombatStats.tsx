@@ -4,33 +4,46 @@ import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
 import { ShieldIcon } from '../../inventory/components/equipmentIcons'
-import { useT } from '../../../i18n/useI18n'
-import {
-  exhaustionLevel,
-  formatModifier,
-  initiativeActionPoints,
-  initiativeBonus,
-  movementSquares,
-  nimbleAttributeValue,
-  nimbleInitiative,
-  proficiencyBonus,
-} from '../../../rules/deriveStats'
+import { useT, type TranslateFn } from '../../../i18n/useI18n'
+import { exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../../rules/deriveStats'
+import { initiativeActionPoints, nimbleAttributeValue, nimbleInitiative } from '../../../rules/endeavour'
+import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { movementHint } from '../../../components/vitalsDisplay'
+
+/**
+ * What the armor class means under the character's rules, and the one extra number pinned to the
+ * shield. Endeavour: the AC is damage reduction from the worn armor, not a to-hit target, and the
+ * badge is the shield's `Blocken` bonus. D&D: the AC is the to-hit target, and the badge is the
+ * legacy sheet's separate damage reduction (`Schadensreduktion`).
+ */
+function armorClassDisplay(t: TranslateFn, character: CharacterFrontmatter): { hint: string; badge?: { value: number; label?: string } } {
+  if (isEndeavour(character)) {
+    const armorHint = character.armor
+      ? t('stats.armorClassHint', { value: character.armor_class, armor: wikilinkTarget(character.armor) })
+      : t('stats.armorClassHintNone')
+    const block = character.shield_block
+    return block ? { hint: `${armorHint} ${t('equipment.blockHint', { value: block })}`, badge: { value: block } } : { hint: armorHint }
+  }
+
+  const gear = [character.armor, character.shield].filter((link): link is string => Boolean(link)).map(wikilinkTarget)
+  const reduction = character.damage_reduction
+  const hint = [
+    t('stats.armorClassHintDnd', { value: character.armor_class }),
+    gear.length > 0 ? t('stats.armorClassWorn', { gear: gear.join(', ') }) : undefined,
+    reduction ? t('stats.damageReductionHint', { value: reduction }) : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ')
+  return { hint, badge: reduction ? { value: reduction, label: t('stats.damageReduction') } : undefined }
+}
 
 /** Armor class as a heater shield, the way tabletop-RPG sheets and game HUDs draw it. */
 export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
   const gradientId = useId()
-  // Nimble armor class is damage reduction from the worn armor, not a to-hit target — say so.
-  const armorHint = character.nimble_attributes
-    ? character.armor
-      ? t('stats.armorClassHint', { value: character.armor_class, armor: wikilinkTarget(character.armor) })
-      : t('stats.armorClassHintNone')
-    : undefined
-  const block = character.nimble_attributes ? character.shield_block : undefined
-  const hint = block ? `${armorHint} ${t('equipment.blockHint', { value: block })}` : armorHint
+  const { hint, badge } = armorClassDisplay(t, character)
 
   return (
     <div className="flex shrink-0 flex-col items-center" title={hint}>
@@ -56,11 +69,13 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
           />
         </svg>
         <span className="absolute inset-x-0 top-[1.2rem] text-center font-num text-2xl text-fg">{character.armor_class}</span>
-        {block ? (
+        {badge && (
           <span className="rpg-plate absolute -right-2 bottom-0 flex items-center gap-0.5 px-1 font-num text-[0.65rem] leading-tight text-trim">
-            <ShieldIcon className="size-2.5" />+{block}
+            {badge.label ?? <ShieldIcon className="size-2.5" />}
+            {badge.label ? ' ' : '+'}
+            {badge.value}
           </span>
-        ) : null}
+        )}
       </div>
       <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.armorClass')}</span>
     </div>
@@ -164,8 +179,8 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           {exhaustion > 0 ? <ExhaustedValue className="is-loud">{squares}</ExhaustedValue> : undefined}
         </StatPlate>
       )}
-      {/* Nimble has no proficiency bonus at all (#9); its evasion value sits by the armor class instead. */}
-      {!character.nimble_attributes && <StatPlate label={t('stats.profBonus')} value={formatModifier(proficiencyBonus(character))} />}
+      {/* Endeavour has no proficiency bonus at all (#9); its evasion value sits by the armor class instead. */}
+      {!isEndeavour(character) && <StatPlate label={t('stats.profBonus')} value={formatModifier(proficiencyBonus(character))} />}
     </div>
   )
 }

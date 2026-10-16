@@ -4,17 +4,10 @@ import { D20Modifier } from '../../components/ExhaustedValue'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
 import { characterRoute } from '../../routes/paths'
-import {
-  abilityModifier,
-  characterSkillBonus,
-  evasionValue,
-  exhaustionD20Penalty,
-  formatModifier,
-  initiativeBonus,
-  isSkillTrained,
-  movementSquares,
-  nimbleAttributeValue,
-} from '../../rules/deriveStats'
+import { characterSkillBonus, exhaustionD20Penalty, formatModifier, initiativeBonus, isSkillTrained, movementSquares } from '../../rules/deriveStats'
+import { abilityModifier } from '../../rules/dnd5e'
+import { evasionValue, nimbleAttributeValue } from '../../rules/endeavour'
+import { isEndeavour } from '../../rules/ruleset'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type VaultFile } from '../../vault/types'
 import { resiliencePool } from '../../rules/vitals'
 import { Portrait } from './CharacterParts'
@@ -49,8 +42,8 @@ function effectiveValue(row: Row, c: CharacterFrontmatter): number | undefined {
 
 function useSections(characters: CharacterFrontmatter[]): Section[] {
   const t = useT()
-  const anyNimble = characters.some((c) => c.nimble_attributes)
-  const anyClassic = characters.some((c) => !c.nimble_attributes)
+  const anyNimble = characters.some(isEndeavour)
+  const anyClassic = characters.some((c) => !isEndeavour(c))
 
   const combat: Row[] = [
     { key: 'ac', label: t('short.armorClass'), title: t('stats.armorClass'), format: 'number', value: (c) => c.armor_class },
@@ -75,7 +68,7 @@ function useSections(characters: CharacterFrontmatter[]): Section[] {
             key: `n-${key}`,
             label: t(`nimbleAttribute.${key}`),
             format: 'modifier',
-            value: (c) => (c.nimble_attributes ? nimbleAttributeValue(c, key) : undefined),
+            value: (c) => (isEndeavour(c) ? nimbleAttributeValue(c, key) : undefined),
           }),
         )
       : []),
@@ -85,7 +78,7 @@ function useSections(characters: CharacterFrontmatter[]): Section[] {
             key: `a-${key}`,
             label: t(`ability.${key}`),
             format: 'modifier',
-            value: (c) => (c.nimble_attributes ? undefined : abilityModifier(c.abilities[key])),
+            value: (c) => (isEndeavour(c) ? undefined : abilityModifier(c.abilities[key])),
           }),
         )
       : []),

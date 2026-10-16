@@ -22,6 +22,8 @@ function isDmPrivatePath(path: string): boolean {
 /** The vault retagged its rules from `Regeln/Nimble` to `Regeln/Endeavour`; both still count. */
 const ENDEAVOUR_TAG = 'Regeln/Endeavour'
 const RULE_TAGS = [ENDEAVOUR_TAG, 'Regeln/Nimble', 'Nimble']
+/** The legacy campaign vault tags its D&D rule pages with the rulebook they follow. */
+const PHB_2024_TAG = 'Regeln/PHB2024'
 
 /**
  * Best-effort, evidence-based heuristic — no supported vault format has an explicit `ruleset:`
@@ -35,6 +37,7 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
   let endeavour = false
   let legacyDnd = false
   let nativeSchema = false
+  let phb2024 = false
 
   for (const file of files) {
     if (!file.path.toLowerCase().endsWith('.md') || isDmPrivatePath(file.path)) continue
@@ -50,6 +53,10 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
       endeavour = true
       if (ruleTag !== ENDEAVOUR_TAG) evidence.push(`tags: ${ENDEAVOUR_TAG}`)
     }
+    if (!phb2024 && hasTag(tags, PHB_2024_TAG)) {
+      phb2024 = true
+      evidence.push(`tags: ${PHB_2024_TAG}`)
+    }
     if (!nativeSchema && data.type === 'character') {
       nativeSchema = true
       evidence.push('type: character (own schema, modeled on 5e 2024 rules)')
@@ -64,6 +71,6 @@ export function detectRuleset(files: VaultSourceFile[]): RulesetDetectionResult 
   if (nimble && (legacyDnd || nativeSchema)) return { ruleset: 'custom', evidence }
   if (nimble) return { ruleset: 'nimble', evidence }
   if (nativeSchema) return { ruleset: 'dnd5e_2024', evidence }
-  if (legacyDnd) return { ruleset: 'dnd5e', evidence }
+  if (legacyDnd) return { ruleset: phb2024 ? 'dnd5e_2024' : 'dnd5e', evidence }
   return { ruleset: 'unknown', evidence }
 }

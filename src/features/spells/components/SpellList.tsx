@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
-import { spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../rules/deriveStats'
+import { abilityAbbreviation, spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../rules/deriveStats'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter, type SpellFrontmatter, type SpellTargetKind, type VaultFile } from '../../../vault/types'
+import { type CharacterFrontmatter, type SpellFrontmatter, type SpellTargetKind, type VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
@@ -52,9 +52,8 @@ export function SpellList({
   const dc = spellSaveDC(character)
   const dcPenalty = exhaustionStaticPenalty(character)
   const attack = spellAttackBonus(character)
-  // Nimble sheets name saves by their own attributes (BW, not DEX).
-  const saveLabel = (ability: SpellFrontmatter['save_ability']) =>
-    ability ? (character.nimble_attributes ? ABILITY_TO_NIMBLE_ATTRIBUTE[ability] : ability).toUpperCase() : ''
+  // Endeavour sheets name saves by their own attributes (BW, not DEX).
+  const saveLabel = (ability: SpellFrontmatter['save_ability']) => (ability ? abilityAbbreviation(character, ability) : '')
 
   return (
     <div className="space-y-4">

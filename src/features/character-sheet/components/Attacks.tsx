@@ -4,7 +4,8 @@ import { useD20Penalty } from '../../../dice/d20Penalty'
 import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
 import { CaptionedRoll, DieIcon, HitIcon, ROLL_BUTTON } from '../../../dice/RollGlyphs'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
-import { evasionValue, formatModifier } from '../../../rules/deriveStats'
+import { formatModifier } from '../../../rules/deriveStats'
+import { evasionValue } from '../../../rules/endeavour'
 import type { CharacterFrontmatter } from '../../../vault/types'
 
 const KIND_KEY: Record<string, TranslationKey> = {

@@ -2,9 +2,12 @@ import { Card } from '../../../components/Card'
 import { D20Modifier } from '../../../components/ExhaustedValue'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { formatModifier, nimbleAttributeValue, nimbleSkillBonus, nimbleSkillValue, skillBonus, skillProficiencyLevel } from '../../../rules/deriveStats'
+import { formatModifier } from '../../../rules/deriveStats'
+import { skillBonus, skillProficiencyLevel } from '../../../rules/dnd5e'
+import { nimbleAttributeValue, nimbleSkillBonus, nimbleSkillValue } from '../../../rules/endeavour'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+import { isEndeavour } from '../../../rules/ruleset'
 
 /** Nimble skills have no proficiency levels — just an independently-trained flat bonus (0 to
  * `NIMBLE_SKILL_MAX`, untrained = 0) on top of the governing attribute. Read-only: the DM sets skill
@@ -45,7 +48,7 @@ function NimbleSkillRow({ character, skill }: { character: CharacterFrontmatter;
 /** Skill list. Read-only in both schemas, like the attributes: only rolling happens here. */
 export function Skills({ character }: { character: CharacterFrontmatter }) {
   const t = useT()
-  const nimble = Boolean(character.nimble_attributes)
+  const nimble = isEndeavour(character)
 
   return (
     <Card title={t('cards.skills')}>

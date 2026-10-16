@@ -1,30 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import {
-  abilityModifier,
-  classSummary,
-  evasionValue,
-  exhaustionD20Penalty,
-  movementSquares,
-  formatModifier,
-  initiativeActionPoints,
-  initiativeBonus,
-  nimbleAttributeValue,
-  nimbleInitiative,
-  nimbleSkillBonus,
-  nimbleSkillValue,
-  speedInSquares,
-  passivePerception,
-  savingThrowBonus,
-  skillBonus,
-  skillProficiencyLevel,
-  spellAttackBonus,
-  spellSaveDC,
-} from './deriveStats'
+import { classSummary, exhaustionD20Penalty, movementSquares, formatModifier, initiativeBonus, speedInSquares, passivePerception, spellAttackBonus, spellSaveDC } from './deriveStats'
+import { abilityModifier, savingThrowBonus, skillBonus, skillProficiencyLevel } from './dnd5e'
+import { evasionValue, initiativeActionPoints, nimbleAttributeValue, nimbleInitiative, nimbleSkillBonus, nimbleSkillValue } from './endeavour'
 import type { CharacterFrontmatter } from '../vault/types'
 
 const character: CharacterFrontmatter = {
   type: 'character',
   name: 'Test Wizard',
+  ruleset: 'dnd5e',
   class: [{ name: 'Wizard', level: 5, subclass: 'School of Evocation' }],
   species: 'Elf',
   background: 'Sage',
@@ -108,7 +91,7 @@ describe('spell save DC / attack bonus', () => {
   })
 
   it('uses the Nimble attribute and no proficiency bonus for Nimble characters (#9)', () => {
-    const nimble = { ...character, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 1, vs: 3, pr: 0, en: 0 } }
+    const nimble = { ...character, ruleset: 'endeavour' as const, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 1, vs: 3, pr: 0, en: 0 } }
     expect(spellSaveDC(nimble)).toBe(11) // 8 + VS 3
     expect(spellAttackBonus(nimble)).toBe(3)
   })
@@ -119,7 +102,7 @@ describe('spell save DC / attack bonus', () => {
 })
 
 describe('Nimble initiative (rule Initiative)', () => {
-  const nimble = { ...character, nimble_attributes: { st: 0, bw: 2, ko: 0, ge: 0, in: -1, vs: 0, pr: 0, en: 0 } }
+  const nimble = { ...character, ruleset: 'endeavour' as const, nimble_attributes: { st: 0, bw: 2, ko: 0, ge: 0, in: -1, vs: 0, pr: 0, en: 0 } }
 
   it('rolls Instinkt for the order and Beweglichkeit for the action points', () => {
     expect(nimbleInitiative(nimble)).toEqual({ order: -1, actions: 2 })
@@ -138,7 +121,7 @@ describe('Nimble initiative (rule Initiative)', () => {
 
 describe('nimbleAttributeValue', () => {
   it('clamps to the rule range -5..+5', () => {
-    const nimble = { ...character, nimble_attributes: { st: 7, bw: -9, ko: 3, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+    const nimble = { ...character, ruleset: 'endeavour' as const, nimble_attributes: { st: 7, bw: -9, ko: 3, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
     expect(nimbleAttributeValue(nimble, 'st')).toBe(5)
     expect(nimbleAttributeValue(nimble, 'bw')).toBe(-5)
     expect(nimbleAttributeValue(nimble, 'ko')).toBe(3)
@@ -169,7 +152,7 @@ describe('speedInSquares', () => {
 })
 
 describe('evasionValue', () => {
-  const nimble = { ...character, nimble_attributes: { st: 0, bw: 3, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+  const nimble = { ...character, ruleset: 'endeavour' as const, nimble_attributes: { st: 0, bw: 3, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
 
   it('is 10 + BW', () => {
     expect(evasionValue(nimble)).toBe(13)
@@ -192,6 +175,7 @@ describe('evasionValue', () => {
 describe('nimbleSkillValue / nimbleSkillBonus', () => {
   const nimble = {
     ...character,
+    ruleset: 'endeavour' as const,
     nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 2, vs: 0, pr: 0, en: 0 },
     nimble_skills: { perception: 14, insight: -3, survival: 4 },
   }
@@ -210,7 +194,7 @@ describe('nimbleSkillValue / nimbleSkillBonus', () => {
 
 describe('exhaustion (rule Erschöpfung)', () => {
   const exhausted = { ...character, conditions: { exhaustion: 3 } }
-  const nimbleExhausted = { ...exhausted, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
+  const nimbleExhausted = { ...exhausted, ruleset: 'endeavour' as const, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } }
 
   it('takes twice the level off every d20 roll', () => {
     expect(exhaustionD20Penalty(character)).toBe(0)

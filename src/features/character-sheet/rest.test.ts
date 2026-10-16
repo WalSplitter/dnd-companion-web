@@ -6,6 +6,7 @@ function character(overrides: Partial<CharacterFrontmatter> = {}): CharacterFron
   return {
     type: 'character',
     name: 'Test',
+    ruleset: 'endeavour',
     class: [{ name: 'Prüfling', level: 3 }],
     species: '',
     background: '',
@@ -28,12 +29,12 @@ function character(overrides: Partial<CharacterFrontmatter> = {}): CharacterFron
 const byKey = (kind: Parameters<typeof planRest>[1], c = character()) => Object.fromEntries(planRest(c, kind).map((ch) => [ch.grade ? `slot${ch.grade}` : ch.key, ch.to]))
 
 describe('restKinds', () => {
-  it('offers the three Endeavour rests to a character with resilience', () => {
+  it('offers the three Endeavour rests to an Endeavour character', () => {
     expect(restKinds(character())).toEqual(['breather', 'field', 'safe'])
   })
 
-  it('offers the D&D long rest otherwise', () => {
-    expect(restKinds(character({ resilience: undefined }))).toEqual(['long'])
+  it('offers the D&D long rest to a D&D character, whatever pools its sheet carries', () => {
+    expect(restKinds(character({ ruleset: 'dnd5e' }))).toEqual(['long'])
   })
 })
 

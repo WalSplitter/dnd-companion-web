@@ -1,9 +1,9 @@
 import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget } from '../../vault/types'
+import { isEndeavour } from '../../rules/ruleset'
 import { resiliencePool } from '../../rules/vitals'
 
 /**
- * Rests and what they restore. Endeavour characters (those with resilience points or Nimble
- * attributes) follow the vault's `Regeln/Umgebung/Rasten` notes; everyone else gets the D&D 2024
+ * Rests and what they restore. Endeavour characters follow the vault's `Regeln/Umgebung/Rasten` notes; everyone else gets the D&D 2024
  * long rest.
  *
  * - `breather` (Verschnaufen, 10 min, 2×/day): 50 % of max RP.
@@ -29,12 +29,8 @@ export interface RestChange {
   grade?: string
 }
 
-export function isEndeavourCharacter(character: CharacterFrontmatter): boolean {
-  return Boolean(character.resilience || character.nimble_attributes)
-}
-
 export function restKinds(character: CharacterFrontmatter): RestKind[] {
-  return isEndeavourCharacter(character) ? ['breather', 'field', 'safe'] : ['long']
+  return isEndeavour(character) ? ['breather', 'field', 'safe'] : ['long']
 }
 
 /** `current + gain`, capped at `max` — never lowers a pool that's somehow above max already. */

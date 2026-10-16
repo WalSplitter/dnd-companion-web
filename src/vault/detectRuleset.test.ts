@@ -25,6 +25,14 @@ Hintergrund: { Name: Ar'go }
     expect(detectRuleset([file("Characters/Ar'go.md", content)]).ruleset).toBe('dnd5e')
   })
 
+  it('detects the legacy sheet as dnd5e_2024 when the rule pages are tagged Regeln/PHB2024', () => {
+    const sheet = '---\nAttribute: { Stärke: 10 }\nRettungswürfe: { Stärke: 1 }\nFertigkeiten: { Athletik: 1 }\nHintergrund: { Name: Drogan }\n---\n'
+    const rule = '---\ntags:\n  - Klasse\n  - Regeln/PHB2024\n---\n'
+    const result = detectRuleset([file('Kampagne/Drogan.md', sheet), file('Charaktere/Klassen/Barbar.md', rule)])
+    expect(result.ruleset).toBe('dnd5e_2024')
+    expect(result.evidence).toContain('tags: Regeln/PHB2024')
+  })
+
   it('detects a Regeln/Endeavour tag as endeavour', () => {
     const result = detectRuleset([file('Regeln/Inventar.md', '---\ntags: [Regeln/Endeavour/Inventar]\n---\n')])
     expect(result.ruleset).toBe('endeavour')

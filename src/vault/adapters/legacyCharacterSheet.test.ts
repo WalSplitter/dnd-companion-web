@@ -214,6 +214,21 @@ describe('legacy character sheet adapter', () => {
     expect(character.abilities).toEqual({ str: 18, dex: 14, con: 15, int: 10, wis: 12, cha: 8 })
   })
 
+  it('plays every legacy sheet by D&D rules', () => {
+    expect(vault.characters[0].frontmatter.ruleset).toBe('dnd5e')
+  })
+
+  it('reads weapon/armor training and the worn gear with its armor points and damage reduction', () => {
+    const content = characterFile.content
+      .replace('  Werkzeuge:\n', '  Rüstungen:\n    - "[[Leichte Rüstung]]"\n    - "[[Schilde]]"\n  Waffen:\n    - "[[Kriegswaffen]]"\n  Werkzeuge:\n')
+      .replace('  Zusätzliche_Rüstung: 0\n', '  Zusätzliche_Rüstung: 0\n  Rüstung: "[[Fellrüstung]]"\n')
+    const armorFile = { path: 'Gegenstände/Rüstung/Fellrüstung.md', content: '---\nRP: 2\nSR: 1\nDex_cap: 3\n---\n' }
+    const character = buildVault([{ ...characterFile, content }, classFile, armorFile]).characters[0].frontmatter
+    expect(character.class_proficiencies).toEqual({ weapons: ['Kriegswaffen'], armor: ['Leichte Rüstung', 'Schilde'] })
+    // 10 + DEX 2 + RP 2 — no Unarmored Defense while armor is worn
+    expect(character).toMatchObject({ armor_class: 14, damage_reduction: 1, armor: '[[Fellrüstung]]' })
+  })
+
   it('computes proficiency bonus from level and maps saving throw / skill proficiencies', () => {
     const character = vault.characters[0].frontmatter
     expect(character.proficiency_bonus).toBe(3) // ceil(6/4)+1

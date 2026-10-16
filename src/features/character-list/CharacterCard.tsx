@@ -2,21 +2,10 @@ import { useId, type ReactNode } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../components/ExhaustedValue'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
-import {
-  abilityModifier,
-  characterSkillBonus,
-  classSummary,
-  evasionValue,
-  exhaustionD20Penalty,
-  exhaustionLevel,
-  formatModifier,
-  initiativeBonus,
-  movementSquares,
-  nimbleAttributeValue,
-  nimbleSkillValue,
-  proficiencyBonus,
-  skillProficiencyLevel,
-} from '../../rules/deriveStats'
+import { characterSkillBonus, classSummary, exhaustionD20Penalty, exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../rules/deriveStats'
+import { abilityModifier, skillProficiencyLevel } from '../../rules/dnd5e'
+import { evasionValue, nimbleAttributeValue, nimbleSkillValue } from '../../rules/endeavour'
+import { isEndeavour } from '../../rules/ruleset'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../vault/types'
 import { characterFate } from '../../rules/vitals'
 import { movementHint } from '../../components/vitalsDisplay'
@@ -31,7 +20,7 @@ const PROFICIENCY_RANK = { none: 0, proficient: 1, expertise: 2 } as const
 /** The trained skills worth showing off: Nimble skills by trained value, D&D skills by proficiency
  * (expertise first), each with its total roll bonus. */
 function topSkills(character: CharacterFrontmatter): { key: SkillKey; bonus: number }[] {
-  const nimble = Boolean(character.nimble_attributes)
+  const nimble = isEndeavour(character)
   return SKILLS.map(({ key }) => ({
     key,
     rank: nimble ? nimbleSkillValue(character, key) : PROFICIENCY_RANK[skillProficiencyLevel(character, key)],
@@ -72,7 +61,7 @@ function HeadlineStats({ character: c, className = '' }: { character: CharacterF
         </StatTile>
       )}
       {/* Nimble: the turn-order roll (IN); the AP roll lives on the sheet. */}
-      <StatTile label={t('short.initiative')} title={c.nimble_attributes ? t('stats.initiativeOrderNote') : t('stats.initiative')}>
+      <StatTile label={t('short.initiative')} title={isEndeavour(c) ? t('stats.initiativeOrderNote') : t('stats.initiative')}>
         <D20Modifier value={initiativeBonus(c)} />
       </StatTile>
       {squares !== undefined ? (
@@ -91,8 +80,8 @@ function HeadlineStats({ character: c, className = '' }: { character: CharacterF
 function AttributeRow({ character: c }: { character: CharacterFrontmatter }) {
   const t = useT()
   return (
-    <div className={`grid gap-1 border-t border-trim/15 pt-2.5 ${c.nimble_attributes ? 'grid-cols-8' : 'grid-cols-6'}`}>
-      {c.nimble_attributes
+    <div className={`grid gap-1 border-t border-trim/15 pt-2.5 ${isEndeavour(c) ? 'grid-cols-8' : 'grid-cols-6'}`}>
+      {isEndeavour(c)
         ? NIMBLE_ATTRIBUTES.map(({ key }) => {
             const primary = c.nimble_primary_attributes?.includes(key)
             return (

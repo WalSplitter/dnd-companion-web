@@ -16,14 +16,17 @@ import type {
   WeaponAttack,
   WeaponKind,
 } from '../types'
-import { abilityModifier } from '../../rules/deriveStats'
+import { abilityModifier } from '../../rules/dnd5e'
 import { resolveBiography } from './biography'
+import { resolveLegacyDefense } from './legacyDefense'
 import { extractItemTable } from './markdownTable'
 import type { ImageAssets } from '../types'
 
 /**
  * Adapter for the "Character Sheet Vorlage" format used by an existing campaign vault
  * (German field names, no `type:` marker, values expressed as Dataview-style nested objects).
+ * That vault plays D&D 5e 2024 (plus the DM's armor house rules, see `legacyDefense.ts`), so every
+ * character read here gets `ruleset: 'dnd5e'`.
  * Detected structurally (see `looksLikeLegacyCharacter`) rather than by a marker field, since the
  * source vault predates this app and its authors are mid-redesign of their own rules/format.
  *
@@ -98,14 +101,17 @@ function resolveHitDie(className: string, files: RawFile[]): string {
   return 'd8'
 }
 
-function resolveArmorClass(data: Record<string, unknown>, dexMod: number): number {
-  const verteidigung = data.Verteidigung
-  if (isRecord(verteidigung)) {
-    const base = typeof verteidigung.Natürliche_Rüstung === 'number' ? verteidigung.Natürliche_Rüstung : 10
-    const extra = typeof verteidigung.Zusätzliche_Rüstung === 'number' ? verteidigung.Zusätzliche_Rüstung : 0
-    return base + extra + dexMod
-  }
-  return 10 + dexMod
+/** Display names of an `Übung` list (`"[[Einfache Waffen]]"`, ...), `undefined` when it has none. */
+function linkNames(list: unknown): string[] | undefined {
+  const names = Array.isArray(list) ? list.map(linkDisplay).filter(Boolean) : []
+  return names.length > 0 ? names : undefined
+}
+
+/** Weapon and armor training from the sheet's own `Übung.Waffen`/`.Rüstungen`. */
+function resolveClassProficiencies(uebung: Record<string, unknown>): CharacterFrontmatter['class_proficiencies'] {
+  const weapons = linkNames(uebung.Waffen) ?? []
+  const armor = linkNames(uebung.Rüstungen) ?? []
+  return weapons.length > 0 || armor.length > 0 ? { weapons, armor } : undefined
 }
 
 function collectFeatures(data: Record<string, unknown>, files: RawFile[]): CharacterFeature[] {
@@ -466,7 +472,6 @@ export function normalizeLegacyCharacter(
 
   const level = typeof data.Stufe === 'number' ? data.Stufe : 1
   const proficiencyBonus = Math.ceil(level / 4) + 1
-  const dexMod = abilityModifier(abilities.dex)
 
   const savesRaw = isRecord(data.Rettungswürfe) ? data.Rettungswürfe : {}
   const savingThrowProficiencies = Object.entries(ABILITY_MAP)
@@ -492,8 +497,9 @@ export function normalizeLegacyCharacter(
   const hitDiceUsed = typeof gesundheit.TW === 'number' ? Math.max(0, level - gesundheit.TW) : 0
 
   const uebung = isRecord(data.Übung) ? data.Übung : {}
-  const languages = Array.isArray(uebung.Sprachen) ? uebung.Sprachen.map(linkDisplay).filter(Boolean) : undefined
-  const toolProficiencies = Array.isArray(uebung.Werkzeuge) ? uebung.Werkzeuge.map(linkDisplay).filter(Boolean) : undefined
+  const languages = linkNames(uebung.Sprachen)
+  const toolProficiencies = linkNames(uebung.Werkzeuge)
+  const defense = resolveLegacyDefense(data, abilities, className, allFiles)
 
   const inventoryFile = findLinkedSheet(file.name, allFiles, 'inventar')
   const inventarSections = isRecord(inventoryFile?.data.Inventar) ? inventoryFile.data.Inventar : undefined
@@ -537,6 +543,7 @@ export function normalizeLegacyCharacter(
 
   return {
     type: 'character',
+    ruleset: 'dnd5e',
     name: typeof hintergrund.Name === 'string' ? hintergrund.Name : file.name,
     class: [{ name: linkDisplay(hintergrund.Klasse) || className, level, subclass: linkDisplay(hintergrund.Subklasse) || undefined }],
     species: linkDisplay(hintergrund.Volk) || 'Unknown',
@@ -548,12 +555,16 @@ export function normalizeLegacyCharacter(
     saving_throw_proficiencies: savingThrowProficiencies,
     skill_proficiencies: skillProficiencies,
     skill_expertise: skillExpertise.length > 0 ? skillExpertise : undefined,
-    armor_class: resolveArmorClass(data, dexMod),
+    armor_class: defense.armorClass,
+    damage_reduction: defense.damageReduction,
+    armor: defense.armor,
+    shield: defense.shield,
     speed: typeof data.Bewegung === 'number' ? `${data.Bewegung} Felder` : 'unknown',
     hp: { current: hpCurrent, max: hpMax, temp: hpTemp },
     hit_dice: { die: resolveHitDie(className, allFiles), total: level, used: hitDiceUsed },
     languages,
     tool_proficiencies: toolProficiencies,
+    class_proficiencies: resolveClassProficiencies(uebung),
     inventory: equipped || carried ? { equipped, carried } : undefined,
     currency,
     spellcasting,

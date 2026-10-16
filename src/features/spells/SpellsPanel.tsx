@@ -4,8 +4,8 @@ import { ResourcePoolBar } from '../../components/ResourcePoolBar'
 import { D20RollButton } from '../../dice/RollButton'
 import { useT } from '../../i18n/useI18n'
 import { D20Modifier, SpellSaveDCValue } from '../../components/ExhaustedValue'
-import { spellAttackBonus } from '../../rules/deriveStats'
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, type CharacterFrontmatter } from '../../vault/types'
+import { abilityAbbreviation, spellAttackBonus } from '../../rules/deriveStats'
+import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { SpellList } from './components/SpellList'
 import { SpellSlotTracker } from './components/SpellSlotTracker'
@@ -40,12 +40,12 @@ export function SpellsPanel({
   }
 
   const attack = spellAttackBonus(character)
-  const ability = character.nimble_attributes ? ABILITY_TO_NIMBLE_ATTRIBUTE[character.spellcasting.ability] : character.spellcasting.ability
+  const ability = abilityAbbreviation(character, character.spellcasting.ability)
   const pools = character.resource_pools ?? []
 
   const castingStats = (
     <div className="flex flex-wrap items-center gap-1.5">
-      <CastingStat label={t('stats.ability')}>{ability.toUpperCase()}</CastingStat>
+      <CastingStat label={t('stats.ability')}>{ability}</CastingStat>
       <CastingStat label={t('stats.saveDC')}>
         <SpellSaveDCValue character={character} />
       </CastingStat>
