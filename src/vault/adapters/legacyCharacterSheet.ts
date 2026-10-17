@@ -18,6 +18,7 @@ import type {
 } from '../types'
 import { abilityModifier } from '../../rules/dnd5e'
 import { resolveBiography } from './biography'
+import { resolveJournal } from './journal'
 import { resolveLegacyDefense } from './legacyDefense'
 import { extractItemTable } from './markdownTable'
 import type { ImageAssets } from '../types'
@@ -530,7 +531,9 @@ export function normalizeLegacyCharacter(
 
   const conditionTargets = resolveConditionWriteTargets(file.path, conditions)
   const spellSlotTargets = resolveSpellSlotWriteTargets(file.path, data, spellSheetFile, spellcasting?.slots)
+  const journal = resolveJournal(file, allFiles)
   const writeTargets: CharacterWriteTargets = {
+    journal: journal.target,
     ...(isRecord(data.Gesundheit)
       ? { hp_current: { path: file.path, keyPath: ['Gesundheit', 'TP'] }, hp_temp: { path: file.path, keyPath: ['Gesundheit', 'TempTP'] } }
       : {}),
@@ -572,6 +575,7 @@ export function normalizeLegacyCharacter(
     features: collectFeatures(data, allFiles),
     portrait_url: resolvePortraitLink(hintergrund.Bild, imageAssets),
     biography: resolveBiography(data),
+    journal: journal.journal,
     conditions,
     resource_pools: resourcePools,
     attacks,

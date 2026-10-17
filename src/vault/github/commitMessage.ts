@@ -47,6 +47,7 @@ function formatValue(value: unknown): string {
 
 /** `hp.current: 14 → 13`; a large block (a whole inventory) only says that it changed. */
 function changeLine(edit: PendingEdit): string {
+  if (edit.patch.kind === 'create') return `created ${noteName(edit.path)}.md`
   const key = edit.patch.keyPath.join('.')
   const from = formatValue(edit.base)
   const to = formatValue(edit.patch.value)
@@ -76,7 +77,8 @@ export function commitMessage(edits: PendingEdit[], login?: string | null): stri
     groups.set(name, [...(groups.get(name) ?? []), edit])
   }
   const names = [...groups.keys()]
-  const fields = [...new Set(edits.map((e) => fieldName(e.patch.keyPath)))]
+  // A created note shows up in the body; its first content is what the subject names.
+  const fields = [...new Set(edits.filter((e) => e.patch.kind !== 'create').map((e) => fieldName(e.patch.keyPath)))]
 
   let subject =
     names.length === 1 ? `chore(${scopeOf(names[0])}): update ${listOf(fields)}` : `chore(vault): update ${listOf(names)}`

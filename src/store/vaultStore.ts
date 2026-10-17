@@ -23,9 +23,9 @@ import {
   showVaultDirectoryPicker,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, Vault, VaultSourceFile } from '../vault/types'
+import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, JournalEntry, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
@@ -148,6 +148,13 @@ interface VaultState {
    * has nowhere to store its equipment.
    */
   setEquipment: (characterPath: string, change: EquipmentChange) => Promise<void>
+  /**
+   * Replaces a character's journal (`journal:`, own schema — see `adapters/journal.ts`), written as a
+   * whole list to the note that holds it. The first entry creates that note when it doesn't exist yet
+   * (`Tagebuch <Name>.md`). Same optimistic-write + rollback shape as the other writers; no-op without
+   * edit permission.
+   */
+  setJournal: (characterPath: string, journal: JournalEntry[]) => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -354,7 +361,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
         github: null,
         loadingProgress: null,
         rootHandle: handle,
-        writer: folderWriter(fileHandles),
+        writer: folderWriter(fileHandles, handle),
         sync: null,
         editPermission: 'not-requested',
         writeError: null,
@@ -752,6 +759,28 @@ export const useVaultStore = create<VaultState>((set, get) => {
         context: { characterPath, change },
         retry: () => void get().setEquipment(characterPath, change),
       })
+    },
+
+    setJournal: async (characterPath, journal) => {
+      const { vault, writer, editPermission } = get()
+      const target = findCharacter(vault, characterPath)?._write?.journal
+      if (editPermission !== 'granted' || !target || !writer || (!target.create && !writer.canWrite(target.path))) return
+      const context = characterContext(vault, characterPath)
+
+      await editCharacter(
+        characterPath,
+        // Once created, later edits go to the note as it is.
+        (c) => ({ ...c, journal, _write: { ...c._write, journal: { path: target.path } } }),
+        async () => {
+          if (target.create) await writer.create(target.path, target.create, context)
+          await writer.write(target.path, journalPatch(journal), context)
+        },
+        {
+          source: 'vault.setJournal',
+          context: { characterPath, writePath: target.path, entries: journal.length },
+          retry: () => void get().setJournal(characterPath, journal),
+        },
+      )
     },
   }
 })

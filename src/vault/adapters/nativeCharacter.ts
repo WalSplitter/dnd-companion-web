@@ -7,6 +7,7 @@ import type { CharacterFeature, CharacterFrontmatter, CharacterRuleset, Characte
 import type { ImageAssets } from '../types'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { resolveBiography } from './biography'
+import { resolveJournal } from './journal'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
 import { resolveWeaponAttacks } from './weaponAttacks'
 
@@ -378,7 +379,8 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   }
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
-  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets }
+  const journal = resolveJournal(raw, files)
+  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets, journal: journal.target }
 
   return {
     ...equipped,
@@ -396,6 +398,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     biography: resolveBiography(raw.data),
+    journal: journal.journal,
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }
 }

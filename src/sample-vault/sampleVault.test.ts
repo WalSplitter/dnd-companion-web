@@ -35,6 +35,14 @@ describe('sample vault', () => {
     expect(detectRuleset(sampleVaultFiles).ruleset).toBe('endeavour')
   })
 
+  it('gives every character a journal from a few sessions, linked from its own Tagebuch note', () => {
+    for (const { frontmatter: c } of vault.characters) {
+      expect(c.journal?.length, c.name).toBeGreaterThanOrEqual(8)
+      expect(c._write?.journal?.path, c.name).toMatch(/\/Tagebuch [^/]+\.md$/)
+      expect(c._write?.journal?.create, c.name).toBeUndefined()
+    }
+  })
+
   it('derives pools, primary attributes and evasion from the class and armor notes', () => {
     const elandra = character('Elandra Windrider')
     expect(elandra.hp.max).toBe(12)
