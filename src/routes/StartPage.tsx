@@ -174,8 +174,10 @@ export function StartPage() {
           {vaultOpen && <CurrentVaultBar />}
 
           {/* Portals */}
-          <div className="grid grid-cols-1 gap-4 short:gap-3 tall:gap-6 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
-            <div className="rise-in md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
+          <div className="grid grid-cols-1 gap-4 short:gap-3 tall:gap-6 md:grid-cols-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            {/* `min-w-0` with the `minmax(0, …)` tracks: a long vault name truncates instead of
+                widening its column and squeezing the other cards. */}
+            <div className="rise-in min-w-0 md:col-span-2 lg:col-span-1 lg:row-span-2" style={{ '--i': 4 } as CSSProperties}>
               <ContinueCard onOpen={(r, target) => void openRecent(r, target)} />
             </div>
 
