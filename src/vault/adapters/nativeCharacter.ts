@@ -1,7 +1,7 @@
 import { nimbleAttributeValue } from '../../rules/endeavour'
 import { isEndeavour, parseRuleset } from '../../rules/ruleset'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
-import { findRawFileByName, type RawFile } from '../rawFile'
+import { backlinksTo, findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
 import type { CharacterFeature, CharacterFrontmatter, CharacterRuleset, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../types'
@@ -89,8 +89,7 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
  * it is used.
  */
 function resolveLinkedFields(own: RawFile, files: RawFile[]) {
-  const target = own.name.trim().toLowerCase()
-  const candidates = [own, ...files.filter((f) => f !== own && linkFile(f.data.Charakter).toLowerCase() === target)]
+  const candidates = [own, ...backlinksTo(files, own.name)]
 
   const blockSource = (key: string): Sourced | undefined => {
     const file = candidates.find((f) => isRecord(f.data[key]))

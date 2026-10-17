@@ -317,7 +317,12 @@ describe('GitHubSync creating notes', () => {
     await first.sync.write('Neu.md', journalPatch(entries))
     const { sync } = makeSync({ restored: first.persisted.at(-1) })
     expect(sync.canWrite('Neu.md')).toBe(true)
+    // Not in the repository's files, so the reload adds it to show its queued journal.
+    const local = sync.localFiles([{ path: 'Brünhild.md', content: note(12) }])
+    expect(local.map((f) => f.path)).toEqual(['Brünhild.md', 'Neu.md'])
+    expect(readFrontmatterValue(local[1].content, ['journal'])).toHaveLength(1)
     await sync.flush()
+    expect(sync.localFiles([]).map((f) => f.path)).toEqual([])
     expect(readFrontmatterValue(repo.fileAt('Vault/Neu.md')!, ['journal'])).toHaveLength(1)
   })
 })

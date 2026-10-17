@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
+import { Icon } from '../../theme/topicIcons'
 import type { SkillIcon as SkillIconName } from './skillIconKeys'
 
-/** Line glyphs on a 24 grid, drawn in `currentColor` like the app's other icons. */
+/** Glyphs for the skill tree's tiles, on the app's icon base (`Icon`). */
 const PATHS: Record<SkillIconName, ReactNode> = {
   // Signpost: a fork in the road
   choice: (
@@ -142,9 +143,5 @@ const PATHS: Record<SkillIconName, ReactNode> = {
 }
 
 export function SkillIcon({ name, className = 'size-5' }: { name: SkillIconName; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      {PATHS[name]}
-    </svg>
-  )
+  return <Icon className={className}>{PATHS[name]}</Icon>
 }

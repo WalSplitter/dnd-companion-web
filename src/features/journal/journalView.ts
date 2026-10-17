@@ -1,4 +1,5 @@
 import type { TranslationKey } from '../../i18n/useI18n'
+import { fold } from '../../utils/fold'
 import type { JournalEntry, JournalKind } from '../../vault/types'
 
 /** Which entries the journal shows: one kind or all, and a free-text search. */
@@ -14,14 +15,6 @@ export interface SessionGroup {
   /** Earliest and latest date written in the session. */
   from?: string
   to?: string
-}
-
-/** Case- and accent-insensitive form for searching (`Brücke` matches `brucke`). */
-function fold(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
 }
 
 /** Entries of the filter's kind whose title or text contains every word of the query. */

@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { basename } from '../../vault/wikilinkSyntax'
+import { basename, WIKILINKS_RE } from '../../vault/wikilinkSyntax'
 import { WikiLink } from './WikiLink'
 
 /** Matches `[[Target]]` / `[[Target|Alias]]`, or an inline-code span (`Target`) — notes commonly mark
  * vault references (tags, field names, note titles) with backticks instead of brackets. */
-const REFERENCE_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|`([^`\n]+)`/g
+const REFERENCE_RE = new RegExp(`${WIKILINKS_RE.source}|\`([^\`\\n]+)\``, 'g')
 
 /** Dataview inline expressions (`` `=this.Kosten` ``) are only meaningful inside Obsidian — they
  * are not references, so they're dropped instead of rendered as unresolvable links. */
@@ -34,8 +34,7 @@ export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[]
       code !== undefined ? (
         <WikiLink key={key} target={code.trim()} display={code.trim()} />
       ) : (
-        // A trailing `\` is the escape of an alias pipe inside a table cell (`[[Target\|Alias]]`).
-        <WikiLink key={key} target={target.replace(/\\$/, '').trim()} display={alias ? alias.trim() : basename(target.replace(/\\$/, ''))} />
+        <WikiLink key={key} target={target.trim()} display={alias ? alias.trim() : basename(target)} />
       ),
     )
   }

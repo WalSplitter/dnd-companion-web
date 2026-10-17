@@ -1,15 +1,6 @@
 import type { ReactNode } from 'react'
+import { Icon, type IconProps } from '../../theme/topicIcons'
 import type { JournalKind } from '../../vault/types'
-
-type IconProps = { className?: string }
-
-function Icon({ className = 'size-4', children }: IconProps & { children: ReactNode }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      {children}
-    </svg>
-  )
-}
 
 const KIND_ICON_PATHS: Record<JournalKind, ReactNode> = {
   // Quill

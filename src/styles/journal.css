@@ -1,27 +1,6 @@
 /* The Journal tab (JournalPanel): a quest-log timeline. In `components`, so the per-kind color
  * utilities (`KIND_STYLE`) override the neutral chip and medallion. */
 @layer components {
-  .journal-input {
-    border-radius: 0.375rem;
-    border: 1px solid color-mix(in srgb, var(--color-trim) 25%, transparent);
-    background: color-mix(in srgb, var(--color-bg) 45%, var(--color-surface));
-    padding: 0.5rem 0.65rem;
-    color: var(--color-fg);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.25);
-    transition:
-      border-color 150ms ease,
-      box-shadow 150ms ease;
-  }
-  .journal-input::placeholder {
-    color: color-mix(in srgb, var(--color-fg-muted) 75%, transparent);
-  }
-  .journal-input:focus {
-    outline: none;
-    border-color: var(--color-trim);
-    box-shadow:
-      inset 0 1px 3px rgb(0 0 0 / 0.25),
-      0 0 0 3px color-mix(in srgb, var(--color-trim) 18%, transparent);
-  }
   /* Grows with its text (Chromium), between three lines and a screenful. */
   .journal-textarea {
     field-sizing: content;
@@ -30,24 +9,6 @@
     resize: vertical;
   }
 
-  .journal-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--color-trim) 22%, transparent);
-    background: color-mix(in srgb, var(--color-surface-2) 60%, transparent);
-    padding: 0.25rem 0.7rem;
-    font-size: 0.78rem;
-    color: var(--color-fg);
-    cursor: pointer;
-    transition:
-      border-color 150ms ease,
-      background-color 150ms ease;
-  }
-  .journal-chip:hover {
-    border-color: color-mix(in srgb, var(--color-trim) 55%, transparent);
-  }
   .journal-count {
     font-family: var(--font-numeric);
     font-size: 0.72rem;
@@ -85,19 +46,6 @@
     box-shadow: none;
   }
 
-  .journal-icon-btn {
-    display: inline-grid;
-    place-items: center;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 0.375rem;
-    color: var(--color-fg-muted);
-    cursor: pointer;
-  }
-  .journal-icon-btn:hover {
-    background: color-mix(in srgb, var(--color-trim) 12%, transparent);
-    color: var(--color-fg);
-  }
   /* Actions show on hover or focus; touch screens always see them. */
   @media (hover: hover) {
     .journal-entry .journal-actions {
@@ -172,9 +120,8 @@
   }
   .journal-card {
     border-radius: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
-    border-right: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
+    /* The left edge is the kind's color (`border-l-4` + `KIND_STYLE.edge`, utilities win). */
+    border: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
     background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 85%, transparent), color-mix(in srgb, var(--color-surface) 85%, transparent));
     padding: 0.75rem 0.9rem;
     transition: box-shadow 200ms ease;
@@ -221,13 +168,4 @@
     cursor: default;
   }
 
-  .journal-empty {
-    display: grid;
-    justify-items: center;
-    gap: 0.75rem;
-    padding: 3rem 1rem;
-    text-align: center;
-    border-radius: 0.75rem;
-    border: 1px dashed color-mix(in srgb, var(--color-trim) 30%, transparent);
-  }
 }

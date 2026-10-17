@@ -1,4 +1,5 @@
 import { applyPatch, createPatch, readFrontmatterValue, type FrontmatterPatch, type VaultWriter, type WriteContext } from '../writeback/persist'
+import type { VaultSourceFile } from '../types'
 import { commitMessage } from './commitMessage'
 import {
   commitFiles,
@@ -151,6 +152,18 @@ export class GitHubSync implements VaultWriter {
 
   canWrite(path: string): boolean {
     return this.remote.has(path) || this.creates(path)
+  }
+
+  /**
+   * The vault's files as this browser sees them: `files` (the repository's) with every queued edit
+   * applied, plus the notes queued to be created that the repository doesn't have yet — without
+   * them, a reload would show (and the next edit overwrite) an empty journal instead of the queued one.
+   */
+  localFiles(files: VaultSourceFile[]): VaultSourceFile[] {
+    if (this.edits.size === 0) return files
+    const known = new Set(files.map((f) => f.path))
+    const created = [...this.edits.keys()].filter((path) => !known.has(path) && this.creates(path))
+    return [...files.map((f) => ({ ...f, content: this.localContent(f.path) ?? f.content })), ...created.map((path) => ({ path, content: this.localContent(path)! }))]
   }
 
   /** Whether a note that isn't in the repository yet is queued to be created at `path`. */

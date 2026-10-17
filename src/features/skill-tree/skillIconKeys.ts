@@ -1,5 +1,5 @@
-import type { ProgressionNode } from '../../vault/adapters/classProgression'
-import { fold } from './boardLayout'
+import { stripRank, type ProgressionNode } from '../../vault/adapters/classProgression'
+import { fold } from '../../utils/fold'
 
 export const SKILL_ICONS = [
   'choice',
@@ -97,13 +97,22 @@ const KEYWORDS: [SkillIcon, RegExp][] = [
 /** Lower case without accents, `ß` as `ss` — the form the keywords are written in. */
 const norm = (text: string) => fold(text).replace(/ß/g, 'ss')
 
-/** The icon for a node: its note's `Icon:`, the subclass's signpost, or the first keyword match. */
+const icons = new WeakMap<ProgressionNode, SkillIcon>()
+
+/** The icon for a node: its note's `Icon:`, the subclass's signpost, or the first keyword match —
+ * worked out once per node. */
 export function iconFor(node: ProgressionNode): SkillIcon {
+  let icon = icons.get(node)
+  if (!icon) icons.set(node, (icon = pickIcon(node)))
+  return icon
+}
+
+function pickIcon(node: ProgressionNode): SkillIcon {
   const own = node.icon ? norm(node.icon) : undefined
   if (own && (SKILL_ICONS as readonly string[]).includes(own)) return own as SkillIcon
   if (own && ALIASES[own]) return ALIASES[own]
   if (node.kind !== 'feature') return 'choice'
-  for (const text of [norm(node.name.replace(/\s*\(\d+\)$/, '')), norm(node.description ?? '')]) {
+  for (const text of [norm(stripRank(node.name)), norm(node.description ?? '')]) {
     for (const [icon, re] of KEYWORDS) if (re.test(text)) return icon
   }
   return 'rune'

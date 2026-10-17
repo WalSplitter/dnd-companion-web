@@ -305,7 +305,7 @@
     z-index: 10;
     width: max-content;
     max-width: 17rem;
-    transform: translate(-50%, calc(-100% - 18px));
+    transform: translate(var(--st-tip-x, -50%), var(--st-tip-y, calc(-100% - 18px)));
     pointer-events: none;
     border-radius: 0.5rem;
     border: 1px solid color-mix(in srgb, var(--color-trim) 55%, transparent);
@@ -317,19 +317,13 @@
     backdrop-filter: blur(6px);
   }
   .st-tooltip-left {
-    transform: translate(-12%, calc(-100% - 18px));
+    --st-tip-x: -12%;
   }
   .st-tooltip-right {
-    transform: translate(-88%, calc(-100% - 18px));
+    --st-tip-x: -88%;
   }
   .st-tooltip-below {
-    transform: translate(-50%, 18px);
-  }
-  .st-tooltip-below.st-tooltip-left {
-    transform: translate(-12%, 18px);
-  }
-  .st-tooltip-below.st-tooltip-right {
-    transform: translate(-88%, 18px);
+    --st-tip-y: 18px;
   }
   .st-status-unlocked {
     color: var(--color-success);
@@ -341,23 +335,6 @@
     color: var(--color-fg-muted);
   }
 
-  .st-toggle {
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--color-trim) 22%, transparent);
-    padding: 0.2rem 0.75rem;
-    font-size: 0.78rem;
-    color: var(--color-fg-muted);
-    cursor: pointer;
-  }
-  .st-toggle-on {
-    background: color-mix(in srgb, var(--color-trim) 18%, transparent);
-    color: var(--color-fg);
-  }
-  .st-chip-sub {
-    border-color: color-mix(in srgb, #a78bfa 55%, transparent);
-    background: color-mix(in srgb, #a78bfa 12%, transparent);
-    color: var(--color-fg);
-  }
 
   .st-subhead {
     font-family: var(--font-display);
@@ -366,14 +343,6 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-trim);
-  }
-  .st-close {
-    color: var(--color-fg-muted);
-    cursor: pointer;
-    padding-inline: 0.25rem;
-  }
-  .st-close:hover {
-    color: var(--color-fg);
   }
   .st-rank {
     border-radius: 999px;
@@ -441,32 +410,15 @@
     box-shadow: 0 0 16px -8px var(--color-trim);
   }
   .st-list-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--color-trim) 30%, transparent);
-    background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
-    padding: 0.15rem 0.7rem 0.15rem 0.2rem;
-    font-size: 0.8rem;
-    color: var(--color-fg);
-    cursor: pointer;
+    padding-left: 0.2rem;
   }
   .st-list-chip.st-sub {
-    border-color: color-mix(in srgb, #a78bfa 55%, transparent);
+    border-color: color-mix(in srgb, var(--st-sub) 55%, transparent);
   }
   .st-list-chip.st-selected {
     box-shadow: 0 0 0 2px var(--color-trim);
   }
 
-  .st-empty {
-    display: grid;
-    gap: 0.75rem;
-    justify-items: start;
-    border-radius: 0.75rem;
-    border: 1px dashed color-mix(in srgb, var(--color-trim) 30%, transparent);
-    padding: 1.5rem;
-  }
   .st-example {
     max-width: 100%;
     overflow-x: auto;
@@ -482,10 +434,10 @@
   .st-sheet {
     position: fixed;
     right: 1.5rem;
-    top: var(--st-sheet-top, 5.5rem);
+    top: calc(var(--app-header-h, 4.5rem) + 0.75rem);
     z-index: 40;
     width: 22rem;
-    max-height: calc(100vh - var(--st-sheet-top, 5.5rem) - 1rem);
+    max-height: calc(100vh - var(--app-header-h, 4.5rem) - 1.75rem);
     overflow-y: auto;
     border-radius: 0.75rem;
     box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.75);

@@ -103,6 +103,7 @@ describe('evaluateCell', () => {
   const data = { A: { Stufe3: 2 }, B: 'x' }
   it('evaluates simple Dataview paths and string joins', () => {
     expect(evaluateCell('`=this.A.Stufe3 + "W6"`', data)).toBe('2W6')
+    expect(evaluateCell('`=this.A.Stufe3 + "+1"`', data)).toBe('2+1')
     expect(evaluateCell('+`=this.A.Stufe3`', data)).toBe('+2')
     expect(evaluateCell('`=this.A.Stufe3 + 1`', data)).toBe('3')
     expect(evaluateCell('[[Zaubertricks|ZT]] 4', data)).toBe('ZT 4')

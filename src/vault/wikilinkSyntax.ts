@@ -15,6 +15,18 @@ export function basename(target: string): string {
   return last.replace(/\.md$/i, '').trim()
 }
 
+/**
+ * Every `[[Target]]` / `[[Target|Alias]]` inside a text — also `[[Target\\|Alias]]`, the alias pipe
+ * escaped inside a table cell. Global: use it with `replace`/`matchAll`, or reset `lastIndex`.
+ */
+export const WIKILINKS_RE = /\[\[([^\]|\\]+)(?:\\?\|([^\]]+))?\]\]/g
+
+/** `"[[Hiebschaden]]/[[Stichschaden|Stich]]"` → `"Hiebschaden/Stich"`: every wikilink in a text
+ * replaced by its display text (the alias, else the target's bare filename). */
+export function linksToText(text: string): string {
+  return text.replace(WIKILINKS_RE, (_match, target: string, alias?: string) => (alias ? alias.trim() : basename(target)))
+}
+
 /** Strips `[[...]]` wrapping and an optional `|alias`, returning the target's bare filename. */
 export function wikilinkTarget(raw: string): string {
   const match = WIKILINK_RE.exec(raw.trim())

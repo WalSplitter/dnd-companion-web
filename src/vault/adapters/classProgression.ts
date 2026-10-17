@@ -1,7 +1,8 @@
 import { isRecord } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type { CharacterFeature, CharacterFrontmatter, FeatureUsage } from '../types'
-import { basename, linkDisplay, linkFile } from '../wikilinkSyntax'
+import { basename, linkDisplay, linkFile, linksToText } from '../wikilinkSyntax'
+import { parsePipeTables } from './markdownTable'
 import { noteSummary, parseFeatureUsage } from './nativeCharacter'
 
 /**
@@ -80,51 +81,15 @@ export interface ClassProgression {
 
 export const SUBCLASS_FAMILY = 'subclass'
 
+/** What of a character its progressions are read from. */
+export type ProgressionSource = Pick<CharacterFrontmatter, 'class' | 'features'>
+
 const EMPTY_CELL = /^[-–—\s]*$/
-
-/** `| a | b |` → cells; `\|` (a pipe inside a wikilink alias) is kept as part of its cell. */
-function splitRow(line: string): string[] {
-  return line
-    .trim()
-    .replace(/^\|/, '')
-    .replace(/(?<!\\)\|$/, '')
-    .split(/(?<!\\)\|/)
-    .map((cell) => cell.replace(/\\\|/g, '|').trim())
-}
-
-interface Table {
-  header: string[]
-  rows: string[][]
-}
-
-/** Every pipe table in a note body (also inside callouts). */
-function parseTables(body: string): Table[] {
-  const tables: Table[] = []
-  let block: string[] = []
-  const flush = () => {
-    if (block.length >= 2 && /^\|?(\s*:?-{2,}:?\s*\|)*\s*:?-{2,}:?\s*\|?$/.test(block[1])) {
-      tables.push({ header: splitRow(block[0]), rows: block.slice(2).map(splitRow) })
-    }
-    block = []
-  }
-  for (const raw of body.split(/\r?\n/)) {
-    const line = raw.replace(/^\s*(>\s*)+/, '').trim()
-    if (line.startsWith('|')) block.push(line)
-    else flush()
-  }
-  flush()
-  return tables
-}
-
-/** Plain text of a header cell: wikilinks to their display text. */
-function headerText(cell: string): string {
-  return cell.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, target: string, alias?: string) => alias ?? basename(target)).trim()
-}
 
 /** The first table with a level column and a feature column, as rows of `{ level, features, values }`. */
 function levelTable(body: string): { level: number; features: string; values: { label: string; cell: string }[] }[] | undefined {
-  for (const table of parseTables(body)) {
-    const header = table.header.map(headerText)
+  for (const table of parsePipeTables(body)) {
+    const header = table.header.map(linksToText)
     const levelCol = header.findIndex((h) => /^(stufe|level)$/i.test(h))
     const featureCol = header.findIndex((h) => /^(merkmale?|features?)$/i.test(h))
     if (levelCol < 0 || featureCol < 0) continue
@@ -157,7 +122,8 @@ export function evaluateCell(cell: string, data: Record<string, unknown>): strin
   let failed = false
   const text = cell.replace(/`=\s*([^`]+)`/g, (_m, expr: string) => {
     let result: unknown
-    for (const part of expr.split('+').map((p) => p.trim())) {
+    // Split on `+` outside string literals (`"+1"` stays one part).
+    for (const part of expr.split(/\+(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((p) => p.trim())) {
       let value: unknown
       if (/^this(\.[\p{L}\p{N}_]+)+$/u.test(part)) value = lookup(data, part)
       else if (/^"[^"]*"$/.test(part)) value = part.slice(1, -1)
@@ -171,7 +137,7 @@ export function evaluateCell(cell: string, data: Record<string, unknown>): strin
     return String(result)
   })
   if (failed || /`|INPUT\[/.test(text)) return undefined
-  const clean = headerText(text)
+  const clean = linksToText(text)
   return EMPTY_CELL.test(clean) ? undefined : clean
 }
 
@@ -207,13 +173,14 @@ function cellItems(cell: string): CellItem[] {
       return [{ name: link[3] ? `${display} ${link[3].trim()}` : display, target }]
     }
     // `Merkmal: Kampfarchetyp`, `Merkmal Schutzherr`, `Pfadmerkmal`: the subclass's feature of that level.
-    const text = headerText(item)
+    const text = linksToText(item)
     if (/merkmal/i.test(text)) return [{ name: text, placeholder: text.replace(/^merkmal\s*:?\s*/i, '').trim() || text }]
     return [{ name: text }]
   })
 }
 
-const stripRank = (name: string) => name.replace(/\s*\(\d+\)\s*$/, '').trim()
+/** `Tatendrang (2)` → `Tatendrang`. */
+export const stripRank = (name: string) => name.replace(/\s*\(\d+\)\s*$/, '').trim()
 
 /** The choices a feature's note lists under an `Optionen`/`Auswahl` heading: `- **Name**: text` or `- [[Name]]`. */
 function noteOptions(note: RawFile): ProgressionOption[] | undefined {
@@ -267,7 +234,7 @@ function featureNodes(className: string, features: CharacterFeature[]): Omit<Pro
   })
 }
 
-function classProgression(entry: CharacterFrontmatter['class'][number], character: CharacterFrontmatter, files: RawFile[]): ClassProgression {
+function classProgression(entry: CharacterFrontmatter['class'][number], character: ProgressionSource, files: RawFile[]): ClassProgression {
   const ownFeatures = character.features ?? []
   const classNote = findRawFileByName(files, entry.name)
   const table = classNote ? levelTable(classNote.body) : undefined
@@ -291,7 +258,7 @@ function classProgression(entry: CharacterFrontmatter['class'][number], characte
   for (const row of table ?? []) {
     addValues(row.level, row.values, classNote!.data)
     for (const raw of cellItems(row.features)) {
-      const linksSubclass = Boolean(raw.target && ((subclassList && raw.target.toLowerCase() === subclassList) || /^(sub|unter)klassen?$/i.test(raw.target)))
+      const linksSubclass = Boolean(raw.target && ((subclassList && raw.target.toLowerCase() === subclassList) || /^((sub|unter)klassen?|subclass(es)?)$/i.test(raw.target)))
       // The first link to the subclass list is choosing it; later ones (the old vault links it again at
       // every subclass level) stand for its features.
       const isChoice: boolean = linksSubclass && !choiceSeen
@@ -339,6 +306,6 @@ function classProgression(entry: CharacterFrontmatter['class'][number], characte
 }
 
 /** One progression per class the character has, in the character's class order. */
-export function resolveClassProgressions(character: CharacterFrontmatter, files: RawFile[]): ClassProgression[] {
+export function resolveClassProgressions(character: ProgressionSource, files: RawFile[]): ClassProgression[] {
   return (character.class ?? []).filter((c) => c.name).map((c) => classProgression(c, character, files))
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { Card } from '../../components/Card'
 import { renderObsidianBody } from '../../components/obsidian/renderObsidian'
 import { useI18n } from '../../i18n/useI18n'
@@ -73,7 +73,7 @@ function EntryEditor({
             role="radio"
             aria-checked={kind === k}
             onClick={() => setKind(k)}
-            className={`journal-chip ${kind === k ? KIND_STYLE[k].tint : ''}`}
+            className={`rpg-chip ${kind === k ? KIND_STYLE[k].tint : ''}`}
           >
             <JournalKindIcon kind={k} className={`size-4 ${KIND_STYLE[k].text}`} />
             {t(KIND_LABEL[k])}
@@ -92,7 +92,7 @@ function EntryEditor({
         }}
         placeholder={t('journal.titlePlaceholder')}
         aria-label={t('journal.titlePlaceholder')}
-        className="journal-input w-full font-display text-sm tracking-wide"
+        className="rpg-input w-full font-display text-sm tracking-wide"
       />
       <textarea
         ref={textRef}
@@ -101,7 +101,7 @@ function EntryEditor({
         placeholder={t('journal.textPlaceholder')}
         aria-label={t('journal.textPlaceholder')}
         rows={3}
-        className="journal-input journal-textarea w-full text-sm leading-relaxed"
+        className="rpg-input journal-textarea w-full text-sm leading-relaxed"
       />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-fg-muted">
@@ -114,7 +114,7 @@ function EntryEditor({
             inputMode="numeric"
             value={session}
             onChange={(e) => setSession(e.target.value)}
-            className="journal-input w-14 px-1.5 py-1 text-center font-numeric text-sm text-fg"
+            className="rpg-input w-14 px-1.5 py-1 text-center font-numeric text-sm text-fg"
           />
         </label>
         {!onCancel && (
@@ -124,7 +124,7 @@ function EntryEditor({
         )}
         <label htmlFor={dateId} className="flex items-center gap-1.5">
           {t('journal.date')}
-          <input id={dateId} type="date" value={date} onChange={(e) => setDate(e.target.value)} className="journal-input px-1.5 py-1 text-sm text-fg" />
+          <input id={dateId} type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rpg-input px-1.5 py-1 text-sm text-fg" />
         </label>
 
         <div className="ml-auto flex items-center gap-2">
@@ -144,6 +144,15 @@ function EntryEditor({
   )
 }
 
+/** An icon button that switches something on and off (a quest done, an entry pinned). */
+function ToggleIconButton({ on, label, onClass, onToggle, children }: { on: boolean; label: string; onClass: string; onToggle: () => void; children: ReactNode }) {
+  return (
+    <button type="button" title={label} aria-label={label} aria-pressed={on} onClick={onToggle} className={`rpg-icon-btn ${on ? onClass : ''}`}>
+      {children}
+    </button>
+  )
+}
+
 function EntryActions({
   entry,
   onChange,
@@ -160,36 +169,22 @@ function EntryActions({
   return (
     <div className="journal-actions flex shrink-0 items-center gap-0.5">
       {entry.kind === 'quest' && (
-        <button
-          type="button"
-          title={entry.done ? t('journal.reopen') : t('journal.markDone')}
-          aria-label={entry.done ? t('journal.reopen') : t('journal.markDone')}
-          aria-pressed={Boolean(entry.done)}
-          onClick={() => onChange({ ...entry, done: !entry.done })}
-          className={`journal-icon-btn ${entry.done ? 'text-success' : ''}`}
-        >
+        <ToggleIconButton on={Boolean(entry.done)} label={entry.done ? t('journal.reopen') : t('journal.markDone')} onClass="text-success" onToggle={() => onChange({ ...entry, done: !entry.done })}>
           <CheckIcon />
-        </button>
+        </ToggleIconButton>
       )}
-      <button
-        type="button"
-        title={entry.pinned ? t('journal.unpin') : t('journal.pin')}
-        aria-label={entry.pinned ? t('journal.unpin') : t('journal.pin')}
-        aria-pressed={Boolean(entry.pinned)}
-        onClick={() => onChange({ ...entry, pinned: !entry.pinned })}
-        className={`journal-icon-btn ${entry.pinned ? 'text-trim' : ''}`}
-      >
+      <ToggleIconButton on={Boolean(entry.pinned)} label={entry.pinned ? t('journal.unpin') : t('journal.pin')} onClass="text-trim" onToggle={() => onChange({ ...entry, pinned: !entry.pinned })}>
         <PinIcon />
-      </button>
-      <button type="button" title={t('journal.edit')} aria-label={t('journal.edit')} onClick={onEdit} className="journal-icon-btn">
+      </ToggleIconButton>
+      <button type="button" title={t('journal.edit')} aria-label={t('journal.edit')} onClick={onEdit} className="rpg-icon-btn">
         <PencilIcon />
       </button>
       {confirming ? (
-        <button type="button" onClick={onDelete} onBlur={() => setConfirming(false)} autoFocus className="journal-icon-btn w-auto! px-2 text-xs text-danger">
+        <button type="button" onClick={onDelete} onBlur={() => setConfirming(false)} autoFocus className="rpg-icon-btn w-auto! px-2 text-xs text-danger">
           {t('journal.confirmDelete')}
         </button>
       ) : (
-        <button type="button" title={t('journal.delete')} aria-label={t('journal.delete')} onClick={() => setConfirming(true)} className="journal-icon-btn hover:text-danger">
+        <button type="button" title={t('journal.delete')} aria-label={t('journal.delete')} onClick={() => setConfirming(true)} className="rpg-icon-btn hover:text-danger">
           <TrashIcon />
         </button>
       )}
@@ -264,7 +259,7 @@ function KindFilter({ entries, filter, onChange }: { entries: JournalEntry[]; fi
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-1.5">
-        <button type="button" aria-pressed={filter.kind === 'all'} onClick={() => onChange({ ...filter, kind: 'all' })} className={`journal-chip ${filter.kind === 'all' ? 'border-trim/70 bg-trim/15' : ''}`}>
+        <button type="button" aria-pressed={filter.kind === 'all'} onClick={() => onChange({ ...filter, kind: 'all' })} className={`rpg-chip ${filter.kind === 'all' ? 'rpg-chip-on' : ''}`}>
           {t('journal.all')} <span className="journal-count">{entries.length}</span>
         </button>
         {JOURNAL_KINDS.filter((k) => counts[k] || filter.kind === k).map((k) => (
@@ -273,7 +268,7 @@ function KindFilter({ entries, filter, onChange }: { entries: JournalEntry[]; fi
             type="button"
             aria-pressed={filter.kind === k}
             onClick={() => onChange({ ...filter, kind: filter.kind === k ? 'all' : k })}
-            className={`journal-chip ${filter.kind === k ? KIND_STYLE[k].tint : ''}`}
+            className={`rpg-chip ${filter.kind === k ? KIND_STYLE[k].tint : ''}`}
           >
             <JournalKindIcon kind={k} className={`size-3.5 ${KIND_STYLE[k].text}`} />
             {t(KIND_LABEL[k])} <span className="journal-count">{counts[k] ?? 0}</span>
@@ -288,7 +283,7 @@ function KindFilter({ entries, filter, onChange }: { entries: JournalEntry[]; fi
           onChange={(e) => onChange({ ...filter, query: e.target.value })}
           placeholder={t('journal.search')}
           aria-label={t('journal.search')}
-          className="journal-input w-full py-1.5 pl-8 text-sm"
+          className="rpg-input w-full py-1.5 pl-8 text-sm"
         />
       </label>
     </div>
@@ -383,9 +378,10 @@ export function JournalPanel({ character, characterPath }: { character: Characte
     remove: (id) => save(updateEntry(entries, id, () => null)),
   }
 
-  const shown = filterEntries(entries, filter)
-  const pinned = shown.filter((e) => e.pinned).reverse()
-  const groups = groupBySession(shown.filter((e) => !e.pinned))
+  const { shown, pinned, groups } = useMemo(() => {
+    const shown = filterEntries(entries, filter)
+    return { shown, pinned: shown.filter((e) => e.pinned).reverse(), groups: groupBySession(shown.filter((e) => !e.pinned)) }
+  }, [entries, filter])
   const file = character._write?.journal?.path.split('/').pop()
 
   function jump(id: string) {
@@ -406,7 +402,6 @@ export function JournalPanel({ character, characterPath }: { character: Characte
         {canEdit ? (
           <Card title={t('journal.new')}>
             <EntryEditor
-              key={latestSession ?? 0}
               initial={{ kind: 'note', text: '', session: latestSession ?? 1, date: todayIso() }}
               latestSession={latestSession}
               submitLabel={t('journal.save')}
@@ -414,13 +409,13 @@ export function JournalPanel({ character, characterPath }: { character: Characte
             />
           </Card>
         ) : (
-          <p className="rounded-lg border border-dashed border-trim/30 px-4 py-3 text-sm text-fg-muted">{t('journal.readOnly')}</p>
+          <p className="rpg-note text-sm">{t('journal.readOnly')}</p>
         )}
 
         {entries.length > 0 && <KindFilter entries={entries} filter={filter} onChange={setFilter} />}
 
         {entries.length === 0 ? (
-          <div className="journal-empty">
+          <div className="rpg-empty">
             <JournalKindIcon kind="lore" className="size-10 text-trim/70" />
             <p className="max-w-sm text-sm text-fg-muted">{t('journal.empty')}</p>
           </div>
@@ -441,26 +436,29 @@ export function JournalPanel({ character, characterPath }: { character: Characte
                 </ol>
               </section>
             )}
-            {groups.map((g) => (
-              <section key={g.session ?? 'none'} aria-label={g.session !== undefined ? t('journal.sessionN', { n: g.session }) : t('journal.noSession')}>
-                <h3 className="journal-session-title mb-3">
-                  {g.session !== undefined && <span className="journal-session-medal">{g.session}</span>}
-                  <span>{g.session !== undefined ? t('journal.sessionN', { n: g.session }) : t('journal.noSession')}</span>
-                  {g.from && (
-                    <span className="text-[0.7rem] font-normal tracking-normal text-fg-muted normal-case">
-                      {formatJournalDate(g.from, locale)}
-                      {g.to && g.to !== g.from && ` – ${formatJournalDate(g.to, locale)}`}
-                    </span>
-                  )}
-                  <span aria-hidden className="h-px flex-1 bg-linear-to-r from-trim/40 to-transparent" />
-                </h3>
-                <ol className="journal-timeline">
-                  {g.entries.map((e) => (
-                    <EntryCard key={e.id} entry={e} h={handlers} />
-                  ))}
-                </ol>
-              </section>
-            ))}
+            {groups.map((g) => {
+              const label = g.session !== undefined ? t('journal.sessionN', { n: g.session }) : t('journal.noSession')
+              return (
+                <section key={g.session ?? 'none'} aria-label={label}>
+                  <h3 className="journal-session-title mb-3">
+                    {g.session !== undefined && <span className="journal-session-medal">{g.session}</span>}
+                    <span>{label}</span>
+                    {g.from && (
+                      <span className="text-[0.7rem] font-normal tracking-normal text-fg-muted normal-case">
+                        {formatJournalDate(g.from, locale)}
+                        {g.to && g.to !== g.from && ` – ${formatJournalDate(g.to, locale)}`}
+                      </span>
+                    )}
+                    <span aria-hidden className="h-px flex-1 bg-linear-to-r from-trim/40 to-transparent" />
+                  </h3>
+                  <ol className="journal-timeline">
+                    {g.entries.map((e) => (
+                      <EntryCard key={e.id} entry={e} h={handlers} />
+                    ))}
+                  </ol>
+                </section>
+              )
+            })}
           </>
         )}
         {file && entries.length > 0 && <p className="text-right text-[0.7rem] text-fg-muted/80">{t('journal.savedTo', { file })}</p>}

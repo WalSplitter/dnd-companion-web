@@ -519,8 +519,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
             if (activeSync === sync) syncStatusChanged(status)
           },
         })
-        const localFiles = restored.length > 0 ? files.map((f) => ({ ...f, content: sync.localContent(f.path) ?? f.content })) : files
-        const loaded = applyVault(localFiles, imageAssets)
+        const loaded = applyVault(sync.localFiles(files), imageAssets)
         // Reloading the same repository (e.g. after a conflict) keeps edit mode on.
         const current = get()
         const stillEditing = current.github !== null && gitHubVaultKey(current.github) === gitHubVaultKey(github) && current.editPermission === 'granted'
@@ -769,9 +768,10 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
       await editCharacter(
         characterPath,
-        // Once created, later edits go to the note as it is.
-        (c) => ({ ...c, journal, _write: { ...c._write, journal: { path: target.path } } }),
+        (c) => ({ ...c, journal }),
         async () => {
+          // `create` stays on the write target: every writer keeps a note that already exists, so
+          // asking again is free — and a failed first save can't lose the instruction to create it.
           if (target.create) await writer.create(target.path, target.create, context)
           await writer.write(target.path, journalPatch(journal), context)
         },

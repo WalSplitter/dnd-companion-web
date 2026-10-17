@@ -1,7 +1,6 @@
 import { isRecord } from '../frontmatterFields'
-import type { RawFile } from '../rawFile'
+import { backlinksTo, type RawFile } from '../rawFile'
 import { JOURNAL_KINDS, type CharacterWriteTargets, type JournalEntry, type JournalKind } from '../types'
-import { linkFile } from '../wikilinkSyntax'
 
 /**
  * A character's journal: the player's notes from the table, kept as a `journal:` list in the app's own
@@ -86,8 +85,7 @@ const folderOf = (path: string) => (path.includes('/') ? path.slice(0, path.last
  * `Tagebuch <Name>.md` to create in the character's folder.
  */
 export function resolveJournal(own: RawFile, files: RawFile[]): { journal: JournalEntry[]; target: NonNullable<CharacterWriteTargets['journal']> } {
-  const name = own.name.trim().toLowerCase()
-  const linked = files.filter((f) => f !== own && linkFile(f.data.Charakter).toLowerCase() === name)
+  const linked = backlinksTo(files, own.name)
   const source = [own, ...linked].find((f) => Array.isArray(f.data.journal))
   if (source) return { journal: parseJournal(source.data.journal), target: { path: source.path } }
 
