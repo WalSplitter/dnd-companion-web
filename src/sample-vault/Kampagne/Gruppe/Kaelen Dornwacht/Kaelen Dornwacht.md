@@ -25,6 +25,7 @@ appearance:
 class:
   - name: Waldläufer
     level: 4
+    subclass: Hüter des wilden Herzens
 species: Waldelf
 background: Außenseiter
 alignment: Neutral
@@ -72,14 +73,16 @@ languages: [Gemeinsprache, Elfisch, Sylvanisch]
 attacks:
   - "[[Langbogen]]"
   - "[[Kurzschwert]]"
+Merkmale:
+  - "[[Beute markieren]]"
+  - "[[Sammler]]"
+  - "[[Rausch der Jagd]]"
+  - "[[Abrollen und Zuschlagen]]"
+  - "[[Spurenlesers Gespür]]"
+  - "[[Ich hab die Anhöhe]]"
+  - "[[Eindrucksvolle Gestalt]]"
+  - "[[Wildniserkunder]]"
 features:
-  - name: Beute markieren
-    source: Waldläufer 1
-    description: Als Bonusaktion markierst du eine Kreatur, die du sehen kannst. Deine Angriffe gegen sie verursachen 1W6 zusätzlichen Schaden, und du weißt immer, in welcher Richtung sie sich befindet.
-    usage: action
-  - name: Rausch der Jagd
-    source: Waldläufer 2
-    description: Fällt deine markierte Beute, erhältst du sofort einen zusätzlichen [[Aktionspunkte|AP]] und kannst die Markierung kostenlos auf ein neues Ziel übertragen.
   - name: Maske der Wildnis
     source: Waldelf
     description: Du kannst dich verstecken, wenn du nur leicht verdeckt bist — durch Laub, Regen, Nebel oder Schnee. Dazu [[Dunkelsicht]] auf 18 m.

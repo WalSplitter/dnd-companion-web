@@ -25,6 +25,7 @@ appearance:
 class:
   - name: Paladin
     level: 4
+    subclass: Eid der Zuflucht
 species: Mensch
 background: Adeliger
 alignment: Rechtschaffen Gut
@@ -71,18 +72,15 @@ resilience:
 languages: [Gemeinsprache, Celestisch]
 attacks:
   - "[[Kriegshammer]]"
+Merkmale:
+  - "[[Strahlendes Urteil]]"
+  - "[[Handauflegen]]"
+  - "[[Eiferer]]"
+  - "[[Vorbild der Tugend]]"
+  - "[[Heiliger Erlass]]"
+  - "[[Aura der Zuflucht]]"
+  - "[[Mein Leben für meine Freunde]]"
 features:
-  - name: Göttlicher Schutz
-    source: Paladin 1
-    description: Als Reaktion, wenn ein Verbündeter in 1,5 m getroffen wird, ziehst du den Angriff auf dich. Du erhältst den Schaden, darfst aber sofort [[Blocken]].
-    usage: action
-  - name: Handauflegen
-    source: Paladin 1
-    description: Du hast einen Vorrat von 5 × Paladinstufe an Heilung. Mit einer Aktion berührst du eine Kreatur und stellst daraus beliebig viele [[Trefferpunkte]] wieder her.
-    usage: action
-  - name: Richtspruch
-    source: Paladin 2
-    description: Wenn du mit einer Nahkampfwaffe triffst, kannst du 1 [[Resilienzpunkte|RP]] ausgeben, um 2W8 gleißenden Schaden zusätzlich zu verursachen.
   - name: Menschlicher Ehrgeiz
     source: Mensch
     description: Einmal pro Rast darfst du einen misslungenen Fertigkeitswurf wiederholen.

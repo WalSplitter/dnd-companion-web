@@ -25,6 +25,7 @@ appearance:
 class:
   - name: Gauner
     level: 3
+    subclass: Werkzeuge des Schurken
 species: Halbling
 background: Krimineller
 alignment: Chaotisch Neutral
@@ -71,18 +72,14 @@ languages: [Gemeinsprache, Halblingisch, Diebessprache]
 attacks:
   - "[[Rapier]]"
   - "[[Dolch]]"
+Merkmale:
+  - "[[Hinterhältiger Angriff]]"
+  - "[[Skrupelloser Opportunist]]"
+  - "[[Die Regeln brechen]]"
+  - "[[Gaunersprache]]"
+  - "[[Tiefschlag]]"
+  - "[[Süßholz raspeln]]"
 features:
-  - name: Die Regeln brechen
-    source: Gauner 1
-    description: Einmal pro Kampf darfst du nach einem Wurf einen deiner Würfel auf eine Zahl deiner Wahl drehen — solange du die Gruppe dabei nicht ansiehst.
-    usage: action
-  - name: Hinterhältiger Angriff
-    source: Gauner 1
-    description: Triffst du eine Kreatur, die du überrascht hast oder neben der ein Verbündeter steht, verursachst du 2W6 zusätzlichen Schaden. Einmal pro Zug.
-  - name: Schmutziger Trick
-    source: Gauner 2
-    description: Für 1 [[Aktionspunkte|AP]] wirfst du Taschensand oder setzt einen Tiefschlag. Das Ziel ist bis zum Ende deines nächsten Zuges im Nachteil bei Angriffen.
-    usage: action
   - name: Halblingsglück
     source: Halbling
     description: Würfelst du bei einem W20-Wurf eine 1, darfst du neu würfeln und musst das neue Ergebnis verwenden.

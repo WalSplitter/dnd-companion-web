@@ -34,7 +34,8 @@ export function renderObsidianLine(line: string, keyPrefix: string): ReactNode[]
       code !== undefined ? (
         <WikiLink key={key} target={code.trim()} display={code.trim()} />
       ) : (
-        <WikiLink key={key} target={target.trim()} display={alias ? alias.trim() : basename(target)} />
+        // A trailing `\` is the escape of an alias pipe inside a table cell (`[[Target\|Alias]]`).
+        <WikiLink key={key} target={target.replace(/\\$/, '').trim()} display={alias ? alias.trim() : basename(target.replace(/\\$/, ''))} />
       ),
     )
   }

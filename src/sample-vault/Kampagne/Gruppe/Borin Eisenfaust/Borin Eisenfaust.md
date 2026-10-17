@@ -24,6 +24,7 @@ appearance:
 class:
   - name: Krieger
     level: 4
+    subclass: Pfad des Bergherzens
 species: Bergzwerg
 background: Soldat
 alignment: Rechtschaffen Gut
@@ -78,14 +79,17 @@ attacks:
   - "[[Langschwert]]"
   - link: "[[Wurfmesser]]"
     charges: 4
+Merkmale:
+  - "[[Kampfrausch]]"
+  - "[[Ist das schon alles]]"
+  - "[[Wachsende Wut]]"
+  - "[[Eins mit den Ahnen]]"
+  - "[[Blutdurst]]"
+  - "[[Zähigkeit der Berge]]"
+  - "[[Steinerne Widerstandskraft]]"
+  - "[[Unbändiger Rausch]]"
+  - "[[Wildes Arsenal]]"
 features:
-  - name: Zweiter Atem
-    source: Krieger 1
-    description: Einmal pro Rast kannst du als Bonusaktion 1W10 + deine Kriegerstufe an [[Resilienzpunkte]]n zurückgewinnen.
-    usage: action
-  - name: Kampfstil — Verteidigung
-    source: Krieger 1
-    description: Solange du eine Rüstung trägst, ist deine [[Rüstungsklasse]] um 1 erhöht.
   - name: Zwergische Zähigkeit
     source: Bergzwerg
     description: Du bist im Vorteil bei Rettungswürfen gegen Gift. Dazu [[Dunkelsicht]] auf 18 m.

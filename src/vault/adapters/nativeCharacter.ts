@@ -274,7 +274,7 @@ export function deriveEquipment(character: CharacterFrontmatter, files: RawFile[
 
 /** `Einsatz` of a `#Merkmal` note: `[[Aktion]]`/`[[Bonusaktion]]` → action, `[[Reaktion]]` → reaction,
  * anything else (`Passiv`, absent) → passive — the same split as the vault's own sheet embeds. */
-function parseFeatureUsage(raw: unknown): FeatureUsage {
+export function parseFeatureUsage(raw: unknown): FeatureUsage {
   const name = linkFile(raw).trim().toLowerCase()
   if (name === 'aktion' || name === 'bonusaktion') return 'action'
   return name === 'reaktion' ? 'reaction' : 'passive'
@@ -282,7 +282,7 @@ function parseFeatureUsage(raw: unknown): FeatureUsage {
 
 /** A note's short description: its `Beschreibung` field, else the first prose paragraph of its body
  * (skipping headings, embeds and code blocks). */
-function noteSummary(file: RawFile): string | undefined {
+export function noteSummary(file: RawFile): string | undefined {
   if (typeof file.data.Beschreibung === 'string' && file.data.Beschreibung.trim()) return file.data.Beschreibung.trim()
   const paragraph = file.body
     .replace(/```[\s\S]*?```/g, '')

@@ -5,6 +5,7 @@ import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { InventoryPanel } from '../inventory/InventoryPanel'
 import { JournalPanel } from '../journal/JournalPanel'
+import { SkillTreePanel } from '../skill-tree/SkillTreePanel'
 import { SpellsPanel } from '../spells/SpellsPanel'
 import { AbilityScores } from './components/AbilityScores'
 import { BiographyPanel } from './components/BiographyPanel'
@@ -24,7 +25,7 @@ import { hasBiography } from '../../vault/adapters/biography'
 import { exhaustionD20Penalty } from '../../rules/deriveStats'
 import { evasionValue } from '../../rules/endeavour'
 
-type Tab = 'sheet' | 'inventory' | 'spells' | 'journal' | 'biography'
+type Tab = 'sheet' | 'inventory' | 'spells' | 'skills' | 'journal' | 'biography'
 
 export function CharacterSheet({
   character,
@@ -47,6 +48,7 @@ export function CharacterSheet({
     { key: 'inventory', label: t('tabs.inventory') },
     ...(hasSpells ? ([{ key: 'spells', label: t('tabs.spells') }] as const) : []),
     { key: 'journal', label: t('tabs.journal') },
+    ...(character.class.length > 0 ? ([{ key: 'skills', label: t('tabs.skills') }] as const) : []),
     ...(hasBiography(character, body) ? ([{ key: 'biography', label: t('tabs.biography') }] as const) : []),
   ]
 
@@ -115,6 +117,7 @@ export function CharacterSheet({
 
           {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
           {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
+          {tab === 'skills' && <SkillTreePanel character={character} />}
           {tab === 'journal' && <JournalPanel character={character} characterPath={characterPath} />}
           {tab === 'biography' && <BiographyPanel character={character} story={body} />}
         </div>
