@@ -47,6 +47,7 @@ function formatValue(value: unknown): string {
 
 /** `hp.current: 14 → 13`; a large block (a whole inventory) only says that it changed. */
 function changeLine(edit: PendingEdit): string {
+  if (edit.patch.kind === 'create') return `created ${noteName(edit.path)}.md`
   const key = edit.patch.keyPath.join('.')
   const from = formatValue(edit.base)
   const to = formatValue(edit.patch.value)
@@ -76,10 +77,18 @@ export function commitMessage(edits: PendingEdit[], login?: string | null): stri
     groups.set(name, [...(groups.get(name) ?? []), edit])
   }
   const names = [...groups.keys()]
-  const fields = [...new Set(edits.map((e) => fieldName(e.patch.keyPath)))]
+  // The subject names the fields changed; a created note only shows in the body — unless creations are
+  // all that's left (a journal's first entry deleted again before the commit), then it names those.
+  const changed = new Set<string>()
+  const created: string[] = []
+  for (const e of edits) {
+    if (e.patch.kind === 'create') created.push(`${noteName(e.path)}.md`)
+    else changed.add(fieldName(e.patch.keyPath))
+  }
+  const fields = [...changed]
+  const action = fields.length > 0 ? `update ${listOf(fields)}` : `create ${listOf(created)}`
 
-  let subject =
-    names.length === 1 ? `chore(${scopeOf(names[0])}): update ${listOf(fields)}` : `chore(vault): update ${listOf(names)}`
+  let subject = names.length === 1 ? `chore(${scopeOf(names[0])}): ${action}` : `chore(vault): update ${listOf(names)}`
   if (subject.length > SUBJECT_MAX) {
     subject = names.length === 1 ? `chore(${scopeOf(names[0])}): update ${fields.length} fields` : `chore(vault): update ${names.length} characters`
   }

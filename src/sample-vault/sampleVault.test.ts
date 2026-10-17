@@ -4,6 +4,7 @@ import { detectRuleset } from '../vault/detectRuleset'
 import { movementSquares } from '../rules/deriveStats'
 import { evasionValue } from '../rules/endeavour'
 import { equippedWeapons, equipNew } from '../features/inventory/equipment'
+import { resolveClassProgressions } from '../vault/adapters/classProgression'
 import { deriveEquipment } from '../vault/adapters/nativeCharacter'
 import { buildVault, parseVaultFiles } from '../vault/parseFrontmatter'
 import { parseRawFile } from '../vault/rawFile'
@@ -33,6 +34,25 @@ describe('sample vault', () => {
       'Kaelen Dornwacht',
     ])
     expect(detectRuleset(sampleVaultFiles).ruleset).toBe('endeavour')
+  })
+
+  it('gives every character a journal from a few sessions, linked from its own Tagebuch note', () => {
+    for (const { frontmatter: c } of vault.characters) {
+      expect(c.journal?.length, c.name).toBeGreaterThanOrEqual(8)
+      expect(c._write?.journal?.path, c.name).toMatch(/\/Tagebuch [^/]+\.md$/)
+      expect(c._write?.journal?.create, c.name).toBeUndefined()
+    }
+  })
+
+  it('gives every class a level table and every character a chosen subclass', () => {
+    const rawFiles = parseVaultFiles(sampleVaultFiles)
+    for (const { frontmatter: c } of vault.characters) {
+      const [p] = resolveClassProgressions(c, rawFiles)
+      expect(p.fromTable, c.name).toBe(true)
+      expect(p.subclass?.found, c.name).toBe(true)
+      expect(p.nodes.filter((n) => n.kind === 'subclass-placeholder'), c.name).toEqual([])
+      expect(p.nodes.every((n) => n.description), c.name).toBe(true)
+    }
   })
 
   it('derives pools, primary attributes and evasion from the class and armor notes', () => {
@@ -126,7 +146,8 @@ describe('sample vault', () => {
     for (const file of sampleVaultFiles) {
       const { body, data } = parseRawFile(file)
       const text = `${JSON.stringify(data)}\n${body}`
-      for (const [, target] of text.matchAll(/!?\[\[([^\]|#]+)/g)) {
+      // `\|` is an alias pipe escaped inside a table cell.
+      for (const [, target] of text.matchAll(/!?\[\[([^\]|#\\]+)/g)) {
         if (INTENTIONALLY_UNRESOLVED.test(target) || /\.(svg|png|jpe?g|webp)$/i.test(target)) continue
         if (resolveWikilink(index, target).kind === 'unresolved') dangling.add(`${file.path} → ${target}`)
       }

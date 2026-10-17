@@ -25,6 +25,7 @@ appearance:
 class:
   - name: Kleriker
     level: 3
+    subclass: Lichtträger der Gnade
 species: Mensch
 background: Akolythin
 alignment: Neutral Gut
@@ -70,14 +71,14 @@ resilience:
 languages: [Gemeinsprache, Celestisch]
 attacks:
   - "[[Streitkolben]]"
+Merkmale:
+  - "[[Hüter von Leben und Tod]]"
+  - "[[Sengendes Licht]]"
+  - "[[Lebensbund-Geist]]"
+  - "[[Meister des Zwielichts]]"
+  - "[[Das Leben ist schön]]"
+  - "[[Gnädige Heilung]]"
 features:
-  - name: Lebensbund-Geist
-    source: Kleriker 1
-    description: Ein Lichtgeist in Gestalt eines weißen Hirschs begleitet dich. Einmal pro Zug kann er als freie Aktion einem Verbündeten in 6 m Umkreis 1W4 [[Trefferpunkte]] schenken oder einem Gegner 1W4 Schaden zufügen.
-    usage: action
-  - name: Gleichgewicht
-    source: Kleriker 1
-    description: Du wählst Zauber aus den Domänen Leben und Tod. Wirkst du einen Zauber der einen Domäne, kostet der nächste Zauber der anderen Domäne in diesem Kampf 1 [[Mana]] weniger.
   - name: Menschlicher Ehrgeiz
     source: Mensch
     description: Einmal pro Rast darfst du einen misslungenen Fertigkeitswurf wiederholen.

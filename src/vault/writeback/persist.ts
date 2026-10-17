@@ -1,5 +1,6 @@
 import { load } from 'js-yaml'
-import { WORN_SLOTS, type CharacterFrontmatter, type Currency, type EndeavourContainerSlotAssignment, type EquipmentChange, type FieldWriteTarget, type InventoryEntry } from '../types'
+import { serializeJournal } from '../adapters/journal'
+import { WORN_SLOTS, type CharacterFrontmatter, type Currency, type EndeavourContainerSlotAssignment, type EquipmentChange, type FieldWriteTarget, type InventoryEntry, type JournalEntry } from '../types'
 import { patchFrontmatterBlock, patchFrontmatterField, YamlPatchError } from './yamlPatch'
 
 export { YamlPatchError }
@@ -8,16 +9,24 @@ export { YamlPatchError }
  * One edit to a note's frontmatter, as plain data rather than a closure — so it can be queued,
  * persisted across a reload and re-applied onto a newer version of the file (see `github/githubSync.ts`).
  * `field` patches a single scalar line (`patchFrontmatterField`), `block` replaces one key's whole
- * value (`patchFrontmatterBlock`).
+ * value (`patchFrontmatterBlock`). `create` brings a new note into being with `value` as its text
+ * (see `VaultWriter.create`); it leaves a note that already has text alone.
  */
 export type FrontmatterPatch =
   | { kind: 'field'; keyPath: string[]; value: number | boolean; createIfMissing?: boolean }
   | { kind: 'block'; keyPath: string[]; value: unknown; flowLevel?: number; createIfMissing?: boolean }
+  | { kind: 'create'; keyPath: []; value: string }
 
 export function applyPatch(content: string, patch: FrontmatterPatch): string {
+  if (patch.kind === 'create') return content.trim() === '' ? patch.value : content
   return patch.kind === 'field'
     ? patchFrontmatterField(content, patch.keyPath, patch.value, { createIfMissing: patch.createIfMissing })
     : patchFrontmatterBlock(content, patch.keyPath, patch.value, patch.flowLevel, patch.createIfMissing)
+}
+
+/** Creates the note `content` describes (see `VaultWriter.create`). */
+export function createPatch(content: string): FrontmatterPatch {
+  return { kind: 'create', keyPath: [], value: content }
 }
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
@@ -98,6 +107,11 @@ export function conditionsPatch(active: string[]): FrontmatterPatch {
   return { kind: 'block', keyPath: ['conditions', 'active'], value: active.length > 0 ? active : undefined, flowLevel: 1, createIfMissing: true }
 }
 
+/** Rewrites the character's whole `journal` list (see `adapters/journal.ts`); an empty journal removes the key. */
+export function journalPatch(entries: JournalEntry[]): FrontmatterPatch {
+  return { kind: 'block', keyPath: ['journal'], value: entries.length > 0 ? serializeJournal(entries) : undefined, createIfMissing: true }
+}
+
 /** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how
  * the vault's inventory notes hand-write it. */
 export function currencyBlockPatch(currency: Currency): FrontmatterPatch {
@@ -146,6 +160,9 @@ export interface VaultWriter {
   /** Whether `path` is a note this writer knows and can patch. */
   canWrite(path: string): boolean
   write(path: string, patch: FrontmatterPatch, context?: WriteContext): Promise<void>
+  /** Brings a new note at `path` into being with `content` as its text, after which `canWrite(path)`
+   * holds. A note that already exists there is kept as it is. */
+  create(path: string, content: string, context?: WriteContext): Promise<void>
 }
 
 /** What an edit is about, beyond the file and key — used to describe it (e.g. in a commit message). */
@@ -158,15 +175,51 @@ export interface WriteContext {
 export const sandboxWriter: VaultWriter = {
   canWrite: () => true,
   write: () => Promise.resolve(),
+  create: () => Promise.resolve(),
 }
 
-/** Writes through the File System Access handles collected while reading a local vault folder. */
-export function folderWriter(fileHandles: Map<string, FileSystemFileHandle>): VaultWriter {
+/** The file at `path` (vault-relative, `/`-separated) under `root`, creating it — and missing folders —
+ * with `content` when it doesn't exist yet. An existing file is returned untouched. */
+async function createFile(root: FileSystemDirectoryHandle, path: string, content: string): Promise<FileSystemFileHandle> {
+  const segments = path.split('/')
+  const fileName = segments.pop()!
+  let dir = root
+  for (const segment of segments) dir = await dir.getDirectoryHandle(segment, { create: true })
+  try {
+    return await dir.getFileHandle(fileName)
+  } catch (err) {
+    if (!(err instanceof DOMException && err.name === 'NotFoundError')) throw err
+  }
+  const handle = await dir.getFileHandle(fileName, { create: true })
+  const writable = await handle.createWritable()
+  await writable.write(content)
+  await writable.close()
+  return handle
+}
+
+/**
+ * Writes through the File System Access handles collected while reading a local vault folder. New
+ * notes are created under `root`; a write to one still being created waits for it.
+ */
+export function folderWriter(fileHandles: Map<string, FileSystemFileHandle>, root?: FileSystemDirectoryHandle): VaultWriter {
+  const creating = new Map<string, Promise<FileSystemFileHandle>>()
   return {
-    canWrite: (path) => fileHandles.has(path),
-    write: (path, patch) => {
-      const handle = fileHandles.get(path)
-      return handle ? rewriteFile(handle, patch) : Promise.reject(new Error(`no file handle for ${path}`))
+    canWrite: (path) => fileHandles.has(path) || creating.has(path),
+    write: async (path, patch) => {
+      const handle = fileHandles.get(path) ?? (await creating.get(path))
+      if (!handle) throw new Error(`no file handle for ${path}`)
+      return rewriteFile(handle, patch)
+    },
+    create: async (path, content) => {
+      if (fileHandles.has(path)) return
+      if (!root) throw new Error(`cannot create ${path}: no vault folder`)
+      const pending = creating.get(path) ?? createFile(root, path, content)
+      creating.set(path, pending)
+      try {
+        fileHandles.set(path, await pending)
+      } finally {
+        creating.delete(path)
+      }
     },
   }
 }

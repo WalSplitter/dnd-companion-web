@@ -206,6 +206,10 @@ export interface CharacterWriteTargets {
   /** Own schema: the file owning the `currency` key, rewritten as a whole block (it may be a flow map
    * like `{ cp: 1, gp: 2 }` that no scalar patch can address). */
   currency_block?: { path: string }
+  /** The file holding the character's `journal` (see `adapters/journal.ts`): the character's own file,
+   * a linked note, or — with `create` — a `Tagebuch <Name>.md` that doesn't exist yet and is created,
+   * with `create` as its text, on the first entry. */
+  journal?: { path: string; create?: string }
 }
 
 export interface ConditionsInfo {
@@ -362,6 +366,8 @@ export interface CharacterFrontmatter {
   /** Derived (`resolveBiography`): personality, ideals, bonds, flaws and appearance for the
    * "Biography" tab — read from either the own schema or the older German sheet blocks. */
   biography?: CharacterBiography
+  /** The player's session notes, oldest first — see `adapters/journal.ts`. */
+  journal?: JournalEntry[]
   /** Object/data URL for a portrait image, resolved from a vault-relative wikilink/attachment reference. */
   portrait_url?: string
   /** Optional lineup rank (`front`/`middle`/`back`, or `vorne`/`mitte`/`hinten`) overriding the class
@@ -376,6 +382,31 @@ export interface CharacterFrontmatter {
   /** Persistence metadata (not display data) for write-back — see `writeback/`. Absent for a field
    * means it's read-only: no known single vault location to patch. */
   _write?: CharacterWriteTargets
+}
+
+/** What a journal entry is about — each gets its own color and icon in the journal. */
+export const JOURNAL_KINDS = ['note', 'quest', 'npc', 'place', 'loot', 'lore'] as const
+export type JournalKind = (typeof JOURNAL_KINDS)[number]
+
+/**
+ * One note in a character's journal (own schema, `journal:` list). Its text stays in whatever language
+ * the player wrote it in; only the labels around it are translated.
+ */
+export interface JournalEntry {
+  /** Runtime-only, for keys and edits — never written to the vault. */
+  id: string
+  kind: JournalKind
+  /** Markdown; may hold `[[Wikilinks]]`. */
+  text: string
+  title?: string
+  /** Session number the note was taken in. */
+  session?: number
+  /** `YYYY-MM-DD`. */
+  date?: string
+  /** Kept at the top of the journal. */
+  pinned?: boolean
+  /** A quest that's been completed. */
+  done?: boolean
 }
 
 /** When a feature is used (`Einsatz` on a `#Merkmal` note): `[[Aktion]]`, `[[Reaktion]]`, or

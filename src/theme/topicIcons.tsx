@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 
 export type IconProps = { className?: string }
 
-function Icon({ className = 'h-4 w-4', children }: IconProps & { children: ReactNode }) {
+/** The app's line-icon base: a 24 grid stroked in `currentColor`. */
+export function Icon({ className = 'h-4 w-4', children }: IconProps & { children: ReactNode }) {
   return (
     <svg
       viewBox="0 0 24 24"

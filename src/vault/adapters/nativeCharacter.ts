@@ -1,12 +1,13 @@
 import { nimbleAttributeValue } from '../../rules/endeavour'
 import { isEndeavour, parseRuleset } from '../../rules/ruleset'
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
-import { findRawFileByName, type RawFile } from '../rawFile'
+import { backlinksTo, findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
 import type { CharacterFeature, CharacterFrontmatter, CharacterRuleset, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
 import type { ImageAssets } from '../types'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { resolveBiography } from './biography'
+import { resolveJournal } from './journal'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './endeavourItem'
 import { resolveWeaponAttacks } from './weaponAttacks'
 
@@ -88,8 +89,7 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
  * it is used.
  */
 function resolveLinkedFields(own: RawFile, files: RawFile[]) {
-  const target = own.name.trim().toLowerCase()
-  const candidates = [own, ...files.filter((f) => f !== own && linkFile(f.data.Charakter).toLowerCase() === target)]
+  const candidates = [own, ...backlinksTo(files, own.name)]
 
   const blockSource = (key: string): Sourced | undefined => {
     const file = candidates.find((f) => isRecord(f.data[key]))
@@ -273,7 +273,7 @@ export function deriveEquipment(character: CharacterFrontmatter, files: RawFile[
 
 /** `Einsatz` of a `#Merkmal` note: `[[Aktion]]`/`[[Bonusaktion]]` → action, `[[Reaktion]]` → reaction,
  * anything else (`Passiv`, absent) → passive — the same split as the vault's own sheet embeds. */
-function parseFeatureUsage(raw: unknown): FeatureUsage {
+export function parseFeatureUsage(raw: unknown): FeatureUsage {
   const name = linkFile(raw).trim().toLowerCase()
   if (name === 'aktion' || name === 'bonusaktion') return 'action'
   return name === 'reaktion' ? 'reaction' : 'passive'
@@ -281,7 +281,7 @@ function parseFeatureUsage(raw: unknown): FeatureUsage {
 
 /** A note's short description: its `Beschreibung` field, else the first prose paragraph of its body
  * (skipping headings, embeds and code blocks). */
-function noteSummary(file: RawFile): string | undefined {
+export function noteSummary(file: RawFile): string | undefined {
   if (typeof file.data.Beschreibung === 'string' && file.data.Beschreibung.trim()) return file.data.Beschreibung.trim()
   const paragraph = file.body
     .replace(/```[\s\S]*?```/g, '')
@@ -378,7 +378,8 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   }
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
-  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets }
+  const journal = resolveJournal(raw, files)
+  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets, journal: journal.target }
 
   return {
     ...equipped,
@@ -396,6 +397,7 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     class_proficiencies: resolveClassProficiencies(notes),
     portrait_url: resolvePortraitLink(raw.data.portrait, imageAssets),
     biography: resolveBiography(raw.data),
+    journal: journal.journal,
     _write: Object.keys(writeTargets).length > 0 ? writeTargets : undefined,
   }
 }

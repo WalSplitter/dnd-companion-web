@@ -1,0 +1,171 @@
+/* The Journal tab (JournalPanel): a quest-log timeline. In `components`, so the per-kind color
+ * utilities (`KIND_STYLE`) override the neutral chip and medallion. */
+@layer components {
+  /* Grows with its text (Chromium), between three lines and a screenful. */
+  .journal-textarea {
+    field-sizing: content;
+    min-height: 5.5rem;
+    max-height: 60vh;
+    resize: vertical;
+  }
+
+  .journal-count {
+    font-family: var(--font-numeric);
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+  }
+
+  .journal-link {
+    cursor: pointer;
+    color: var(--color-trim);
+  }
+  .journal-link:hover {
+    text-decoration: underline;
+  }
+
+  .journal-submit {
+    border-radius: 0.375rem;
+    border: 1px solid var(--color-trim);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-trim) 32%, var(--color-surface)), color-mix(in srgb, var(--color-trim) 14%, var(--color-surface)));
+    padding: 0.4rem 1rem;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-fg);
+    cursor: pointer;
+    box-shadow: 0 0 14px -6px var(--color-trim);
+  }
+  .journal-submit:hover:not(:disabled) {
+    box-shadow: 0 0 18px -4px var(--color-trim);
+  }
+  .journal-submit:disabled {
+    cursor: default;
+    opacity: 0.45;
+    box-shadow: none;
+  }
+
+  /* Actions show on hover or focus; touch screens always see them. */
+  @media (hover: hover) {
+    .journal-entry .journal-actions {
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+    .journal-entry:hover .journal-actions,
+    .journal-entry:focus-within .journal-actions {
+      opacity: 1;
+    }
+  }
+
+  .journal-session-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-trim);
+  }
+  /* The session number on a small gilded seal. */
+  .journal-session-medal {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: 0.3rem;
+    border-radius: 999px;
+    border: 2px solid var(--color-trim);
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--color-trim) 35%, var(--color-surface)), var(--color-surface) 70%);
+    font-family: var(--font-numeric);
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    color: var(--color-fg);
+    box-shadow:
+      0 0 0 2px var(--color-surface),
+      0 0 14px -4px var(--color-trim);
+  }
+
+  /* A vertical line the entries hang from, each on a medallion in its kind's color. */
+  .journal-timeline {
+    position: relative;
+    margin-left: 1rem;
+    padding-left: 1.6rem;
+    border-left: 1px solid color-mix(in srgb, var(--color-trim) 28%, transparent);
+    display: grid;
+    gap: 0.75rem;
+  }
+  .journal-node {
+    position: absolute;
+    left: calc(-1.6rem - 1rem - 0.5px);
+    top: 0.6rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: 2px solid color-mix(in srgb, var(--color-trim) 40%, transparent);
+    isolation: isolate;
+  }
+  /* Opaque under the kind's translucent tint, so the timeline line doesn't show through. */
+  .journal-node::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--color-surface);
+  }
+  .journal-card {
+    border-radius: 0.5rem;
+    /* The left edge is the kind's color (`border-l-4` + `KIND_STYLE.edge`, utilities win). */
+    border: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 85%, transparent), color-mix(in srgb, var(--color-surface) 85%, transparent));
+    padding: 0.75rem 0.9rem;
+    transition: box-shadow 200ms ease;
+  }
+  .journal-entry:hover .journal-card {
+    box-shadow: 0 0 18px -10px var(--color-trim);
+  }
+  /* The entry a quest-tracker click jumped to. */
+  .journal-flash .journal-card {
+    animation: journal-flash 1.5s ease-out;
+  }
+  @keyframes journal-flash {
+    0%,
+    30% {
+      box-shadow:
+        0 0 0 2px var(--color-trim),
+        0 0 24px -4px var(--color-trim);
+    }
+    100% {
+      box-shadow: none;
+    }
+  }
+
+  .journal-quest-box {
+    display: grid;
+    place-items: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    transform: rotate(45deg) scale(0.85);
+    border: 1.5px solid rgb(245 158 11 / 0.8);
+    cursor: pointer;
+  }
+  .journal-quest-box > svg {
+    transform: rotate(-45deg);
+  }
+  .journal-quest-box:hover:not(:disabled) {
+    background: rgb(245 158 11 / 0.2);
+  }
+  .journal-quest-box:hover:not(:disabled) > svg {
+    opacity: 1;
+  }
+  .journal-quest-box:disabled {
+    cursor: default;
+  }
+
+}

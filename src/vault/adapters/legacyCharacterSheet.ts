@@ -1,6 +1,6 @@
 import { isRecord, resolvePortraitLink } from '../frontmatterFields'
 import { linkDisplay, linkFile, wikilinkTarget } from '../wikilinkSyntax'
-import { findRawFileByName, type RawFile } from '../rawFile'
+import { backlinksTo, findRawFileByName, type RawFile } from '../rawFile'
 import type {
   AbilityKey,
   CharacterFeature,
@@ -18,6 +18,7 @@ import type {
 } from '../types'
 import { abilityModifier } from '../../rules/dnd5e'
 import { resolveBiography } from './biography'
+import { resolveJournal } from './journal'
 import { resolveLegacyDefense } from './legacyDefense'
 import { extractItemTable } from './markdownTable'
 import type { ImageAssets } from '../types'
@@ -144,9 +145,8 @@ function collectFeatures(data: Record<string, unknown>, files: RawFile[]): Chara
  * backlink) matters because a character can have several such linked sheets.
  */
 function findLinkedSheet(characterFileName: string, files: RawFile[], namePrefix: string): RawFile | undefined {
-  const target = characterFileName.trim().toLowerCase()
   const prefix = namePrefix.toLowerCase()
-  return files.find((f) => f.name.toLowerCase().startsWith(prefix) && linkFile(f.data.Charakter).toLowerCase() === target)
+  return backlinksTo(files, characterFileName).find((f) => f.name.toLowerCase().startsWith(prefix))
 }
 
 /**
@@ -156,12 +156,7 @@ function findLinkedSheet(characterFileName: string, files: RawFile[], namePrefix
  * those same fields directly on the character file itself. Detected by content, not filename.
  */
 function findSpellSource(characterFileName: string, files: RawFile[]): RawFile | undefined {
-  const target = characterFileName.trim().toLowerCase()
-  return files.find(
-    (f) =>
-      linkFile(f.data.Charakter).toLowerCase() === target &&
-      (Array.isArray(f.data.Zauber) || isRecord(f.data.Zauberplätze)),
-  )
+  return backlinksTo(files, characterFileName).find((f) => Array.isArray(f.data.Zauber) || isRecord(f.data.Zauberplätze))
 }
 
 function firstRecord(...candidates: unknown[]): Record<string, unknown> {
@@ -530,7 +525,9 @@ export function normalizeLegacyCharacter(
 
   const conditionTargets = resolveConditionWriteTargets(file.path, conditions)
   const spellSlotTargets = resolveSpellSlotWriteTargets(file.path, data, spellSheetFile, spellcasting?.slots)
+  const journal = resolveJournal(file, allFiles)
   const writeTargets: CharacterWriteTargets = {
+    journal: journal.target,
     ...(isRecord(data.Gesundheit)
       ? { hp_current: { path: file.path, keyPath: ['Gesundheit', 'TP'] }, hp_temp: { path: file.path, keyPath: ['Gesundheit', 'TempTP'] } }
       : {}),
@@ -572,6 +569,7 @@ export function normalizeLegacyCharacter(
     features: collectFeatures(data, allFiles),
     portrait_url: resolvePortraitLink(hintergrund.Bild, imageAssets),
     biography: resolveBiography(data),
+    journal: journal.journal,
     conditions,
     resource_pools: resourcePools,
     attacks,

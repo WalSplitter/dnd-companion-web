@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fieldPatch } from '../writeback/persist'
+import { journalNoteContent } from '../adapters/journal'
+import { fieldPatch, journalPatch, readFrontmatterValue } from '../writeback/persist'
 import type { GitHubVaultRef } from './githubApi'
 import { GitHubSync, sameValue, type PendingEdit, type SyncStatus } from './githubSync'
 
@@ -268,5 +269,60 @@ describe('GitHubSync', () => {
     repo.writesForbidden = false
     await sync.flush()
     expect(repo.fileAt('Vault/Brünhild.md')).toBe(note(5))
+  })
+})
+
+describe('GitHubSync creating notes', () => {
+  const entries = [{ id: 'a', kind: 'quest' as const, title: 'Den Pass sichern', text: 'Brom zahlt 50 GM.', session: 2 }]
+
+  it('commits a new note together with the edits made to it', async () => {
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const { sync } = makeSync()
+    const path = 'Tagebuch Brünhild.md'
+    expect(sync.canWrite(path)).toBe(false)
+
+    await sync.create(path, journalNoteContent('Brünhild'), { character: 'Brünhild' })
+    expect(sync.canWrite(path)).toBe(true)
+    await sync.write(path, journalPatch(entries), { character: 'Brünhild' })
+    await sync.flush()
+
+    expect(repo.appCommits).toHaveLength(1)
+    const written = repo.fileAt(`Vault/${path}`)!
+    expect(readFrontmatterValue(written, ['Charakter'])).toBe('[[Brünhild]]')
+    expect(readFrontmatterValue(written, ['journal'])).toEqual([{ session: 2, kind: 'quest', title: 'Den Pass sichern', text: 'Brom zahlt 50 GM.' }])
+    expect(repo.appCommits[0].message).toContain('chore(brünhild): update journal')
+    expect(repo.appCommits[0].message).toContain('- created Tagebuch Brünhild.md')
+    expect(sync.status).toEqual({ state: 'synced' })
+  })
+
+  it('keeps a note someone else created meanwhile and only patches it', async () => {
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const { sync } = makeSync()
+    const path = 'Tagebuch Brünhild.md'
+    await sync.create(path, journalNoteContent('Brünhild'))
+    await sync.write(path, journalPatch(entries))
+    repo.push(`Vault/${path}`, '---\nCharakter: "[[Brünhild]]"\ntags: [eigene]\n---\nSchon da.\n')
+    await sync.flush()
+
+    const written = repo.fileAt(`Vault/${path}`)!
+    expect(readFrontmatterValue(written, ['tags'])).toEqual(['eigene'])
+    expect(readFrontmatterValue(written, ['journal'])).toHaveLength(1)
+    expect(written).toContain('Schon da.')
+  })
+
+  it('restores a queued creation after a reload', async () => {
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const first = makeSync()
+    await first.sync.create('Neu.md', journalNoteContent('Brünhild'))
+    await first.sync.write('Neu.md', journalPatch(entries))
+    const { sync } = makeSync({ restored: first.persisted.at(-1) })
+    expect(sync.canWrite('Neu.md')).toBe(true)
+    // Not in the repository's files, so the reload adds it to show its queued journal.
+    const local = sync.localFiles([{ path: 'Brünhild.md', content: note(12) }])
+    expect(local.map((f) => f.path)).toEqual(['Brünhild.md', 'Neu.md'])
+    expect(readFrontmatterValue(local[1].content, ['journal'])).toHaveLength(1)
+    await sync.flush()
+    expect(sync.localFiles([]).map((f) => f.path)).toEqual([])
+    expect(readFrontmatterValue(repo.fileAt('Vault/Neu.md')!, ['journal'])).toHaveLength(1)
   })
 })

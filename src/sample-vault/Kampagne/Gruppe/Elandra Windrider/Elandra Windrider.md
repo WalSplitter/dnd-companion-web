@@ -19,6 +19,7 @@ appearance: Schlank und hochgewachsen, silberblondes Haar, das sie mit einem Fed
 class:
   - name: Arkanist
     level: 3
+    subclass: Beschwörer der Kontrolle
 species: Hochelfe
 background: Gelehrte
 alignment: Neutral Gut
@@ -65,13 +66,13 @@ languages: [Gemeinsprache, Elfisch, Drakonisch]
 attacks:
   - "[[Kampfstab]]"
   - "[[Dolch]]"
+Merkmale:
+  - "[[Elementare Zauberkunst]]"
+  - "[[Begabter Forscher]]"
+  - "[[Elementare Meisterschaft]]"
+  - "[[Schicksal verweigern]]"
+  - "[[Willenskraft]]"
 features:
-  - name: Arkane Erholung
-    source: Arkanist 1
-    description: Einmal pro Tag erhältst du nach einer kurzen Rast verbrauchte Zauberplätze mit einem Gesamtgrad von bis zu der Hälfte deiner Arkanisten-Stufe (aufgerundet) zurück.
-  - name: Zauberbuch
-    source: Arkanist 1
-    description: Deine Zauber stehen in einem Zauberbuch. Neue Formeln kannst du hineinkopieren, wenn du sie findest — gewirkt wird mit [[Verstand]].
   - name: Elfenblut
     source: Hochelfe
     description: Du bist im Vorteil gegen Bezauberung, und Magie kann dich nicht in Schlaf versetzen. Dazu [[Dunkelsicht]] auf 18 m.

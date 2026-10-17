@@ -1,4 +1,5 @@
-import { applyPatch, readFrontmatterValue, type FrontmatterPatch, type VaultWriter, type WriteContext } from '../writeback/persist'
+import { applyPatch, createPatch, readFrontmatterValue, type FrontmatterPatch, type VaultWriter, type WriteContext } from '../writeback/persist'
+import type { VaultSourceFile } from '../types'
 import { commitMessage } from './commitMessage'
 import {
   commitFiles,
@@ -72,6 +73,9 @@ export function sameValue(a: unknown, b: unknown): boolean {
 
 const keyOf = (keyPath: string[]) => keyPath.join('\u0000')
 
+/** Key of a note's `create` edit (its key path is empty). */
+const CREATE_KEY = keyOf([])
+
 /** How often a commit is retried when the branch moved between reading its head and updating it. */
 const MAX_ATTEMPTS = 3
 
@@ -103,8 +107,9 @@ export class GitHubSync implements VaultWriter {
   constructor(options: GitHubSyncOptions) {
     this.options = options
     for (const [path, content] of options.contents) this.remote.set(path, { content, commit: options.commitSha })
+    const created = new Set((options.restored ?? []).filter((e) => e.patch.kind === 'create').map((e) => e.path))
     for (const edit of options.restored ?? []) {
-      if (!this.remote.has(edit.path)) continue
+      if (!this.remote.has(edit.path) && !created.has(edit.path)) continue
       const fileEdits = this.edits.get(edit.path) ?? new Map<string, PendingEdit>()
       fileEdits.set(keyOf(edit.patch.keyPath), edit)
       this.edits.set(edit.path, fileEdits)
@@ -133,8 +138,8 @@ export class GitHubSync implements VaultWriter {
   /** A note's text as this browser sees it: the repository's version plus every queued edit that fits. */
   localContent(path: string): string | undefined {
     const remote = this.remote.get(path)
-    if (!remote) return undefined
-    let content = remote.content
+    if (!remote && !this.creates(path)) return undefined
+    let content = remote?.content ?? ''
     for (const edit of this.edits.get(path)?.values() ?? []) {
       try {
         content = applyPatch(content, edit.patch)
@@ -146,19 +151,42 @@ export class GitHubSync implements VaultWriter {
   }
 
   canWrite(path: string): boolean {
-    return this.remote.has(path)
+    return this.remote.has(path) || this.creates(path)
+  }
+
+  /**
+   * The vault's files as this browser sees them: `files` (the repository's) with every queued edit
+   * applied, plus the notes queued to be created that the repository doesn't have yet — without
+   * them, a reload would show (and the next edit overwrite) an empty journal instead of the queued one.
+   */
+  localFiles(files: VaultSourceFile[]): VaultSourceFile[] {
+    if (this.edits.size === 0) return files
+    const known = new Set(files.map((f) => f.path))
+    const created = [...this.edits.keys()].filter((path) => !known.has(path) && this.creates(path))
+    return [...files.map((f) => ({ ...f, content: this.localContent(f.path) ?? f.content })), ...created.map((path) => ({ path, content: this.localContent(path)! }))]
+  }
+
+  /** Whether a note that isn't in the repository yet is queued to be created at `path`. */
+  private creates(path: string): boolean {
+    return this.edits.get(path)?.has(CREATE_KEY) ?? false
+  }
+
+  /** Queues the new note for the next commit — nothing to do when the repository already has it. */
+  create(path: string, content: string, context?: WriteContext): Promise<void> {
+    if (this.remote.has(path) || this.creates(path)) return Promise.resolve()
+    return this.write(path, createPatch(content), context)
   }
 
   async write(path: string, patch: FrontmatterPatch, context?: WriteContext): Promise<void> {
     const remote = this.remote.get(path)
-    if (!remote) throw new Error(`no such note in the repository: ${path}`)
+    if (!remote && patch.kind !== 'create' && !this.creates(path)) throw new Error(`no such note in the repository: ${path}`)
     // Throws (so the store rolls the edit back) when the note doesn't have the shape the patch expects.
-    applyPatch(this.localContent(path)!, patch)
+    applyPatch(this.localContent(path) ?? '', patch)
 
     const key = keyOf(patch.keyPath)
     const fileEdits = this.edits.get(path) ?? new Map<string, PendingEdit>()
     const previous = fileEdits.get(key)
-    const base = previous ? previous.base : readFrontmatterValue(remote.content, patch.keyPath)
+    const base = previous ? previous.base : remote && patch.kind !== 'create' ? readFrontmatterValue(remote.content, patch.keyPath) : undefined
     fileEdits.delete(key) // re-inserted last, keeping edit order
     // Changed back to what the repository has — nothing left to commit for this key.
     const character = context?.character ?? previous?.character
@@ -288,13 +316,19 @@ export class GitHubSync implements VaultWriter {
 
       for (const path of new Set(batch.map((e) => e.path))) {
         const edits = batch.filter((e) => e.path === path)
-        const remote = await this.remoteAt(path, head.commitSha)
+        const fetched = await this.remoteAt(path, head.commitSha)
+        // A note this browser creates starts out empty; one someone else created meanwhile is kept.
+        const remote = fetched ?? (edits.some((e) => e.patch.kind === 'create') ? '' : null)
         if (remote === null) {
           conflicts.push(...edits.map((e) => ({ path, keyPath: e.patch.keyPath, base: e.base, theirs: undefined, mine: e.patch.value, fileGone: true })))
           continue
         }
         let content = remote
         for (const edit of edits) {
+          if (edit.patch.kind === 'create') {
+            content = applyPatch(content, edit.patch)
+            continue
+          }
           const theirs = readFrontmatterValue(content, edit.patch.keyPath)
           const conflict = { path, keyPath: edit.patch.keyPath, base: edit.base, theirs, mine: edit.patch.value }
           if (!sameValue(theirs, edit.base) && !sameValue(theirs, edit.patch.value)) {

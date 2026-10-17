@@ -3,7 +3,7 @@ import { isEndeavour } from '../../rules/ruleset'
 import { hasTag, tagList } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type { CharacterFrontmatter, NimbleAttributeKey, WeaponAttack, WeaponKind } from '../types'
-import { basename, linkFile } from '../wikilinkSyntax'
+import { linkFile, linksToText } from '../wikilinkSyntax'
 import { looksLikeEndeavourItem } from './endeavourItem'
 
 /**
@@ -24,23 +24,20 @@ import { looksLikeEndeavourItem } from './endeavourItem'
  * without a note (claws, an improvised weapon). A link to a missing or non-weapon note is dropped.
  */
 
-/** `"[[Hiebschaden]]/[[Stichschaden]]"` -> `"Hiebschaden/Stichschaden"` — every wikilink inside a
- * string replaced by its display text, not just a string that is one whole link. */
-function linksToText(raw: unknown): string | undefined {
+/** A cell value as plain text (see `linksToText`); `undefined` when empty or not text. */
+function cellText(raw: unknown): string | undefined {
   if (typeof raw !== 'string' && typeof raw !== 'number') return undefined
-  const text = String(raw)
-    .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target: string, alias?: string) => (alias ?? basename(target)).trim())
-    .trim()
+  const text = linksToText(String(raw)).trim()
   return text || undefined
 }
 
 function propertyList(raw: unknown): string[] {
-  return Array.isArray(raw) ? raw.map(linksToText).filter((p): p is string => Boolean(p)) : []
+  return Array.isArray(raw) ? raw.map(cellText).filter((p): p is string => Boolean(p)) : []
 }
 
 /** `"1,5(1)"` (meters, then squares) -> `"1,5 m"`; the ranged `Range1-3` become `"3/6/12 m"`. */
 function meters(parts: unknown[]): string | undefined {
-  const values = parts.map((p) => linksToText(p)?.replace(/\s*\(\d+\)$/, '')).filter((p): p is string => Boolean(p))
+  const values = parts.map((p) => cellText(p)?.replace(/\s*\(\d+\)$/, '')).filter((p): p is string => Boolean(p))
   return values.length > 0 ? `${values.join('/')} m` : undefined
 }
 
@@ -58,7 +55,7 @@ function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFron
   const attacks: WeaponAttack[] = []
 
   const add = (kind: WeaponKind, label: string, dice: unknown, type: unknown, range: string | undefined, properties: string[]) => {
-    const damageDice = linksToText(dice)
+    const damageDice = cellText(dice)
     if (!damageDice) return
     const attribute = attributeFor(kind, finesse, character)
     const bonus = nimbleAttributeValue(character, attribute)
@@ -69,7 +66,7 @@ function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFron
       attack_bonus: bonus,
       damage_dice: damageDice,
       damage_bonus: bonus,
-      damage_type: linksToText(type),
+      damage_type: cellText(type),
       range: range ?? '',
       properties,
     })

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
@@ -17,8 +18,27 @@ import { StartPage } from './routes/StartPage'
 import { VaultLayout } from './routes/VaultLayout'
 import { useVaultStore } from './store/vaultStore'
 
+/** Publishes the sticky header's height as `--app-header-h` on the root, so floating panels can
+ * start right below it (see `.st-sheet`), however the header wraps. */
+function useHeaderHeightVar() {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const header = ref.current
+    if (!header) return
+    const root = document.documentElement
+    const observer = new ResizeObserver(() => root.style.setProperty('--app-header-h', `${header.getBoundingClientRect().height}px`))
+    observer.observe(header)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--app-header-h')
+    }
+  }, [])
+  return ref
+}
+
 function App() {
   const t = useT()
+  const headerRef = useHeaderHeightVar()
   const isLoading = useVaultStore((s) => s.status === 'loading')
   const loadingProgress = useVaultStore((s) => s.loadingProgress)
   // The start page brings its own vault controls; the header's only matter once a vault is open.
@@ -40,7 +60,7 @@ function App() {
       <TooltipLayer />
       {inOwlbear && <OwlbearNavigator />}
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
-      <header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
+      <header ref={headerRef} className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
         {/* In Owlbear the panel can be narrow, and the header stays one row there: as the panel narrows,
             the role becomes an icon, the language switcher one button, and finally the brand goes. */}
         <div

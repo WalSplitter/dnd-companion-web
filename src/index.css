@@ -23,6 +23,9 @@
 @import './styles/spells.css';
 @import './styles/dice.css';
 @import './styles/inventory.css';
+@import './styles/controls.css';
+@import './styles/journal.css';
+@import './styles/skill-tree.css';
 
 /* Viewport-height variants, for pages that should fit one screen (the start page): `short` for
  * laptop-height windows, `tight` for small ones (1366×768 / 1280×720 with browser chrome). */
