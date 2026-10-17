@@ -430,7 +430,8 @@
     color: var(--color-fg);
   }
 
-  /* The selected feature's details float beside the board (and slide up from the bottom on phones). */
+  /* The selected feature's details: docked beside its tile on wide screens (placed by `DetailSheet`;
+     top right until it has measured), a sheet at the bottom on phones. */
   .st-sheet {
     position: fixed;
     right: 1.5rem;
@@ -443,10 +444,22 @@
     box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.75);
     animation: st-sheet-in 180ms ease-out;
   }
+  .st-sheet[data-side] {
+    right: auto;
+  }
+  .st-sheet[data-side='left'] {
+    --st-sheet-from: translateX(-12px);
+  }
+  .st-sheet[data-side='below'] {
+    --st-sheet-from: translateY(-8px);
+  }
+  .st-sheet[data-side='above'] {
+    --st-sheet-from: translateY(8px);
+  }
   @keyframes st-sheet-in {
     from {
       opacity: 0;
-      transform: translateX(12px);
+      transform: var(--st-sheet-from, translateX(12px));
     }
   }
   @media (width < 64rem) {

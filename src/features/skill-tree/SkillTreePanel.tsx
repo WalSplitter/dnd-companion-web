@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Card } from '../../components/Card'
 import { renderObsidianBody } from '../../components/obsidian/renderObsidian'
@@ -164,6 +164,7 @@ function BoardView({
             <button
               key={node.id}
               type="button"
+              data-st-node={node.id}
               className={`st-cell ${selectedId === node.id ? 'st-selected' : ''} ${dim ? 'st-dim' : ''} ${matches?.has(node.id) ? 'st-match' : ''}`}
               style={{ left: p.x - p.width / 2, top: p.y - p.size / 2, width: p.width }}
               aria-label={`${node.name}, ${t('skills.level', { n: node.level })}, ${statusText(t, node, level)}`}
@@ -198,7 +199,7 @@ function BoardView({
           </div>
         ))}
 
-        {hovered && <NodeTooltip node={hovered.node} level={level} x={hovered.x} y={hovered.y - hovered.size / 2} boardWidth={width} />}
+        {hovered && hoverId !== selectedId && <NodeTooltip node={hovered.node} level={level} x={hovered.x} y={hovered.y - hovered.size / 2} boardWidth={width} />}
       </div>
     </div>
   )
@@ -311,14 +312,146 @@ function NodeDetail({ progression, node, tier, onSelect }: { progression: ClassP
   )
 }
 
+/** Wide enough to dock the details beside a tile; narrower screens get the bottom sheet (see skill-tree.css). */
+const DOCK_QUERY = '(width >= 64rem)'
+const DOCK_GAP = 14
+const DOCK_MARGIN = 8
+
+type SheetSide = 'right' | 'left' | 'below' | 'above'
+type SheetPlacement = { top: number; left: number; side: SheetSide }
+
+/** The element a node's details point at: its tile on the board or in the list, else its "up next" entry. */
+function anchorFor(id: string): HTMLElement | null {
+  const sel = `[data-st-node="${CSS.escape(id)}"]`
+  const button = document.querySelector<HTMLElement>(`.st-board ${sel}, .st-list ${sel}`) ?? document.querySelector<HTMLElement>(sel)
+  return button?.querySelector<HTMLElement>('.st-tile') ?? button
+}
+
+function headerHeight(): number {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-header-h')) || 72
+}
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, Math.max(min, max)))
+
 /**
- * The selected feature's details, floating beside the board: rendered into `body` so nothing on the
- * page (the breadcrumb bar, a panel's stacking context) can paint over it, and placed below the
- * sticky app header (`--app-header-h`) so its close button always shows. Phones get it as a sheet
- * at the bottom.
+ * Beside the tile — right of it if there's room, else left, else under or over it — and kept inside
+ * the viewport below the header. It never leaves the tile's height, though: scroll the tile away and
+ * the details go with it rather than hanging on to the screen's edge.
  */
-function DetailSheet({ children }: { children: ReactNode }) {
-  return createPortal(<aside className="st-sheet">{children}</aside>, document.body)
+function placeSheet(tile: DOMRect, sheet: { width: number; height: number }): SheetPlacement {
+  const vw = document.documentElement.clientWidth
+  const vh = window.innerHeight
+  const minTop = headerHeight() + DOCK_MARGIN
+  const maxTop = vh - DOCK_MARGIN - sheet.height
+
+  const side: SheetSide =
+    tile.right + DOCK_GAP + sheet.width <= vw - DOCK_MARGIN
+      ? 'right'
+      : tile.left - DOCK_GAP - sheet.width >= DOCK_MARGIN
+        ? 'left'
+        : tile.bottom + DOCK_GAP + sheet.height <= vh - DOCK_MARGIN
+          ? 'below'
+          : 'above'
+
+  if (side === 'right' || side === 'left') {
+    // The heading level with the tile; then on screen; then still overlapping the tile's height.
+    const top = clamp(clamp(tile.top - 24, minTop, maxTop), tile.bottom - sheet.height, tile.top)
+    return { side, top, left: side === 'right' ? tile.right + DOCK_GAP : tile.left - DOCK_GAP - sheet.width }
+  }
+  const left = clamp(tile.left + tile.width / 2 - sheet.width / 2, DOCK_MARGIN, vw - DOCK_MARGIN - sheet.width)
+  return { side, left, top: side === 'below' ? tile.bottom + DOCK_GAP : Math.max(minTop, tile.top - DOCK_GAP - sheet.height) }
+}
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(query).matches)
+  useEffect(() => {
+    const mql = window.matchMedia?.(query)
+    if (!mql) return
+    const onChange = () => setMatches(mql.matches)
+    onChange()
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [query])
+  return matches
+}
+
+/**
+ * The selected feature's details, docked beside its tile: rendered into `body` so nothing on the
+ * page (the breadcrumb bar, a panel's stacking context) can paint over it, and kept below the sticky
+ * app header (`--app-header-h`) so its close button always shows. It follows the tile as the page or
+ * the board scrolls; a tile off screen (picked from "up next" or a rank) is scrolled into view first.
+ * Phones get it as a sheet at the bottom. Escape or a click elsewhere closes it.
+ */
+function DetailSheet({ anchorId, onClose, children }: { anchorId: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+  const docked = useMediaQuery(DOCK_QUERY)
+  const [placement, setPlacement] = useState<SheetPlacement | null>(null)
+  const closeRef = useRef(onClose)
+  useEffect(() => {
+    closeRef.current = onClose
+  })
+
+  useEffect(() => {
+    if (!docked) return
+    const tile = anchorFor(anchorId)
+    if (!tile) return
+    const rect = tile.getBoundingClientRect()
+    if (rect.top < headerHeight() || rect.bottom > window.innerHeight) tile.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+  }, [anchorId, docked])
+
+  // Measured before paint, so the sheet never shows in its fallback corner first.
+  useLayoutEffect(() => {
+    const sheet = ref.current
+    if (!docked || !sheet) {
+      setPlacement(null)
+      return
+    }
+    let frame = 0
+    const update = () => {
+      const tile = anchorFor(anchorId)
+      const next = tile ? placeSheet(tile.getBoundingClientRect(), sheet.getBoundingClientRect()) : null
+      setPlacement((prev) => (prev && next && prev.top === next.top && prev.left === next.left && prev.side === next.side ? prev : next))
+    }
+    const schedule = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(update)
+    }
+    update()
+    // Capture: the board scrolls sideways in its own container once its lanes are at their minimum.
+    window.addEventListener('scroll', schedule, { capture: true, passive: true })
+    window.addEventListener('resize', schedule)
+    const observer = new ResizeObserver(schedule)
+    observer.observe(sheet)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule, { capture: true })
+      window.removeEventListener('resize', schedule)
+      observer.disconnect()
+    }
+  }, [anchorId, docked])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
+    // Another tile only switches the details (its own click handles that), anything else closes them.
+    const onPointer = (e: PointerEvent) => {
+      const target = e.target as Element | null
+      if (target && !ref.current?.contains(target) && !target.closest('[data-st-node]')) closeRef.current()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onPointer)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onPointer)
+    }
+  }, [])
+
+  const style: CSSProperties | undefined = placement ? { top: placement.top, left: placement.left } : undefined
+  return createPortal(
+    <aside ref={ref} className="st-sheet" data-side={placement?.side} style={style}>
+      {children}
+    </aside>,
+    document.body,
+  )
 }
 
 /** The values of the highest level at or below `level` that lists any (a subclass table only names some levels). */
@@ -357,7 +490,7 @@ function Overview({ progression, onSelect }: { progression: ClassProgression; on
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
             {upcoming.map((n) => (
               <li key={n.id}>
-                <button type="button" onClick={() => onSelect(n.id)} className="st-upcoming">
+                <button type="button" data-st-node={n.id} onClick={() => onSelect(n.id)} className="st-upcoming">
                   <Tile node={n} tier="minor" state="next" size={28} />
                   {n.name}
                 </button>
@@ -411,6 +544,7 @@ function ListView({ progression, matches, selectedId, onSelect }: { progression:
                     <button
                       key={n.id}
                       type="button"
+                      data-st-node={n.id}
                       onClick={() => onSelect(n.id)}
                       aria-pressed={selectedId === n.id}
                       className={`rpg-chip st-list-chip ${n.source === 'subclass' ? 'st-sub' : ''} ${selectedId === n.id ? 'st-selected' : ''} ${matches !== null && !matches.has(n.id) ? 'st-dim' : ''}`}
@@ -528,7 +662,7 @@ export function SkillTreePanel({ character }: { character: CharacterFrontmatter 
       </div>
 
       {selected && (
-        <DetailSheet>
+        <DetailSheet anchorId={selected.id} onClose={() => setSelectedId(null)}>
           <NodeDetail progression={progression} node={selected} tier={selectedTier} onSelect={setSelectedId} />
         </DetailSheet>
       )}
