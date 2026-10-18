@@ -94,6 +94,7 @@ function CloudIcon({ state }: { state: SyncStatus['state'] }) {
     syncing: <path className="origin-[12px_14px] animate-spin" d="M14.4 14a2.4 2.4 0 1 1-.9-1.9" />,
     error: <path d="M12 11.5v2.6m0 2.2h.01" />,
     conflict: <path d="M10 11.5v5m4-5v5m-4-2.5h4" />,
+    offline: <path d="M4 4l16 16" />,
   }
   return (
     <svg viewBox="0 0 24 24" className="size-[1.15rem]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -105,8 +106,8 @@ function CloudIcon({ state }: { state: SyncStatus['state'] }) {
 
 /**
  * The GitHub half of the header's edit pill: a cloud showing where the vault's edits stand — saved,
- * waiting (with a count; click: save now), saving, failed (click: retry) or in conflict (click:
- * resolve). The words are in its tooltip, to keep the header narrow.
+ * waiting (with a count; click: save now), saving, failed (click: retry), in conflict (click:
+ * resolve) or waiting for a connection (with a count). The words are in its tooltip, to keep the header narrow.
  */
 export function SyncSegment({ className = '' }: { className?: string }) {
   const t = useT()
@@ -131,12 +132,13 @@ export function SyncSegment({ className = '' }: { className?: string }) {
       onClick: () => void syncNow(),
     },
     conflict: { label: t('github.sync.conflict'), hint: t('github.conflict.body'), color: 'bg-warning/10 text-warning hover:bg-warning/20', onClick: () => setShowConflicts(true) },
+    offline: { label: t('github.sync.offline'), hint: t('github.sync.offlineTooltip'), color: 'text-fg-muted' },
   }
   const { label, hint, color, onClick } = view[sync.state]
   const content = (
     <>
       <CloudIcon state={sync.state} />
-      {sync.state === 'pending' && <span className="font-num text-xs font-bold">{sync.count}</span>}
+      {(sync.state === 'pending' || (sync.state === 'offline' && sync.count > 0)) && <span className="font-num text-xs font-bold">{sync.count}</span>}
     </>
   )
   const classes = `flex items-center gap-1 px-2.5 transition ${color} ${className}`

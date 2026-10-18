@@ -258,6 +258,23 @@ describe('GitHubSync', () => {
     expect(sync.pendingCount).toBe(0)
   })
 
+  it('waits for the connection instead of failing while the browser is offline', async () => {
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const { sync, statuses } = makeSync()
+    vi.stubGlobal('navigator', { onLine: false })
+
+    await sync.write('Brünhild.md', fieldPatch(hpTarget, 7))
+    await sync.flush()
+    expect(repo.appCommits).toHaveLength(0)
+    expect(statuses.at(-1)).toEqual({ state: 'offline', count: 1 })
+
+    // Back online (`start()` flushes on the `online` event).
+    vi.stubGlobal('navigator', { onLine: true })
+    await sync.flush()
+    expect(sync.status).toEqual({ state: 'synced' })
+    expect(repo.appCommits).toHaveLength(1)
+  })
+
   it('keeps the queue and reports why when GitHub refuses the write', async () => {
     const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
     repo.writesForbidden = true

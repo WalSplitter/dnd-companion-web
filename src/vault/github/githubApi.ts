@@ -262,6 +262,43 @@ export async function listVaultFolders(token: string, ref: GitHubVaultRef, branc
   return [...vaults.map((path) => ({ path, isVault: true })), ...others.map((path) => ({ path, isVault: false }))]
 }
 
+/** One commit of the branch's history, as the party chronicle reads it. */
+export interface GitHubCommit {
+  sha: string
+  message: string
+  /** Author date, ISO 8601. */
+  date: string
+  /** The author's GitHub login — absent when the commit's email isn't tied to an account. */
+  login: string | null
+  /** Name from the commit itself (`git config user.name`). */
+  authorName: string
+  url: string
+}
+
+/** Commits per history page — GitHub's maximum. */
+export const COMMITS_PER_PAGE = 100
+
+/**
+ * One page (1-based) of the branch's commits that touched the vault folder, newest first. Revalidated,
+ * so a commit pushed a minute ago is already in it.
+ */
+export async function listCommits(token: string, ref: GitHubVaultRef, page = 1): Promise<GitHubCommit[]> {
+  const query = new URLSearchParams({ per_page: String(COMMITS_PER_PAGE), page: String(page) })
+  if (ref.branch) query.set('sha', ref.branch)
+  if (ref.subpath) query.set('path', ref.subpath)
+  const commits = await getJson<
+    { sha: string; html_url: string; author: { login: string } | null; commit: { message: string; author: { name: string; date: string } | null } }[]
+  >(token, `${repoPath(ref)}/commits?${query}`, { fresh: true })
+  return commits.map((c) => ({
+    sha: c.sha,
+    message: c.commit.message,
+    date: c.commit.author?.date ?? '',
+    login: c.author?.login ?? null,
+    authorName: c.commit.author?.name ?? '',
+    url: c.html_url,
+  }))
+}
+
 /** Whether the token's account may push to the repository (a read-only *token* only shows on the first write). */
 export async function fetchCanPush(token: string, ref: GitHubVaultRef): Promise<boolean> {
   const repo = await getJson<{ permissions?: { push?: boolean } }>(token, repoPath(ref), { fresh: true })

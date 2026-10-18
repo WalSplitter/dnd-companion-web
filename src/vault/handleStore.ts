@@ -1,5 +1,5 @@
 import type { RulesetId } from './detectRuleset'
-import { gitHubVaultKey, gitHubVaultName, type GitHubVaultRef } from './github/githubApi'
+import { gitHubVaultKey, gitHubVaultName, type GitHubSnapshot, type GitHubVaultRef } from './github/githubApi'
 import type { PendingEdit } from './github/githubSync'
 
 const DB_NAME = 'dnd-companion'
@@ -9,6 +9,10 @@ const LEGACY_VAULT_KEY = 'vault-dir'
 const RECENTS_KEY = 'recent-vaults'
 /** Prefix of the per-repository queue of edits not yet committed — see `github/githubSync.ts`. */
 const PENDING_EDITS_PREFIX = 'github-pending:'
+/** The file listing of the GitHub vault loaded last, to open it again offline (its blobs are in `github/blobCache.ts`). */
+const SNAPSHOT_KEY = 'github-snapshot'
+/** Prefix of whether a repository's token could push when last asked — the answer while offline. */
+const CAN_PUSH_PREFIX = 'github-can-push:'
 /** How many folders the start page offers to reopen. */
 export const MAX_RECENT_VAULTS = 5
 
@@ -158,4 +162,34 @@ export async function savePendingEdits(ref: GitHubVaultRef, edits: PendingEdit[]
   const key = PENDING_EDITS_PREFIX + gitHubVaultKey(ref)
   if (edits.length > 0) await withStore('readwrite', (store) => store.put(edits, key))
   else await withStore('readwrite', (store) => store.delete(key))
+}
+
+/**
+ * The listing of the GitHub vault loaded last, if `ref` is that vault. Only one is kept, like the
+ * blob cache keeps only one vault's files — an older vault's listing would be useless without them.
+ */
+export async function loadGitHubSnapshot(ref: GitHubVaultRef): Promise<GitHubSnapshot | undefined> {
+  try {
+    const stored = await withStore<{ key: string; snapshot: GitHubSnapshot } | undefined>('readonly', (store) => store.get(SNAPSHOT_KEY))
+    return stored?.key === gitHubVaultKey(ref) ? stored.snapshot : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export async function saveGitHubSnapshot(ref: GitHubVaultRef, snapshot: GitHubSnapshot): Promise<void> {
+  await withStore('readwrite', (store) => store.put({ key: gitHubVaultKey(ref), snapshot }, SNAPSHOT_KEY))
+}
+
+/** Whether the token could push to the repository when last asked (`undefined`: never asked here). */
+export async function loadCanPush(ref: GitHubVaultRef): Promise<boolean | undefined> {
+  try {
+    return await withStore<boolean | undefined>('readonly', (store) => store.get(CAN_PUSH_PREFIX + gitHubVaultKey(ref)))
+  } catch {
+    return undefined
+  }
+}
+
+export async function saveCanPush(ref: GitHubVaultRef, canPush: boolean): Promise<void> {
+  await withStore('readwrite', (store) => store.put(canPush, CAN_PUSH_PREFIX + gitHubVaultKey(ref)))
 }

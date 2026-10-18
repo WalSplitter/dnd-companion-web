@@ -41,6 +41,8 @@ export interface SyncConflict {
 export type SyncStatus =
   | { state: 'synced' }
   | { state: 'pending' | 'syncing'; count: number }
+  /** The browser has no connection: edits keep queuing and go out once it's back. */
+  | { state: 'offline'; count: number }
   | { state: 'error'; count: number; kind: GitHubErrorKind | null; error: unknown }
   | { state: 'conflict'; count: number; conflicts: SyncConflict[] }
 
@@ -70,6 +72,9 @@ export function sameValue(a: unknown, b: unknown): boolean {
   const ka = keys(a)
   return ka.length === keys(b).length && ka.every((k) => sameValue((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
 }
+
+/** Whether the browser knows it has no connection (`navigator.onLine` only ever errs towards "online"). */
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
 const keyOf = (keyPath: string[]) => keyPath.join('\u0000')
 
@@ -131,6 +136,8 @@ export class GitHubSync implements VaultWriter {
     const count = this.pendingCount
     if (this.running) return { state: 'syncing', count }
     if (this.conflicts.length > 0) return { state: 'conflict', count, conflicts: this.conflicts }
+    // Offline, a failed attempt is no error to report — the next one starts when the connection returns.
+    if (isOffline()) return { state: 'offline', count }
     if (this.failure) return { state: 'error', count, kind: this.failure instanceof GitHubError ? this.failure.kind : null, error: this.failure }
     return count > 0 ? { state: 'pending', count } : { state: 'synced' }
   }
@@ -206,6 +213,10 @@ export class GitHubSync implements VaultWriter {
       return this.running
     }
     if (this.pendingCount === 0 || this.conflicts.length > 0) return Promise.resolve()
+    if (isOffline()) {
+      this.emit()
+      return Promise.resolve()
+    }
 
     this.failure = null
     this.running = this.sync()
@@ -248,20 +259,26 @@ export class GitHubSync implements VaultWriter {
     return fetchCanPush(this.options.token, this.options.ref)
   }
 
-  /** Commits on page hide (the tab may not come back) and when the connection returns. */
+  /** Commits on page hide (the tab may not come back) and when the connection returns; tells when it's lost. */
   start(): void {
     if (this.detach || typeof window === 'undefined') return
     const onHide = () => {
       if (document.visibilityState === 'hidden') void this.flush()
     }
-    const onOnline = () => void this.flush()
+    const onOnline = () => {
+      this.emit()
+      void this.flush()
+    }
+    const onOffline = () => this.emit()
     document.addEventListener('visibilitychange', onHide)
     window.addEventListener('pagehide', onHide)
     window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
     this.detach = () => {
       document.removeEventListener('visibilitychange', onHide)
       window.removeEventListener('pagehide', onHide)
       window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
     }
     if (this.pendingCount > 0) void this.flush()
   }

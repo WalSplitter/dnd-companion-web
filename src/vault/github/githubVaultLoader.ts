@@ -65,20 +65,40 @@ export interface GitHubVaultContents {
   files: VaultSourceFile[]
   imageAssets: ImageAssets
   snapshot: GitHubSnapshot
+  /** GitHub was unreachable: this is the copy kept from the last visit. */
+  offline: boolean
+}
+
+/** Where the listing of the last vault read is kept, so it can be read again without a connection. */
+export interface SnapshotStore {
+  load(): Promise<GitHubSnapshot | undefined>
+  save(snapshot: GitHubSnapshot): Promise<void>
 }
 
 /**
  * Reads a vault out of a GitHub repository: one tree listing, then each note and image by blob SHA —
  * served from `cache` when this exact content was downloaded before. Produces the same `files` /
  * `imageAssets` shape as the local folder loaders, so parsing doesn't care where the vault came from.
+ *
+ * Without a connection, the listing kept in `snapshots` stands in for GitHub's and every file comes
+ * from `cache` — the vault as of the last visit. It fails like any offline load when either is missing.
  */
 export async function readVaultFromGitHub(
   token: string,
   ref: GitHubVaultRef,
-  options: { cache?: BlobCache | null; onProgress?: (done: number, total: number) => void } = {},
+  options: { cache?: BlobCache | null; snapshots?: SnapshotStore; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<GitHubVaultContents> {
-  const { cache, onProgress } = options
-  const snapshot = await fetchSnapshot(token, ref)
+  const { cache, snapshots, onProgress } = options
+  let snapshot: GitHubSnapshot
+  let offline = false
+  try {
+    snapshot = await fetchSnapshot(token, ref)
+  } catch (err) {
+    const kept = err instanceof GitHubError && err.kind === 'network' ? await snapshots?.load() : undefined
+    if (!kept) throw err
+    snapshot = kept
+    offline = true
+  }
   const { mdFiles, imageFiles } = selectVaultBlobs(snapshot, ref.subpath)
 
   const total = mdFiles.length + imageFiles.length
@@ -107,5 +127,6 @@ export async function readVaultFromGitHub(
   }
 
   await cache?.retainOnly(new Set([...mdFiles, ...imageFiles].map((b) => b.sha)))
-  return { files: notes, imageAssets, snapshot }
+  if (!offline) await snapshots?.save(snapshot).catch(() => {}) // without it, just no offline copy
+  return { files: notes, imageAssets, snapshot, offline }
 }

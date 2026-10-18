@@ -45,7 +45,8 @@
   stroke-linecap: round;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .d20-button:hover .d20-icon:not(.is-rolling) {
+  .d20-button:hover .d20-icon:not(.is-rolling),
+  .roll-log-fab:hover .d20-icon:not(.is-rolling) {
     animation: d20-wobble 600ms ease-in-out;
   }
   .d20-icon.is-rolling {

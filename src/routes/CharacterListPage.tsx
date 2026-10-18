@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CharacterCard, CharacterRow } from '../features/character-list/CharacterCard'
+import { ChroniclePanel } from '../features/character-list/ChroniclePanel'
 import { PartyRadar } from '../features/character-list/PartyRadar'
 import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
@@ -17,11 +18,13 @@ const CONTAINER: Record<Exclude<CharacterLayout, 'lineup'>, string> = {
 export function CharacterListPage() {
   const t = useT()
   const characters = useVaultStore((s) => s.vault.characters)
+  // The chronicle reads the repository's commit history, so it only exists for a GitHub vault.
+  const hasHistory = useVaultStore((s) => s.github !== null)
   const [mode, setMode] = useCharacterViewMode()
   const layout = resolveLayout(mode, characters.length)
   // The tab lives in the URL so "back" from a sheet returns to the comparison.
   const [searchParams, setSearchParams] = useSearchParams()
-  const comparing = searchParams.get('tab') === 'compare'
+  const tab = searchParams.get('tab') === 'compare' ? 'compare' : searchParams.get('tab') === 'chronicle' && hasHistory ? 'chronicle' : 'party'
 
   if (characters.length === 0) {
     return (
@@ -33,8 +36,9 @@ export function CharacterListPage() {
   }
 
   const tabs = [
-    { key: 'party', label: t('characterList.tabParty'), active: !comparing },
-    { key: 'compare', label: t('characterList.tabCompare'), active: comparing },
+    { key: 'party', label: t('characterList.tabParty') },
+    { key: 'compare', label: t('characterList.tabCompare') },
+    ...(hasHistory ? [{ key: 'chronicle', label: t('characterList.tabChronicle') }] : []),
   ]
 
   return (
@@ -43,26 +47,28 @@ export function CharacterListPage() {
         <h1 className="text-2xl font-semibold text-fg">
           {t('characterList.title')} <span className="ml-1 text-sm font-normal text-fg-muted">{characters.length}</span>
         </h1>
-        {!comparing && <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />}
+        {tab === 'party' && <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />}
       </div>
 
       <div role="tablist" className="mb-4 flex gap-1 whitespace-nowrap border-b border-trim/25">
-        {tabs.map((tab) => (
+        {tabs.map(({ key, label }) => (
           <button
-            key={tab.key}
+            key={key}
             type="button"
             role="tab"
-            aria-selected={tab.active}
-            onClick={() => setSearchParams(tab.key === 'compare' ? { tab: 'compare' } : {}, { replace: true })}
+            aria-selected={tab === key}
+            onClick={() => setSearchParams(key === 'party' ? {} : { tab: key }, { replace: true })}
             className="rpg-tab cursor-pointer"
           >
-            {tab.label}
+            {label}
           </button>
         ))}
       </div>
 
-      {comparing ? (
+      {tab === 'compare' ? (
         <PartyRadar characters={characters} />
+      ) : tab === 'chronicle' ? (
+        <ChroniclePanel />
       ) : layout === 'lineup' ? (
         <PartyFormation characters={characters} />
       ) : (

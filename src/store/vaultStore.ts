@@ -9,8 +9,12 @@ import type { GitHubSync, SyncStatus } from '../vault/github/githubSync'
 import {
   forgetRecentVault,
   listRecentVaults,
+  loadCanPush,
+  loadGitHubSnapshot,
   loadPendingEdits,
   rememberRecentVault,
+  saveCanPush,
+  saveGitHubSnapshot,
   savePendingEdits,
   updateRecentVault,
   type RecentVault,
@@ -497,6 +501,8 @@ export const useVaultStore = create<VaultState>((set, get) => {
         const cache = await openBlobCache()
         const { files, imageAssets, snapshot } = await readVaultFromGitHub(token, ref, {
           cache,
+          // Kept for opening this vault again without a connection.
+          snapshots: { load: () => loadGitHubSnapshot(ref), save: (s) => saveGitHubSnapshot(ref, s) },
           onProgress: (done, total) => {
             if (seq === loadSeq) set({ loadingProgress: { done, total } })
           },
@@ -593,9 +599,18 @@ export const useVaultStore = create<VaultState>((set, get) => {
     requestEditPermission: async () => {
       const sync = activeSync
       if (sync && get().writer === sync) {
+        const { ref } = sync.source
         try {
-          set({ editPermission: (await sync.canPush()) ? 'granted' : 'denied' })
+          const canPush = await sync.canPush()
+          set({ editPermission: canPush ? 'granted' : 'denied' })
+          void saveCanPush(ref, canPush).catch(() => {})
         } catch (err) {
+          // Offline, the last answer stands: edits queue up and are committed once GitHub is back.
+          const known = err instanceof GitHubError && err.kind === 'network' ? await loadCanPush(ref) : undefined
+          if (known !== undefined) {
+            if (activeSync === sync) set({ editPermission: known ? 'granted' : 'denied' })
+            return
+          }
           console.error('[vault] checking push access failed:', err)
           set({ editPermission: 'denied' })
           reportError({ titleKey: 'github.sync.permissionFailed', hintKey: githubHint(err), source: 'vault.requestEditPermission', error: err })
@@ -811,4 +826,9 @@ export function wasSampleVaultActive(): boolean {
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
+}
+
+/** Repository and token of the open GitHub vault — for reading its history (the party chronicle). */
+export function activeGitHubSource(): { ref: GitHubVaultRef; token: string } | null {
+  return activeSync?.source ?? null
 }
