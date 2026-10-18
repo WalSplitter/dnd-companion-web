@@ -802,6 +802,19 @@ export const en = {
   'exhaustion.passiveHint': 'Passive Perception {{base}}, exhaustion −{{n}} → {{total}}',
   'roll.hitDie': 'Hit Die',
 
+  // Roll log
+  'rollLog.title': 'Roll log',
+  'rollLog.clear': 'Clear',
+  'rollLog.empty': 'No rolls yet. Click any die or value on the sheet.',
+  'rollLog.nextRoll': 'Next d20 roll',
+  'rollLog.mode.normal': 'Normal',
+  'rollLog.mode.advantage': 'Advantage',
+  'rollLog.mode.disadvantage': 'Disadvantage',
+  'rollLog.modeHint': 'Applies to your next d20 roll only, like Shift/Alt+click. A class advantage and a disadvantage cancel out.',
+  'rollLog.armed': 'next roll with {{mode}}',
+  'rollLog.badge.advantage': 'ADV',
+  'rollLog.badge.disadvantage': 'DIS',
+
   // Wikilink popover
   'wikilink.character': 'Character',
   'wikilink.item': 'Item',

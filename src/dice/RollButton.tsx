@@ -7,6 +7,7 @@ import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
 import { d20RollHint, damageRollHint } from './rollHint'
 import { rollD20, rollDamage, type D20RollResult, type DiceRollResult, type RollMode } from './notation'
+import { resolveRollMode, useRoller, useRollLogStore } from './rollLogStore'
 
 /** `penalty` is the part of a d20 result's modifier that came from `D20PenaltyContext` (exhaustion),
  * kept apart so the popover can show it separately from the roll's own bonus. */
@@ -56,16 +57,34 @@ export function D20RollButton({
   const t = useT()
   const penalty = useD20Penalty()
   const share = useShareRoll()
+  const roller = useRoller()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
   const [rolls, setRolls] = useState(0)
 
   function roll(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    const mode: RollMode = e.shiftKey ? 'advantage' : e.altKey ? 'disadvantage' : defaultMode
+    const log = useRollLogStore.getState()
+    const forced = e.shiftKey || e.altKey
+    const mode = resolveRollMode({ shift: e.shiftKey, alt: e.altKey, armed: log.armedMode, base: defaultMode })
+    // An armed mode is for one roll; Shift/Alt override it without using it up.
+    if (!forced && log.armedMode !== 'normal') log.setArmedMode('normal')
     setRolls((n) => n + 1)
     const result = rollD20({ mode, modifier: modifier - penalty })
-    setOutcome({ kind: 'd20', label, result, penalty, effect: effect?.(result) })
+    const effectText = effect?.(result)
+    setOutcome({ kind: 'd20', label, result, penalty, effect: effectText })
+    log.add(roller, {
+      kind: 'd20',
+      label,
+      total: result.total,
+      rolls: result.rolls,
+      modifier: result.modifier + penalty,
+      penalty: penalty || undefined,
+      mode: result.mode,
+      critical: result.isCriticalHit,
+      fumble: result.isCriticalMiss,
+      effect: effectText,
+    })
     share?.({
       kind: attack ? 'attack' : 'd20',
       label,
@@ -120,6 +139,7 @@ export function DamageRollButton({
 }) {
   const t = useT()
   const share = useShareRoll()
+  const roller = useRoller()
   const [outcome, setOutcome] = useState<RollOutcome | null>(null)
 
   function roll(e: React.MouseEvent) {
@@ -128,10 +148,15 @@ export function DamageRollButton({
     const critical = e.shiftKey
     const result = rollDamage(`${dice}${bonus ? formatModifier(bonus) : ''}`, { critical })
     if (!result) return
-    setOutcome({
+    const fullLabel = `${label}${critical ? t('roll.critSuffix') : ''}${damageType ? ` · ${damageType}` : ''}`
+    setOutcome({ kind: 'damage', label: fullLabel, result })
+    useRollLogStore.getState().add(roller, {
       kind: 'damage',
-      label: `${label}${critical ? t('roll.critSuffix') : ''}${damageType ? ` · ${damageType}` : ''}`,
-      result,
+      label: fullLabel,
+      total: result.total,
+      rolls: result.rolls,
+      modifier: result.modifier,
+      critical,
     })
     share?.({ kind: 'damage', label, total: result.total, rolls: result.rolls, modifier: result.modifier, critical, damageType })
   }

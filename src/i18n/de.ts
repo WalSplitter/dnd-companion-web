@@ -779,6 +779,18 @@ export const de = {
   'exhaustion.passiveHint': 'Passive Wahrnehmung {{base}}, Erschöpfung −{{n}} → {{total}}',
   'roll.hitDie': 'Trefferwürfel',
 
+  'rollLog.title': 'Würfelprotokoll',
+  'rollLog.clear': 'Leeren',
+  'rollLog.empty': 'Noch keine Würfe. Klicke auf einen Würfel oder Wert im Bogen.',
+  'rollLog.nextRoll': 'Nächster W20-Wurf',
+  'rollLog.mode.normal': 'Normal',
+  'rollLog.mode.advantage': 'Vorteil',
+  'rollLog.mode.disadvantage': 'Nachteil',
+  'rollLog.modeHint': 'Gilt nur für deinen nächsten W20-Wurf, wie Shift/Alt+Klick. Vorteil der Klasse und Nachteil heben sich auf.',
+  'rollLog.armed': 'nächster Wurf mit {{mode}}',
+  'rollLog.badge.advantage': 'VT',
+  'rollLog.badge.disadvantage': 'NT',
+
   'wikilink.character': 'Charakter',
   'wikilink.item': 'Gegenstand',
   'wikilink.spell': 'Zauber',
