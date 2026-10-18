@@ -5,6 +5,8 @@ import type { en } from './en'
 export const de = {
   'app.brand': 'D&D Companion',
   'app.brandShort': 'D&D',
+  'app.updateReady': 'Eine neue Version ist da.',
+  'app.updateReload': 'Neu laden',
   'app.createdBy': 'Erstellt von',
   'app.sourceCode': 'Quellcode auf GitHub',
   'app.sponsor': 'Unterstütze mich',
@@ -300,6 +302,8 @@ export const de = {
   'github.sync.syncing': 'Speichere…',
   'github.sync.error': 'Nicht gespeichert – erneut versuchen',
   'github.sync.conflict': 'Konflikt',
+  'github.sync.offline': 'Offline',
+  'github.sync.offlineTooltip': 'Änderungen bleiben in diesem Browser und werden committet, sobald du wieder online bist.',
   'github.conflict.title': 'Auf beiden Seiten geändert',
   'github.conflict.body':
     'Seit du den Vault geladen hast, hat jemand diese Werte im Repository geändert – und du hast sie auch geändert. Von deinen Änderungen ist noch nichts gespeichert.',

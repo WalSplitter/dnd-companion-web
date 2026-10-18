@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { memoryBlobCache } from './blobCache'
-import { GitHubError, parseGitHubVaultRef, type GitHubVaultRef } from './githubApi'
-import { readVaultFromGitHub } from './githubVaultLoader'
+import { GitHubError, parseGitHubVaultRef, type GitHubSnapshot, type GitHubVaultRef } from './githubApi'
+import { readVaultFromGitHub, type SnapshotStore } from './githubVaultLoader'
 
 const encoder = new TextEncoder()
 
@@ -136,6 +136,33 @@ describe('readVaultFromGitHub', () => {
 
     await readVaultFromGitHub('good-token', ref(), { cache })
     expect(blobRequests()).toHaveLength(2)
+  })
+
+  it('opens the vault of the last visit when GitHub is unreachable', async () => {
+    fakeGitHub()
+    const cache = memoryBlobCache()
+    let kept: GitHubSnapshot | undefined
+    const snapshots: SnapshotStore = { load: async () => kept, save: async (s) => void (kept = s) }
+    const online = await readVaultFromGitHub('good-token', ref(), { cache, snapshots })
+    expect(online.offline).toBe(false)
+    expect(kept?.commitSha).toBe('commit_main')
+
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
+    const offline = await readVaultFromGitHub('good-token', ref(), { cache, snapshots })
+    expect(offline.offline).toBe(true)
+    expect(offline.snapshot.commitSha).toBe('commit_main')
+    expect(offline.files).toEqual(online.files)
+  })
+
+  it('fails offline without a kept copy, and never stands in for other failures', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
+    expect((await failureOf(readVaultFromGitHub('good-token', ref(), { snapshots: { load: async () => undefined, save: async () => {} } }))).kind).toBe(
+      'network',
+    )
+
+    fakeGitHub()
+    const kept = { branch: 'main', commitSha: 'old', entries: [] }
+    expect((await failureOf(readVaultFromGitHub('expired', ref(), { snapshots: { load: async () => kept, save: async () => {} } }))).kind).toBe('unauthorized')
   })
 
   it('explains each way the repository can be out of reach', async () => {

@@ -4,6 +4,7 @@ import { AppFooter } from './components/AppFooter'
 import { ErrorToaster } from './components/ErrorToaster'
 import { PageErrorBoundary } from './components/PageErrorBoundary'
 import { TooltipLayer } from './components/TooltipLayer'
+import { UpdateToast } from './components/UpdateToast'
 import { useT } from './i18n/useI18n'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import { inOwlbear } from './owlbear/host'
@@ -57,6 +58,7 @@ function App() {
       <ThemeEffect />
       <AmbientLayer />
       <ErrorToaster />
+      {!inOwlbear && <UpdateToast />}
       <TooltipLayer />
       {inOwlbear && <OwlbearNavigator />}
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}

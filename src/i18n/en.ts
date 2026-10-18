@@ -8,6 +8,8 @@ export const en = {
   // App chrome
   'app.brand': 'D&D Companion',
   'app.brandShort': 'D&D',
+  'app.updateReady': 'A new version is available.',
+  'app.updateReload': 'Reload',
   'app.createdBy': 'Crafted by',
   'app.sourceCode': 'Source on GitHub',
   'app.sponsor': 'Sponsor me',
@@ -309,6 +311,8 @@ export const en = {
   'github.sync.syncing': 'Saving…',
   'github.sync.error': 'Not saved — retry',
   'github.sync.conflict': 'Conflict',
+  'github.sync.offline': 'Offline',
+  'github.sync.offlineTooltip': 'Changes stay in this browser and are committed as soon as you are back online.',
   'github.conflict.title': 'Changed on both sides',
   'github.conflict.body':
     'Since you loaded the vault, someone changed these values in the repository — and you changed them too. None of your changes have been saved yet.',

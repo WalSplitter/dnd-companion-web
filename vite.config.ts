@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import type { Plugin } from 'vite'
@@ -88,9 +91,51 @@ function owlbearRings(): Plugin {
   }
 }
 
+/**
+ * The app's service worker (`src/pwa/sw.js`), emitted as `<base>sw.js` with the list of files to
+ * cache for offline use: everything the build produced plus `public/` — minus what only Owlbear
+ * Rodeo loads (it needs a connection anyway) — and a version hash over their contents, so every
+ * build that changes a file installs as a new worker.
+ */
+function serviceWorker(): Plugin {
+  let publicDir = ''
+  const publicFiles = (): [string, Buffer][] =>
+    publicDir
+      ? readdirSync(publicDir, { recursive: true, encoding: 'utf8' })
+          .filter((file) => statSync(join(publicDir, file)).isFile())
+          .map((file) => [relative(publicDir, join(publicDir, file)).replace(/\\/g, '/'), readFileSync(join(publicDir, file))])
+      : []
+  return {
+    name: 'service-worker',
+    apply: 'build',
+    configResolved(config) {
+      publicDir = config.publicDir
+    },
+    generateBundle: {
+      // After the other plugins emitted their files, so the list is complete.
+      order: 'post',
+      handler(_options, bundle) {
+        const files = new Map<string, string | Uint8Array>(publicFiles())
+        for (const [name, item] of Object.entries(bundle)) files.set(name, item.type === 'chunk' ? item.code : item.source)
+        const precache = [...files.keys()].filter((name) => !/(^|\/)owlbear|\.map$|(^|\/)desktop\.ini$/i.test(name)).sort()
+        const hash = createHash('sha256')
+        for (const name of precache) hash.update(name).update('\0').update(files.get(name)!)
+        const source = readFileSync(new URL('./src/pwa/sw.js', import.meta.url), 'utf8')
+        this.emitFile({
+          type: 'asset',
+          fileName: 'sw.js',
+          source: `const PRECACHE = ${JSON.stringify(precache)}
+const VERSION = '${hash.digest('hex').slice(0, 12)}'
+${source}`,
+        })
+      },
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings()],
+  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), serviceWorker()],
   // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
   base: process.env.BASE_PATH ?? '/',
   server: {

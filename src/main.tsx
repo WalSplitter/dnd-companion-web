@@ -5,6 +5,7 @@ import App from './App.tsx'
 import { I18nProvider } from './i18n/I18nContext.tsx'
 import { inOwlbear } from './owlbear/host'
 import { connectOwlbear } from './owlbear/owlbearStore'
+import { registerServiceWorker } from './pwa/serviceWorker'
 import './index.css'
 
 function render() {
@@ -21,4 +22,7 @@ function render() {
 
 // Inside Owlbear the SDK has to read the URL before the router rewrites it; elsewhere it isn't loaded at all.
 if (inOwlbear) void connectOwlbear().catch(console.error).finally(render)
-else render()
+else {
+  render()
+  registerServiceWorker()
+}
