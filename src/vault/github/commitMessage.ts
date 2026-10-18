@@ -27,6 +27,12 @@ export function fieldName(keyPath: string[]): string {
   return FIELD_NAMES[key] ?? key.replace(/_/g, ' ')
 }
 
+/** The whole key path, readably: `spellcasting.slots.1.used` → "spellcasting › spell slots › 1 › used"; `hp.current` → "hp". */
+export function fieldLabel(keyPath: string[]): string {
+  const shown = keyPath.filter((k, i) => i === 0 || !/^(current|value)$/i.test(k))
+  return shown.map((k) => FIELD_NAMES[k] ?? k.replace(/_/g, ' ')).join(' › ')
+}
+
 /** A Conventional Commits scope: `Dummy Charakter` → `dummy-charakter`. */
 function scopeOf(name: string): string {
   return name

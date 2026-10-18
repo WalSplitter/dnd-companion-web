@@ -812,3 +812,8 @@ export function wasSampleVaultActive(): boolean {
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
 }
+
+/** Repository and token of the open GitHub vault — for reading its history (the party chronicle). */
+export function activeGitHubSource(): { ref: GitHubVaultRef; token: string } | null {
+  return activeSync?.source ?? null
+}
