@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Card } from '../../components/Card'
+import { useDismiss } from '../../components/useDismiss'
 import { renderObsidianBody } from '../../components/obsidian/renderObsidian'
 import { useI18n, type TranslationKey } from '../../i18n/useI18n'
 import { useVaultStore } from '../../store/vaultStore'
@@ -386,10 +387,6 @@ function DetailSheet({ anchorId, onClose, children }: { anchorId: string; onClos
   const ref = useRef<HTMLElement>(null)
   const docked = useMediaQuery(DOCK_QUERY)
   const [placement, setPlacement] = useState<SheetPlacement | null>(null)
-  const closeRef = useRef(onClose)
-  useEffect(() => {
-    closeRef.current = onClose
-  })
 
   useEffect(() => {
     if (!docked) return
@@ -430,20 +427,8 @@ function DetailSheet({ anchorId, onClose, children }: { anchorId: string; onClos
     }
   }, [anchorId, docked])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
-    // Another tile only switches the details (its own click handles that), anything else closes them.
-    const onPointer = (e: PointerEvent) => {
-      const target = e.target as Element | null
-      if (target && !ref.current?.contains(target) && !target.closest('[data-st-node]')) closeRef.current()
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onPointer)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('pointerdown', onPointer)
-    }
-  }, [])
+  // Another tile only switches the details (its own click handles that), anything else closes them.
+  useDismiss(true, onClose, (target) => Boolean(ref.current?.contains(target) || target.closest('[data-st-node]')))
 
   const style: CSSProperties | undefined = placement ? { top: placement.top, left: placement.left } : undefined
   return createPortal(

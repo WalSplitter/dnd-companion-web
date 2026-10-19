@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { useDismiss } from '../components/useDismiss'
 import { useT, type TranslationKey } from '../i18n/useI18n'
 import {
   CLASS_THEMES,
@@ -215,23 +216,7 @@ export function ThemeSwitcher() {
     return () => window.removeEventListener('resize', update)
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      const target = e.target as Node
-      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return
-      setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  useDismiss(open, () => setOpen(false), [triggerRef, menuRef])
 
   function select(key: ThemeName) {
     setTheme(key)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readStored, writeStored } from '../../utils/storage'
 
 export type CharacterViewMode = 'auto' | 'cards' | 'list' | 'lineup'
 export type CharacterLayout = Exclude<CharacterViewMode, 'auto'>
@@ -16,13 +17,8 @@ export function resolveLayout(mode: CharacterViewMode, count: number): Character
 }
 
 function readStoredMode(): CharacterViewMode {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return MODES.includes(stored as CharacterViewMode) ? (stored as CharacterViewMode) : 'auto'
-  } catch {
-    // localStorage unavailable (private mode, ...) — the default works without it.
-    return 'auto'
-  }
+  const stored = readStored(STORAGE_KEY)
+  return MODES.includes(stored as CharacterViewMode) ? (stored as CharacterViewMode) : 'auto'
 }
 
 /** The chosen view mode, remembered per device: a DM's laptop and a player's phone may want different ones. */
@@ -30,11 +26,7 @@ export function useCharacterViewMode(): [CharacterViewMode, (mode: CharacterView
   const [mode, setModeState] = useState(readStoredMode)
   const setMode = (next: CharacterViewMode) => {
     setModeState(next)
-    try {
-      localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // Not persisted — still applies for this visit.
-    }
+    writeStored(STORAGE_KEY, next)
   }
   return [mode, setMode]
 }

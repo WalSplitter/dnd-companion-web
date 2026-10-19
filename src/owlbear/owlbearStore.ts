@@ -1,5 +1,6 @@
 import type OBRType from '@owlbear-rodeo/sdk'
 import { create } from 'zustand'
+import { readStored, writeStored, writeStoredJson } from '../utils/storage'
 import { CLAIMS_KEY, loadClaims } from './claims'
 import type { LiveRoster } from './live'
 import type { LootDrop } from './loot'
@@ -45,22 +46,14 @@ export const useOwlbearStore = create<OwlbearState>(() => ({
 }))
 
 function loadRollVisibility(): RollVisibility {
-  try {
-    const stored = localStorage.getItem(ROLL_VISIBILITY_KEY)
-    if (stored === 'false') return 'off'
-    return stored === 'gm' || stored === 'off' ? stored : 'all'
-  } catch {
-    return 'all'
-  }
+  const stored = readStored(ROLL_VISIBILITY_KEY)
+  if (stored === 'false') return 'off'
+  return stored === 'gm' || stored === 'off' ? stored : 'all'
 }
 
 export function setRollVisibility(rollVisibility: RollVisibility) {
   useOwlbearStore.setState({ rollVisibility })
-  try {
-    localStorage.setItem(ROLL_VISIBILITY_KEY, rollVisibility)
-  } catch {
-    // Not remembered beyond this visit then.
-  }
+  writeStored(ROLL_VISIBILITY_KEY, rollVisibility)
 }
 
 /** Marks `name` as this player's own character, or stops doing so. */
@@ -68,11 +61,7 @@ export function setClaimed(name: string, claimed: boolean) {
   const others = useOwlbearStore.getState().claimed.filter((n) => n !== name)
   const next = claimed ? [...others, name] : others
   useOwlbearStore.setState({ claimed: next })
-  try {
-    localStorage.setItem(CLAIMS_KEY, JSON.stringify(next))
-  } catch {
-    // Not remembered beyond this visit then.
-  }
+  writeStoredJson(CLAIMS_KEY, next)
 }
 
 let obr: typeof OBRType | null = null

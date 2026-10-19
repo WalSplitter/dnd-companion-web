@@ -1,28 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DICTIONARIES, I18nContext, interpolate, type I18nContextValue, type Lang } from './useI18n'
+import { detectLang, storeLang } from './detectLang'
 
-const STORAGE_KEY = 'dnd-companion-lang'
-
-function detectDefaultLang(): Lang {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'en' || stored === 'de') return stored
-  } catch {
-    // localStorage unavailable (private mode, ...) — fall through to browser language detection.
-  }
-  return navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en'
-}
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(detectDefaultLang)
+  const [lang, setLangState] = useState<Lang>(detectLang)
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next)
-    try {
-      localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // Non-fatal — the choice just won't persist across reloads.
-    }
+    storeLang(next)
   }, [])
 
   // Keeps <html lang> in step so the browser hyphenates (and screen readers pronounce) in that language.

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterFrontmatter, Vault } from '../vault/types'
-import { folderWriter } from '../vault/writeback/persist'
+import { folderWriter, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import { useErrorLogStore } from './errorLogStore'
 import { useVaultStore } from './vaultStore'
 
@@ -100,5 +100,40 @@ describe('vaultStore.updateCharacterField', () => {
     useVaultStore.setState({ editPermission: 'not-requested' })
     await useVaultStore.getState().updateCharacterField('A.md', { path: 'A.md', keyPath: ['hp'] }, 9, bump)
     expect(hpOf('A')).toBe(1)
+  })
+})
+
+describe('vaultStore.setCampaignJournal', () => {
+  beforeEach(() => {
+    useErrorLogStore.getState().clear()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  const entry = { id: 'e1', kind: 'quest', text: 'Zum Steinkreis' } as const
+
+  function setupCampaign(writer: VaultWriter) {
+    useVaultStore.setState({
+      vault: { characters: [], campaign: { path: 'Kampagnenbuch.md', create: '---\n---\n', dms: [], entries: [] } } as unknown as Vault,
+      writer,
+      editPermission: 'granted',
+      writeError: null,
+    })
+  }
+
+  it('creates the note on the first entry, and stops offering to create it', async () => {
+    setupCampaign(sandboxWriter)
+    await useVaultStore.getState().setCampaignJournal([entry])
+    const campaign = useVaultStore.getState().vault.campaign!
+    expect(campaign.entries).toEqual([entry])
+    expect(campaign.create).toBeUndefined()
+  })
+
+  it('rolls back, still to be created, when the write fails', async () => {
+    setupCampaign({ ...sandboxWriter, write: () => Promise.reject(new Error('disk full')) })
+    await useVaultStore.getState().setCampaignJournal([entry])
+    const campaign = useVaultStore.getState().vault.campaign!
+    expect(campaign.entries).toEqual([])
+    expect(campaign.create).toBeDefined()
+    expect(useErrorLogStore.getState().entries).toHaveLength(1)
   })
 })

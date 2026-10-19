@@ -112,6 +112,11 @@ export function journalPatch(entries: JournalEntry[]): FrontmatterPatch {
   return { kind: 'block', keyPath: ['journal'], value: entries.length > 0 ? serializeJournal(entries) : undefined, createIfMissing: true }
 }
 
+/** Rewrites the DM list (`dm:`) of the campaign journal (see `adapters/campaignJournal.ts`). */
+export function campaignDmPatch(dms: string[]): FrontmatterPatch {
+  return { kind: 'block', keyPath: ['dm'], value: dms.length > 0 ? dms : undefined, createIfMissing: true }
+}
+
 /** Rewrites the character's whole `currency` key (own schema) — as a one-line flow map, matching how
  * the vault's inventory notes hand-write it. */
 export function currencyBlockPatch(currency: Currency): FrontmatterPatch {
@@ -169,6 +174,8 @@ export interface VaultWriter {
 export interface WriteContext {
   /** Name of the character the edit belongs to (the note may be a linked sheet with another name). */
   character?: string
+  /** Others are waiting for it (the DM's campaign journal): a queued writer commits it after a short pause, not the usual long one. */
+  soon?: boolean
 }
 
 /** Accepts every edit and stores none — for the bundled sample vault, whose edits live only in memory. */

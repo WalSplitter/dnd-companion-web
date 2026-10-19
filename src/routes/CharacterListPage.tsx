@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { CampaignPanel } from '../features/campaign/CampaignPanel'
+import { useUnseenCount } from '../features/campaign/useCampaign'
 import { CharacterCard, CharacterRow } from '../features/character-list/CharacterCard'
 import { ChroniclePanel } from '../features/character-list/ChroniclePanel'
 import { PartyRadar } from '../features/character-list/PartyRadar'
@@ -8,12 +10,15 @@ import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../fe
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
+import type { JournalEntry } from '../vault/types'
 import { characterRoute } from './paths'
 
 const CONTAINER: Record<Exclude<CharacterLayout, 'lineup'>, string> = {
   cards: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3',
   list: 'flex flex-col gap-2',
 }
+
+const NO_ENTRIES: JournalEntry[] = []
 
 export function CharacterListPage() {
   const t = useT()
@@ -24,7 +29,10 @@ export function CharacterListPage() {
   const layout = resolveLayout(mode, characters.length)
   // The tab lives in the URL so "back" from a sheet returns to the comparison.
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab = searchParams.get('tab') === 'compare' ? 'compare' : searchParams.get('tab') === 'chronicle' && hasHistory ? 'chronicle' : 'party'
+  const requested = searchParams.get('tab')
+  const tab = requested === 'compare' || requested === 'campaign' ? requested : requested === 'chronicle' && hasHistory ? 'chronicle' : 'party'
+  const campaignEntries = useVaultStore((s) => s.vault.campaign?.entries)
+  const unseen = useUnseenCount(campaignEntries ?? NO_ENTRIES)
 
   if (characters.length === 0) {
     return (
@@ -37,6 +45,7 @@ export function CharacterListPage() {
 
   const tabs = [
     { key: 'party', label: t('characterList.tabParty') },
+    { key: 'campaign', label: t('campaign.tab'), badge: tab === 'campaign' ? 0 : unseen },
     { key: 'compare', label: t('characterList.tabCompare') },
     ...(hasHistory ? [{ key: 'chronicle', label: t('characterList.tabChronicle') }] : []),
   ]
@@ -50,8 +59,8 @@ export function CharacterListPage() {
         {tab === 'party' && <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />}
       </div>
 
-      <div role="tablist" className="mb-4 flex gap-1 whitespace-nowrap border-b border-trim/25">
-        {tabs.map(({ key, label }) => (
+      <div role="tablist" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
+        {tabs.map(({ key, label, badge }) => (
           <button
             key={key}
             type="button"
@@ -61,12 +70,19 @@ export function CharacterListPage() {
             className="rpg-tab cursor-pointer"
           >
             {label}
+            {badge ? (
+              <span className="campaign-tab-badge" title={t('campaign.unseen', { n: badge })}>
+                {badge}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
 
       {tab === 'compare' ? (
         <PartyRadar characters={characters} />
+      ) : tab === 'campaign' ? (
+        <CampaignPanel />
       ) : tab === 'chronicle' ? (
         <ChroniclePanel />
       ) : layout === 'lineup' ? (

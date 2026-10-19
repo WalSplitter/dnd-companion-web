@@ -61,6 +61,8 @@ export interface GitHubSyncOptions {
   onStatus?: (status: SyncStatus) => void
   /** Quiet time after the last edit before it is committed (default: 5 minutes). */
   delayMs?: number
+  /** The same for an edit others are waiting for (`WriteContext.soon`; default: 15 seconds). */
+  soonDelayMs?: number
 }
 
 /** Equality of YAML-ish values, ignoring key order and `undefined` properties. */
@@ -105,6 +107,8 @@ export class GitHubSync implements VaultWriter {
   private running: Promise<void> | null = null
   private rerun = false
   private timer: ReturnType<typeof setTimeout> | undefined
+  /** An edit others wait for is queued (see `schedule`). */
+  private soonPending = false
   private detach: (() => void) | null = null
   /** The account's login for the commit message — asked once; `null` when GitHub wouldn't say. */
   private login: Promise<string | null> | null = null
@@ -202,7 +206,7 @@ export class GitHubSync implements VaultWriter {
     else this.edits.delete(path)
 
     void this.changed()
-    this.schedule()
+    this.schedule(context?.soon)
   }
 
   /** Commits whatever is queued right now (after any sync already running). */
@@ -219,6 +223,7 @@ export class GitHubSync implements VaultWriter {
     }
 
     this.failure = null
+    this.soonPending = false
     this.running = this.sync()
       .catch((err: unknown) => {
         this.failure = err
@@ -252,6 +257,23 @@ export class GitHubSync implements VaultWriter {
     this.conflicts = []
     await this.changed()
     if (choice === 'mine') await this.flush()
+  }
+
+  /** The token's GitHub login (asked once; `null` when GitHub wouldn't say). */
+  account(): Promise<string | null> {
+    this.login ??= fetchLogin(this.options.token).catch(() => null)
+    return this.login
+  }
+
+  /**
+   * Re-reads one note at the branch's current head — to pick up what someone else committed since the
+   * vault was loaded (the DM's campaign journal). Returns the note as this browser sees it, queued edits
+   * included (`null`: not in the repository).
+   */
+  async pull(path: string): Promise<string | null> {
+    const head = await fetchBranchHead(this.options.token, this.options.ref, this.options.ref.branch)
+    await this.remoteAt(path, head.commitSha)
+    return this.localContent(path) ?? null
   }
 
   /** Whether the token's account may push — checked when edit mode is switched on. */
@@ -290,9 +312,12 @@ export class GitHubSync implements VaultWriter {
     this.detach = null
   }
 
-  private schedule() {
+  /** Commits after a quiet time — the short one while an edit others wait for is queued. */
+  private schedule(soon = false) {
     clearTimeout(this.timer)
-    if (this.conflicts.length === 0) this.timer = setTimeout(() => void this.flush(), this.options.delayMs ?? 5 * 60_000)
+    if (soon) this.soonPending = true
+    const delay = this.soonPending ? (this.options.soonDelayMs ?? 15_000) : (this.options.delayMs ?? 5 * 60_000)
+    if (this.conflicts.length === 0) this.timer = setTimeout(() => void this.flush(), delay)
     this.emit()
   }
 
@@ -368,8 +393,7 @@ export class GitHubSync implements VaultWriter {
       let commit = head.commitSha
       if (files.size > 0) {
         try {
-          this.login ??= fetchLogin(token).catch(() => null)
-          commit = await commitFiles(token, ref, ref.branch, head, files, commitMessage(batch, await this.login))
+          commit = await commitFiles(token, ref, ref.branch, head, files, commitMessage(batch, await this.account()))
         } catch (err) {
           // Someone pushed between reading the head and moving the branch — rebuild on the new head.
           if (err instanceof GitHubError && err.kind === 'not-fast-forward' && attempt < MAX_ATTEMPTS) continue
