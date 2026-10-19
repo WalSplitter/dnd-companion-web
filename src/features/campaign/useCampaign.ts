@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCanEdit } from '../../store/canEdit'
 import { useIsCampaignDm, useVaultStore } from '../../store/vaultStore'
+import { readStored, writeStored } from '../../utils/storage'
 import { gitHubVaultKey } from '../../vault/github/githubApi'
 import type { JournalEntry } from '../../vault/types'
 import { entryMark, loadSeen, saveSeen, unseenEntries } from './campaignSeen'
@@ -13,12 +14,8 @@ export function useVaultKey(): string {
 const LEAD_KEY = 'dnd-companion-campaign-lead:'
 
 function storedLead(vaultKey: string): boolean | null {
-  try {
-    const raw = localStorage.getItem(LEAD_KEY + vaultKey)
-    return raw === null ? null : raw === '1'
-  } catch {
-    return null
-  }
+  const raw = readStored(LEAD_KEY + vaultKey)
+  return raw === null ? null : raw === '1'
 }
 
 export interface CampaignRole {
@@ -57,11 +54,7 @@ export function useCampaignRole(): CampaignRole {
   const setLeading = useCallback(
     (on: boolean) => {
       setLead({ vaultKey, on })
-      try {
-        localStorage.setItem(LEAD_KEY + vaultKey, on ? '1' : '0')
-      } catch {
-        // Just not remembered.
-      }
+      writeStored(LEAD_KEY + vaultKey, on ? '1' : '0')
     },
     [vaultKey],
   )

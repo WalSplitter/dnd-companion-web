@@ -1,4 +1,5 @@
 import type OBR from '@owlbear-rodeo/sdk'
+import { readStoredJson, writeStoredJson } from '../utils/storage'
 
 /**
  * The app runs in Owlbear as a popover of its own rather than as the toolbar action's popover:
@@ -60,22 +61,14 @@ const MIN_WIDTH = 320
 const MIN_HEIGHT = 240
 
 export function loadPanelPrefs(): PanelPrefs {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) return { ...DEFAULT_PREFS, ...(JSON.parse(stored) as Partial<PanelPrefs>) }
-  } catch {
-    // Storage unavailable or garbled — the defaults will do.
-  }
-  return DEFAULT_PREFS
+  // Storage unavailable or garbled — the defaults will do.
+  const stored = readStoredJson(STORAGE_KEY)
+  return stored && typeof stored === 'object' ? { ...DEFAULT_PREFS, ...(stored as Partial<PanelPrefs>) } : DEFAULT_PREFS
 }
 
 export function savePanelPrefs(change: Partial<PanelPrefs>): PanelPrefs {
   const prefs = { ...loadPanelPrefs(), ...change }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
-  } catch {
-    // Not remembered then; the panel still opens.
-  }
+  writeStoredJson(STORAGE_KEY, prefs)
   return prefs
 }
 

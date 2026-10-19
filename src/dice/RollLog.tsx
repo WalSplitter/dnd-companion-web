@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useDismiss } from '../components/useDismiss'
 import { useI18n } from '../i18n/useI18n'
 import { formatModifier } from '../rules/deriveStats'
 import { D20Icon } from './D20Icon'
@@ -6,6 +7,13 @@ import type { RollMode } from './notation'
 import { useRollLogStore, type RollLogEntry } from './rollLogStore'
 
 const MODES: RollMode[] = ['normal', 'advantage', 'disadvantage']
+
+/** Each mode's colors: `chip` for its selected switch, `fab` for the die button while it's armed. */
+const MODE_TONE: Record<RollMode, { chip: string; fab: string }> = {
+  normal: { chip: 'border-trim bg-trim/15 text-trim', fab: 'border-trim/50 text-trim' },
+  advantage: { chip: 'border-success bg-success/15 text-success', fab: 'border-success text-success' },
+  disadvantage: { chip: 'border-danger bg-danger/15 text-danger', fab: 'border-danger text-danger' },
+}
 
 /**
  * The sheet's roll log, like a game's combat log: a d20 at the end of the tab row (in the page's
@@ -22,21 +30,7 @@ export function RollLog() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  useDismiss(open, () => setOpen(false), [rootRef])
 
   const time = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit' })
   const armed = armedMode !== 'normal'
@@ -68,13 +62,7 @@ export function RollLog() {
                   aria-checked={armedMode === mode}
                   onClick={() => setArmedMode(mode)}
                   className={`cursor-pointer rounded-md border px-1.5 py-1 text-xs font-medium transition ${
-                    armedMode === mode
-                      ? mode === 'advantage'
-                        ? 'border-success bg-success/15 text-success'
-                        : mode === 'disadvantage'
-                          ? 'border-danger bg-danger/15 text-danger'
-                          : 'border-trim bg-trim/15 text-trim'
-                      : 'border-trim/25 text-fg-muted hover:border-trim/60 hover:text-fg'
+                    armedMode === mode ? MODE_TONE[mode].chip : 'border-trim/25 text-fg-muted hover:border-trim/60 hover:text-fg'
                   }`}
                 >
                   {t(`rollLog.mode.${mode}`)}
@@ -102,9 +90,7 @@ export function RollLog() {
         aria-expanded={open}
         aria-label={t('rollLog.title')}
         title={armed ? `${t('rollLog.title')} · ${t('rollLog.armed', { mode: t(`rollLog.mode.${armedMode}`) })}` : t('rollLog.title')}
-        className={`roll-log-fab relative grid size-8 cursor-pointer place-items-center rounded-md border bg-surface-2 transition hover:shadow-[0_0_10px_-3px_var(--color-trim)] ${
-          armedMode === 'advantage' ? 'border-success text-success' : armedMode === 'disadvantage' ? 'border-danger text-danger' : 'border-trim/50 text-trim'
-        }`}
+        className={`roll-log-fab relative grid size-8 cursor-pointer place-items-center rounded-md border bg-surface-2 transition hover:shadow-[0_0_10px_-3px_var(--color-trim)] ${MODE_TONE[armedMode].fab}`}
       >
         {/* Tumbles once for every new roll, so the corner die echoes the one that was clicked. */}
         <D20Icon key={entries[0]?.id ?? 0} rolling={entries.length > 0} />

@@ -31,6 +31,7 @@ import {
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
 import { campaignDmPatch, conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { readStored, writeStored } from '../utils/storage'
 import type { TranslationKey } from '../i18n/useI18n'
 import type { CampaignJournal, CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, JournalEntry, Vault, VaultSourceFile } from '../vault/types'
 
@@ -255,6 +256,13 @@ function loadGitHubRuntime() {
   )
 }
 
+/** What an optimistic write logs if it fails: where, with which details, and how to try again. */
+interface WriteFailure {
+  source: string
+  context?: Record<string, unknown>
+  retry: () => void
+}
+
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
 const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable', githubLogin: null, campaignCheckedAt: null } as const
 
@@ -269,22 +277,6 @@ let campaignWrites = 0
 
 /** The last GitHub login seen per repository, so the DM can keep writing offline. */
 const LOGIN_KEY = 'dnd-companion-github-login:'
-
-function cachedLogin(key: string): string | null {
-  try {
-    return localStorage.getItem(LOGIN_KEY + key)
-  } catch {
-    return null
-  }
-}
-
-function cacheLogin(key: string, login: string) {
-  try {
-    localStorage.setItem(LOGIN_KEY + key, login)
-  } catch {
-    // Only a convenience for offline use.
-  }
-}
 
 const NO_FILES: VaultSourceFile[] = []
 
@@ -438,6 +430,19 @@ export const useVaultStore = create<VaultState>((set, get) => {
     throw new Error('Permission to read the vault folder was denied.')
   }
 
+  /** A write that was applied optimistically failed and is being rolled back: logged, with a retry. */
+  function reportRollback(failure: WriteFailure, err: unknown) {
+    console.error(`[${failure.source}] failed, rolling back:`, err)
+    reportError({
+      titleKey: 'errorLog.saveFailed',
+      hintKey: 'errorLog.hint.rolledBack',
+      source: failure.source,
+      error: err,
+      context: failure.context,
+      action: { labelKey: 'errorLog.retry', run: failure.retry },
+    })
+  }
+
   /**
    * Applies `mutate` to the character locally, then runs `write` (if any) against disk. If the write
    * fails only that character is rolled back to its previous frontmatter — so a concurrent edit to
@@ -447,7 +452,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
     characterPath: string,
     mutate: (character: CharacterFrontmatter) => CharacterFrontmatter,
     write: (() => Promise<void>) | null,
-    failure: { source: string; context?: Record<string, unknown>; retry: () => void },
+    failure: WriteFailure,
   ) {
     const previous = findCharacter(get().vault, characterPath)
     set({ vault: mapCharacter(get().vault, characterPath, mutate), writeError: null })
@@ -457,15 +462,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
     try {
       await write()
     } catch (err) {
-      console.error(`[${failure.source}] failed, rolling back:`, err)
-      reportError({
-        titleKey: 'errorLog.saveFailed',
-        hintKey: 'errorLog.hint.rolledBack',
-        source: failure.source,
-        error: err,
-        context: failure.context,
-        action: { labelKey: 'errorLog.retry', run: failure.retry },
-      })
+      reportRollback(failure, err)
       set({
         vault: previous ? mapCharacter(get().vault, characterPath, () => previous) : get().vault,
         writeError: errorMessage(err),
@@ -478,7 +475,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
   async function editCampaign(
     mutate: (campaign: CampaignJournal) => CampaignJournal,
     write: () => Promise<void>,
-    failure: { source: string; context?: Record<string, unknown>; retry: () => void },
+    failure: WriteFailure,
   ) {
     const previous = get().vault.campaign
     if (!previous) return
@@ -486,16 +483,14 @@ export const useVaultStore = create<VaultState>((set, get) => {
     campaignWrites++
     try {
       await write()
+      // The note exists now, no longer "to be created" — a re-read wouldn't tell: its signature ignores that.
+      const written = get().vault.campaign
+      if (written?.create !== undefined && written.path === previous.path) {
+        const { create: _created, ...rest } = written
+        set({ vault: { ...get().vault, campaign: rest } })
+      }
     } catch (err) {
-      console.error(`[${failure.source}] failed, rolling back:`, err)
-      reportError({
-        titleKey: 'errorLog.saveFailed',
-        hintKey: 'errorLog.hint.rolledBack',
-        source: failure.source,
-        error: err,
-        context: failure.context,
-        action: { labelKey: 'errorLog.retry', run: failure.retry },
-      })
+      reportRollback(failure, err)
       set({ vault: { ...get().vault, campaign: previous }, writeError: errorMessage(err) })
     } finally {
       campaignWrites--
@@ -620,7 +615,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
           sync: sync.status,
           editPermission: stillEditing ? 'granted' : 'not-requested',
           writeError: null,
-          githubLogin: stillEditing ? current.githubLogin : cachedLogin(gitHubVaultKey(github)),
+          githubLogin: stillEditing ? current.githubLogin : readStored(LOGIN_KEY + gitHubVaultKey(github)),
           campaignCheckedAt: Date.now(),
           ...loaded,
         })
@@ -628,7 +623,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
         void sync.account().then((login) => {
           if (activeSync !== sync || !login) return
           set({ githubLogin: login })
-          cacheLogin(gitHubVaultKey(github), login)
+          writeStored(LOGIN_KEY + gitHubVaultKey(github), login)
         })
         // Unlike a folder, a repository needs no click to grant writing: whether the token may push is
         // asked right away, and editing is on if it may.
@@ -928,7 +923,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
       let content: string | null
       try {
-        content = sync ? (await sync.pull(campaign.path)).content : await readFolderFile(rootHandle!, campaign.path)
+        content = sync ? await sync.pull(campaign.path) : await readFolderFile(rootHandle!, campaign.path)
       } catch (err) {
         // Offline or rate-limited: the next look will do. Not worth an error-log entry.
         console.warn('[vault.refreshCampaign] failed:', err)

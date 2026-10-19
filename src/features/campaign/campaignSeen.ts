@@ -1,3 +1,4 @@
+import { readStoredJson, writeStoredJson } from '../../utils/storage'
 import type { JournalEntry } from '../../vault/types'
 
 /**
@@ -18,20 +19,13 @@ export function entryMark(entry: JournalEntry): string {
 
 /** The marks seen on this device so far; `null` before the first look (then nothing counts as new). */
 export function loadSeen(vaultKey: string): Set<string> | null {
-  try {
-    const raw = localStorage.getItem(SEEN_KEY + vaultKey)
-    return raw === null ? null : new Set(JSON.parse(raw) as string[])
-  } catch {
-    return null
-  }
+  const stored = readStoredJson(SEEN_KEY + vaultKey)
+  return Array.isArray(stored) ? new Set(stored.filter((m): m is string => typeof m === 'string')) : null
 }
 
+/** Storage full or blocked: entries just keep showing as new. */
 export function saveSeen(vaultKey: string, marks: Iterable<string>): void {
-  try {
-    localStorage.setItem(SEEN_KEY + vaultKey, JSON.stringify([...marks]))
-  } catch {
-    // Storage full or blocked: entries just keep showing as new.
-  }
+  writeStoredJson(SEEN_KEY + vaultKey, [...marks])
 }
 
 /** The entries not seen on this device yet (none before the first look). */

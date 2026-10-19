@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
+import { useDismiss } from './useDismiss'
 import { useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { classSummary, totalCharacterLevel } from '../rules/deriveStats'
@@ -43,21 +44,7 @@ function CharacterSwitcher({ current, characters }: { current: CharacterFrontmat
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const onPointer = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointer)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onPointer)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  useDismiss(open, () => setOpen(false), [rootRef])
 
   return (
     <div ref={rootRef} className="relative min-w-0">

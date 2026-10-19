@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useDismiss } from '../../../components/useDismiss'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
@@ -67,24 +68,9 @@ export function CurrencyDisplay({
     })
   }, [openCoin])
 
-  useEffect(() => {
-    if (!openCoin) return
-    function onPointerDown(e: PointerEvent) {
-      const target = e.target as Node
-      if (popoverRef.current?.contains(target)) return
-      if (Object.values(tileRefs.current).some((el) => el?.contains(target))) return
-      setOpenCoin(null)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpenCoin(null)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [openCoin])
+  useDismiss(openCoin !== null, () => setOpenCoin(null), (target) =>
+    [popoverRef.current, ...Object.values(tileRefs.current)].some((el) => el?.contains(target)),
+  )
 
   if (!currency) return null
 

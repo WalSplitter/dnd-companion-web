@@ -8,6 +8,17 @@ export interface JournalFilter {
   query: string
 }
 
+/** Every entry: what a journal shows at first, and again before jumping to an entry. */
+export const SHOW_ALL: JournalFilter = { kind: 'all', query: '' }
+
+/** The locale journal dates are written in. */
+export const journalLocale = (lang: string) => (lang === 'de' ? 'de-DE' : 'en-GB')
+
+/** How many different sessions the entries were written in. */
+export function countSessions(entries: JournalEntry[]): number {
+  return new Set(entries.flatMap((e) => (e.session !== undefined ? [e.session] : []))).size
+}
+
 /** One session's entries, newest first. `session` is undefined for notes not tied to a session. */
 export interface SessionGroup {
   session: number | undefined

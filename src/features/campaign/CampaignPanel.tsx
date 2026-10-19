@@ -10,7 +10,7 @@ import { linksToText } from '../../vault/wikilinkSyntax'
 import { DmSealIcon, JournalKindIcon, RefreshIcon } from '../journal/journalKinds'
 import { EntryEditor, JournalTimeline, KindFilter, QuestTracker, type EntryHandlers } from '../journal/JournalParts'
 import { useJumpToEntry } from '../journal/useJumpToEntry'
-import { filterEntries, KIND_LABEL, KIND_STYLE, todayIso, updateEntry, type JournalFilter } from '../journal/journalView'
+import { countSessions, filterEntries, journalLocale, KIND_LABEL, KIND_STYLE, SHOW_ALL, todayIso, updateEntry, type JournalFilter } from '../journal/journalView'
 import { useCampaignRefresh, useCampaignRole, useFreshEntries, type CampaignRole } from './useCampaign'
 
 /** "Spielleiter | Spieler": which side of the screen the DM looks at. */
@@ -58,10 +58,9 @@ function CampaignHero({ entries, role, refresh }: { entries: JournalEntry[]; rol
   const { t } = useI18n()
   const campaign = useVaultStore((s) => s.vault.campaign)
   const vaultName = useVaultStore((s) => s.vaultName)
-  const sessions = new Set(entries.flatMap((e) => (e.session !== undefined ? [e.session] : []))).size
   const count = (kind: JournalKind) => entries.filter((e) => e.kind === kind).length
   const stats = [
-    { label: t('journal.statSessions'), value: sessions },
+    { label: t('journal.statSessions'), value: countSessions(entries) },
     { label: t('campaign.statOpenQuests'), value: entries.filter((e) => e.kind === 'quest' && !e.done).length },
     { label: t('campaign.statPeople'), value: count('npc') },
     { label: t('campaign.statPlaces'), value: count('place') },
@@ -172,16 +171,16 @@ function ClaimCard() {
  */
 export function CampaignPanel() {
   const { t, lang } = useI18n()
-  const locale = lang === 'de' ? 'de-DE' : 'en-GB'
+  const locale = journalLocale(lang)
   const campaign = useVaultStore((s) => s.vault.campaign)
   const characters = useVaultStore((s) => s.vault.characters)
   const setCampaignJournal = useVaultStore((s) => s.setCampaignJournal)
   const role = useCampaignRole()
   const refresh = useCampaignRefresh()
   const entries = useMemo(() => campaign?.entries ?? [], [campaign?.entries])
-  const [filter, setFilter] = useState<JournalFilter>({ kind: 'all', query: '' })
+  const [filter, setFilter] = useState<JournalFilter>(SHOW_ALL)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const { flashId, jump } = useJumpToEntry(() => setFilter({ kind: 'all', query: '' }))
+  const { flashId, jump } = useJumpToEntry(() => setFilter(SHOW_ALL))
   const isFresh = useFreshEntries(entries, !role.leading)
   const latestSession = currentSession(entries)
   const party = useMemo(() => characters.map((c) => c.frontmatter.name), [characters])

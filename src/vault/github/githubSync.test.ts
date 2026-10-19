@@ -181,12 +181,12 @@ describe('GitHubSync', () => {
     const { sync } = makeSync()
     await sync.write('Brünhild.md', fieldPatch(hpTarget, 11))
 
-    expect(await sync.pull('Brünhild.md')).toEqual({ content: note(11), changed: false })
+    expect(await sync.pull('Brünhild.md')).toBe(note(11))
     repo.push('Vault/Brünhild.md', note(12, 8))
-    expect(await sync.pull('Brünhild.md')).toEqual({ content: note(11, 8), changed: true })
-    expect(await sync.pull('Neu.md')).toEqual({ content: null, changed: false })
+    expect(await sync.pull('Brünhild.md')).toBe(note(11, 8))
+    expect(await sync.pull('Neu.md')).toBeNull()
     repo.push('Vault/Neu.md', '---\na: 1\n---\n')
-    expect(await sync.pull('Neu.md')).toEqual({ content: '---\na: 1\n---\n', changed: true })
+    expect(await sync.pull('Neu.md')).toBe('---\na: 1\n---\n')
   })
 
   it('has nothing to commit when a value is changed back', async () => {

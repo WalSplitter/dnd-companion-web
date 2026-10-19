@@ -268,13 +268,12 @@ export class GitHubSync implements VaultWriter {
   /**
    * Re-reads one note at the branch's current head — to pick up what someone else committed since the
    * vault was loaded (the DM's campaign journal). Returns the note as this browser sees it, queued edits
-   * included (`null`: not in the repository), and whether the repository's version changed.
+   * included (`null`: not in the repository).
    */
-  async pull(path: string): Promise<{ content: string | null; changed: boolean }> {
-    const before = this.remote.get(path)?.content
+  async pull(path: string): Promise<string | null> {
     const head = await fetchBranchHead(this.options.token, this.options.ref, this.options.ref.branch)
-    const remote = await this.remoteAt(path, head.commitSha)
-    return { content: this.localContent(path) ?? null, changed: (remote ?? undefined) !== before }
+    await this.remoteAt(path, head.commitSha)
+    return this.localContent(path) ?? null
   }
 
   /** Whether the token's account may push — checked when edit mode is switched on. */

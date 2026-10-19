@@ -3,6 +3,7 @@ import { Card } from '../../components/Card'
 import { useI18n } from '../../i18n/useI18n'
 import { useCanEdit } from '../../store/canEdit'
 import { useVaultStore } from '../../store/vaultStore'
+import { readStored, writeStored } from '../../utils/storage'
 import { isFor } from '../../vault/adapters/campaignJournal'
 import { currentSession, newJournalId } from '../../vault/adapters/journal'
 import type { CharacterFrontmatter, JournalEntry } from '../../vault/types'
@@ -10,14 +11,13 @@ import { useCampaignRefresh, useFreshEntries } from '../campaign/useCampaign'
 import { DmSealIcon, JournalKindIcon } from './journalKinds'
 import { EntryEditor, JournalTimeline, KindFilter, QuestTracker, type EntryHandlers } from './JournalParts'
 import { useJumpToEntry } from './useJumpToEntry'
-import { filterEntries, todayIso, updateEntry, type JournalFilter } from './journalView'
+import { countSessions, filterEntries, journalLocale, SHOW_ALL, todayIso, updateEntry, type JournalFilter } from './journalView'
 
 function Chronicle({ entries }: { entries: JournalEntry[] }) {
   const { t } = useI18n()
-  const sessions = new Set(entries.flatMap((e) => (e.session !== undefined ? [e.session] : []))).size
   const openQuests = entries.filter((e) => e.kind === 'quest' && !e.done).length
   const stats = [
-    { label: t('journal.statSessions'), value: sessions },
+    { label: t('journal.statSessions'), value: countSessions(entries) },
     { label: t('journal.statEntries'), value: entries.length },
     { label: t('journal.statOpenQuests'), value: openQuests },
   ]
@@ -39,25 +39,17 @@ function Chronicle({ entries }: { entries: JournalEntry[] }) {
 const SHOW_CAMPAIGN_KEY = 'dnd-companion-journal-show-campaign'
 
 function useShowCampaign(): [boolean, (on: boolean) => void] {
-  const [on, setOn] = useState(() => {
-    try {
-      return localStorage.getItem(SHOW_CAMPAIGN_KEY) !== '0'
-    } catch {
-      return true
-    }
-  })
+  const [on, setOn] = useState(() => readStored(SHOW_CAMPAIGN_KEY) !== '0')
   return [
     on,
     (next) => {
       setOn(next)
-      try {
-        localStorage.setItem(SHOW_CAMPAIGN_KEY, next ? '1' : '0')
-      } catch {
-        // Just not remembered.
-      }
+      writeStored(SHOW_CAMPAIGN_KEY, next ? '1' : '0')
     },
   ]
 }
+
+const NO_ENTRIES: JournalEntry[] = []
 
 /**
  * The Journal tab: the player's own notes from the table, saved to the vault (see
@@ -68,22 +60,23 @@ function useShowCampaign(): [boolean, (on: boolean) => void] {
  */
 export function JournalPanel({ character, characterPath }: { character: CharacterFrontmatter; characterPath: string }) {
   const { t, lang } = useI18n()
-  const locale = lang === 'de' ? 'de-DE' : 'en-GB'
+  const locale = journalLocale(lang)
   const canEdit = useCanEdit()
   const setJournal = useVaultStore((s) => s.setJournal)
   const campaign = useVaultStore((s) => s.vault.campaign)
   const own = useMemo(() => character.journal ?? [], [character.journal])
-  const [filter, setFilter] = useState<JournalFilter>({ kind: 'all', query: '' })
+  const [filter, setFilter] = useState<JournalFilter>(SHOW_ALL)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showCampaign, setShowCampaign] = useShowCampaign()
-  const { flashId, jump } = useJumpToEntry(() => setFilter({ kind: 'all', query: '' }))
+  const { flashId, jump } = useJumpToEntry(() => setFilter(SHOW_ALL))
   useCampaignRefresh()
 
   const fromDm = useMemo(
     () => (campaign?.entries ?? []).filter((e) => isFor(e, character.name)).map((e) => ({ ...e, fromCampaign: true })),
     [campaign?.entries, character.name],
   )
-  const isFresh = useFreshEntries(fromDm, true)
+  // Only what's actually shown counts as seen — hidden, the DM's entries stay new for the campaign tab.
+  const isFresh = useFreshEntries(showCampaign ? fromDm : NO_ENTRIES, true)
   // Both journals in one timeline, oldest first — by session; unnumbered notes keep their place.
   const entries = useMemo(() => {
     if (!showCampaign || fromDm.length === 0) return own
