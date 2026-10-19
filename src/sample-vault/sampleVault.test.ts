@@ -44,6 +44,17 @@ describe('sample vault', () => {
     }
   })
 
+  it('has a campaign journal on the campaign level, with entries for single characters too', () => {
+    const campaign = vault.campaign!
+    expect(campaign.path).toBe('Kampagne/Kampagnenbuch.md')
+    expect(campaign.create).toBeUndefined()
+    expect(campaign.entries.length).toBeGreaterThanOrEqual(10)
+    const names = new Set(vault.characters.map((c) => c.frontmatter.name))
+    const audiences = campaign.entries.flatMap((e) => e.audience ?? [])
+    expect(audiences.length).toBeGreaterThan(0)
+    for (const name of audiences) expect(names.has(name), name).toBe(true)
+  })
+
   it('gives every class a level table and every character a chosen subclass', () => {
     const rawFiles = parseVaultFiles(sampleVaultFiles)
     for (const { frontmatter: c } of vault.characters) {

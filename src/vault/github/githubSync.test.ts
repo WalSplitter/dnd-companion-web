@@ -157,6 +157,38 @@ describe('GitHubSync', () => {
     expect(repo.fileAt('Vault/Brünhild.md')).toBe(note(10))
   })
 
+  it('commits an edit others wait for after a short pause, taking along what else is queued', async () => {
+    vi.useFakeTimers()
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const { sync } = makeSync()
+
+    await sync.write('Brünhild.md', fieldPatch(hpTarget, 11))
+    await sync.write('Brünhild.md', fieldPatch(manaTarget, 1), { soon: true })
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(repo.appCommits).toHaveLength(0)
+    await vi.advanceTimersByTimeAsync(6_000)
+    expect(repo.appCommits).toHaveLength(1)
+    expect(repo.fileAt('Vault/Brünhild.md')).toBe(note(11, 1))
+
+    // Back to the long pause for ordinary edits.
+    await sync.write('Brünhild.md', fieldPatch(hpTarget, 10))
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(repo.appCommits).toHaveLength(1)
+  })
+
+  it('pulls one note at the branch head, keeping queued edits on top', async () => {
+    const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
+    const { sync } = makeSync()
+    await sync.write('Brünhild.md', fieldPatch(hpTarget, 11))
+
+    expect(await sync.pull('Brünhild.md')).toEqual({ content: note(11), changed: false })
+    repo.push('Vault/Brünhild.md', note(12, 8))
+    expect(await sync.pull('Brünhild.md')).toEqual({ content: note(11, 8), changed: true })
+    expect(await sync.pull('Neu.md')).toEqual({ content: null, changed: false })
+    repo.push('Vault/Neu.md', '---\na: 1\n---\n')
+    expect(await sync.pull('Neu.md')).toEqual({ content: '---\na: 1\n---\n', changed: true })
+  })
+
   it('has nothing to commit when a value is changed back', async () => {
     const repo = fakeRepo({ 'Vault/Brünhild.md': note(12) })
     const { sync } = makeSync()

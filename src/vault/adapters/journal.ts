@@ -1,6 +1,7 @@
 import { isRecord } from '../frontmatterFields'
 import { backlinksTo, type RawFile } from '../rawFile'
 import { JOURNAL_KINDS, type CharacterWriteTargets, type JournalEntry, type JournalKind } from '../types'
+import { linkFile } from '../wikilinkSyntax'
 
 /**
  * A character's journal: the player's notes from the table, kept as a `journal:` list in the app's own
@@ -55,11 +56,18 @@ export function parseJournal(raw: unknown): JournalEntry[] {
     if (date) entry.date = date
     if (item.pinned === true) entry.pinned = true
     if (item.done === true) entry.done = true
+    // `for:` — whom a campaign journal entry is meant for (see `adapters/campaignJournal.ts`).
+    // An unquoted `for: [[Name]]` reads as a nested list — flattened, it's the name all the same.
+    const audience = [item.for].flat(3).flatMap((v) => {
+      const name = typeof v === 'string' ? (linkFile(v) || v).trim() : ''
+      return name ? [name] : []
+    })
+    if (audience.length > 0) entry.audience = audience
     return entry.text || entry.title ? [entry] : []
   })
 }
 
-/** What's written for each entry: no runtime `id`, no `false` flags, keys in reading order. */
+/** What's written for each entry: no runtime `id`, no `false` flags, keys in reading order (`for:` as wikilinks). */
 export function serializeJournal(entries: JournalEntry[]): Record<string, unknown>[] {
   return entries.map((e) => ({
     ...(e.session !== undefined ? { session: e.session } : {}),
@@ -68,6 +76,7 @@ export function serializeJournal(entries: JournalEntry[]): Record<string, unknow
     ...(e.title ? { title: e.title } : {}),
     ...(e.pinned ? { pinned: true } : {}),
     ...(e.done ? { done: true } : {}),
+    ...(e.audience?.length ? { for: e.audience.map((name) => `[[${name}]]`) } : {}),
     text: e.text,
   }))
 }

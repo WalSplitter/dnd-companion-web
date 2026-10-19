@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
+import { campaignFromFile, isDm } from '../vault/adapters/campaignJournal'
+import { serializeJournal } from '../vault/adapters/journal'
 import { deriveEquipment, equipmentChangeFields } from '../vault/adapters/nativeCharacter'
 import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
-import type { RawFile } from '../vault/rawFile'
+import { parseRawFile, type RawFile } from '../vault/rawFile'
 import { GitHubError, gitHubVaultKey, gitHubVaultName, type GitHubErrorKind, type GitHubVaultRef } from '../vault/github/githubApi'
 import type { GitHubSync, SyncStatus } from '../vault/github/githubSync'
 import {
@@ -23,13 +25,14 @@ import {
 import {
   isFileSystemAccessSupported,
   readVaultFromDirectoryHandle,
+  readFolderFile,
   readVaultFromFileList,
   showVaultDirectoryPicker,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { campaignDmPatch, conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
 import type { TranslationKey } from '../i18n/useI18n'
-import type { CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, JournalEntry, Vault, VaultSourceFile } from '../vault/types'
+import type { CampaignJournal, CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, JournalEntry, Vault, VaultSourceFile } from '../vault/types'
 
 
 /** 'none': nothing opened yet — the start page is showing and there is no vault to render. */
@@ -72,6 +75,10 @@ interface VaultState {
   editPermission: EditPermission
   /** Set when a field write failed after already being applied optimistically (and then rolled back). */
   writeError: string | null
+  /** The GitHub account of the open repository's token — who may write the campaign journal (`dm:`). */
+  githubLogin: string | null
+  /** When the campaign journal was last re-read from the repository or the folder (see `refreshCampaign`). */
+  campaignCheckedAt: number | null
   /** Opens the bundled sample vault — always in its original state, so this also discards any demo edits.
    * The first call downloads the vault's notes (a separate chunk); every later one switches synchronously. */
   loadSampleVault: () => Promise<boolean>
@@ -159,6 +166,19 @@ interface VaultState {
    * edit permission.
    */
   setJournal: (characterPath: string, journal: JournalEntry[]) => Promise<void>
+  /**
+   * Replaces the DM's campaign journal (`journal:` on the campaign note — see `adapters/campaignJournal.ts`),
+   * creating the note on the first entry. Same optimistic-write + rollback shape as `setJournal`. A
+   * GitHub vault commits it after a short pause, so the players see it soon.
+   */
+  setCampaignJournal: (entries: JournalEntry[]) => Promise<void>
+  /** Enters the GitHub account as the campaign's DM — only while nobody is (`dm:` empty). */
+  claimCampaign: () => Promise<void>
+  /**
+   * Re-reads the campaign journal — from the repository's current head, or from disk (after a
+   * `git pull`) — and shows what changed. Quiet when offline; a no-op for the sample vault.
+   */
+  refreshCampaign: () => Promise<void>
 }
 
 // Portrait images are exposed as object URLs (see vaultLoader.ts); each one needs revoking when a
@@ -236,7 +256,35 @@ function loadGitHubRuntime() {
 }
 
 /** State shared by every "a vault is showing" transition that has no folder handles to write through. */
-const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable' } as const
+const NO_WRITE_ACCESS = { rootHandle: null, writer: null, sync: null, editPermission: 'unavailable', githubLogin: null, campaignCheckedAt: null } as const
+
+/** Commit-message context of a campaign journal edit — committed soon, since players are waiting for it. */
+const CAMPAIGN_CONTEXT = { character: 'Kampagnenbuch', soon: true }
+
+/** What the campaign journal says, for telling whether a re-read changed anything (ids are runtime-only). */
+const campaignSignature = (c: CampaignJournal | undefined) => (c ? JSON.stringify([c.path, c.title, c.dms, serializeJournal(c.entries)]) : '')
+
+/** Campaign journal writes in flight — a re-read meanwhile could show the note from before them. */
+let campaignWrites = 0
+
+/** The last GitHub login seen per repository, so the DM can keep writing offline. */
+const LOGIN_KEY = 'dnd-companion-github-login:'
+
+function cachedLogin(key: string): string | null {
+  try {
+    return localStorage.getItem(LOGIN_KEY + key)
+  } catch {
+    return null
+  }
+}
+
+function cacheLogin(key: string, login: string) {
+  try {
+    localStorage.setItem(LOGIN_KEY + key, login)
+  } catch {
+    // Only a convenience for offline use.
+  }
+}
 
 const NO_FILES: VaultSourceFile[] = []
 
@@ -369,6 +417,8 @@ export const useVaultStore = create<VaultState>((set, get) => {
         sync: null,
         editPermission: 'not-requested',
         writeError: null,
+        githubLogin: null,
+        campaignCheckedAt: Date.now(),
         ...loaded,
       })
       replaceSync(null)
@@ -421,6 +471,34 @@ export const useVaultStore = create<VaultState>((set, get) => {
         writeError: errorMessage(err),
       })
       notifyCharacterEdit(get().vault, characterPath)
+    }
+  }
+
+  /** `editCharacter` for the campaign journal: applied at once, rolled back (and logged) if `write` fails. */
+  async function editCampaign(
+    mutate: (campaign: CampaignJournal) => CampaignJournal,
+    write: () => Promise<void>,
+    failure: { source: string; context?: Record<string, unknown>; retry: () => void },
+  ) {
+    const previous = get().vault.campaign
+    if (!previous) return
+    set({ vault: { ...get().vault, campaign: mutate(previous) }, writeError: null })
+    campaignWrites++
+    try {
+      await write()
+    } catch (err) {
+      console.error(`[${failure.source}] failed, rolling back:`, err)
+      reportError({
+        titleKey: 'errorLog.saveFailed',
+        hintKey: 'errorLog.hint.rolledBack',
+        source: failure.source,
+        error: err,
+        context: failure.context,
+        action: { labelKey: 'errorLog.retry', run: failure.retry },
+      })
+      set({ vault: { ...get().vault, campaign: previous }, writeError: errorMessage(err) })
+    } finally {
+      campaignWrites--
     }
   }
 
@@ -542,9 +620,16 @@ export const useVaultStore = create<VaultState>((set, get) => {
           sync: sync.status,
           editPermission: stillEditing ? 'granted' : 'not-requested',
           writeError: null,
+          githubLogin: stillEditing ? current.githubLogin : cachedLogin(gitHubVaultKey(github)),
+          campaignCheckedAt: Date.now(),
           ...loaded,
         })
         sync.start()
+        void sync.account().then((login) => {
+          if (activeSync !== sync || !login) return
+          set({ githubLogin: login })
+          cacheLogin(gitHubVaultKey(github), login)
+        })
         // Unlike a folder, a repository needs no click to grant writing: whether the token may push is
         // asked right away, and editing is on if it may.
         if (!stillEditing) void get().requestEditPermission()
@@ -797,6 +882,70 @@ export const useVaultStore = create<VaultState>((set, get) => {
         },
       )
     },
+
+    setCampaignJournal: async (entries) => {
+      const { vault, writer, editPermission } = get()
+      const campaign = vault.campaign
+      if (!campaign || editPermission !== 'granted' || !writer || (!campaign.create && !writer.canWrite(campaign.path))) return
+
+      await editCampaign(
+        (c) => ({ ...c, entries }),
+        async () => {
+          // `create` stays on the campaign, as on a character's journal target: asking again is free.
+          if (campaign.create) await writer.create(campaign.path, campaign.create, CAMPAIGN_CONTEXT)
+          await writer.write(campaign.path, journalPatch(entries), CAMPAIGN_CONTEXT)
+        },
+        {
+          source: 'vault.setCampaignJournal',
+          context: { writePath: campaign.path, entries: entries.length },
+          retry: () => void get().setCampaignJournal(entries),
+        },
+      )
+    },
+
+    claimCampaign: async () => {
+      const { vault, writer, editPermission, githubLogin } = get()
+      const campaign = vault.campaign
+      if (!campaign || !githubLogin || campaign.dms.length > 0 || editPermission !== 'granted' || !writer) return
+      const dms = [githubLogin]
+
+      await editCampaign(
+        (c) => ({ ...c, dms }),
+        async () => {
+          if (campaign.create) await writer.create(campaign.path, campaign.create, CAMPAIGN_CONTEXT)
+          await writer.write(campaign.path, campaignDmPatch(dms), CAMPAIGN_CONTEXT)
+        },
+        { source: 'vault.claimCampaign', context: { writePath: campaign.path, login: githubLogin }, retry: () => void get().claimCampaign() },
+      )
+    },
+
+    refreshCampaign: async () => {
+      const { vault, rootHandle, writer } = get()
+      const campaign = vault.campaign
+      if (!campaign || campaignWrites > 0) return
+      const sync = activeSync && writer === activeSync ? activeSync : null
+      if (!sync && !rootHandle) return
+
+      let content: string | null
+      try {
+        content = sync ? (await sync.pull(campaign.path)).content : await readFolderFile(rootHandle!, campaign.path)
+      } catch (err) {
+        // Offline or rate-limited: the next look will do. Not worth an error-log entry.
+        console.warn('[vault.refreshCampaign] failed:', err)
+        return
+      }
+      const now = get()
+      // Another vault opened meanwhile, or an edit started that this read may predate.
+      if (now.vault.campaign?.path !== campaign.path || campaignWrites > 0) return
+      if (content === null) {
+        set({ campaignCheckedAt: Date.now() })
+        return
+      }
+      const next = campaignFromFile(parseRawFile({ path: campaign.path, content }))
+      // Unchanged: keep the entries (and their ids) — an entry being edited stays open.
+      if (campaignSignature(next) === campaignSignature(now.vault.campaign)) set({ campaignCheckedAt: Date.now() })
+      else set({ campaignCheckedAt: Date.now(), vault: { ...now.vault, campaign: next } })
+    },
   }
 })
 
@@ -826,6 +975,11 @@ export function wasSampleVaultActive(): boolean {
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
+}
+
+/** Whether this browser's GitHub account is one of the campaign's DMs. */
+export function useIsCampaignDm(): boolean {
+  return useVaultStore((s) => s.vault.campaign !== undefined && isDm(s.vault.campaign, s.githubLogin))
 }
 
 /** Repository and token of the open GitHub vault — for reading its history (the party chronicle). */

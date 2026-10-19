@@ -51,6 +51,28 @@ export function JournalKindIcon({ kind, className }: IconProps & { kind: Journal
   return <Icon className={className}>{KIND_ICON_PATHS[kind]}</Icon>
 }
 
+/** A wax seal with the DM's hooded eye: written by the DM, in the campaign journal. */
+export function DmSealIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2.4l2.2 1.5 2.6-.2 1.1 2.4 2.4 1.1-.2 2.6 1.5 2.2-1.5 2.2.2 2.6-2.4 1.1-1.1 2.4-2.6-.2L12 21.6l-2.2-1.5-2.6.2-1.1-2.4-2.4-1.1.2-2.6L2.4 12l1.5-2.2-.2-2.6 2.4-1.1 1.1-2.4 2.6.2z" />
+      <path d="M7.6 13c1.2-1.9 2.7-2.9 4.4-2.9s3.2 1 4.4 2.9c-1.2 1.9-2.7 2.9-4.4 2.9S8.8 14.9 7.6 13z" />
+      <circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M8.6 8.9 12 7.4l3.4 1.5" />
+    </Icon>
+  )
+}
+
+/** Two arrows chasing each other: look for what changed. */
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19.5 9A8 8 0 0 0 5 7.5M4.5 15A8 8 0 0 0 19 16.5" />
+      <path d="M5 3.5v4h4M19 20.5v-4h-4" />
+    </Icon>
+  )
+}
+
 export function PinIcon(props: IconProps) {
   return (
     <Icon {...props}>

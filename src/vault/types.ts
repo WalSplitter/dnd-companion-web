@@ -407,6 +407,26 @@ export interface JournalEntry {
   pinned?: boolean
   /** A quest that's been completed. */
   done?: boolean
+  /** Campaign journal only (`for:`): the characters the DM wrote this for; absent = the whole party. */
+  audience?: string[]
+  /** Runtime-only: a read-only entry from the campaign journal, shown in a character's journal. */
+  fromCampaign?: boolean
+}
+
+/**
+ * The DM's journal for the whole party (see `adapters/campaignJournal.ts`): one note on the campaign
+ * level, written only by the DM and shown read-only to everyone else.
+ */
+export interface CampaignJournal {
+  /** The note holding it — or, with `create`, where it is created (with `create` as its text) on the first entry. */
+  path: string
+  create?: string
+  /** The campaign's name, from the note's `title:` (else the app's default label). */
+  title?: string
+  /** GitHub logins allowed to write it (`dm:`). Empty: nobody has claimed it yet. */
+  dms: string[]
+  /** Oldest first, like a character's journal. */
+  entries: JournalEntry[]
 }
 
 /** When a feature is used (`Einsatz` on a `#Merkmal` note): `[[Aktion]]`, `[[Reaktion]]`, or
@@ -611,4 +631,6 @@ export interface Vault {
    * see `adapters/endeavourItem.ts`. Kept separate from `items` (the native `type: item` schema)
    * rather than merged in; see that module's doc comment for why. */
   endeavourItems: VaultFile<EndeavourItemFrontmatter>[]
+  /** The DM's campaign journal — always set by `buildVault` (to a note still to be created, if need be). */
+  campaign?: CampaignJournal
 }

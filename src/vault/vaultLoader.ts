@@ -144,3 +144,17 @@ export async function readVaultFromFileList(
 
   return { files, imageAssets }
 }
+
+/** The text of one note under `root` as it is on disk now — `null` when it doesn't exist (any more). */
+export async function readFolderFile(root: FileSystemDirectoryHandle, path: string): Promise<string | null> {
+  const segments = path.split('/')
+  const fileName = segments.pop()!
+  try {
+    let dir = root
+    for (const segment of segments) dir = await dir.getDirectoryHandle(segment)
+    return await (await (await dir.getFileHandle(fileName)).getFile()).text()
+  } catch (err) {
+    if (err instanceof DOMException && (err.name === 'NotFoundError' || err.name === 'TypeMismatchError')) return null
+    throw err
+  }
+}

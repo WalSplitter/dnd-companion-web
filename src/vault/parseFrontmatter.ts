@@ -1,3 +1,4 @@
+import { resolveCampaignJournal } from './adapters/campaignJournal'
 import { looksLikeEndeavourItem, normalizeEndeavourItem } from './adapters/endeavourItem'
 import { looksLikeLegacyCharacter, normalizeLegacyCharacter } from './adapters/legacyCharacterSheet'
 import { looksLikeLegacySpellNote, normalizeLegacySpellNote } from './adapters/legacySpell'
@@ -79,5 +80,6 @@ export function buildVaultFromRawFiles(rawFiles: RawFile[], imageAssets?: ImageA
     }
   }
 
+  vault.campaign = resolveCampaignJournal(rawFiles, vault.characters.map((c) => c.path))
   return vault
 }
