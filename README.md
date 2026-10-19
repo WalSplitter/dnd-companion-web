@@ -27,12 +27,15 @@ No server · no database · no account.
 
 ## Features
 
-- 🎲 **A living sheet.** Modifiers, saves, skills and spell DC are derived, never duplicated. Click any value like `1d8` or `2d6+3` to roll it.
+- 🎲 **A living sheet.** Modifiers, saves, skills and spell DC are derived, never duplicated. Click any value like `1d8` or `2d6+3` to roll it; a roll log keeps the session's rolls and sets advantage on touch screens.
 - 🎒 **Slot-grid inventory.** Drag items between backpacks and pouches, track charges, and equip gear on a character screen with body slots.
 - ✨ **Spells and resources.** Slots, mana, class pools, luck points, exhaustion, rests and a biography tab.
+- 🌳 **Skill tree.** The class from level 1 to 20 as a talent board, built from the class table in your vault.
+- 📖 **Journal and campaign log.** Players take notes per character; the DM keeps quests, people and places for the whole party.
 - 📜 **Reads your vault directly.** Frontmatter and `[[Wikilinks]]`, with hover previews like in Obsidian.
 - 💾 **Writes back safely.** Edits are patched into the exact YAML key; formatting and comments stay. Failed writes are rolled back.
-- ☁️ **Straight from GitHub.** On any device, phones included, saved as tidy commits.
+- ☁️ **Straight from GitHub.** On any device, phones included, saved as tidy commits, with a chronicle of every session.
+- 📴 **Works offline.** Installable as a PWA; edits wait and are committed once you're back online.
 - 🏰 **In Owlbear Rodeo.** HP, temp HP, resilience and AC of linked tokens are live for the whole group, in sync with the Clash! tracker; rolls show up on the token.
 - 👥 **The whole party.** Cards, a compact list or a front/middle/back lineup, plus a side-by-side comparison.
 - 🎨 **Yours to style.** Colour palettes, class and animated topic themes; English and German.
@@ -56,7 +59,9 @@ The [wiki](https://github.com/WalSplitter/dnd-companion-web/wiki) has step-by-st
 | Guide | What's in it |
 | --- | --- |
 | [Getting Started](https://github.com/WalSplitter/dnd-companion-web/wiki/Getting-Started) | from zero to your character sheet in a few minutes |
-| [GitHub Sync](https://github.com/WalSplitter/dnd-companion-web/wiki/GitHub-Sync) | repository setup, access tokens, how and when changes are committed |
+| [Journal](https://github.com/WalSplitter/dnd-companion-web/wiki/Journal) · [Campaign Log](https://github.com/WalSplitter/dnd-companion-web/wiki/Campaign-Log) | notes per character, and the DM's log for the whole party |
+| [Skill Tree](https://github.com/WalSplitter/dnd-companion-web/wiki/Skill-Tree) | the class progression board and the level table behind it |
+| [GitHub Sync](https://github.com/WalSplitter/dnd-companion-web/wiki/GitHub-Sync) | repository setup, access tokens, commits, offline use and the chronicle |
 | [Owlbear Rodeo](https://github.com/WalSplitter/dnd-companion-web/wiki/Owlbear-Rodeo) | the extension, live values, Clash!, rolls on the token |
 | [Vault Setup](https://github.com/WalSplitter/dnd-companion-web/wiki/Vault-Setup) · [For the DM](https://github.com/WalSplitter/dnd-companion-web/wiki/For-the-DM) | characters, items, spells and classes in your vault |
 | [Vault Formats](https://github.com/WalSplitter/dnd-companion-web/wiki/Vault-Formats) | the exact frontmatter of the native, Endeavour and legacy formats |
@@ -87,7 +92,7 @@ npm run dev      # http://localhost:5173
 
 ## Roadmap
 
-Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues), for example [#23](https://github.com/WalSplitter/dnd-companion-web/issues/23) (more Owlbear integration: initiative, conditions on tokens, loot) and [#12](https://github.com/WalSplitter/dnd-companion-web/issues/12) (offline use as a PWA).
+Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-companion-web/issues), for example [#9](https://github.com/WalSplitter/dnd-companion-web/issues/9) (AC, initiative and spell DC by the Nimble formulas in Endeavour).
 
 ## License
 
