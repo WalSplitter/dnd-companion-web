@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
@@ -40,6 +40,28 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
   const updateCharacterField = useVaultStore((s) => s.updateCharacterField)
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  // Left offset (px, relative to the trigger's box) that keeps the panel on screen: right-aligned to
+  // the trigger where it fits, otherwise pushed in so it keeps a 16px gutter (narrow phones).
+  const [panelLeft, setPanelLeft] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) return
+    function place() {
+      const container = containerRef.current
+      const panel = panelRef.current
+      if (!container || !panel) return
+      const box = container.getBoundingClientRect()
+      const width = panel.offsetWidth
+      const gutter = 16
+      const viewport = document.documentElement.clientWidth
+      const left = Math.max(gutter, Math.min(box.right - width, viewport - gutter - width))
+      setPanelLeft(left - box.left)
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -107,9 +129,11 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
       {open && (
         <div
           id={menuId}
+          ref={panelRef}
           role="dialog"
           aria-label={t('rest.title')}
-          className="rpg-panel absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-surface p-3 shadow-xl"
+          style={panelLeft === null ? { right: 0 } : { left: panelLeft }}
+          className="rpg-panel absolute top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-surface p-3 shadow-xl"
         >
           <div className="mb-2 flex items-baseline justify-between gap-2">
             <span className="font-display text-sm font-bold tracking-wide text-fg">{t('rest.title')}</span>
