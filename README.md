@@ -46,7 +46,7 @@ Open **<https://walsplitter.github.io/dnd-companion-web/>**. There is nothing to
 
 | | Card | Where the vault is | Saving changes |
 | --- | --- | --- | --- |
-| 🧪 | **Explore the sample vault** | bundled demo party of six | tried in memory, never saved |
+| 🧪 | **Explore the sample vault** | bundled demo party of seven | tried in memory, never saved |
 | 📁 | **Choose folder…** | a folder on your device | into the files (Chrome, Edge, Opera) |
 | ☁️ | **Open from a repository** | a GitHub repository | as commits, in any browser |
 

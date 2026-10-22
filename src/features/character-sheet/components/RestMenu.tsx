@@ -96,6 +96,8 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
         return t('spells.slotLevelLabel', { level: change.grade ?? '' })
       case 'hitDice':
         return t('stats.hitDice')
+      case 'resource':
+        return change.resource?.name ?? ''
     }
   }
 
@@ -137,7 +139,7 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
                   <span className="flex flex-wrap gap-1">
                     {changes.map((change) => (
                       <span
-                        key={`${change.key}-${change.grade ?? ''}`}
+                        key={`${change.key}-${change.grade ?? change.resource?.key ?? ''}`}
                         className="inline-flex items-baseline gap-1 rounded bg-black/20 px-1.5 py-0.5 text-[0.7rem] text-fg-muted"
                       >
                         {changeLabel(change)}

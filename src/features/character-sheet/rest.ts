@@ -1,5 +1,6 @@
 import type { CharacterFrontmatter, CharacterWriteTargets, FieldWriteTarget } from '../../vault/types'
 import { isEndeavour } from '../../rules/ruleset'
+import { recoveryAmount } from '../../rules/endeavourClasses'
 import { resiliencePool } from '../../rules/vitals'
 
 /**
@@ -11,13 +12,14 @@ import { resiliencePool } from '../../rules/vitals'
  *   half of each grade's slots). Exhaustion stays.
  * - `safe` (Sichere Rast, 8 h at a safe place, 1×/day): all RP, 50 % of max HP, all mana and slots,
  *   one exhaustion level. Temp HP end with it (`Temporäre Trefferpunkte#Wirkungsdauer`).
+ * - Class resources (Ki) come back as their own note says (`ClassResource.recovery`).
  * - `long` (D&D 2024 long rest): all HP, hit dice and slots, one exhaustion level, temp HP end.
  *
  * Every percentage rounds down, as the rules say.
  */
 export type RestKind = 'breather' | 'field' | 'safe' | 'long'
 
-export type RestChangeKey = 'resilience' | 'hp' | 'temp' | 'mana' | 'exhaustion' | 'slot' | 'hitDice'
+export type RestChangeKey = 'resilience' | 'hp' | 'temp' | 'mana' | 'exhaustion' | 'slot' | 'hitDice' | 'resource'
 
 /** One pool a rest changes. `from`/`to` are what the sheet shows: remaining slots and hit dice, not used ones. */
 export interface RestChange {
@@ -27,6 +29,8 @@ export interface RestChange {
   max?: number
   /** Spell grade, for `slot`. */
   grade?: string
+  /** `ClassResource.key` and name, for `resource`. */
+  resource?: { key: string; name: string }
 }
 
 export function restKinds(character: CharacterFrontmatter): RestKind[] {
@@ -71,6 +75,15 @@ export function planRest(character: CharacterFrontmatter, kind: RestKind): RestC
     }
   }
 
+  if (kind !== 'long') {
+    for (const resource of character.class_resources ?? []) {
+      const recovery = resource.recovery[kind]
+      if (recovery === undefined) continue
+      const to = regain(resource.current, recoveryAmount(recovery, resource.max), resource.max)
+      push({ key: 'resource', resource: { key: resource.key, name: resource.name }, from: resource.current, to, max: resource.max })
+    }
+  }
+
   if (share.exhaustion > 0) push({ key: 'exhaustion', from: exhaustion, to: Math.max(0, exhaustion - share.exhaustion) })
 
   if (kind === 'long' && hitDice) {
@@ -91,6 +104,7 @@ export function restChangeWrite(change: RestChange, targets: CharacterWriteTarge
     exhaustion: targets?.exhaustion,
     slot: change.grade !== undefined ? targets?.spell_slots?.[change.grade] : undefined,
     hitDice: targets?.hit_dice_remaining,
+    resource: change.resource ? targets?.class_resources?.[change.resource.key] : undefined,
   }[change.key]
   if (!target) return undefined
   // Slots are stored as `used`; everything else as the value the sheet shows.
@@ -118,5 +132,13 @@ export function applyRestChange(c: CharacterFrontmatter, change: RestChange): Ch
     }
     case 'hitDice':
       return c.hit_dice ? { ...c, hit_dice: { ...c.hit_dice, used: c.hit_dice.total - change.to } } : c
+    case 'resource':
+      return withResource(c, change.resource?.key ?? '', change.to)
   }
+}
+
+/** The character with class resource `key` set to `current`. */
+export function withResource(c: CharacterFrontmatter, key: string, current: number): CharacterFrontmatter {
+  if (!c.class_resources?.some((r) => r.key === key)) return c
+  return { ...c, class_resources: c.class_resources.map((r) => (r.key === key ? { ...r, current } : r)) }
 }

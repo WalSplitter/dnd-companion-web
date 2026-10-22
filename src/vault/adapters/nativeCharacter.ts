@@ -1,9 +1,21 @@
+import { CLASS_RESOURCE_RULES } from '../../rules/endeavourClasses'
 import { nimbleAttributeValue } from '../../rules/endeavour'
 import { isEndeavour, parseRuleset } from '../../rules/ruleset'
-import { isRecord, resolvePortraitLink } from '../frontmatterFields'
+import { hasTag, isRecord, resolvePortraitLink, tagList } from '../frontmatterFields'
 import { backlinksTo, findRawFileByName, type RawFile } from '../rawFile'
 import { NIMBLE_ATTRIBUTES, parseNimbleAttributeKey, WORN_SLOTS } from '../types'
-import type { CharacterFeature, CharacterFrontmatter, CharacterRuleset, CharacterWriteTargets, EquipmentChange, FeatureUsage, FieldWriteTarget, NimbleAttributeKey } from '../types'
+import type {
+  CharacterFeature,
+  CharacterFrontmatter,
+  CharacterRuleset,
+  CharacterWriteTargets,
+  ClassResource,
+  EquipmentChange,
+  FeatureCost,
+  FeatureUsage,
+  FieldWriteTarget,
+  NimbleAttributeKey,
+} from '../types'
 import type { ImageAssets } from '../types'
 import { linkDisplay, linkFile } from '../wikilinkSyntax'
 import { resolveBiography } from './biography'
@@ -276,7 +288,71 @@ export function deriveEquipment(character: CharacterFrontmatter, files: RawFile[
 export function parseFeatureUsage(raw: unknown): FeatureUsage {
   const name = linkFile(raw).trim().toLowerCase()
   if (name === 'aktion' || name === 'bonusaktion') return 'action'
-  return name === 'reaktion' ? 'reaction' : 'passive'
+  return name === 'reaktion' || name === 'reaktionen' ? 'reaction' : 'passive'
+}
+
+/** A feature note's usage. Newer notes keep their cost in `Einsatz` (`"2 [[Aktionspunkte|AP]]"`,
+ * `"1 [[Ki|Kipunkt]]"`) and say what it is with a `Zug/Aktion`/`Zug/Reaktion` tag, also nested
+ * (`Regeln/Endeavour/Zug/Reaktion`); the tag wins, then `Einsatz` as above. A feature with a cost but
+ * no such tag (a Ki action) is used, so it counts as an action. */
+export function noteFeatureUsage(data: Record<string, unknown>): FeatureUsage {
+  const tags = tagList(data)
+  if (tags.some((t) => /(^|\/)Zug\/Reaktion(\/|$)/i.test(t))) return 'reaction'
+  if (tags.some((t) => /(^|\/)Zug\/(Bonus)?Aktion(\/|$)/i.test(t))) return 'action'
+  const usage = parseFeatureUsage(data.Einsatz)
+  return usage === 'passive' && parseFeatureCost(data.Einsatz) ? 'action' : usage
+}
+
+/** `"2 [[Aktionspunkte|AP]], 1 [[Ki|Kipunkt]]"` → `{ ap: 2, resource: Ki × 1 }`: each `<n> [[Target]]`
+ * naming the action points or a class resource's note. `undefined` without any. */
+export function parseFeatureCost(raw: unknown): FeatureCost | undefined {
+  if (typeof raw !== 'string') return undefined
+  const cost: FeatureCost = {}
+  for (const [, amount, target] of raw.matchAll(/(\d+)\s*\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]/g)) {
+    const name = target.trim().toLowerCase()
+    if (name === 'aktionspunkte') cost.ap = Number(amount)
+    const rule = CLASS_RESOURCE_RULES.find((r) => r.featureNote.toLowerCase() === name)
+    if (rule) cost.resource = { key: rule.key, name: rule.name, amount: Number(amount) }
+  }
+  return cost.ap !== undefined || cost.resource ? cost : undefined
+}
+
+/** A feature note as the sheet lists it. */
+function featureFromNote(name: string, note: RawFile, source?: string): CharacterFeature {
+  const cost = parseFeatureCost(note.data.Einsatz)
+  return { name, description: noteSummary(note), usage: noteFeatureUsage(note.data), ...(cost ? { cost } : {}), ...(source ? { source } : {}) }
+}
+
+/**
+ * The class resources (`CLASS_RESOURCE_RULES`) the character has unlocked: a class of the rule's name
+ * at or above the level on its feature note. The current value is `resources.<key>` on the character's
+ * file, clamped to the max; a value that was never written means full.
+ */
+function resolveClassResources(data: Record<string, unknown>, character: CharacterFrontmatter, files: RawFile[]): ClassResource[] {
+  if (!isEndeavour(character) || !Array.isArray(character.class)) return []
+  const stored = isRecord(data.resources) ? data.resources : {}
+  return CLASS_RESOURCE_RULES.flatMap((rule): ClassResource[] => {
+    const entry = character.class.find((c) => c.name?.toLowerCase() === rule.className.toLowerCase())
+    const unlockAt = numberFrom(files, rule.featureNote, 'Stufe') ?? 1
+    if (!entry || typeof entry.level !== 'number' || entry.level < unlockAt) return []
+    const max = rule.max(character)
+    const value = stored[rule.key]
+    const current = typeof value === 'number' ? Math.max(0, Math.min(max, value)) : max
+    return [{ key: rule.key, name: rule.name, current, max, recovery: rule.recovery }]
+  })
+}
+
+/** The actions spending an unlocked resource (the monk's Ki actions), for those the character doesn't list itself. */
+function resourceActions(resources: ClassResource[], listed: CharacterFeature[], files: RawFile[]): CharacterFeature[] {
+  const known = new Set(listed.map((f) => f.name.toLowerCase()))
+  return resources.flatMap((resource) => {
+    const tag = CLASS_RESOURCE_RULES.find((r) => r.key === resource.key)?.actionTag
+    if (!tag) return []
+    return files
+      .filter((f) => hasTag(tagList(f.data), tag) && !known.has(f.name.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+      .map((f) => featureFromNote(f.name, f, resource.name))
+  })
 }
 
 /** A note's short description: its `Beschreibung` field, else the first prose paragraph of its body
@@ -309,7 +385,7 @@ function resolveFeatures(data: Record<string, unknown>, files: RawFile[]): Chara
     if (typeof entry === 'string' && entry.trim()) {
       const note = findRawFileByName(files, linkFile(entry))
       if (!note) return [{ name: linkDisplay(entry), usage: 'passive' }]
-      return [{ name: linkDisplay(entry), description: noteSummary(note), usage: parseFeatureUsage(note.data.Einsatz) }]
+      return [featureFromNote(linkDisplay(entry), note)]
     }
     if (!isRecord(entry) || typeof entry.name !== 'string') return []
     const usage = entry.usage === 'action' || entry.usage === 'reaction' ? entry.usage : parseFeatureUsage(entry.Einsatz)
@@ -379,7 +455,17 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
   const pools = resolveLevelPools(character, files)
   const notes = classNotes(raw.data.class, files)
   const journal = resolveJournal(raw, files)
-  const writeTargets: CharacterWriteTargets = { ...ownFileWriteTargets(raw.path, raw.data, ruleset), ...linked.writeTargets, journal: journal.target }
+  const resources = resolveClassResources(raw.data, character, files)
+  const features = resolveFeatures(raw.data, files) ?? []
+  const allFeatures = [...features, ...resourceActions(resources, features, files)]
+  const writeTargets: CharacterWriteTargets = {
+    ...ownFileWriteTargets(raw.path, raw.data, ruleset),
+    ...linked.writeTargets,
+    journal: journal.target,
+    ...(resources.length > 0
+      ? { class_resources: Object.fromEntries(resources.map((r) => [r.key, { path: raw.path, keyPath: ['resources', r.key], createIfMissing: true }])) }
+      : {}),
+  }
 
   return {
     ...equipped,
@@ -388,7 +474,8 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     // neutral scores keep the D&D-only code paths safe.
     abilities: isRecord(raw.data.abilities) ? character.abilities : { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     ...deriveEquipment(equipped, files),
-    features: resolveFeatures(raw.data, files),
+    features: allFeatures.length > 0 ? allFeatures : undefined,
+    class_resources: resources.length > 0 ? resources : undefined,
     hit_dice: isEndeavour(character) ? undefined : character.hit_dice,
     ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
     ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),

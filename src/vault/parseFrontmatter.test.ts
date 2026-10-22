@@ -302,6 +302,76 @@ Rettungswürfe:
       ])
     })
 
+    describe('the monk (Ki, costs, martial arts)', () => {
+      const monkTag = 'tags:\n  - Regeln/Endeavour/Merkmal/Klasse/Mönch'
+      const monk = (level: number, extra = '') => asClass(`  - name: Mönch\n    level: ${level}\n`).content.replace('---\n', '---\n').replace(/\n---\n$/, `\n${extra}---\n`)
+      const files = (level: number, extra = '') => [
+        { path: 'Characters/Nimble.md', content: monk(level, extra) },
+        { path: 'Klassen/Mönch/Mönch.md', content: '---\nMönchswürfel:\n  1: 1W6\n  6: 1W8\n---\n' },
+        { path: 'Klassen/Mönch/Ki/Ki.md', content: `---\n${monkTag}\nEinsatz: Passiv\nKlasse: "[[Mönch]]"\nStufe: 2\n---\n` },
+        { path: 'Klassen/Mönch/Ki/Schnellschlag.md', content: `---\n${monkTag}/Ki-Aktion\nEinsatz: "1 [[Ki|Kipunkt]]"\n---\nEin zusätzlicher Angriff.` },
+        { path: 'Klassen/Mönch/Ki/Ausweichschritt.md', content: `---\n${monkTag}/Ki-Aktion\n  - Zug/Reaktion\nEinsatz: "1 [[Ki|Kipunkt]]"\n---\nAusweichen verdoppeln.` },
+        { path: 'Klassen/Mönch/Schlaghagel.md', content: `---\n${monkTag}\n  - Zug/Aktion\nEinsatz: "2 [[Aktionspunkte|AP]]"\n---\nZwei Angriffe.` },
+      ]
+
+      it('has no Ki below the level of the Ki note', () => {
+        const c = buildVault(files(1)).characters[0].frontmatter
+        expect(c.class_resources).toBeUndefined()
+        expect(c.features).toBeUndefined()
+      })
+
+      it('gets Ki with EN as max, full until written, and its write target under resources', () => {
+        const c = buildVault(files(2)).characters[0].frontmatter
+        expect(c.class_resources).toEqual([{ key: 'ki', name: 'Ki', current: 3, max: 3, recovery: { breather: 1, field: 'half', safe: 'all' } }])
+        expect(c._write?.class_resources?.ki).toEqual({ path: 'Characters/Nimble.md', keyPath: ['resources', 'ki'], createIfMissing: true })
+        expect(buildVault(files(2, 'resources: { ki: 1 }\n')).characters[0].frontmatter.class_resources?.[0].current).toBe(1)
+      })
+
+      it('lists the Ki actions with their costs, and reads AP costs of listed features', () => {
+        const c = buildVault(files(2, 'Merkmale:\n  - "[[Schlaghagel]]"\n')).characters[0].frontmatter
+        expect(c.features).toEqual([
+          { name: 'Schlaghagel', description: 'Zwei Angriffe.', usage: 'action', cost: { ap: 2 } },
+          { name: 'Ausweichschritt', description: 'Ausweichen verdoppeln.', usage: 'reaction', cost: { resource: { key: 'ki', name: 'Ki', amount: 1 } }, source: 'Ki' },
+          { name: 'Schnellschlag', description: 'Ein zusätzlicher Angriff.', usage: 'action', cost: { resource: { key: 'ki', name: 'Ki', amount: 1 } }, source: 'Ki' },
+        ])
+      })
+
+      it('strikes unarmed with the Mönchswürfel of its level and the better of ST and GE', () => {
+        const at = (level: number, attrs: string) => {
+          const file = files(level)
+          file[0] = { ...file[0], content: file[0].content.replace(/nimble_attributes: .*\n/, `nimble_attributes: ${attrs}\n`) }
+          return buildVault(file).characters[0].frontmatter.attacks?.[0]
+        }
+        expect(at(5, '{ st: 1, bw: 0, ko: 0, ge: 3, in: 0, vs: 0, pr: 0, en: 2 }')).toMatchObject({
+          name: 'Waffenloser Angriff',
+          attribute: 'ge',
+          attack_bonus: 3,
+          damage_dice: '1W6',
+          damage_bonus: 3,
+          properties: ['Finesse'],
+        })
+        expect(at(6, '{ st: 2, bw: 0, ko: 0, ge: 1, in: 0, vs: 0, pr: 0, en: 2 }')).toMatchObject({ attribute: 'st', damage_dice: '1W8' })
+      })
+
+      it("strikes with the subclass's Kernattribut once one is chosen, even if the other is higher", () => {
+        const file = files(5)
+        file[0] = {
+          ...file[0],
+          content: file[0].content
+            .replace('  - name: Mönch\n    level: 5\n', '  - name: Mönch\n    level: 5\n    subclass: Pfad der Eisenfaust\n')
+            .replace(/nimble_attributes: .*\n/, 'nimble_attributes: { st: 1, bw: 0, ko: 0, ge: 3, in: 0, vs: 0, pr: 0, en: 2 }\n'),
+        }
+        const subclass = { path: 'Klassen/Mönch/Pfad der Eisenfaust.md', content: '---\nKernattribut: "[[Stärke]]"\n---\n' }
+        expect(buildVault([...file, subclass]).characters[0].frontmatter.attacks?.[0]).toMatchObject({ attribute: 'st', attack_bonus: 1, damage_bonus: 1 })
+      })
+
+      it('gives anyone else an unarmed strike of 1 + ST only when listed', () => {
+        expect(buildVault([nimbleCharacter()]).characters[0].frontmatter.attacks).toBeUndefined()
+        const listed = buildVault([nimbleCharacter('attacks:\n  - "[[Waffenloser Angriff]]"\n')]).characters[0].frontmatter.attacks
+        expect(listed).toEqual([expect.objectContaining({ attribute: 'st', attack_bonus: 0, damage_dice: '1', damage_bonus: 0, properties: [] })])
+      })
+    })
+
     it('drops hit dice and their write target', () => {
       const vault = buildVault([nimbleCharacter()])
       expect(vault.characters[0].frontmatter.hit_dice).toBeUndefined()

@@ -182,6 +182,18 @@
   translate: -100% 0;
 }
 
+/* Class resources (the monk's Ki): a calm jade, apart from the gold resilience and azure mana. */
+:root {
+  --ki: color-mix(in srgb, var(--color-accent) 25%, #3fbf8f);
+}
+.ki-fill {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ki) 55%, white), var(--ki) 45%, color-mix(in srgb, var(--ki) 55%, black));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ki) 45%, transparent);
+}
+.ki-caption {
+  color: color-mix(in srgb, var(--ki) 80%, white);
+}
+
 /* Exhaustion: wound tokens. Empty ones are hollow silhouettes; filled ones bleed. */
 .exh-token {
   display: inline-block;

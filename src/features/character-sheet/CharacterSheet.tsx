@@ -117,7 +117,7 @@ export function CharacterSheet({
                 <div className="space-y-4">
                   <Attacks character={character} />
                   <Conditions character={character} characterPath={characterPath} />
-                  <FeaturesTraits character={character} />
+                  <FeaturesTraits character={character} characterPath={characterPath} />
                 </div>
               </div>
             )}

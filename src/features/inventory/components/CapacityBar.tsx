@@ -3,12 +3,13 @@ import { useT } from '../../../i18n/useI18n'
 /**
  * Replaces the old lb-weight display for the new slot-based system: the real example items carry no
  * weight field at all, and `Gepäck.md` only ever measures load in slots. Shows "used / capacity" for
- * the main backpack (the container that actually gates what fits — see the feature's plan doc for
- * why the separate STR-modifier "Belastet" threshold isn't implemented yet).
+ * the main backpack (the container that actually gates what fits), and below it the separate
+ * `Belastet` threshold of rule `Gepäck` (15 + ST × 2 slots, `limit`), warning once it's passed.
  */
-export function CapacityBar({ used, capacity }: { used: number; capacity: number }) {
+export function CapacityBar({ used, capacity, limit }: { used: number; capacity: number; limit?: number }) {
   const t = useT()
   const over = used > capacity
+  const encumbered = limit !== undefined && used > limit
   const pct = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0
 
   return (
@@ -18,6 +19,14 @@ export function CapacityBar({ used, capacity }: { used: number; capacity: number
         <div className={`h-full rounded-full bg-linear-to-r ${over ? 'from-danger/60 to-danger' : 'from-trim/60 to-trim'}`} style={{ width: `${pct}%` }} />
       </div>
       <div className="text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('endeavourInventory.capacityLabel')}</div>
+      {limit !== undefined && (
+        <div
+          className={`mt-1 text-[0.65rem] leading-tight ${encumbered ? 'font-semibold text-warning' : 'text-fg-muted'}`}
+          title={t('endeavourInventory.encumbranceHint', { limit })}
+        >
+          {encumbered ? t('endeavourInventory.encumbered') : t('endeavourInventory.encumbranceAt', { limit })}
+        </div>
+      )}
     </div>
   )
 }

@@ -14,7 +14,9 @@
 | [[Ilsa Morgentau]] | [[Kleriker]] 3 | Mensch | Heilung / Unterstützung |
 | [[Kaelen Dornwacht]] | [[Waldläufer]] 4 | Waldelf | Fernkampf / Späher |
 | [[Fenn Flinkfinger]] | [[Gauner]] 3 | Halbling | Heimlichkeit / Schaden |
+| [[Ren Aschenlied]] | [[Mönch]] 5 | Mensch | Nahkampf / Beweglichkeit |
 
 Die Regeln unter `Regeln/` und die Gegenstände unter `Gegenstände/` folgen demselben Schema wie im
 Spielervault (Tags `Regeln/Endeavour` bzw. `Gegenstand/...`), sind aber auf das beschränkt, was die
-sechs Beispielcharaktere verlinken.
+sieben Beispielcharaktere verlinken. Der [[Mönch]] zeigt das neuere Klassenformat: Seine Klassentabelle
+entsteht aus den Merkmal-Notizen (`Klasse`, `Stufe`, `Subklasse`) statt aus einer Tabelle in der Klassennotiz.

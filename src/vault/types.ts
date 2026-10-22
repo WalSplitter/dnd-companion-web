@@ -188,6 +188,8 @@ export interface CharacterWriteTargets {
   spell_slots?: Record<string, FieldWriteTarget>
   /** `spellcasting.mana.current`, on whichever file owns `spellcasting`. */
   mana_current?: FieldWriteTarget
+  /** `resources.<key>` on the character's own file, per `ClassResource.key`. */
+  class_resources?: Record<string, FieldWriteTarget>
   /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
   /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
@@ -376,6 +378,10 @@ export interface CharacterFrontmatter {
   conditions?: ConditionsInfo
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]
+  /** Derived, not read as-is: Endeavour class resources such as the monk's Ki (see
+   * `rules/endeavourClasses.ts`), unlocked by class level. `current` comes from `resources.<key>` on the
+   * character's file; absent there means full. */
+  class_resources?: ClassResource[]
   /** Own schema: written-out attacks, or — for Nimble characters — `"[[Waffe]]"` links to weapon notes,
    * resolved into full attacks by `resolveWeaponAttacks` (`adapters/weaponAttacks.ts`). */
   attacks?: WeaponAttack[]
@@ -448,12 +454,32 @@ export interface CharacterBiography {
 
 export type FeatureUsage = 'action' | 'reaction' | 'passive'
 
+/** How much of a pool a rest restores: all of it, half the max (rounded up), or a flat amount. */
+export type ResourceRecovery = 'all' | 'half' | number
+
+export interface ClassResource {
+  /** Key under the character's `resources:` (`ki`). */
+  key: string
+  name: string
+  current: number
+  max: number
+  recovery: Partial<Record<'breather' | 'field' | 'safe', ResourceRecovery>>
+}
+
+/** What using a feature costs, read from its note's `Einsatz` (`"1 [[Aktionspunkte|AP]], 1 [[Ki|Kipunkt]]"`). */
+export interface FeatureCost {
+  ap?: number
+  /** A class resource (`ClassResource.key`) and how much of it. */
+  resource?: { key: string; name: string; amount: number }
+}
+
 export interface CharacterFeature {
   name: string
   source?: string
   description?: string
   /** Absent = passive. */
   usage?: FeatureUsage
+  cost?: FeatureCost
 }
 
 /** A vault-file wikilink (`"[[Name]]"`, resolved against `type: item` files) or an inline item with data already attached. */

@@ -10,7 +10,9 @@ import { abilityModifier } from '../../../rules/dnd5e'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { maxExhaustion, percentOf, resiliencePool, stepWithin } from '../../../rules/vitals'
 import { hpFillClass } from '../../../components/vitalsDisplay'
+import { KiIcon } from '../../../components/KiIcon'
 import { ManaIcon } from '../../../components/ManaIcon'
+import { withResource } from '../rest'
 import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
 
@@ -374,6 +376,24 @@ export function HitPoints({
               ticks={mana.max > 0 && mana.max <= 30 ? mana.max : 10}
             />
           )}
+          {(character.class_resources ?? []).map((resource) => {
+            const target = editable(writeTargets?.class_resources?.[resource.key])
+            return (
+              <PoolRow
+                key={resource.key}
+                icon={<KiIcon />}
+                label={resource.name}
+                ariaLabel={t('a11y.currentResource', { name: resource.name })}
+                current={resource.current}
+                max={resource.max}
+                onSet={target && ((next: number) => void updateCharacterField(characterPath, target, next, (c) => withResource(c, resource.key, next)))}
+                numberClass="text-lg"
+                heightClass="h-2.5"
+                fillClass={() => 'ki-fill'}
+                ticks={resource.max > 0 && resource.max <= 30 ? resource.max : 10}
+              />
+            )
+          })}
         </div>
       </div>
 

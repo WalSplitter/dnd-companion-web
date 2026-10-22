@@ -24,7 +24,7 @@ const character = (name: string) => {
 const INTENTIONALLY_UNRESOLVED = /^(embed |.*schaden$)/i
 
 describe('sample vault', () => {
-  it('parses as an Endeavour vault with a full party of six characters', () => {
+  it('parses as an Endeavour vault with a full party of seven characters', () => {
     expect(vault.characters.map((c) => c.frontmatter.name).sort()).toEqual([
       'Aldric von Hohenwacht',
       'Borin Eisenfaust',
@@ -32,6 +32,7 @@ describe('sample vault', () => {
       'Fenn Flinkfinger',
       'Ilsa Morgentau',
       'Kaelen Dornwacht',
+      'Ren Aschenlied',
     ])
     expect(detectRuleset(sampleVaultFiles).ruleset).toBe('endeavour')
   })
@@ -91,6 +92,15 @@ describe('sample vault', () => {
     expect(pools('Ilsa Morgentau')).toEqual([12, 4, ['in', 'en'], 10, 6])
     expect(pools('Kaelen Dornwacht')).toEqual([20, 5, ['ge', 'in'], 12, 7])
     expect(pools('Fenn Flinkfinger')).toEqual([12, 8, ['ge', 'vs'], 13, 5])
+    expect(pools('Ren Aschenlied')).toEqual([18, 12, ['bw', 'en'], 12, 5])
+  })
+
+  it('gives the monk Ki, its Ki actions and an unarmed strike with the Mönchswürfel', () => {
+    const ren = character('Ren Aschenlied')
+    expect(ren.class_resources).toEqual([expect.objectContaining({ key: 'ki', current: 2, max: 3 })])
+    expect(ren.features?.filter((f) => f.source === 'Ki').map((f) => f.name)).toEqual(['Ausweichschritt', 'Schnellschlag', 'Selbstbeherrschung', 'Windschritt'])
+    expect(ren.features?.find((f) => f.name === 'Konter')).toMatchObject({ usage: 'reaction', cost: { resource: { key: 'ki', amount: 1 } } })
+    expect(ren.attacks?.[0]).toMatchObject({ name: 'Waffenloser Angriff', attribute: 'ge', damage_dice: '1W6', properties: ['Finesse'] })
   })
 
   it('builds attacks from the linked weapon notes, with the bonus from ST or (Finesse) GE', () => {

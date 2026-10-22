@@ -6,7 +6,7 @@ import { useCanEdit } from '../../../store/canEdit'
 import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
 import { deriveEquipment, equipmentChangeFields } from '../../../vault/adapters/nativeCharacter'
 import { formatModifier } from '../../../rules/deriveStats'
-import { evasionValue } from '../../../rules/endeavour'
+import { encumbranceLimit, evasionValue } from '../../../rules/endeavour'
 import type { CharacterFrontmatter, EndeavourContainerSlotAssignment, EndeavourInventoryEntry, EquipmentChange, WeaponAttack } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { resolveEndeavourItemLink, type VaultIndex } from '../../../vault/wikilinks'
@@ -421,7 +421,7 @@ export function EndeavourInventoryGrid({
           </div>
           {mainCapacity && (
             <div className="w-40">
-              <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} />
+              <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} limit={encumbranceLimit(character)} />
             </div>
           )}
         </div>

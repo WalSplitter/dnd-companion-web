@@ -63,6 +63,14 @@ describe('planRest', () => {
     expect(byKey('field', slotCaster)).toMatchObject({ slot1: 2, slot2: 3 })
   })
 
+  it('restores Ki as its note says: 1 on Verschnaufen, half the max rounded up on a Feldrast, all on a Sichere Rast', () => {
+    const monk = character({ class_resources: [{ key: 'ki', name: 'Ki', current: 0, max: 5, recovery: { breather: 1, field: 'half', safe: 'all' } }] })
+    const ki = (kind: Parameters<typeof planRest>[1]) => planRest(monk, kind).find((ch) => ch.key === 'resource')
+    expect(ki('breather')).toEqual({ key: 'resource', resource: { key: 'ki', name: 'Ki' }, from: 0, to: 1, max: 5 })
+    expect(ki('field')?.to).toBe(3)
+    expect(ki('safe')?.to).toBe(5)
+  })
+
   it('D&D long rest: everything back, hit dice included', () => {
     const dnd = character({ resilience: undefined, hit_dice: { die: 'W8', total: 3, used: 2 }, spellcasting: undefined })
     expect(byKey('long', dnd)).toEqual({ hp: 21, temp: 0, exhaustion: 1, hitDice: 3 })
@@ -78,6 +86,14 @@ describe('restChangeWrite / applyRestChange', () => {
 
   it('skips pools without a write target', () => {
     expect(restChangeWrite({ key: 'mana', from: 1, to: 5 }, {})).toBeUndefined()
+  })
+
+  it('writes and applies a class resource change', () => {
+    const target = { path: 'Mönch.md', keyPath: ['resources', 'ki'], createIfMissing: true }
+    const change = { key: 'resource' as const, resource: { key: 'ki', name: 'Ki' }, from: 0, to: 2, max: 3 }
+    expect(restChangeWrite(change, { class_resources: { ki: target } })).toEqual({ target, value: 2 })
+    const monk = character({ class_resources: [{ key: 'ki', name: 'Ki', current: 0, max: 3, recovery: {} }] })
+    expect(applyRestChange(monk, change).class_resources?.[0].current).toBe(2)
   })
 
   it('applies a mana change to the character', () => {
