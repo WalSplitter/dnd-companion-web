@@ -6,6 +6,7 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { ShieldIcon } from '../../inventory/components/equipmentIcons'
 import { useT, type TranslateFn } from '../../../i18n/useI18n'
 import { exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../../rules/deriveStats'
+import { initiativeDerivation, nimbleAttributeTerm, type DerivationTerm } from '../../../rules/derivation'
 import { initiativeActionPoints, nimbleAttributeValue, nimbleInitiative } from '../../../rules/endeavour'
 import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
@@ -131,19 +132,21 @@ export function Evasion({ value, character }: { value: number; character: Charac
 function InitiativePlate({
   label,
   modifier,
+  derivation,
   note,
   effect,
   initiative = 'order',
 }: {
   label: string
   modifier: number
+  derivation: DerivationTerm[]
   note?: string
   effect?: (result: D20RollResult) => string
   initiative?: 'order' | 'actions'
 }) {
   return (
     <StatPlate label={label}>
-      <D20RollButton label={label} modifier={modifier} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
+      <D20RollButton label={label} modifier={modifier} derivation={derivation} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
         <D20Modifier value={modifier} hint={false} className="is-loud" />
       </D20RollButton>
     </StatPlate>
@@ -160,17 +163,23 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
       {nimble ? (
         // Rule `Initiative`: two rolls — Instinkt for the turn order, Beweglichkeit for the first round's AP.
         <>
-          <InitiativePlate label={t('stats.initiativeOrder')} modifier={nimble.order} note={t('stats.initiativeOrderNote')} />
+          <InitiativePlate
+            label={t('stats.initiativeOrder')}
+            modifier={nimble.order}
+            derivation={[nimbleAttributeTerm(character, 'in')]}
+            note={t('stats.initiativeOrderNote')}
+          />
           <InitiativePlate
             label={t('stats.initiativeActions')}
             modifier={nimble.actions}
+            derivation={[nimbleAttributeTerm(character, 'bw')]}
             note={t('stats.initiativeActionsNote')}
             initiative="actions"
             effect={(result) => t('stats.initiativeActionsResult', { count: initiativeActionPoints(result.total, result.kept) })}
           />
         </>
       ) : (
-        <InitiativePlate label={t('stats.initiative')} modifier={initiativeBonus(character)} />
+        <InitiativePlate label={t('stats.initiative')} modifier={initiativeBonus(character)} derivation={initiativeDerivation(character)} />
       )}
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />

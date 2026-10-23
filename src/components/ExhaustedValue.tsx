@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { useD20Penalty } from '../dice/d20Penalty'
 import { useT } from '../i18n/useI18n'
+import { passivePerceptionDerivation, spellSaveDCDerivation, type DerivationTerm } from '../rules/derivation'
 import { exhaustionStaticPenalty, formatModifier, passivePerception, spellSaveDC } from '../rules/deriveStats'
 import type { CharacterFrontmatter } from '../vault/types'
+import { derivationText } from './derivationText'
 import { useExhaustedSync } from './exhaustedSync'
 
 /**
@@ -40,29 +42,38 @@ export function D20Modifier({ value, className = '', hint = true }: { value: num
   )
 }
 
+/** A static value that stands in for a d20 test, with its derivation as the tooltip ("Passive
+ * Wahrnehmung 12. 10 + IN +1 + Fertigkeit +1 = 12"), marked when exhaustion lowered it. */
+function StaticValue({ label, value, derivation, exhausted, className }: { label: string; value: number; derivation: DerivationTerm[]; exhausted: boolean; className: string }) {
+  const t = useT()
+  const hint = `${label} ${value}. ${derivationText(t, derivation)}`
+  if (!exhausted) return <span className={className} title={hint}>{value}</span>
+  return (
+    <ExhaustedValue className={className} hint={hint}>
+      {value}
+    </ExhaustedValue>
+  )
+}
+
 /** The spell save DC (already lowered by exhaustion, see `spellSaveDC`), marked when it is. */
 export function SpellSaveDCValue({ character, className = '' }: { character: CharacterFrontmatter; className?: string }) {
   const t = useT()
   const dc = spellSaveDC(character)
-  const penalty = exhaustionStaticPenalty(character)
-  if (dc === undefined) return <span className={className}>—</span>
-  if (penalty <= 0) return <span className={className}>{dc}</span>
-  return (
-    <ExhaustedValue className={className} hint={t('exhaustion.dcHint', { base: dc + penalty, n: penalty, total: dc })}>
-      {dc}
-    </ExhaustedValue>
-  )
+  const derivation = spellSaveDCDerivation(character)
+  if (dc === undefined || !derivation) return <span className={className}>—</span>
+  return <StaticValue label={t('stats.saveDC')} value={dc} derivation={derivation} exhausted={exhaustionStaticPenalty(character) > 0} className={className} />
 }
 
 /** Passive Perception (already lowered by exhaustion, see `passivePerception`), marked when it is. */
 export function PassivePerceptionValue({ character, className = '' }: { character: CharacterFrontmatter; className?: string }) {
   const t = useT()
-  const value = passivePerception(character)
-  const penalty = exhaustionStaticPenalty(character)
-  if (penalty <= 0) return <span className={className}>{value}</span>
   return (
-    <ExhaustedValue className={className} hint={t('exhaustion.passiveHint', { base: value + penalty, n: penalty, total: value })}>
-      {value}
-    </ExhaustedValue>
+    <StaticValue
+      label={t('stats.passivePerception')}
+      value={passivePerception(character)}
+      derivation={passivePerceptionDerivation(character)}
+      exhausted={exhaustionStaticPenalty(character) > 0}
+      className={className}
+    />
   )
 }

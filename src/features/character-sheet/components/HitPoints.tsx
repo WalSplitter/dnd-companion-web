@@ -1,4 +1,5 @@
 import { useContext, useState, type ReactNode } from 'react'
+import { levelPoolText } from '../../../components/derivationText'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { DamageRollButton } from '../../../dice/RollButton'
@@ -184,12 +185,15 @@ function PoolRow({
   ticks,
   warded,
   hitKey,
+  maxHint,
 }: {
   icon: ReactNode
   label: string
   ariaLabel: string
   current: number
   max: number
+  /** Tooltip on the maximum, e.g. how the class notes add up to it (`levelPoolText`). */
+  maxHint?: string
   onSet?: (next: number) => void
   numberClass: string
   heightClass: string
@@ -215,7 +219,9 @@ function PoolRow({
         {onSet && <StepButton direction={-1} label={label} disabled={current <= 0} onStep={(d) => onSet(stepWithin(current, d, 0, max))} />}
         <span className={`flex min-w-11 items-baseline justify-center font-num leading-none text-fg ${numberClass}`}>
           {onSet ? <EditableNumber key={current} value={current} max={max} onCommit={onSet} className={`w-[1.9em] ${quietInput}`} /> : current}
-          <span className="text-[0.7em] font-medium text-fg-muted">/{max}</span>
+          <span className={`text-[0.7em] font-medium text-fg-muted ${maxHint ? 'cursor-help' : ''}`} title={maxHint}>
+            /{max}
+          </span>
         </span>
         {onSet && <StepButton direction={1} label={label} disabled={current >= max} onStep={(d) => onSet(stepWithin(current, d, 0, max))} />}
       </div>
@@ -295,6 +301,10 @@ export function HitPoints({
       void updateCharacterField(characterPath, exhaustionTarget, next, (c) => ({ ...c, conditions: { ...c.conditions, exhaustion: next } })))
 
   const resilience = resiliencePool(character)
+  const poolParts = character.level_pool_derivation
+  const hpMaxHint = poolParts?.hp ? levelPoolText(t, t('cards.hitPoints'), max, poolParts.hp, 'KO') : undefined
+  const resilienceMaxHint =
+    poolParts?.resilience && resilience ? levelPoolText(t, t('stats.resilience'), resilience.max, poolParts.resilience, 'EN/2') : undefined
   const mana = character.spellcasting?.mana
   const exhaustion = character.conditions?.exhaustion ?? 0
   const exhaustionMax = maxExhaustion(character)
@@ -344,6 +354,7 @@ export function HitPoints({
               ticks={resilience.max > 0 && resilience.max <= 30 ? resilience.max : 10}
               warded={warded}
               hitKey={wardHitKey}
+              maxHint={resilienceMaxHint}
             />
           )}
           <PoolRow
@@ -359,6 +370,7 @@ export function HitPoints({
             ticks={10}
             warded={warded}
             hitKey={wardHitKey}
+            maxHint={hpMaxHint}
           />
           {/* Mana is spent in play like the two pools above, so it shares the HUD; damage never
               reaches it, so it stays outside the ward. */}

@@ -5,6 +5,7 @@ import { D20RollButton } from '../../dice/RollButton'
 import { useT } from '../../i18n/useI18n'
 import { D20Modifier, SpellSaveDCValue } from '../../components/ExhaustedValue'
 import { abilityAbbreviation, spellAttackBonus } from '../../rules/deriveStats'
+import { spellAttackDerivation } from '../../rules/derivation'
 import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
 import { SpellList } from './components/SpellList'
@@ -51,7 +52,7 @@ export function SpellsPanel({
       </CastingStat>
       <CastingStat label={t('stats.attack')}>
         {attack !== undefined ? (
-          <D20RollButton attack label={t('roll.spellAttack')} modifier={attack} className="cursor-pointer transition hover:text-trim">
+          <D20RollButton attack label={t('roll.spellAttack')} modifier={attack} derivation={spellAttackDerivation(character)} className="cursor-pointer transition hover:text-trim">
             <D20Modifier value={attack} hint={false} />
           </D20RollButton>
         ) : (

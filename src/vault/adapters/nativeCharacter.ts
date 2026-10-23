@@ -14,6 +14,7 @@ import type {
   FeatureCost,
   FeatureUsage,
   FieldWriteTarget,
+  LevelPoolPart,
   NimbleAttributeKey,
 } from '../types'
 import type { ImageAssets } from '../types'
@@ -415,20 +416,28 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * (3) multiclassing follows D&D 5e 2024 and Nimble: only the starting class grants the doubled
  * level 1, a class taken later counts like a level up.
  */
-function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: number; resilience?: number } {
+type LevelPool = { max: number; parts: LevelPoolPart[] }
+
+function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: LevelPool; resilience?: LevelPool } {
   if (!isEndeavour(character) || !Array.isArray(character.class) || character.class.length === 0) return {}
   const perLevelBonus = { hp: nimbleAttributeValue(character, 'ko'), resilience: Math.floor(nimbleAttributeValue(character, 'en') / 2) }
 
-  const total = (pool: 'hp' | 'resilience', field: string): number | undefined => {
-    let sum = 0
+  const total = (pool: 'hp' | 'resilience', field: string): LevelPool | undefined => {
+    const parts: LevelPoolPart[] = []
     for (const [i, c] of character.class.entries()) {
       const classValue = numberFrom(files, c.name, field)
       if (classValue === undefined || typeof c.level !== 'number' || c.level < 1) return undefined
-      const subclassValue = c.subclass ? (numberFrom(files, c.subclass, field) ?? 0) : 0
-      const levels = i === 0 ? c.level + 1 : c.level
-      sum += levels * (classValue + subclassValue + perLevelBonus[pool])
+      parts.push({
+        className: c.name,
+        level: c.level,
+        levels: i === 0 ? c.level + 1 : c.level,
+        base: classValue,
+        subclass: c.subclass ? (numberFrom(files, c.subclass, field) ?? 0) : 0,
+        attribute: perLevelBonus[pool],
+      })
     }
-    return Math.max(0, sum)
+    const sum = parts.reduce((acc, p) => acc + p.levels * (p.base + p.subclass + p.attribute), 0)
+    return { max: Math.max(0, sum), parts }
   }
 
   return { hp: total('hp', 'BasisTP'), resilience: total('resilience', 'BasisRP') }
@@ -453,6 +462,8 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     attack_entries: Array.isArray(raw.data.attacks) ? raw.data.attacks : undefined,
   }
   const pools = resolveLevelPools(character, files)
+  const hpPool = isRecord(raw.data.hp) ? pools.hp : undefined
+  const resiliencePool = character.resilience ? pools.resilience : undefined
   const notes = classNotes(raw.data.class, files)
   const journal = resolveJournal(raw, files)
   const resources = resolveClassResources(raw.data, character, files)
@@ -477,8 +488,9 @@ export function normalizeNativeCharacter(raw: RawFile, files: RawFile[], imageAs
     features: allFeatures.length > 0 ? allFeatures : undefined,
     class_resources: resources.length > 0 ? resources : undefined,
     hit_dice: isEndeavour(character) ? undefined : character.hit_dice,
-    ...(pools.hp !== undefined && isRecord(raw.data.hp) ? { hp: { ...character.hp, max: pools.hp } } : {}),
-    ...(pools.resilience !== undefined && character.resilience ? { resilience: { ...character.resilience, max: pools.resilience } } : {}),
+    ...(hpPool ? { hp: { ...character.hp, max: hpPool.max } } : {}),
+    ...(resiliencePool && character.resilience ? { resilience: { ...character.resilience, max: resiliencePool.max } } : {}),
+    level_pool_derivation: hpPool || resiliencePool ? { hp: hpPool?.parts, resilience: resiliencePool?.parts } : undefined,
     nimble_primary_attributes: resolveClassPrimaryAttributes(notes),
     nimble_save_modes: resolveClassSaveModes(leadingClassNote(raw.data.class, files)),
     class_proficiencies: resolveClassProficiencies(notes),

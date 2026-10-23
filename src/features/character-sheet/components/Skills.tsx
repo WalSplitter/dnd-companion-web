@@ -1,10 +1,11 @@
 import { Card } from '../../../components/Card'
 import { D20Modifier } from '../../../components/ExhaustedValue'
+import { derivationText } from '../../../components/derivationText'
 import { D20RollButton } from '../../../dice/RollButton'
 import { useT } from '../../../i18n/useI18n'
-import { formatModifier } from '../../../rules/deriveStats'
+import { skillDerivation } from '../../../rules/derivation'
 import { skillBonus, skillProficiencyLevel } from '../../../rules/dnd5e'
-import { nimbleAttributeValue, nimbleSkillBonus, nimbleSkillValue } from '../../../rules/endeavour'
+import { nimbleSkillBonus, nimbleSkillValue } from '../../../rules/endeavour'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
 import { isEndeavour } from '../../../rules/ruleset'
@@ -18,16 +19,11 @@ function NimbleSkillRow({ character, skill }: { character: CharacterFrontmatter;
   const attribute = NIMBLE_SKILL_ATTRIBUTES[skill]
   const trained = nimbleSkillValue(character, skill)
   const bonus = nimbleSkillBonus(character, skill)
-
-  const breakdown = t('stats.skillBreakdown', {
-    attribute: attribute.toUpperCase(),
-    attributeValue: formatModifier(nimbleAttributeValue(character, attribute)),
-    skill: formatModifier(trained),
-  })
+  const derivation = skillDerivation(character, skill)
 
   return (
     <li
-      title={breakdown}
+      title={`${label}: ${derivationText(t, derivation)}`}
       className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10"
     >
       <D20Modifier value={bonus} className={`w-8 text-right font-num ${trained > 0 ? 'text-trim' : 'text-fg'}`} />
@@ -39,7 +35,7 @@ function NimbleSkillRow({ character, skill }: { character: CharacterFrontmatter;
       )}
       <span className="ml-auto flex items-center gap-2">
         <span className="text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted/70">{attribute.toUpperCase()}</span>
-        <D20RollButton label={label} modifier={bonus} />
+        <D20RollButton label={label} modifier={bonus} derivation={derivation} />
       </span>
     </li>
   )
@@ -59,9 +55,11 @@ export function Skills({ character }: { character: CharacterFrontmatter }) {
               const label = t(`skill.${key}`)
               const bonus = skillBonus(character, key)
               const level = skillProficiencyLevel(character, key)
+              const derivation = skillDerivation(character, key)
               return (
                 <li
                   key={key}
+                  title={`${label}: ${derivationText(t, derivation)}`}
                   className="roll-row group flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition hover:bg-trim/10"
                 >
                   <ProficiencyDot level={level} />
@@ -69,7 +67,7 @@ export function Skills({ character }: { character: CharacterFrontmatter }) {
                   <span className={level === 'none' ? 'text-fg-muted' : 'text-fg'}>{label}</span>
                   <span className="ml-auto flex items-center gap-2">
                     <span className="text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted/70">{ability}</span>
-                    <D20RollButton label={label} modifier={bonus} />
+                    <D20RollButton label={label} modifier={bonus} derivation={derivation} />
                   </span>
                 </li>
               )

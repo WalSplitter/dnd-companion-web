@@ -386,6 +386,14 @@ Rettungswürfe:
       expect(resilience).toEqual({ current: 4, max: 12 })
     })
 
+    it('keeps how the max TP/RP were derived, class by class, for the tooltips', () => {
+      const vault = buildVault([nimbleCharacter(), classNote, subclassNote])
+      expect(vault.characters[0].frontmatter.level_pool_derivation).toEqual({
+        hp: [{ className: 'Prüfling', level: 3, levels: 4, base: 4, subclass: 1, attribute: 2 }],
+        resilience: [{ className: 'Prüfling', level: 3, levels: 4, base: 2, subclass: 0, attribute: 1 }],
+      })
+    })
+
     it('counts a level-1 character as (BasisTP + KO) × 2', () => {
       const vault = buildVault([asClass('  - name: Arkanist\n    level: 1\n'), arkanistNote])
       const { hp, resilience } = vault.characters[0].frontmatter

@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
 import { abilityAbbreviation, spellAttackBonus, spellSaveDC, exhaustionStaticPenalty } from '../../../rules/deriveStats'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
+import { derivationText } from '../../../components/derivationText'
+import { spellAttackDerivation, spellSaveDCDerivation } from '../../../rules/derivation'
 import { type CharacterFrontmatter, type SpellFrontmatter, type SpellTargetKind, type VaultFile } from '../../../vault/types'
 import type { VaultIndex } from '../../../vault/wikilinks'
 import { resolveSpellLink } from '../../../vault/wikilinks'
@@ -324,7 +326,13 @@ function SpellRow({
   const tierSuffix = tier > fm.level ? ` (${t('spells.levelBadge', { level: tier })})` : ''
 
   const dcText = t('spells.saveBadge', { dc: saveDC ?? '—', ability: saveLabel })
-  const dmHint = t(area ? 'spells.dmSaveHintArea' : 'spells.dmSaveHint', { ability: saveLabel, dc: saveDC ?? '—' })
+  const dcDerivation = spellSaveDCDerivation(character)
+  const dmHint = [
+    t(area ? 'spells.dmSaveHintArea' : 'spells.dmSaveHint', { ability: saveLabel, dc: saveDC ?? '—' }),
+    dcDerivation && `${t('stats.saveDC')}: ${derivationText(t, dcDerivation)}`,
+  ]
+    .filter(Boolean)
+    .join('. ')
   const damageNote = [
     t(flow === 'save' ? 'spells.damageNoteSave' : flow === 'auto' ? 'spells.damageNoteAuto' : 'roll.damageNote'),
     fm.ignores_armor ? t('spells.ignoresArmorHint') : undefined,
@@ -335,7 +343,7 @@ function SpellRow({
   const steps = [
     flow === 'attack' && attackBonus !== undefined && (
       <CaptionedRoll key="attack" caption={t('roll.attackCaption')}>
-        <D20RollButton attack label={t('roll.attackSuffix', { name: fm.name })} modifier={attackBonus} note={t('spells.attackNote')} className={ROLL_BUTTON}>
+        <D20RollButton attack label={t('roll.attackSuffix', { name: fm.name })} modifier={attackBonus} note={t('spells.attackNote')} derivation={spellAttackDerivation(character)} className={ROLL_BUTTON}>
           <HitIcon />
           <D20Modifier value={attackBonus} hint={false} />
         </D20RollButton>
@@ -346,7 +354,7 @@ function SpellRow({
         <span className="dm-roll" title={dmHint}>
           <DmIcon />
           {saveDCPenalty > 0 && saveDC !== undefined ? (
-            <ExhaustedValue hint={t('exhaustion.dcHint', { base: saveDC + saveDCPenalty, n: saveDCPenalty, total: saveDC })}>{dcText}</ExhaustedValue>
+            <ExhaustedValue>{dcText}</ExhaustedValue>
           ) : (
             dcText
           )}

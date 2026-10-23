@@ -5,13 +5,20 @@ import { D20RollButton, DamageRollButton } from '../../../dice/RollButton'
 import { CaptionedRoll, DieIcon, HitIcon, ROLL_BUTTON } from '../../../dice/RollGlyphs'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { formatModifier } from '../../../rules/deriveStats'
-import { evasionValue } from '../../../rules/endeavour'
-import type { CharacterFrontmatter } from '../../../vault/types'
+import { nimbleAttributeTerm, type DerivationTerm } from '../../../rules/derivation'
+import { evasionValue, nimbleAttributeValue } from '../../../rules/endeavour'
+import type { CharacterFrontmatter, WeaponAttack } from '../../../vault/types'
 
 const KIND_KEY: Record<string, TranslationKey> = {
   melee: 'weaponKind.melee',
   ranged: 'weaponKind.ranged',
   thrown: 'weaponKind.thrown',
+}
+
+/** An attack derived from a weapon note rolls its attribute alone; a written-out one has a bonus of its own. */
+function attackDerivation(character: CharacterFrontmatter, attack: WeaponAttack): DerivationTerm[] | undefined {
+  if (!attack.attribute || attack.attack_bonus !== nimbleAttributeValue(character, attack.attribute)) return undefined
+  return [nimbleAttributeTerm(character, attack.attribute)]
 }
 
 export function Attacks({ character }: { character: CharacterFrontmatter }) {
@@ -48,7 +55,7 @@ export function Attacks({ character }: { character: CharacterFrontmatter }) {
               </span>
               <span className="flex items-start gap-1.5">
                 <CaptionedRoll caption={t('roll.attackCaption')}>
-                  <D20RollButton attack label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus} note={attackNote} className={ROLL_BUTTON}>
+                  <D20RollButton attack label={t('roll.attackSuffix', { name: attack.name })} modifier={attack.attack_bonus} note={attackNote} derivation={attackDerivation(character, attack)} className={ROLL_BUTTON}>
                     <HitIcon />
                     <D20Modifier value={attack.attack_bonus} hint={false} />
                   </D20RollButton>

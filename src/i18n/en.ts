@@ -572,7 +572,6 @@ export const en = {
   'stats.tempHp': 'Temporary HP',
   'stats.resilience': 'Resilience Points',
   'stats.exhaustionPenalty': 'd20 −{{n}}',
-  'stats.skillBreakdown': 'd20 + {{attribute}} ({{attributeValue}}) + skill ({{skill}})',
   'stats.dead': 'Dead',
   'stats.evasion': 'Evasion',
   'stats.evasionHint': 'Evasion = 10 + BW ({{bw}}). Dodge (reaction, 1 AP): +2 against one attack.',
@@ -858,8 +857,19 @@ export const en = {
   'roll.exhaustionShort': 'exhaustion',
   'exhaustion.modifierHint': 'Base {{base}}, exhaustion −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}} check: d20 {{total}}. Attribute {{base}}, exhaustion −{{n}}. {{hint}}',
-  'exhaustion.dcHint': 'Spell save DC {{base}}, exhaustion −{{n}} → {{total}}',
-  'exhaustion.passiveHint': 'Passive Perception {{base}}, exhaustion −{{n}} → {{total}}',
+
+  // Derivation tooltips (`components/derivationText.ts`)
+  'derivation.skill': 'skill',
+  'derivation.proficiency': 'proficiency',
+  'derivation.expertise': 'expertise',
+  'derivation.exhaustion': 'exhaustion',
+  'derivation.base': 'base',
+  'derivation.subclass': 'subclass',
+  'derivation.level': 'level {{level}}',
+  'derivation.levelDoubled': 'level {{level}} + 1',
+  'derivation.poolMax': 'Maximum {{label}}: {{max}}',
+  'derivation.poolNote': 'The starting class counts level 1 twice; the attribute counts for every level, retroactively',
+
   'roll.hitDie': 'Hit Die',
 
   // Roll log

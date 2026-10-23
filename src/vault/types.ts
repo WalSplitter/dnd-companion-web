@@ -227,6 +227,21 @@ export interface ConditionsInfo {
   notes?: string
 }
 
+/** One class's share of a TP/RP maximum (see `resolveLevelPools` in `adapters/nativeCharacter.ts`):
+ * `levels × (base + subclass + attribute)`. */
+export interface LevelPoolPart {
+  className: string
+  /** The class level; `levels` is one higher for the starting class, whose level 1 counts twice. */
+  level: number
+  levels: number
+  /** The class note's `BasisTP`/`BasisRP`. */
+  base: number
+  /** The subclass note's own `BasisTP`/`BasisRP`, 0 without one. */
+  subclass: number
+  /** KO for TP, half EN rounded down for RP. */
+  attribute: number
+}
+
 export interface ResourcePool {
   name: string
   current: number
@@ -288,6 +303,9 @@ export interface CharacterFrontmatter {
   /** Resilience points (Nimble/Endeavour rules): the fast-swinging combat pool that absorbs damage
    * after temp HP and before HP, and refills on rests. Own schema only. */
   resilience?: { current: number; max: number }
+  /** Derived (Endeavour): how `hp.max` and `resilience.max` were computed from the class notes, one
+   * entry per class, for the tooltips on the maxima. Absent where the sheet's own `max` is kept. */
+  level_pool_derivation?: { hp?: LevelPoolPart[]; resilience?: LevelPoolPart[] }
   /** Own-schema input field: a `"[[Kettenhemd]]"` wikilink to the worn armor's item note (`armor:`, or
    * `Rüstung:` like the old sheet's `Verteidigung.Rüstung`). Its `BW_cap` feeds `bw_cap` below. */
   armor?: string

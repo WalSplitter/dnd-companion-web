@@ -556,7 +556,6 @@ export const de = {
   'stats.tempHp': 'Temporäre TP',
   'stats.resilience': 'Resilienzpunkte',
   'stats.exhaustionPenalty': 'W20 −{{n}}',
-  'stats.skillBreakdown': 'W20 + {{attribute}} ({{attributeValue}}) + Fertigkeit ({{skill}})',
   'stats.dead': 'Tot',
   'stats.evasion': 'Ausweichwert',
   'stats.evasionHint': 'Ausweichwert = 10 + BW ({{bw}}). Ausweichen (Reaktion, 1 AP): +2 gegen einen Angriff.',
@@ -835,8 +834,19 @@ export const de = {
   'roll.exhaustionShort': 'Erschöpfung',
   'exhaustion.modifierHint': 'Grundwert {{base}}, Erschöpfung −{{n}} → {{total}}',
   'exhaustion.checkHint': '{{label}}-Wurf: W20 {{total}}. Attribut {{base}}, Erschöpfung −{{n}}. {{hint}}',
-  'exhaustion.dcHint': 'Zauber-SG {{base}}, Erschöpfung −{{n}} → {{total}}',
-  'exhaustion.passiveHint': 'Passive Wahrnehmung {{base}}, Erschöpfung −{{n}} → {{total}}',
+
+  // Herleitungs-Tooltips (`components/derivationText.ts`)
+  'derivation.skill': 'Fertigkeit',
+  'derivation.proficiency': 'Übung',
+  'derivation.expertise': 'Expertise',
+  'derivation.exhaustion': 'Erschöpfung',
+  'derivation.base': 'Basis',
+  'derivation.subclass': 'Subklasse',
+  'derivation.level': 'Stufe {{level}}',
+  'derivation.levelDoubled': 'Stufe {{level}} + 1',
+  'derivation.poolMax': 'Maximum {{label}}: {{max}}',
+  'derivation.poolNote': 'Die Startklasse zählt Stufe 1 doppelt; das Attribut zählt rückwirkend für jede Stufe',
+
   'roll.hitDie': 'Trefferwürfel',
 
   'rollLog.title': 'Würfelprotokoll',
