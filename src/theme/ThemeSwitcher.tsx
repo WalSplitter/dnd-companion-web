@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { Toggle } from '../components/Toggle'
 import { useDismiss } from '../components/useDismiss'
+import { PHONE_MAX_WIDTH } from '../utils/viewport'
 import { useT, type TranslationKey } from '../i18n/useI18n'
 import {
   CLASS_THEMES,
@@ -174,8 +176,6 @@ interface PanelLayout {
   right: number
 }
 
-/** Below this width the panel becomes a bottom sheet. */
-const SHEET_MAX_WIDTH = 640
 /** Room the popover layout needs below the trigger; with less it switches to the wide layout. */
 const POPOVER_MIN_HEIGHT = 540
 const EDGE_GAP = 16
@@ -184,7 +184,8 @@ function measureLayout(trigger: HTMLElement): PanelLayout {
   const rect = trigger.getBoundingClientRect()
   const top = rect.bottom + 6
   const right = window.innerWidth - rect.right
-  if (window.innerWidth < SHEET_MAX_WIDTH) return { mode: 'sheet', top, right }
+  // On a phone the panel becomes a bottom sheet.
+  if (window.innerWidth < PHONE_MAX_WIDTH) return { mode: 'sheet', top, right }
   const room = window.innerHeight - top - EDGE_GAP
   return { mode: room < POPOVER_MIN_HEIGHT ? 'wide' : 'popover', top, right }
 }
@@ -301,11 +302,7 @@ export function ThemeSwitcher() {
         <SparklesIcon />
       </span>
       <span className="flex-1">{translate('theme.effects')}</span>
-      <span className={`relative h-4 w-7 shrink-0 rounded-full transition ${effects ? 'bg-trim' : 'bg-border'}`} aria-hidden>
-        <span
-          className={`absolute top-0.5 h-3 w-3 rounded-full bg-surface transition-all ${effects ? 'left-3.5' : 'left-0.5'}`}
-        />
-      </span>
+      <Toggle on={effects} />
     </button>
   )
 

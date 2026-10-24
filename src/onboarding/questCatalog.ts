@@ -23,6 +23,8 @@ export interface QuestStep {
   text: TranslationKey
   /** The text on touch screens, where nothing can be hovered. */
   touchText?: TranslationKey
+  /** A footnote shown only in the sample vault (e.g. that what's on screen is made up). */
+  sampleNote?: TranslationKey
   /** How the step ends: the Next button (default), a click on the target, or something the player does. */
   until?: 'click' | QuestAction
   /** A tab (`data-tour` anchor of its button) to open first, unless it's already selected. */
@@ -38,8 +40,9 @@ export interface Quest {
   steps: QuestStep[]
   /** Its action changes the character, so it's only done for real in the sample vault (the "arena"). */
   practice?: boolean
-  /** A sheet quest that needs a spellcaster. */
-  needs?: 'spells'
+  /** A sheet quest that needs a spellcaster, or a party quest that needs a chronicle (a GitHub or the
+   * sample vault) — without one it only explains and offers the arena. */
+  needs?: 'spells' | 'history'
   /** What completes the quest when done outside the tour; defaults to the action its last step waits for. */
   goal?: QuestAction
 }
@@ -242,7 +245,11 @@ export const QUESTS: readonly Quest[] = [
     icon: '⏳',
     title: 'quest.storiesChronicle.title',
     page: 'party',
-    steps: [{ target: 'party.tabs', text: 'quest.storiesChronicle.s1' }],
+    needs: 'history',
+    steps: [
+      { target: 'party.tab.chronicle', text: 'quest.storiesChronicle.s1', until: 'click' },
+      { target: 'party.content', text: 'quest.storiesChronicle.s2', tab: 'party.tab.chronicle', sampleNote: 'quest.storiesChronicle.sampleNote' },
+    ],
   },
 
   {

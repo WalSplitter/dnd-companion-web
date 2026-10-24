@@ -2,6 +2,13 @@
  * quest log with its seals and certificate, the header menu, and the runes. Everything is tinted by
  * the theme's trim and accent colours, so the mentor belongs to whichever theme is active. */
 
+/* During a tour the page's fade-in no longer holds its end state: an animation in effect makes its
+ * element a stacking context, which would keep the page's popovers below the fog. Only the fill mode
+ * changes, so the fade-in doesn't replay when the tour ends. */
+html.quest-touring .page-enter {
+  animation-fill-mode: backwards;
+}
+
 /* A tour target scrolled into view stops clear of the sticky header. */
 [data-tour] {
   scroll-margin-top: calc(var(--app-header-h, 0px) + 16px);
@@ -64,14 +71,15 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-trim) 40%, transparent);
 }
 .splitter-portrait-art {
-  /* Anchored on the face (--face-x/--face-y, the point of the artwork the portrait centres on). */
+  /* Anchored on the face — just below the eyes, at 50% / 40% of every mood's artwork — not on the
+     picture's middle. New artwork means measuring this point again. */
   position: absolute;
   left: 50%;
   top: 58%;
   width: 120%;
   max-width: none;
   height: auto;
-  translate: calc(var(--face-x) * -1) calc(var(--face-y) * -1);
+  translate: -50% -40%;
   transform-origin: 50% 70%;
   filter: saturate(0.92) contrast(1.05) drop-shadow(0 0 6px color-mix(in srgb, var(--color-trim) 40%, transparent));
   user-select: none;
@@ -148,7 +156,6 @@
 
 /* `SplitterWisp`: the shard hovering at the lit element, with a halo and rising embers. */
 .splitter-wisp {
-  --splitter-size: 40px;
   position: fixed;
   z-index: 95;
   width: 24px;
@@ -250,11 +257,12 @@
 .splitter-companion {
   position: fixed;
   left: 16px;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  /* Steps over the footer once it scrolls into view (`--footer-lift`, see `useFooterLift`). */
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--footer-lift, 0px));
+  transition: bottom 0.2s ease-out, filter 0.2s;
   z-index: 60;
   border-radius: 50%;
   cursor: pointer;
-  transition: filter 0.2s;
 }
 .splitter-companion .splitter-portrait {
   --portrait-size: 52px;
@@ -295,7 +303,7 @@
 @keyframes splitter-rise {
   0% { translate: 0 0; scale: 1; opacity: 0; }
   15% { opacity: 1; }
-  100% { translate: var(--dx) calc(var(--splitter-size) * -0.75); scale: 0.3; opacity: 0; }
+  100% { translate: var(--dx) -30px; scale: 0.3; opacity: 0; }
 }
 @keyframes splitter-burst {
   /* From the frame's edge outwards, so no spark crosses the face. */
@@ -311,9 +319,12 @@
 /* ── Fog of war ─────────────────────────────────────────────────────────────────────────────── */
 
 .quest-fog {
+  /* Below the app's popovers and sheets (z-index 40 and up: roll log, rest menu, skill details,
+     tooltips), so what a step asks the player to open shows in full light; above the page and the
+     sticky header (z-index 10). */
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: 35;
   pointer-events: none;
   overflow: hidden;
   animation: quest-fade-in 0.5s ease-out;
@@ -1179,7 +1190,6 @@
   .splitter-wisp-halo,
   .splitter-zzz > span,
   .splitter-spark,
-  .splitter-burst > span,
   .quest-fog,
   .quest-fog::before,
   .quest-fog-hole::after,

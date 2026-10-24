@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { prefersReducedMotion } from '../utils/viewport'
 import cheerArt from './art/splitter-cheer.webp'
 import dozeArt from './art/splitter-doze.webp'
 import happyArt from './art/splitter-happy.webp'
@@ -13,14 +14,8 @@ export type SplitterMood = 'idle' | 'talk' | 'cheer' | 'doze'
  */
 const ART: Record<SplitterMood, string> = { talk: talkArt, idle: happyArt, cheer: cheerArt, doze: dozeArt }
 
-/**
- * The point of the artwork a portrait centres on, in percent of its width and height: the face, just
- * below the eyes. Swapping the artwork means measuring this again.
- */
-const FACE = { x: 50, y: 40 }
-
 /** The crystal shard Splitter is named after, in the theme's colour. */
-export function Shard({ className = '' }: { className?: string }) {
+function Shard({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 34 46" className={`splitter-shard ${className}`} aria-hidden>
       <path className="shard-body" d="M17 1 31 15 24 45 10 45 3 15Z" />
@@ -35,19 +30,17 @@ export function Shard({ className = '' }: { className?: string }) {
  * the odd eyes of his husky — one amber, one ice blue) in a gilded frame, on a dark ground lit in the theme's
  * colour, behind a faint rune ring and a vignette. `round` is the medallion (welcome dialog, companion),
  * `card` the framed portrait beside a dialogue, with a name plate.
+ * Its size is `--portrait-size`, set in CSS by where it sits (welcome dialog, bubble, phone, corner).
  * Each mood has its own painting; on top, talk breathes, cheer hops in a burst of sparks, doze dims
  * with drifting z's.
  */
 export function SplitterPortrait({
   shape,
-  size,
   mood = 'idle',
   name,
   className = '',
 }: {
   shape: 'round' | 'card'
-  /** Width in pixels; without it the surrounding CSS sets `--portrait-size` (e.g. smaller on phones). */
-  size?: number
   mood?: SplitterMood
   /** Name plate under a `card` portrait. */
   name?: string
@@ -56,7 +49,6 @@ export function SplitterPortrait({
   return (
     <span
       className={`splitter-portrait is-${shape} is-${mood} ${className}`}
-      style={{ ...(size ? { '--portrait-size': `${size}px` } : {}), '--face-x': `${FACE.x}%`, '--face-y': `${FACE.y}%` } as CSSProperties}
       aria-hidden
     >
       <span className="splitter-portrait-frame">
@@ -86,10 +78,6 @@ const FLIGHT_MS = 900
 const TRAIL_EMBERS = 12
 const MIN_FLIGHT = 80
 
-function reducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 /** A point on the arc from `a` to `b` that bulges `lift` px upwards at the middle (quadratic Bézier). */
 function arcPoint(a: { x: number; y: number }, b: { x: number; y: number }, lift: number, t: number) {
   const cx = (a.x + b.x) / 2
@@ -117,7 +105,7 @@ export function SplitterWisp({ x, y }: { x: number; y: number }) {
     const distance = Math.hypot(to.x - start.x, to.y - start.y)
     // Small moves (the page scrolling under a target) are simply followed; only a new place is flown to.
     if (distance < MIN_FLIGHT) return
-    if (reducedMotion()) {
+    if (prefersReducedMotion()) {
       el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 })
       return
     }

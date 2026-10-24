@@ -8,7 +8,6 @@ import { abilityAbbreviation, spellAttackBonus } from '../../../rules/deriveStat
 import { spellAttackDerivation } from '../../../rules/derivation'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { SpellSlotTracker } from '../../spells/components/SpellSlotTracker'
-import { lexiconRuleset } from '../../../onboarding/lexicon'
 import { Rune } from '../../../onboarding/Rune'
 
 /** Spellcasting at a glance: ability, save DC, attack and the casting resources. The spells
@@ -26,8 +25,8 @@ export function AttacksSpellcasting({ character, characterPath }: { character: C
       title={t('cards.spellcasting')}
       titleExtra={
         <>
-          <Rune term="mana" ruleset={lexiconRuleset(character)} />
-          <Rune term="spellSlots" ruleset={lexiconRuleset(character)} />
+          <Rune term="mana" character={character} />
+          <Rune term="spellSlots" character={character} />
         </>
       }
     >

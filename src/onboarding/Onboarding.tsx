@@ -1,36 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
+import { characterNameFromPath } from '../routes/paths'
+import { cannotHover, clamp } from '../utils/viewport'
+import { onCharacterEdit, useHasChronicle, useVaultStore } from '../store/vaultStore'
 import { useThemeStore } from '../theme/themeStore'
 import { SplitterPortrait, SplitterWisp, type SplitterMood } from './Splitter'
 import { FogSpotlight } from './FogSpotlight'
 import { QuestBubble, type BubbleAction } from './QuestBubble'
 import { QuestLog } from './QuestLog'
-import { ACT_TITLES, QUESTS, questById, questObjective, type Quest } from './questCatalog'
+import { ACT_TITLES, QUESTS, questById, questObjective, type Quest, type QuestStep } from './questCatalog'
 import { onQuestAction, reportQuestAction } from './questEvents'
 import { isActDone, isJourneyDone, nextQuest } from './questProgress'
 import { useQuestStore, type QuestNotice } from './questStore'
 import { findTourTarget, useTourTarget, type TargetBox } from './useTourTarget'
-import { fitsQuest, questPageOf, sheetCharacterName, useStartQuest } from './useStartQuest'
+import { questPageOf, usePageQuest, useStartQuest } from './useStartQuest'
 import { WelcomeDialog } from './WelcomeDialog'
 
-/** Re-renders on resize, so everything placed in viewport pixels follows. */
-function useViewport() {
-  const [size, setSize] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
-  useEffect(() => {
-    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight })
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-  return size
-}
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
-
-/** Where Splitter's shard hovers during a tour: at the lit element's top-left corner, kept on screen. */
-function wispPosition(box: TargetBox, viewport: { w: number; h: number }) {
-  return { x: clamp(box.left + 4, 18, viewport.w - 18), y: clamp(box.top + 2, 22, viewport.h - 22) }
+/** Where Splitter's shard hovers during a tour: at the lit element's top-left corner, kept on screen
+ * (the target's box changes on resize, so this follows without a resize listener of its own). */
+function wispPosition(box: TargetBox) {
+  return { x: clamp(box.left + 4, 18, window.innerWidth - 18), y: clamp(box.top + 2, 22, window.innerHeight - 22) }
 }
 
 /** What completing `questId` (just now) earned: the act's seal, and the next quest to suggest. */
@@ -77,7 +67,7 @@ function practiceBlocked(quest: Quest): boolean {
  */
 function useQuestReporting() {
   const { pathname } = useLocation()
-  const sheetName = sheetCharacterName(pathname)
+  const sheetName = characterNameFromPath(pathname)
 
   useEffect(() => {
     if (!sheetName) return
@@ -89,6 +79,15 @@ function useQuestReporting() {
     () =>
       useVaultStore.subscribe((state, prev) => {
         if (state.source === 'sample' && prev.source !== 'sample') reportQuestAction('open-sample')
+      }),
+    [],
+  )
+  // Gear and journal changes, by the store writer that made them.
+  useEffect(
+    () =>
+      onCharacterEdit((_path, character, edit) => {
+        if (edit?.source === 'vault.setEquipment' || edit?.source === 'vault.setInventory') reportQuestAction('equip')
+        if (edit?.source === 'vault.setJournal' && (character.journal?.length ?? 0) > (edit.previous?.journal?.length ?? 0)) reportQuestAction('journal')
       }),
     [],
   )
@@ -122,16 +121,31 @@ function useQuestReporting() {
   )
 }
 
+/** What a chronicle quest says instead of its tour in a vault without a history. */
+const NO_HISTORY_STEP: QuestStep = { text: 'quest.storiesChronicle.noHistory' }
+
 /** The running tour step: fog, Splitter's shard at the target, the dialogue with its portrait. */
 function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
   const t = useT()
-  const viewport = useViewport()
   const startQuest = useStartQuest()
-  const step = quest.steps[stepIndex]
+  const inSample = useVaultStore((s) => s.source === 'sample')
+  const hasChronicle = useHasChronicle()
+  // Without a chronicle to show, its quest shrinks to one step that explains it and offers the arena.
+  const noHistory = quest.needs === 'history' && !hasChronicle
+  const step = noHistory ? NO_HISTORY_STEP : quest.steps[stepIndex]
+  const total = noHistory ? 1 : quest.steps.length
   const box = useTourTarget(step.target)
   const blocked = practiceBlocked(quest) && step.until !== undefined && step.until !== 'click'
   const until = blocked ? undefined : step.until
-  const last = stepIndex === quest.steps.length - 1
+  const last = noHistory || stepIndex === total - 1
+  const advance = noHistory ? finishActiveQuest : advanceTour
+
+  // While a tour runs, the page's popovers (roll log, rest menu, tooltips) stay above the fog (see
+  // `html.quest-touring` in onboarding.css).
+  useEffect(() => {
+    document.documentElement.classList.add('quest-touring')
+    return () => document.documentElement.classList.remove('quest-touring')
+  }, [])
 
   // Opens the tab the step lives on (once the page shows it), unless it's open already.
   useEffect(() => {
@@ -158,8 +172,8 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
   }, [until, step.target])
 
   const actions: BubbleAction[] = []
-  if (stepIndex > 0) actions.push({ label: t('quest.back'), onClick: () => useQuestStore.getState().goToStep(stepIndex - 1) })
-  if (blocked) {
+  if (stepIndex > 0 && !noHistory) actions.push({ label: t('quest.back'), onClick: () => useQuestStore.getState().goToStep(stepIndex - 1) })
+  if (blocked || noHistory) {
     actions.push({
       label: t('quest.toArena'),
       onClick: () =>
@@ -171,10 +185,10 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
           }),
     })
   }
-  if (!until) actions.push({ label: t(last ? 'quest.finish' : 'quest.next'), onClick: advanceTour, primary: true })
-  else actions.push({ label: t(until === 'click' ? 'quest.next' : 'quest.skipStep'), onClick: advanceTour })
+  if (!until) actions.push({ label: t(last ? 'quest.finish' : 'quest.next'), onClick: advance, primary: true })
+  else actions.push({ label: t(until === 'click' ? 'quest.next' : 'quest.skipStep'), onClick: advance })
 
-  const wisp = box && wispPosition(box, viewport)
+  const wisp = box && wispPosition(box)
 
   return (
     <>
@@ -184,10 +198,10 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
         portrait={<SplitterPortrait shape="card" mood="talk" name={t('quest.mentorName')} />}
         box={box}
         heading={`${quest.icon} ${t(quest.title)}`}
-        text={t(step.touchText && window.matchMedia('(hover: none)').matches ? step.touchText : step.text)}
-        step={{ index: stepIndex, total: quest.steps.length }}
+        text={t(step.touchText && cannotHover() ? step.touchText : step.text)}
+        step={{ index: noHistory ? 0 : stepIndex, total }}
         waiting={until === 'click' ? t('quest.clickTarget') : until ? t('quest.yourTurn') : undefined}
-        footnote={blocked ? t('quest.practiceHint') : undefined}
+        footnote={blocked ? t('quest.practiceHint') : step.sampleNote && inSample ? t(step.sampleNote) : undefined}
         actions={actions}
         onClose={() => useQuestStore.getState().stop(true)}
       />
@@ -252,7 +266,7 @@ function NoticeView({ notice }: { notice: QuestNotice }) {
 
   return (
     <QuestBubble
-      box={CORNER}
+      box="corner"
       portrait={<SplitterPortrait shape="card" mood={mood} name={t('quest.mentorName')} />}
       heading={heading}
       text={text}
@@ -263,16 +277,32 @@ function NoticeView({ notice }: { notice: QuestNotice }) {
   )
 }
 
-/** A zero-size "target" in the bottom-right corner: notices are placed there, out of the way. */
-const CORNER: TargetBox = { get top() { return window.innerHeight - 24 }, get left() { return window.innerWidth }, width: 0, height: 0 }
+/** How far the page footer reaches up into the viewport — 0 until it scrolls into view — so a corner
+ * element can step over it instead of covering it. */
+function useFooterLift(): number {
+  const [lift, setLift] = useState(0)
+  useEffect(() => {
+    const footer = document.querySelector('footer')
+    if (!footer) return
+    // Fine-grained thresholds, so the lift follows the footer as it scrolls in; nothing runs while it's away.
+    const observer = new IntersectionObserver(([entry]) => setLift(Math.round(entry.intersectionRect.height)), {
+      threshold: Array.from({ length: 21 }, (_, i) => i / 20),
+    })
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [])
+  return lift
+}
 
 /** After the certificate, Splitter may stay dozing in a corner, as a small medallion: a click opens
  * the quest log. */
 function Companion() {
   const t = useT()
+  const lift = useFooterLift()
   return (
     <button
       type="button"
+      style={{ '--footer-lift': `${lift}px` } as CSSProperties}
       className="splitter-companion"
       onClick={() => useQuestStore.getState().openLog()}
       aria-label={t('quest.companionLabel')}
@@ -289,8 +319,7 @@ function Companion() {
  */
 export function Onboarding() {
   useQuestReporting()
-  const { pathname } = useLocation()
-  const page = questPageOf(pathname)
+  const { page, quest: pageQuest } = usePageQuest()
   const startQuest = useStartQuest()
   const enabled = useQuestStore((s) => s.enabled)
   const experience = useQuestStore((s) => s.experience)
@@ -301,10 +330,7 @@ export function Onboarding() {
   const companion = useQuestStore((s) => s.companion)
   const journeyDoneAt = useQuestStore((s) => s.journeyDoneAt)
   const promptedPages = useQuestStore((s) => s.promptedPages)
-  const completed = useQuestStore((s) => s.completed)
   const source = useVaultStore((s) => s.source)
-  const sheetName = sheetCharacterName(pathname)
-  const sheetCharacter = useVaultStore((s) => s.vault.characters.find((c) => c.frontmatter.name === sheetName)?.frontmatter)
   const welcome = enabled && !experience && !welcomeDeferred
 
   // The first visit of a page offers its next quest, once, unless the player said they know it all.
@@ -312,16 +338,15 @@ export function Onboarding() {
   useEffect(() => {
     window.clearTimeout(promptTimer.current)
     if (!enabled || !experience || experience === 'veteran' || active || notice || log || !page) return
-    if (promptedPages.includes(page) || (page !== 'start' && source === 'none')) return
-    const quest = nextQuest(completed, page, (q) => page !== 'sheet' || fitsQuest(q, sheetCharacter))
-    if (!quest) return
+    if (promptedPages.includes(page) || (page !== 'start' && source === 'none') || !pageQuest) return
+    const quest = pageQuest
     promptTimer.current = window.setTimeout(() => {
       const store = useQuestStore.getState()
       store.markPrompted(page)
       store.setNotice({ kind: 'prompt', questId: quest.id })
     }, 1200)
     return () => window.clearTimeout(promptTimer.current)
-  }, [enabled, experience, active, notice, log, page, promptedPages, source, completed, sheetCharacter])
+  }, [enabled, experience, active, notice, log, page, promptedPages, source, pageQuest])
 
   if (!enabled) return null
   const quest = active ? questById(active.questId) : undefined

@@ -12,7 +12,6 @@ import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { movementHint } from '../../../components/vitalsDisplay'
-import { lexiconRuleset } from '../../../onboarding/lexicon'
 import { Rune } from '../../../onboarding/Rune'
 
 /**
@@ -82,7 +81,7 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
       </div>
       <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
         {t('stats.armorClass')}
-        <Rune term="armorClass" ruleset={lexiconRuleset(character)} />
+        <Rune term="armorClass" character={character} />
       </span>
     </div>
   )
@@ -130,7 +129,7 @@ export function Evasion({ value, character }: { value: number; character: Charac
       </div>
       <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
         {t('stats.evasion')}
-        <Rune term="evasion" ruleset={lexiconRuleset(character)} />
+        <Rune term="evasion" character={character} />
       </span>
     </div>
   )
@@ -177,7 +176,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
             label={t('stats.initiativeOrder')}
             modifier={nimble.order}
             derivation={[nimbleAttributeTerm(character, 'in')]}
-            rune={<Rune term="initiative" ruleset={lexiconRuleset(character)} />}
+            rune={<Rune term="initiative" character={character} />}
             note={t('stats.initiativeOrderNote')}
           />
           <InitiativePlate
@@ -194,7 +193,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           label={t('stats.initiative')}
           modifier={initiativeBonus(character)}
           derivation={initiativeDerivation(character)}
-          rune={<Rune term="initiative" ruleset={lexiconRuleset(character)} />}
+          rune={<Rune term="initiative" character={character} />}
         />
       )}
       {squares === undefined ? (

@@ -15,7 +15,6 @@ import { abilityModifier, isSavingThrowProficient, savingThrowBonus } from '../.
 import { nimbleAttributeValue } from '../../../rules/endeavour'
 import { ABILITIES, NIMBLE_ATTRIBUTES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
-import { lexiconRuleset } from '../../../onboarding/lexicon'
 import { Rune } from '../../../onboarding/Rune'
 import { isEndeavour } from '../../../rules/ruleset'
 
@@ -165,8 +164,8 @@ export function AbilityScores({ character, characterPath }: { character: Charact
       title={t('cards.abilitiesAndSaves')}
       titleExtra={
         <>
-          <Rune term="attribute" ruleset={lexiconRuleset(character)} />
-          <Rune term="savingThrow" ruleset={lexiconRuleset(character)} />
+          <Rune term="attribute" character={character} />
+          <Rune term="savingThrow" character={character} />
         </>
       }
     >

@@ -39,7 +39,7 @@ describe('quest catalog', () => {
   it('has a translation for every quest text and lexicon entry in both languages', () => {
     const keys = [
       ...QUESTS.flatMap((q) => [q.title, ...q.steps.map((s) => s.text)]),
-      ...LEXICON.flatMap((e) => [e.title, ...Object.values(e.body)]),
+      ...Object.values(LEXICON).flatMap((e) => [e.title, ...Object.values(e.body)]),
     ]
     for (const lang of ['en', 'de'] as const) for (const key of keys) expect(DICTIONARIES[lang][key], `${lang}: ${key}`).toBeTruthy()
   })

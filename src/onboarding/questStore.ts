@@ -1,19 +1,19 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ActId } from './questCatalog'
+import type { ActId, QuestPage } from './questCatalog'
 import { isJourneyDone } from './questProgress'
 
 /** How much a newcomer wants explained, answered once in the welcome dialog. */
 export type Experience = 'new' | 'player' | 'veteran'
 
-export type QuestPageKey = 'start' | 'party' | 'sheet'
+/** The pages that have quests of their own. */
+export type QuestPageKey = Exclude<QuestPage, 'any'>
 
 /** What Splitter has to say when no tour step is showing. */
 export type QuestNotice =
   | { kind: 'prompt'; questId: string }
   | { kind: 'complete'; questId: string; act?: ActId; nextId?: string }
   | { kind: 'retreat' }
-  | { kind: 'practice'; questId: string }
 
 interface QuestState {
   /** The master switch ("Mentor & Questlog"). Off: no Splitter, no runes, only the menu to turn it back on. */
@@ -117,19 +117,8 @@ export const useQuestStore = create<QuestState>()(
     {
       name: 'dnd-companion-quests',
       version: 1,
-      partialize: (s) => ({
-        enabled: s.enabled,
-        experience: s.experience,
-        learnMode: s.learnMode,
-        completed: s.completed,
-        journeyDoneAt: s.journeyDoneAt,
-        readTerms: s.readTerms,
-        promptedPages: s.promptedPages,
-        dismissals: s.dismissals,
-        retreatAsked: s.retreatAsked,
-        companion: s.companion,
-        lastCharacter: s.lastCharacter,
-      }),
+      // Exactly the fields `INITIAL` lists — the tour, notices and open log start fresh on every visit.
+      partialize: (s) => Object.fromEntries(Object.keys(INITIAL).map((key) => [key, s[key as keyof typeof INITIAL]])),
     },
   ),
 )

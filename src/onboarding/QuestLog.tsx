@@ -2,7 +2,7 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n, useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
-import { LEXICON, type LexiconRuleset } from './lexicon'
+import { LEXICON, type LexiconEntry, type LexiconRuleset, type LexiconTerm } from './lexicon'
 import { ACT_TITLES, MAIN_ACTS, type ActId, type Quest } from './questCatalog'
 import { isActDone, isActUnlocked, isJourneyDone, journeyProgress, nextQuest, questsOfAct, rankKey } from './questProgress'
 import { useQuestStore } from './questStore'
@@ -117,16 +117,16 @@ function Compendium() {
   const ruleset: LexiconRuleset = vaultRuleset === 'endeavour' || vaultRuleset === 'nimble' ? 'endeavour' : 'dnd5e'
   const readTerms = useQuestStore((s) => s.readTerms)
   return (
-    <div className="quest-compendium">
+    <div>
       <p className="quest-compendium-intro">{t(ruleset === 'endeavour' ? 'quest.compendiumIntroEndeavour' : 'quest.compendiumIntroDnd')}</p>
-      {LEXICON.filter((e) => e.body[ruleset]).map((entry) => {
-        const read = readTerms.includes(entry.term)
+      {(Object.entries(LEXICON) as [LexiconTerm, LexiconEntry][]).filter(([, e]) => e.body[ruleset]).map(([term, entry]) => {
+        const read = readTerms.includes(term)
         return (
           <details
-            key={entry.term}
-            className={`quest-lexicon-entry ${read ? 'is-read' : ''}`}
+            key={term}
+            className="quest-lexicon-entry"
             onToggle={(e) => {
-              if ((e.currentTarget as HTMLDetailsElement).open) useQuestStore.getState().markRead(entry.term)
+              if ((e.currentTarget as HTMLDetailsElement).open) useQuestStore.getState().markRead(term)
             }}
           >
             <summary>

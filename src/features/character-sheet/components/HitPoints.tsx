@@ -14,7 +14,6 @@ import { hpFillClass } from '../../../components/vitalsDisplay'
 import { KiIcon } from '../../../components/KiIcon'
 import { ManaIcon } from '../../../components/ManaIcon'
 import { reportQuestAction } from '../../../onboarding/questEvents'
-import { lexiconRuleset } from '../../../onboarding/lexicon'
 import { Rune } from '../../../onboarding/Rune'
 import { withResource } from '../rest'
 import { RestMenu } from './RestMenu'
@@ -316,7 +315,6 @@ export function HitPoints({
       if (next < now) reportQuestAction('damage')
       set(next)
     })
-  const ruleset = lexiconRuleset(character)
 
   const resilience = resiliencePool(character)
   const poolParts = character.level_pool_derivation
@@ -354,7 +352,7 @@ export function HitPoints({
       <div className="min-w-0 grow-[2] basis-[26rem]">
         <div className="mb-2 flex min-h-7 items-center justify-between gap-3">
           <SectionTitle className="min-w-0 flex-1">{t('cards.vitals')}</SectionTitle>
-          <Rune term="rest" ruleset={ruleset} />
+          <Rune term="rest" character={character} />
           <RestMenu character={character} characterPath={characterPath} />
           {tempControl}
         </div>
@@ -374,7 +372,7 @@ export function HitPoints({
               warded={warded}
               hitKey={wardHitKey}
               maxHint={resilienceMaxHint}
-              rune={<Rune term="resilience" ruleset={ruleset} />}
+              rune={<Rune term="resilience" character={character} />}
             />
           )}
           <PoolRow
@@ -391,7 +389,7 @@ export function HitPoints({
             warded={warded}
             hitKey={wardHitKey}
             maxHint={hpMaxHint}
-            rune={<Rune term="hitPoints" ruleset={ruleset} />}
+            rune={<Rune term="hitPoints" character={character} />}
           />
           {/* Mana is spent in play like the two pools above, so it shares the HUD; damage never
               reaches it, so it stays outside the ward. */}
@@ -403,7 +401,13 @@ export function HitPoints({
               current={mana.current}
               max={mana.max}
               onSet={setMana}
-              rune={<Rune term={ruleset === 'endeavour' ? 'mana' : 'spellSlots'} ruleset={ruleset} />}
+              rune={
+                // Each rune only shows under rules that have its term.
+                <>
+                  <Rune term="mana" character={character} />
+                  <Rune term="spellSlots" character={character} />
+                </>
+              }
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'mana-fill'}
@@ -470,7 +474,7 @@ export function HitPoints({
                 caption={
                   <RowCaption>
                     {t('stats.exhaustion')}
-                    <Rune term="exhaustion" ruleset={ruleset} />
+                    <Rune term="exhaustion" character={character} />
                   </RowCaption>
                 }
               />

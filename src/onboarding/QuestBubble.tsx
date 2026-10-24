@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n/useI18n'
+import { clamp, headerHeight, PHONE_MAX_WIDTH, prefersReducedMotion } from '../utils/viewport'
 import type { TargetBox } from './useTourTarget'
 
 const GAP = 18
 const MARGIN = 12
-/** Below this width the bubble docks to the bottom of the screen, as a sheet. */
-const SHEET_BELOW = 640
 /** Below this height (a phone held sideways) there's no room above or below a target: the bubble
  * moves to the side of the screen the target isn't on. */
 const SIDE_BELOW = 500
@@ -18,18 +17,11 @@ export interface BubbleAction {
   primary?: boolean
 }
 
-export interface BubblePlacement {
-  top: number
-  left: number
-  width: number
-  height: number
-}
-
 /** Writes `text` out letter by letter; `finish` shows it at once. Instant with reduced motion. */
 function useTypewriter(text: string) {
   // Counted per text, so a new text starts from its first letter without resetting in an effect.
   const [typed, setTyped] = useState({ text, shown: 0 })
-  const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [instant] = useState(prefersReducedMotion)
   const shown = instant ? text.length : typed.text === text ? typed.shown : 0
 
   useEffect(() => {
@@ -44,7 +36,7 @@ function useTypewriter(text: string) {
     return () => window.clearInterval(timer)
   }, [text, instant])
 
-  return { visible: text.slice(0, shown), done: shown >= text.length, finish: () => setTyped({ text, shown: text.length }) }
+  return { visible: text.slice(0, shown), rest: text.slice(shown), finish: () => setTyped({ text, shown: text.length }) }
 }
 
 /** Bumps when the window or `ref`'s own box resizes (a web font or the portrait loading later), for
@@ -64,15 +56,11 @@ function useResizeTick(ref: RefObject<HTMLElement | null>) {
   return tick
 }
 
-function headerHeight() {
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-header-h')) || 0
-}
-
 /**
  * Splitter's speech bubble, an RPG dialogue box: its `portrait` on the left, the text on the right. It
  * sits beside the lit element (below it when there's room, else above), centred when the step has no
- * target, and docked to the bottom on phones. Its text types itself out (a click shows it whole).
- * `onPlaced` reports where it ended up.
+ * target, in the bottom-right `corner` for notices nobody asked for, and docked to the bottom on phones.
+ * Its text types itself out (a click shows it whole).
  */
 export function QuestBubble({
   box,
@@ -83,11 +71,11 @@ export function QuestBubble({
   footnote,
   actions,
   onClose,
-  onPlaced,
   autoFocus = true,
   portrait,
 }: {
-  box: TargetBox | null
+  /** What the bubble sits beside: the lit element, `null` (centred), or `'corner'`. */
+  box: TargetBox | null | 'corner'
   heading: ReactNode
   text: string
   /** Step dots: index and total. */
@@ -97,7 +85,6 @@ export function QuestBubble({
   footnote?: string
   actions: BubbleAction[]
   onClose?: () => void
-  onPlaced?: (placement: BubblePlacement) => void
   /** Moves focus to the primary button when the text changes. Off for bubbles nobody asked for, so
    * they never pull focus out of what the player is typing. */
   autoFocus?: boolean
@@ -107,7 +94,7 @@ export function QuestBubble({
   const t = useT()
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number; sheet: boolean } | null>(null)
-  const { visible, done, finish } = useTypewriter(text)
+  const { visible, rest, finish } = useTypewriter(text)
   const resized = useResizeTick(ref)
 
   useLayoutEffect(() => {
@@ -121,24 +108,25 @@ export function QuestBubble({
     const vh = window.innerHeight
     const minTop = headerHeight() + MARGIN
     let next: { top: number; left: number; sheet: boolean }
-    if (vw < SHEET_BELOW) {
+    if (vw < PHONE_MAX_WIDTH) {
       next = { top: vh - height - MARGIN, left: MARGIN, sheet: true }
+    } else if (box === 'corner') {
+      next = { top: vh - height - MARGIN, left: vw - width - MARGIN, sheet: false }
     } else if (box && vh < SIDE_BELOW) {
       next = { top: minTop, left: box.left + box.width / 2 < vw / 2 ? vw - width - MARGIN : MARGIN, sheet: false }
     } else if (box) {
       const below = box.top + box.height + GAP
       const above = box.top - GAP - height
       const top = below + height <= vh - MARGIN ? below : above >= minTop ? above : vh - height - MARGIN
-      next = { top, left: Math.min(Math.max(box.left, MARGIN), vw - width - MARGIN), sheet: false }
+      next = { top, left: clamp(box.left, MARGIN, vw - width - MARGIN), sheet: false }
     } else {
       next = { top: Math.max(minTop + 40, (vh - height) / 2), left: (vw - width) / 2, sheet: false }
     }
     // Taller than the room left (a phone held sideways): it scrolls inside, and never leaves the top.
     next.top = Math.max(next.sheet ? MARGIN : minTop, next.top)
     setPos((prev) => (prev && Math.abs(prev.top - next.top) < 0.5 && Math.abs(prev.left - next.left) < 0.5 && prev.sheet === next.sheet ? prev : next))
-    onPlaced?.({ top: next.top, left: next.left, width, height })
     // The bubble's own size changes with its text, the waiting cue and the buttons.
-  }, [box, text, waiting, footnote, actions.length, resized, onPlaced])
+  }, [box, text, waiting, footnote, actions.length, resized])
 
   // Focus moves into the bubble when it opens, so keyboard users can answer it right away.
   useEffect(() => {
@@ -180,7 +168,11 @@ export function QuestBubble({
         {/* The typed text is for the eye; screen readers get the whole sentence at once. */}
         <p className="quest-bubble-text" onClick={finish}>
           <span aria-hidden>{visible}</span>
-          {!done && <span className="quest-bubble-caret" aria-hidden />}
+          {rest && <span className="quest-bubble-caret" aria-hidden />}
+          {/* The rest is laid out unseen, so the bubble keeps its size (and place) while typing. */}
+          <span aria-hidden className="invisible">
+            {rest}
+          </span>
           <span className="sr-only" aria-live="polite">
             {text}
           </span>

@@ -8,7 +8,6 @@ import { skillBonus, skillProficiencyLevel } from '../../../rules/dnd5e'
 import { nimbleSkillBonus, nimbleSkillValue } from '../../../rules/endeavour'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
-import { lexiconRuleset } from '../../../onboarding/lexicon'
 import { Rune } from '../../../onboarding/Rune'
 import { isEndeavour } from '../../../rules/ruleset'
 
@@ -53,8 +52,8 @@ export function Skills({ character }: { character: CharacterFrontmatter }) {
       title={t('cards.skills')}
       titleExtra={
         <>
-          <Rune term="skill" ruleset={lexiconRuleset(character)} />
-          <Rune term="proficiency" ruleset={lexiconRuleset(character)} />
+          <Rune term="skill" character={character} />
+          <Rune term="proficiency" character={character} />
         </>
       }
     >

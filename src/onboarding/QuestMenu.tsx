@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Toggle } from '../components/Toggle'
 import { useDismiss } from '../components/useDismiss'
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
 import { ProgressRing } from './QuestLog'
-import { isJourneyDone, journeyProgress, nextQuest } from './questProgress'
+import { isJourneyDone, journeyProgress } from './questProgress'
 import { useQuestStore } from './questStore'
-import { fitsQuest, questPageOf, sheetCharacterName, useStartQuest } from './useStartQuest'
+import { usePageQuest, useStartQuest } from './useStartQuest'
 
 /** A rolled-up scroll, the quest log's emblem. */
 function ScrollIcon() {
@@ -24,14 +23,6 @@ function ScrollIcon() {
   )
 }
 
-function Toggle({ on }: { on: boolean }) {
-  return (
-    <span className={`relative h-4 w-7 shrink-0 rounded-full transition ${on ? 'bg-trim' : 'bg-border'}`} aria-hidden>
-      <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-surface transition-all ${on ? 'left-3.5' : 'left-0.5'}`} />
-    </span>
-  )
-}
-
 /**
  * The "?" of the header: the quest log button, its ring filling with the journey, and a glint when
  * this page has a quest waiting. Its menu opens the log, the tour of this page, the compendium, and
@@ -39,7 +30,6 @@ function Toggle({ on }: { on: boolean }) {
  */
 export function QuestMenu() {
   const t = useT()
-  const { pathname } = useLocation()
   const startQuest = useStartQuest()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -49,10 +39,7 @@ export function QuestMenu() {
   const learnMode = useQuestStore((s) => s.learnMode)
   const companion = useQuestStore((s) => s.companion)
   const completed = useQuestStore((s) => s.completed)
-  const page = questPageOf(pathname)
-  const sheetName = sheetCharacterName(pathname)
-  const sheetCharacter = useVaultStore((s) => s.vault.characters.find((c) => c.frontmatter.name === sheetName)?.frontmatter)
-  const pageQuest = page ? nextQuest(completed, page, (q) => page !== 'sheet' || fitsQuest(q, sheetCharacter)) : undefined
+  const { quest: pageQuest } = usePageQuest()
   const progress = journeyProgress(completed)
   const store = useQuestStore.getState
 
@@ -61,6 +48,13 @@ export function QuestMenu() {
     setOpen(false)
     fn()
   }
+  const mentorSwitch = (
+    <button type="button" role="menuitemcheckbox" aria-checked={enabled} className={item} onClick={run(() => store().setEnabled(!enabled))}>
+      <span aria-hidden>🌙</span>
+      <span className="flex-1">{t('quest.mentorSwitch')}</span>
+      <Toggle on={enabled} />
+    </button>
+  )
 
   return (
     <div ref={rootRef} className="relative shrink-0">
@@ -114,11 +108,7 @@ export function QuestMenu() {
                   <Toggle on={companion} />
                 </button>
               )}
-              <button type="button" role="menuitemcheckbox" aria-checked className={item} onClick={run(() => store().setEnabled(false))}>
-                <span aria-hidden>🌙</span>
-                <span className="flex-1">{t('quest.mentorSwitch')}</span>
-                <Toggle on />
-              </button>
+              {mentorSwitch}
               <div className="quest-menu-sep" />
               <button
                 type="button"
@@ -135,11 +125,7 @@ export function QuestMenu() {
           ) : (
             <>
               <p className="px-3 pt-2 pb-1 text-xs leading-relaxed text-fg-muted">{t('quest.mentorOffHint')}</p>
-              <button type="button" role="menuitemcheckbox" aria-checked={false} className={item} onClick={run(() => store().setEnabled(true))}>
-                <span aria-hidden>🌙</span>
-                <span className="flex-1">{t('quest.mentorSwitch')}</span>
-                <Toggle on={false} />
-              </button>
+              {mentorSwitch}
             </>
           )}
         </div>

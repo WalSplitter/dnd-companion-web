@@ -26,7 +26,6 @@ import { RollerContext } from '../../dice/rollLogStore'
 import { hasBiography } from '../../vault/adapters/biography'
 import { exhaustionD20Penalty } from '../../rules/deriveStats'
 import { evasionValue } from '../../rules/endeavour'
-import { lexiconRuleset } from '../../onboarding/lexicon'
 import { Rune } from '../../onboarding/Rune'
 
 type Tab = 'sheet' | 'inventory' | 'spells' | 'skills' | 'journal' | 'biography'
@@ -102,7 +101,7 @@ export function CharacterSheet({
                 ))}
               </div>
               <span className="mb-2 shrink-0">
-                <Rune term="advantage" ruleset={lexiconRuleset(character)} />
+                <Rune term="advantage" character={character} />
               </span>
               <RollLog />
             </div>

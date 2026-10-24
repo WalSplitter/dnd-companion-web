@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
 import { campaignFromFile, isDm } from '../vault/adapters/campaignJournal'
-import { reportQuestAction } from '../onboarding/questEvents'
 import { serializeJournal } from '../vault/adapters/journal'
 import { deriveEquipment, equipmentChangeFields } from '../vault/adapters/nativeCharacter'
 import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
@@ -193,21 +192,29 @@ function revokeActiveImageAssets() {
   activeImageAssets = null
 }
 
-type CharacterEditListener = (characterPath: string, character: CharacterFrontmatter) => void
+/** What an edit was (absent for a rollback): the writer that made it (`vault.setJournal`, …) and the
+ * character as it was before. */
+export interface CharacterEditInfo {
+  source: string
+  previous?: CharacterFrontmatter
+}
+
+type CharacterEditListener = (characterPath: string, character: CharacterFrontmatter, edit?: CharacterEditInfo) => void
 const characterEditListeners = new Set<CharacterEditListener>()
 
 /**
  * Follows every edit made to a character in this browser (and its rollback, should the write fail)
- * — not vault loads. The Owlbear Rodeo live sync uses it to share changes made on the sheet.
+ * — not vault loads. The Owlbear Rodeo live sync uses it to share changes made on the sheet, the
+ * onboarding to notice what the player just did.
  */
 export function onCharacterEdit(listener: CharacterEditListener): () => void {
   characterEditListeners.add(listener)
   return () => characterEditListeners.delete(listener)
 }
 
-function notifyCharacterEdit(vault: Vault, characterPath: string) {
+function notifyCharacterEdit(vault: Vault, characterPath: string, edit?: CharacterEditInfo) {
   const character = findCharacter(vault, characterPath)
-  if (character) for (const listener of characterEditListeners) listener(characterPath, character)
+  if (character) for (const listener of characterEditListeners) listener(characterPath, character, edit)
 }
 
 // The GitHub vault's write-back queue, if one is open. Replaced along with the vault: the old one
@@ -457,7 +464,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
   ) {
     const previous = findCharacter(get().vault, characterPath)
     set({ vault: mapCharacter(get().vault, characterPath, mutate), writeError: null })
-    notifyCharacterEdit(get().vault, characterPath)
+    notifyCharacterEdit(get().vault, characterPath, { source: failure.source, previous })
     if (!write) return
 
     try {
@@ -755,7 +762,6 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const { vault, writer, editPermission } = get()
       const target = findCharacter(vault, characterPath)?._write?.inventory
       if (editPermission !== 'granted' || !target || !writer?.canWrite(target.path)) return
-      reportQuestAction('equip')
 
       await editCharacter(
         characterPath,
@@ -820,7 +826,6 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const equipmentTarget = targets?.equipment
       const inventoryTarget = change.containers ? targets?.endeavour_inventory : undefined
       if (editPermission !== 'granted' || !equipmentTarget || (change.containers && !inventoryTarget)) return
-      reportQuestAction('equip')
       const canWrite = writer?.canWrite(equipmentTarget.path) && (!inventoryTarget || writer.canWrite(inventoryTarget.path))
       const context = characterContext(vault, characterPath)
       const { first, containers, ...fields } = change
@@ -862,7 +867,6 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const { vault, writer, editPermission } = get()
       const target = findCharacter(vault, characterPath)?._write?.journal
       if (editPermission !== 'granted' || !target || !writer || (!target.create && !writer.canWrite(target.path))) return
-      if (journal.length > (findCharacter(vault, characterPath)?.journal?.length ?? 0)) reportQuestAction('journal')
       const context = characterContext(vault, characterPath)
 
       await editCharacter(
@@ -974,6 +978,12 @@ export function wasSampleVaultActive(): boolean {
 /** Whether the sample vault is open and differs from its original state (a demo edit was made). */
 export function useSampleVaultEdited(): boolean {
   return useVaultStore((s) => s.source === 'sample' && sampleState !== null && s.vault !== sampleState.vault)
+}
+
+/** Whether the open vault has a chronicle: a GitHub vault's commit history, or the sample vault's
+ * made-up one. */
+export function useHasChronicle(): boolean {
+  return useVaultStore((s) => s.github !== null || s.source === 'sample')
 }
 
 /** Whether this browser's GitHub account is one of the campaign's DMs. */

@@ -9,7 +9,7 @@ import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
+import { useHasChronicle, useVaultStore } from '../store/vaultStore'
 import type { JournalEntry } from '../vault/types'
 import { characterRoute } from './paths'
 
@@ -23,8 +23,7 @@ const NO_ENTRIES: JournalEntry[] = []
 export function CharacterListPage() {
   const t = useT()
   const characters = useVaultStore((s) => s.vault.characters)
-  // The chronicle reads the repository's commit history, so it only exists for a GitHub vault.
-  const hasHistory = useVaultStore((s) => s.github !== null)
+  const hasHistory = useHasChronicle()
   const [mode, setMode] = useCharacterViewMode()
   const layout = resolveLayout(mode, characters.length)
   // The tab lives in the URL so "back" from a sheet returns to the comparison.
@@ -63,7 +62,7 @@ export function CharacterListPage() {
         )}
       </div>
 
-      <div role="tablist" data-tour="party.tabs" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
+      <div role="tablist" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
         {tabs.map(({ key, label, badge }) => (
           <button
             key={key}

@@ -18,6 +18,7 @@ import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './features/vault-access/VaultLoaderControls'
 import { CharacterListPage, CharacterSheetPage, TablePage } from './routes/lazyPages'
 import { StartPage } from './routes/StartPage'
+import { CHARACTER_ROUTE, PARTY_ROUTE } from './routes/paths'
 import { VaultLayout } from './routes/VaultLayout'
 import { useVaultStore } from './store/vaultStore'
 
@@ -109,8 +110,8 @@ function App() {
             <Routes>
               <Route path="/" element={<StartPage />} />
               <Route element={<VaultLayout />}>
-                <Route path="/characters" element={<CharacterListPage />} />
-                <Route path="/characters/:characterName" element={<CharacterSheetPage />} />
+                <Route path={PARTY_ROUTE} element={<CharacterListPage />} />
+                <Route path={CHARACTER_ROUTE} element={<CharacterSheetPage />} />
                 {inOwlbear && <Route path="/table" element={<TablePage />} />}
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

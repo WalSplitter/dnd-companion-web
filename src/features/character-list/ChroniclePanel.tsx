@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { initials } from '../../components/initials'
 import { useI18n, type TranslationKey } from '../../i18n/useI18n'
 import { characterRoute } from '../../routes/paths'
+import { sampleChronicleCommits } from '../../sample-vault/chronicle'
 import { activeGitHubSource, useVaultStore } from '../../store/vaultStore'
 import { fieldLabel } from '../../vault/github/commitMessage'
 import { COMMITS_PER_PAGE, GitHubError, listCommits, type GitHubCommit } from '../../vault/github/githubApi'
@@ -12,8 +13,10 @@ type LoadState = { state: 'loading' } | { state: 'idle'; more: boolean } | { sta
 
 type PageResult = { commits: GitHubCommit[] } | { error: TranslationKey }
 
-/** One page of the open GitHub vault's history, or what went wrong. */
+/** One page of the open GitHub vault's history, or what went wrong. The sample vault has a made-up
+ * history of its own, all on one page. */
 async function fetchHistoryPage(page: number): Promise<PageResult> {
+  if (useVaultStore.getState().source === 'sample') return { commits: page === 1 ? sampleChronicleCommits() : [] }
   const source = activeGitHubSource()
   if (!source) return { commits: [] }
   try {
