@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { classSummary, exhaustionD20Penalty, movementSquares, formatModifier, initiativeBonus, speedInSquares, passivePerception, spellAttackBonus, spellSaveDC } from './deriveStats'
 import { abilityModifier, savingThrowBonus, skillBonus, skillProficiencyLevel } from './dnd5e'
-import { evasionValue, initiativeActionPoints, nimbleAttributeValue, nimbleInitiative, nimbleSkillBonus, nimbleSkillValue } from './endeavour'
+import { encumbranceLimit, evasionValue, initiativeActionPoints, languageAllowance, nimbleAttributeValue, nimbleInitiative, nimbleSkillBonus, nimbleSkillValue } from './endeavour'
 import type { CharacterFrontmatter } from '../vault/types'
 
 const character: CharacterFrontmatter = {
@@ -128,6 +128,27 @@ describe('nimbleAttributeValue', () => {
   })
 })
 
+describe('encumbranceLimit (Gepäck#Maximale Gepäckgröße)', () => {
+  it('is 15 + ST × 2 slots', () => {
+    const withSt = (st: number) => ({ ...character, ruleset: 'endeavour' as const, nimble_attributes: { st, bw: 0, ko: 0, ge: 0, in: 0, vs: 0, pr: 0, en: 0 } })
+    expect(encumbranceLimit(withSt(0))).toBe(15)
+    expect(encumbranceLimit(withSt(-5))).toBe(5)
+    expect(encumbranceLimit(withSt(5))).toBe(25)
+    expect(encumbranceLimit(character)).toBeUndefined()
+  })
+})
+
+describe('languageAllowance (Einen Charakter erstellen#5. Sprachen)', () => {
+  const withVs = (vs: number) => ({ ...character, ruleset: 'endeavour' as const, nimble_attributes: { st: 0, bw: 0, ko: 0, ge: 0, in: 0, vs, pr: 0, en: 0 } })
+  it('is the Gemeinsprache plus one per point of VS, never below one', () => {
+    expect(languageAllowance(withVs(3))).toBe(4)
+    expect(languageAllowance(withVs(-1))).toBe(1)
+  })
+  it('does not apply to D&D characters', () => {
+    expect(languageAllowance(character)).toBeUndefined()
+  })
+})
+
 describe('speedInSquares', () => {
   it('converts feet to 5-ft grid squares', () => {
     expect(speedInSquares('30 ft')).toBe(6)
@@ -222,6 +243,8 @@ describe('exhaustion (rule Erschöpfung)', () => {
     expect(movementSquares(character)).toBe(6)
     expect(movementSquares(exhausted)).toBe(3)
     expect(movementSquares({ ...character, conditions: { exhaustion: 9 } })).toBe(0)
+    // Belastet: −3 m = 2 squares, on top of exhaustion.
+    expect(movementSquares({ ...character, conditions: { active: ['Belastet'] } })).toBe(4)
   })
 })
 

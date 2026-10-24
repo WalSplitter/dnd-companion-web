@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { clamp, headerHeight } from '../../utils/viewport'
 import { createPortal } from 'react-dom'
 import { Card } from '../../components/Card'
 import { useDismiss } from '../../components/useDismiss'
@@ -328,12 +329,6 @@ function anchorFor(id: string): HTMLElement | null {
   return button?.querySelector<HTMLElement>('.st-tile') ?? button
 }
 
-function headerHeight(): number {
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-header-h')) || 72
-}
-
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, Math.max(min, max)))
-
 /**
  * Beside the tile — right of it if there's room, else left, else under or over it — and kept inside
  * the viewport below the header. It never leaves the tile's height, though: scroll the tile away and
@@ -342,7 +337,7 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v,
 function placeSheet(tile: DOMRect, sheet: { width: number; height: number }): SheetPlacement {
   const vw = document.documentElement.clientWidth
   const vh = window.innerHeight
-  const minTop = headerHeight() + DOCK_MARGIN
+  const minTop = headerHeight(72) + DOCK_MARGIN
   const maxTop = vh - DOCK_MARGIN - sheet.height
 
   const side: SheetSide =
@@ -393,7 +388,7 @@ function DetailSheet({ anchorId, onClose, children }: { anchorId: string; onClos
     const tile = anchorFor(anchorId)
     if (!tile) return
     const rect = tile.getBoundingClientRect()
-    if (rect.top < headerHeight() || rect.bottom > window.innerHeight) tile.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+    if (rect.top < headerHeight(72) || rect.bottom > window.innerHeight) tile.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
   }, [anchorId, docked])
 
   // Measured before paint, so the sheet never shows in its fallback corner first.

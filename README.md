@@ -27,7 +27,8 @@ No server · no database · no account.
 
 ## Features
 
-- 🎲 **A living sheet.** Modifiers, saves, skills and spell DC are derived, never duplicated. Click any value like `1d8` or `2d6+3` to roll it; a roll log keeps the session's rolls and sets advantage on touch screens.
+- 🎲 **A living sheet.** Modifiers, saves, skills and spell DC are derived, never duplicated, and their tooltips show how each number adds up. Click any value like `1d8` or `2d6+3` to roll it; a roll log keeps the session's rolls and sets advantage on touch screens.
+- 🐺 **A mentor for newcomers.** Splitter guides first-time players through the app with short tours and a quest log; runes explain the rules words. Optional, and off with one click.
 - 🎒 **Slot-grid inventory.** Drag items between backpacks and pouches, track charges, and equip gear on a character screen with body slots.
 - ✨ **Spells and resources.** Slots, mana, class pools, luck points, exhaustion, rests and a biography tab.
 - 🌳 **Skill tree.** The class from level 1 to 20 as a talent board, built from the class table in your vault.
@@ -46,7 +47,7 @@ Open **<https://walsplitter.github.io/dnd-companion-web/>**. There is nothing to
 
 | | Card | Where the vault is | Saving changes |
 | --- | --- | --- | --- |
-| 🧪 | **Explore the sample vault** | bundled demo party of six | tried in memory, never saved |
+| 🧪 | **Explore the sample vault** | bundled demo party of seven | tried in memory, never saved |
 | 📁 | **Choose folder…** | a folder on your device | into the files (Chrome, Edge, Opera) |
 | ☁️ | **Open from a repository** | a GitHub repository | as commits, in any browser |
 
@@ -59,6 +60,7 @@ The [wiki](https://github.com/WalSplitter/dnd-companion-web/wiki) has step-by-st
 | Guide | What's in it |
 | --- | --- |
 | [Getting Started](https://github.com/WalSplitter/dnd-companion-web/wiki/Getting-Started) | from zero to your character sheet in a few minutes |
+| [Quest Log](https://github.com/WalSplitter/dnd-companion-web/wiki/Quest-Log) | Splitter's tours, the quest log, runes and the compendium |
 | [Journal](https://github.com/WalSplitter/dnd-companion-web/wiki/Journal) · [Campaign Log](https://github.com/WalSplitter/dnd-companion-web/wiki/Campaign-Log) | notes per character, and the DM's log for the whole party |
 | [Skill Tree](https://github.com/WalSplitter/dnd-companion-web/wiki/Skill-Tree) | the class progression board and the level table behind it |
 | [GitHub Sync](https://github.com/WalSplitter/dnd-companion-web/wiki/GitHub-Sync) | repository setup, access tokens, commits, offline use and the chronicle |

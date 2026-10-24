@@ -86,7 +86,8 @@ export function formatDiceExpression({ dice, modifier }: DiceExpression): string
 /** 2024-rules critical hit: doubles the number of damage dice rolled, not the flat modifier. */
 export function rollDamage(raw: string, { critical = false }: { critical?: boolean } = {}): DiceRollResult | undefined {
   const parsed = parseDiceExpression(raw)
-  if (!parsed || parsed.dice.length === 0) return undefined
+  // A flat amount (an unarmed strike's `1+2`) is a valid damage roll too, just without dice.
+  if (!parsed) return undefined
   const rolls = parsed.dice.flatMap(({ count, sides }) => Array.from({ length: critical ? count * 2 : count }, () => rollOne(sides)))
   return { notation: raw, rolls, modifier: parsed.modifier, total: rolls.reduce((sum, r) => sum + r, 0) + parsed.modifier }
 }

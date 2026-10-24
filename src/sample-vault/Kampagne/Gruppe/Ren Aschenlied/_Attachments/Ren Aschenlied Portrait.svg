@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#5c3a2a"/>
+      <stop offset="0.55" stop-color="#2e1c16"/>
+      <stop offset="1" stop-color="#0f0907"/>
+    </radialGradient>
+    <linearGradient id="robe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8742e"/>
+      <stop offset="1" stop-color="#6e3412"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9a77c"/>
+      <stop offset="1" stop-color="#b07c56"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)"/>
+
+  <!-- ash drifting over a burnt monastery roof -->
+  <path d="M0 196l40-34 40 34v60H0Z M170 256v-58l34-30 34 30 18-14v72Z" fill="#140c09" opacity="0.85"/>
+  <g fill="#e8d8c8" opacity="0.5">
+    <circle cx="40" cy="60" r="2"/><circle cx="70" cy="40" r="1.5"/><circle cx="200" cy="70" r="2"/>
+    <circle cx="220" cy="40" r="1.5"/><circle cx="180" cy="110" r="1.5"/><circle cx="54" cy="120" r="1.5"/>
+  </g>
+
+  <!-- quarterstaff across the shoulders -->
+  <path d="M30 176L226 150" stroke="#6b4423" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 176L226 150" stroke="#9a6a3a" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- robe, crossed collar -->
+  <path d="M50 256c4-44 32-68 78-68s74 24 78 68Z" fill="url(#robe)"/>
+  <path d="M104 190l24 30 24-30" fill="none" stroke="#3a1c0a" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- neck + face -->
+  <path d="M116 154h24v36h-24Z" fill="#b07c56"/>
+  <path d="M128 66c-24 0-36 22-36 48 0 28 16 48 36 48s36-20 36-48c0-26-12-48-36-48Z" fill="url(#skin)"/>
+
+  <!-- shaved head with a braid -->
+  <path d="M94 104c2-24 16-38 34-38s32 14 34 38c-10-12-20-16-34-16s-24 4-34 16Z" fill="#8f6446" opacity="0.55"/>
+  <path d="M160 98c14 10 18 30 12 52" fill="none" stroke="#2a1a12" stroke-width="7" stroke-linecap="round"/>
+  <path d="M164 108l6 4M166 120l6 3M168 132l6 2" stroke="#4a3022" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- half-closed eyes, calm smile -->
+  <path d="M106 114q7 3 14 0M136 114q7 3 14 0" stroke="#2a1a12" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M106 104q7-3 13 0M137 104q7-3 13 0" stroke="#2a1a12" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M118 140q10 6 20 0" fill="none" stroke="#8a4a3a" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- ki swirl -->
+  <g transform="translate(60 214)">
+    <circle r="12" fill="none" stroke="#5fd0a4" stroke-width="2.4"/>
+    <path d="M0-12a6 6 0 0 1 0 12 6 6 0 0 0 0 12A12 12 0 0 1 0-12Z" fill="#5fd0a4"/>
+  </g>
+
+  <rect x="3" y="3" width="250" height="250" fill="none" stroke="#d8b25a" stroke-width="6" rx="6"/>
+</svg>

@@ -1,9 +1,9 @@
-import { isRecord } from '../frontmatterFields'
+import { hasTag, isRecord, tagList } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
 import type { CharacterFeature, CharacterFrontmatter, FeatureUsage } from '../types'
 import { basename, linkDisplay, linkFile, linksToText } from '../wikilinkSyntax'
 import { parsePipeTables } from './markdownTable'
-import { noteSummary, parseFeatureUsage } from './nativeCharacter'
+import { noteFeatureUsage, noteSummary } from './nativeCharacter'
 
 /**
  * What a class grants on its way from level 1 to 20, read for the skill tree. Both vaults describe it
@@ -17,6 +17,11 @@ import { noteSummary, parseFeatureUsage } from './nativeCharacter'
  *   link in the table that marks choosing it, and `Merkmal: Kampfarchetyp` rows mark its features.
  *   The chosen subclass (`class[].subclass`) is a note with its own table (`Stufe | Merkmal`) whose
  *   features take those rows' places.
+ *
+ * The Endeavour vault builds that table with Dataview instead (see `featureNoteTable`): each feature is
+ * a note tagged `Regeln/Endeavour/Merkmal/Klasse/...` with `Klasse: "[[Mönch]]"` (or `Alle`) and
+ * `Stufe` (one level or a list), level values come from the class note's level-keyed maps
+ * (`Mönchswürfel: {1: 1W6, 6: 1W8}`), and its subclasses are listed by a `Subklassen <Klasse>` note.
  *
  * A feature's description and usage come from its note (`Beschreibung`/first paragraph, `Einsatz`), or
  * from the character's own written-out feature of the same name. Without a table, the character's
@@ -86,8 +91,14 @@ export type ProgressionSource = Pick<CharacterFrontmatter, 'class' | 'features'>
 
 const EMPTY_CELL = /^[-–—\s]*$/
 
-/** The first table with a level column and a feature column, as rows of `{ level, features, values }`. */
-function levelTable(body: string): { level: number; features: string; values: { label: string; cell: string }[] }[] | undefined {
+interface TableRow {
+  level: number
+  items: CellItem[]
+  values: { label: string; cell: string }[]
+}
+
+/** The first table with a level column and a feature column, as rows of `{ level, items, values }`. */
+function levelTable(body: string): TableRow[] | undefined {
   for (const table of parsePipeTables(body)) {
     const header = table.header.map(linksToText)
     const levelCol = header.findIndex((h) => /^(stufe|level)$/i.test(h))
@@ -97,10 +108,85 @@ function levelTable(body: string): { level: number; features: string; values: { 
       const level = Number.parseInt(row[levelCol] ?? '', 10)
       if (!Number.isFinite(level)) return []
       const values = header.flatMap((label, i) => (i === levelCol || i === featureCol || !label ? [] : [{ label, cell: row[i] ?? '' }]))
-      return [{ level, features: row[featureCol] ?? '', values }]
+      return [{ level, items: cellItems(row[featureCol] ?? ''), values }]
     })
   }
   return undefined
+}
+
+const CLASS_FEATURE_TAG = 'Regeln/Endeavour/Merkmal/Klasse'
+
+/** `Stufe: 4` or `Stufe: [4, 8, 12]`. */
+function levelsOf(value: unknown): number[] {
+  return (Array.isArray(value) ? value : [value]).filter((v): v is number => typeof v === 'number' && Number.isInteger(v))
+}
+
+/** Whether a feature note's `Klasse` (one entry or a list) is `Alle` or links to the class. */
+function belongsToClass(value: unknown, className: string): boolean {
+  const target = className.toLowerCase()
+  return (Array.isArray(value) ? value : [value]).some((v) => typeof v === 'string' && (v.trim() === 'Alle' || basename(linkFile(v)).toLowerCase() === target))
+}
+
+/** The class note's level-keyed maps (`Mönchswürfel: {1: 1W6, 6: 1W8}`) as a value per level, each
+ * level carrying the last value at or below it, like the vault's own table. */
+function levelMaps(data: Record<string, unknown>, maxLevel: number): Map<number, { label: string; cell: string }[]> {
+  const byLevel = new Map<number, { label: string; cell: string }[]>()
+  for (const [label, map] of Object.entries(data)) {
+    if (!isRecord(map) || Array.isArray(map)) continue
+    const steps = Object.entries(map)
+    if (steps.length === 0 || !steps.every(([k, v]) => /^\d+$/.test(k) && (typeof v === 'string' || typeof v === 'number'))) continue
+    const sorted = steps.map(([k, v]) => [Number(k), String(v)] as const).sort((a, b) => a[0] - b[0])
+    for (let level = sorted[0][0]; level <= maxLevel; level++) {
+      const cell = [...sorted].reverse().find(([l]) => l <= level)![1]
+      byLevel.set(level, [...(byLevel.get(level) ?? []), { label, cell }])
+    }
+  }
+  return byLevel
+}
+
+/**
+ * The Endeavour vault's class table, rebuilt as its Dataview query does: per level the class's own
+ * features (no `Subklasse`; the ones for `Alle` first, then by name) and, at level 3 and wherever a
+ * subclass feature sits, a link to the `Subklassen <Klasse>` note (the first one is choosing it).
+ * A feature with `Ersetzt: "[[Schlaghagel]]"` ranks up the one it replaces. `undefined` when no
+ * feature note names the class.
+ */
+function featureNoteTable(classNote: RawFile, files: RawFile[]): { rows: TableRow[]; subclassList?: string; families: Map<string, string> } | undefined {
+  const className = classNote.name
+  const features = files.filter((f) => hasTag(tagList(f.data), CLASS_FEATURE_TAG) && levelsOf(f.data.Stufe).length > 0 && belongsToClass(f.data.Klasse, className))
+  const own = features.filter((f) => !f.data.Subklasse)
+  if (own.length === 0) return undefined
+
+  // `Verbesserter Schlaghagel` → `Schlaghagel` (followed back to the first of a chain).
+  const families = new Map<string, string>()
+  for (const f of own) {
+    let root = f.name
+    for (let seen = new Set<string>(); !seen.has(root.toLowerCase()); ) {
+      seen.add(root.toLowerCase())
+      const replaced = findRawFileByName(files, root)?.data.Ersetzt
+      if (!replaced) break
+      root = basename(linkFile(replaced))
+    }
+    if (root !== f.name) families.set(f.name.toLowerCase(), root)
+  }
+
+  const subclassList = findRawFileByName(files, `Subklassen ${className}`)?.name
+  const maxLevel = Math.max(20, ...features.flatMap((f) => levelsOf(f.data.Stufe)))
+  const values = levelMaps(classNote.data, maxLevel)
+  const rows: TableRow[] = []
+  for (let level = 1; level <= maxLevel; level++) {
+    const here = features.filter((f) => levelsOf(f.data.Stufe).includes(level))
+    const isAll = (f: RawFile) => (f.data.Klasse === 'Alle' ? 0 : 1)
+    const items: CellItem[] = here
+      .filter((f) => !f.data.Subklasse)
+      .sort((a, b) => isAll(a) - isAll(b) || a.name.localeCompare(b.name, 'de'))
+      .map((f) => ({ name: f.name, target: f.name }))
+    if (subclassList && (level === 3 || here.some((f) => f.data.Subklasse))) {
+      items.push({ name: level === 3 ? `${className} Subklasse` : 'Subklassen Merkmal', target: subclassList })
+    }
+    if (items.length > 0 || values.has(level)) rows.push({ level, items, values: values.get(level) ?? [] })
+  }
+  return { rows, subclassList, families }
 }
 
 /** Value at `this.a.b` in the note's frontmatter. */
@@ -201,14 +287,15 @@ function describe(target: string | undefined, name: string, files: RawFile[], ow
   const note = target ? findRawFileByName(files, target) : undefined
   if (note) {
     const icon = typeof note.data.Icon === 'string' ? note.data.Icon.trim() : undefined
-    return { note: note.name, description: noteSummary(note), usage: parseFeatureUsage(note.data.Einsatz), options: noteOptions(note), ...(icon ? { icon } : {}) }
+    return { note: note.name, description: noteSummary(note), usage: noteFeatureUsage(note.data), options: noteOptions(note), ...(icon ? { icon } : {}) }
   }
   const own = ownFeatures.find((f) => f.name.toLowerCase() === stripRank(name).toLowerCase())
   return { note: target, description: own?.description, usage: own?.usage }
 }
 
-function familyOf(item: CellItem): string {
-  return (item.target ?? stripRank(item.name)).toLowerCase()
+function familyOf(item: CellItem, families?: Map<string, string>): string {
+  const key = (item.target ?? stripRank(item.name)).toLowerCase()
+  return families?.get(key)?.toLowerCase() ?? key
 }
 
 /** Adds rank numbers and ids, in level order. */
@@ -237,8 +324,9 @@ function featureNodes(className: string, features: CharacterFeature[]): Omit<Pro
 function classProgression(entry: CharacterFrontmatter['class'][number], character: ProgressionSource, files: RawFile[]): ClassProgression {
   const ownFeatures = character.features ?? []
   const classNote = findRawFileByName(files, entry.name)
-  const table = classNote ? levelTable(classNote.body) : undefined
-  const subclassList = classNote ? linkFile(classNote.data.Name_Subklassen).toLowerCase() : ''
+  const notesTable = classNote && !levelTable(classNote.body) ? featureNoteTable(classNote, files) : undefined
+  const table = notesTable?.rows ?? (classNote ? levelTable(classNote.body) : undefined)
+  const subclassList = (notesTable?.subclassList ?? (classNote ? linkFile(classNote.data.Name_Subklassen) : '')).toLowerCase()
   const subclassLabel = classNote ? linkDisplay(classNote.data.Name_Subklassen) || undefined : undefined
   const subclassNote = entry.subclass ? findRawFileByName(files, entry.subclass) : undefined
   const subclassTable = subclassNote ? levelTable(subclassNote.body) : undefined
@@ -257,7 +345,7 @@ function classProgression(entry: CharacterFrontmatter['class'][number], characte
   let choiceSeen = false
   for (const row of table ?? []) {
     addValues(row.level, row.values, classNote!.data)
-    for (const raw of cellItems(row.features)) {
+    for (const raw of row.items) {
       const linksSubclass = Boolean(raw.target && ((subclassList && raw.target.toLowerCase() === subclassList) || /^((sub|unter)klassen?|subclass(es)?)$/i.test(raw.target)))
       // The first link to the subclass list is choosing it; later ones (the old vault links it again at
       // every subclass level) stand for its features.
@@ -278,13 +366,16 @@ function classProgression(entry: CharacterFrontmatter['class'][number], characte
         })
         continue
       }
-      nodes.push({ name: item.name, level: row.level, family: familyOf(item), familyName: stripRank(item.name), source: 'class', kind: 'feature', ...describe(item.target, item.name, files, ownFeatures) })
+      const family = familyOf(item, notesTable?.families)
+      // A replacing feature (`Verbesserter Schlaghagel`) joins the family of the one it replaces.
+      const familyName = notesTable?.families.get((item.target ?? '').toLowerCase()) ?? stripRank(item.name)
+      nodes.push({ name: item.name, level: row.level, family, familyName, source: 'class', kind: 'feature', ...describe(item.target, item.name, files, ownFeatures) })
     }
   }
 
   for (const row of subclassTable ?? []) {
     addValues(row.level, row.values, subclassNote!.data)
-    for (const item of cellItems(row.features)) {
+    for (const item of row.items) {
       nodes.push({ name: item.name, level: row.level, family: SUBCLASS_FAMILY, familyName: subclassNote!.name, source: 'subclass', kind: 'feature', ...describe(item.target, item.name, files, ownFeatures) })
     }
   }

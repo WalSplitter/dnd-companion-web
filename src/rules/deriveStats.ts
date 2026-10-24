@@ -1,6 +1,7 @@
 import { ABILITY_TO_NIMBLE_ATTRIBUTE, type AbilityKey, type CharacterFrontmatter, type SkillKey } from '../vault/types'
 import { abilityModifier, dndProficiencyBonus, skillBonus, skillProficiencyLevel } from './dnd5e'
 import { nimbleAttributeValue, nimbleInitiative, nimbleSkillBonus, nimbleSkillValue } from './endeavour'
+import { activeConditions } from './conditions'
 import { isEndeavour } from './ruleset'
 
 /**
@@ -116,13 +117,19 @@ export function speedInSquares(speed: string): number | undefined {
   return undefined
 }
 
+/** Rule `Belastet`: −3 m movement, i.e. 2 squares of 1.5 m. */
+const ENCUMBERED_SQUARES = 2
+
 /**
  * Movement in grid squares after exhaustion (rule `Erschöpfung#Verringerte Bewegungsrate`: −1.5 m
- * per level, and one square is 1.5 m / 5 ft, so −1 square per level), never below 0.
+ * per level, and one square is 1.5 m / 5 ft, so −1 square per level) and the `Belastet` condition
+ * (−3 m), never below 0.
  */
 export function movementSquares(character: CharacterFrontmatter): number | undefined {
   const squares = speedInSquares(character.speed)
-  return squares === undefined ? undefined : Math.max(0, squares - exhaustionLevel(character))
+  if (squares === undefined) return undefined
+  const encumbered = activeConditions(character).some((c) => c.toLowerCase() === 'belastet') ? ENCUMBERED_SQUARES : 0
+  return Math.max(0, squares - exhaustionLevel(character) - encumbered)
 }
 
 export function totalCharacterLevel(character: CharacterFrontmatter): number {

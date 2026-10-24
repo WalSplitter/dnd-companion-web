@@ -93,6 +93,65 @@ describe('resolveClassProgressions', () => {
     expect(p.nodes.map((n) => [n.level, n.name])).toEqual([[1, 'Beute markieren']])
   })
 
+  describe('the Endeavour vault: a table built from feature notes', () => {
+    const tag = 'tags:\n  - Regeln/Endeavour/Merkmal/Klasse/Mönch'
+    const monk = raw('Klassen/Mönch/Mönch.md', '---\nMönchswürfel:\n  1: 1W6\n  6: 1W8\n---\n## Klassentabelle\n\n```dataviewjs\n```\n')
+    const notes = [
+      monk,
+      raw('Kampfkunst.md', `---\n${tag}\nEinsatz: Passiv\nKlasse: "[[Mönch]]"\nStufe: 1\n---\nDu kämpfst waffenlos.`),
+      raw('Schlaghagel.md', `---\n${tag}\n  - Zug/Aktion\nEinsatz: "2 [[Aktionspunkte|AP]]"\nKlasse: "[[Mönch]]"\nStufe: 1\n---\n`),
+      raw('Verbesserter Schlaghagel.md', `---\n${tag}\n  - Zug/Aktion\nErsetzt: "[[Schlaghagel]]"\nKlasse: "[[Mönch]]"\nStufe: 13\n---\n`),
+      raw('Ausweichschritt.md', `---\n${tag}/Ki-Aktion\n  - Zug/Reaktion\nEinsatz: "1 [[Ki|Kipunkt]]"\nKlasse: "[[Mönch]]"\nStufe: 2\n---\n`),
+      raw('Primäre Attributswerterhöhung.md', '---\ntags:\n  - Regeln/Endeavour/Merkmal/Klasse\nKlasse: Alle\nStufe:\n  - 4\n  - 8\n---\n'),
+      raw('Subklassen Mönch.md', '# Subklassen\n'),
+      raw('Furorfaust.md', `---\n${tag}/Eisenfaust\nKlasse: "[[Mönch]]"\nSubklasse: "[[Pfad der Eisenfaust]]"\nStufe: 7\n---\n`),
+      raw('Pfad der Eisenfaust.md', '## Merkmale\n\n| Stufe | Merkmal |\n| --- | --- |\n| 3 | [[Kombo]] |\n| 7 | [[Furorfaust]] |\n'),
+      // Another class's feature stays out.
+      raw('Kampfrausch.md', '---\ntags:\n  - Regeln/Endeavour/Merkmal/Klasse/Berserker\nKlasse: "[[Berserker]]"\nStufe: 1\n---\n'),
+    ]
+
+    it('lists features per level, the ones for every class first, with the subclass at 3 and its levels', () => {
+      const [p] = resolveClassProgressions(character([{ name: 'Mönch', level: 5 }]), notes)
+      expect(p.fromTable).toBe(true)
+      expect(p.nodes.map((n) => `${n.level} ${n.name}`)).toEqual([
+        '1 Kampfkunst',
+        '1 Schlaghagel',
+        '2 Ausweichschritt',
+        '3 Mönch Subklasse',
+        '4 Primäre Attributswerterhöhung',
+        '7 Subklassen Merkmal',
+        '8 Primäre Attributswerterhöhung',
+        '13 Verbesserter Schlaghagel',
+      ])
+      expect(p.nodes.find((n) => n.level === 3)).toMatchObject({ kind: 'subclass-choice', family: SUBCLASS_FAMILY })
+    })
+
+    it('reads usage from the Zug tags and ranks up a replaced feature', () => {
+      const [p] = resolveClassProgressions(character([{ name: 'Mönch', level: 5 }]), notes)
+      const byName = (name: string) => p.nodes.find((n) => n.name === name)!
+      expect(byName('Schlaghagel')).toMatchObject({ usage: 'action', family: 'schlaghagel', rank: 1 })
+      expect(byName('Verbesserter Schlaghagel')).toMatchObject({ usage: 'action', family: 'schlaghagel', familyName: 'Schlaghagel', rank: 2 })
+      expect(byName('Ausweichschritt').usage).toBe('reaction')
+      expect(byName('Kampfkunst')).toMatchObject({ usage: 'passive', description: 'Du kämpfst waffenlos.' })
+    })
+
+    it('carries the level-keyed die as a value per level', () => {
+      const [p] = resolveClassProgressions(character([{ name: 'Mönch', level: 5 }]), notes)
+      expect(p.values.get(1)).toEqual([{ label: 'Mönchswürfel', value: '1W6' }])
+      expect(p.values.get(5)).toEqual([{ label: 'Mönchswürfel', value: '1W6' }])
+      expect(p.values.get(6)).toEqual([{ label: 'Mönchswürfel', value: '1W8' }])
+    })
+
+    it("puts the chosen subclass's features in place of its rows", () => {
+      const [p] = resolveClassProgressions(character([{ name: 'Mönch', level: 7, subclass: 'Pfad der Eisenfaust' }]), notes)
+      expect(p.nodes.filter((n) => n.family === SUBCLASS_FAMILY).map((n) => `${n.level} ${n.name} ${n.kind}`)).toEqual([
+        '3 Mönch Subklasse subclass-choice',
+        '3 Kombo feature',
+        '7 Furorfaust feature',
+      ])
+    })
+  })
+
   it('reports a class without a note', () => {
     const [p] = resolveClassProgressions(character([{ name: 'Barde', level: 1 }]), [])
     expect(p).toMatchObject({ noteFound: false, fromTable: false, nodes: [] })

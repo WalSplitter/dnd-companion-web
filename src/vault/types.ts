@@ -188,6 +188,8 @@ export interface CharacterWriteTargets {
   spell_slots?: Record<string, FieldWriteTarget>
   /** `spellcasting.mana.current`, on whichever file owns `spellcasting`. */
   mana_current?: FieldWriteTarget
+  /** `resources.<key>` on the character's own file, per `ClassResource.key`. */
+  class_resources?: Record<string, FieldWriteTarget>
   /** Legacy schema only (own-schema stores this as a YAML array, not a per-key scalar). Raw value is 0|1. */
   saving_throw_proficiencies?: Record<AbilityKey, FieldWriteTarget>
   /** File that actually owns `endeavour_inventory` — the character's own file, or a linked sheet
@@ -223,6 +225,21 @@ export interface ConditionsInfo {
    * set at the table, e.g. in Owlbear Rodeo; read through `activeConditions`. */
   active?: string[]
   notes?: string
+}
+
+/** One class's share of a TP/RP maximum (see `resolveLevelPools` in `adapters/nativeCharacter.ts`):
+ * `levels × (base + subclass + attribute)`. */
+export interface LevelPoolPart {
+  className: string
+  /** The class level; `levels` is one higher for the starting class, whose level 1 counts twice. */
+  level: number
+  levels: number
+  /** The class note's `BasisTP`/`BasisRP`. */
+  base: number
+  /** The subclass note's own `BasisTP`/`BasisRP`, 0 without one. */
+  subclass: number
+  /** KO for TP, half EN rounded down for RP. */
+  attribute: number
 }
 
 export interface ResourcePool {
@@ -286,6 +303,9 @@ export interface CharacterFrontmatter {
   /** Resilience points (Nimble/Endeavour rules): the fast-swinging combat pool that absorbs damage
    * after temp HP and before HP, and refills on rests. Own schema only. */
   resilience?: { current: number; max: number }
+  /** Derived (Endeavour): how `hp.max` and `resilience.max` were computed from the class notes, one
+   * entry per class, for the tooltips on the maxima. Absent where the sheet's own `max` is kept. */
+  level_pool_derivation?: { hp?: LevelPoolPart[]; resilience?: LevelPoolPart[] }
   /** Own-schema input field: a `"[[Kettenhemd]]"` wikilink to the worn armor's item note (`armor:`, or
    * `Rüstung:` like the old sheet's `Verteidigung.Rüstung`). Its `BW_cap` feeds `bw_cap` below. */
   armor?: string
@@ -376,6 +396,10 @@ export interface CharacterFrontmatter {
   conditions?: ConditionsInfo
   /** Per-class resource pools beyond spell slots (e.g. a Sorcerer's sorcery points). */
   resource_pools?: ResourcePool[]
+  /** Derived, not read as-is: Endeavour class resources such as the monk's Ki (see
+   * `rules/endeavourClasses.ts`), unlocked by class level. `current` comes from `resources.<key>` on the
+   * character's file; absent there means full. */
+  class_resources?: ClassResource[]
   /** Own schema: written-out attacks, or — for Nimble characters — `"[[Waffe]]"` links to weapon notes,
    * resolved into full attacks by `resolveWeaponAttacks` (`adapters/weaponAttacks.ts`). */
   attacks?: WeaponAttack[]
@@ -448,12 +472,32 @@ export interface CharacterBiography {
 
 export type FeatureUsage = 'action' | 'reaction' | 'passive'
 
+/** How much of a pool a rest restores: all of it, half the max (rounded up), or a flat amount. */
+export type ResourceRecovery = 'all' | 'half' | number
+
+export interface ClassResource {
+  /** Key under the character's `resources:` (`ki`). */
+  key: string
+  name: string
+  current: number
+  max: number
+  recovery: Partial<Record<'breather' | 'field' | 'safe', ResourceRecovery>>
+}
+
+/** What using a feature costs, read from its note's `Einsatz` (`"1 [[Aktionspunkte|AP]], 1 [[Ki|Kipunkt]]"`). */
+export interface FeatureCost {
+  ap?: number
+  /** A class resource (`ClassResource.key`) and how much of it. */
+  resource?: { key: string; name: string; amount: number }
+}
+
 export interface CharacterFeature {
   name: string
   source?: string
   description?: string
   /** Absent = passive. */
   usage?: FeatureUsage
+  cost?: FeatureCost
 }
 
 /** A vault-file wikilink (`"[[Name]]"`, resolved against `type: item` files) or an inline item with data already attached. */

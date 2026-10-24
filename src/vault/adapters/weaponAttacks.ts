@@ -1,7 +1,9 @@
+import { dieAtLevel, MARTIAL_ARTS } from '../../rules/endeavourClasses'
 import { nimbleAttributeValue } from '../../rules/endeavour'
 import { isEndeavour } from '../../rules/ruleset'
 import { hasTag, tagList } from '../frontmatterFields'
 import { findRawFileByName, type RawFile } from '../rawFile'
+import { parseNimbleAttributeKey } from '../types'
 import type { CharacterFrontmatter, NimbleAttributeKey, WeaponAttack, WeaponKind } from '../types'
 import { linkFile, linksToText } from '../wikilinkSyntax'
 import { looksLikeEndeavourItem } from './endeavourItem'
@@ -79,9 +81,62 @@ function weaponNoteAttacks(note: RawFile, name: string, character: CharacterFron
   return attacks
 }
 
+export const UNARMED_ATTACK = 'Waffenloser Angriff'
+
+/** The character's entry for the martial-arts class (`MARTIAL_ARTS`), if it has the class. */
+function martialArtsClass(character: CharacterFrontmatter) {
+  return character.class?.find((c) => c.name?.toLowerCase() === MARTIAL_ARTS.className.toLowerCase())
+}
+
+/** The martial-arts die for the character's level in that class. */
+function martialArtsDie(character: CharacterFrontmatter, files: RawFile[]): string | undefined {
+  const entry = martialArtsClass(character)
+  if (!entry || typeof entry.level !== 'number') return undefined
+  return dieAtLevel(findRawFileByName(files, entry.name)?.data[MARTIAL_ARTS.dieField], entry.level)
+}
+
+/**
+ * The attribute a monk strikes with (the DM, 2026-10-22): their subclass's `Kernattribut` (`Pfad der
+ * Eisenfaust` → ST). Before choosing a subclass, or when its note names none, `Finesse` lets them
+ * take the better of ST and GE.
+ */
+function martialArtsAttribute(character: CharacterFrontmatter, files: RawFile[]): NimbleAttributeKey {
+  const subclass = martialArtsClass(character)?.subclass
+  const core = subclass ? findRawFileByName(files, subclass)?.data.Kernattribut : undefined
+  return parseNimbleAttributeKey(linkFile(core)) ?? attributeFor('melee', true, character)
+}
+
+/**
+ * Rule `Waffenloser Angriff`: a melee attack with ST, dealing 1 + ST bludgeoning damage within 1,5 m.
+ * A monk (note `Kampfkunst`) deals their Mönchswürfel instead, with the attribute of
+ * `martialArtsAttribute`.
+ */
+function unarmedAttack(character: CharacterFrontmatter, files: RawFile[]): WeaponAttack {
+  const die = martialArtsDie(character, files)
+  const attribute = die ? martialArtsAttribute(character, files) : 'st'
+  const bonus = nimbleAttributeValue(character, attribute)
+  return {
+    name: UNARMED_ATTACK,
+    kind: 'melee',
+    attribute,
+    attack_bonus: bonus,
+    damage_dice: die ?? '1',
+    damage_bonus: bonus,
+    damage_type: 'Wuchtschaden',
+    range: '1,5 m',
+    properties: die ? ['Finesse'] : [],
+  }
+}
+
+/**
+ * The character's attacks. A `"[[Waffenloser Angriff]]"` entry is the unarmed strike; a monk has it
+ * without listing it, as their martial arts make it their main attack.
+ */
 export function resolveWeaponAttacks(raw: unknown, character: CharacterFrontmatter, files: RawFile[]): WeaponAttack[] | undefined {
-  if (!Array.isArray(raw)) return undefined
-  const attacks = raw.flatMap((entry): WeaponAttack[] => {
+  const entries = Array.isArray(raw) ? raw : []
+  const isUnarmed = (entry: unknown) => typeof entry === 'string' && linkFile(entry).toLowerCase() === UNARMED_ATTACK.toLowerCase()
+  const attacks = entries.flatMap((entry): WeaponAttack[] => {
+    if (isEndeavour(character) && isUnarmed(entry)) return [unarmedAttack(character, files)]
     // A stack of a stackable weapon (`{ link: "[[Wurfmesser]]", charges: 3 }`) attacks like its link.
     const stack = entry && typeof entry === 'object' && typeof (entry as { link?: unknown }).link === 'string' ? (entry as { link: string }).link : undefined
     if (typeof entry !== 'string' && stack === undefined) return entry && typeof entry === 'object' ? [entry as WeaponAttack] : []
@@ -89,5 +144,6 @@ export function resolveWeaponAttacks(raw: unknown, character: CharacterFrontmatt
     const note = isEndeavour(character) && name ? findRawFileByName(files, name) : undefined
     return note && looksLikeEndeavourItem(note.data) ? weaponNoteAttacks(note, name, character) : []
   })
+  if (isEndeavour(character) && !entries.some(isUnarmed) && martialArtsDie(character, files)) attacks.unshift(unarmedAttack(character, files))
   return attacks.length > 0 ? attacks : undefined
 }

@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
@@ -6,11 +6,13 @@ import { D20RollButton } from '../../../dice/RollButton'
 import { ShieldIcon } from '../../inventory/components/equipmentIcons'
 import { useT, type TranslateFn } from '../../../i18n/useI18n'
 import { exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../../rules/deriveStats'
+import { initiativeDerivation, nimbleAttributeTerm, type DerivationTerm } from '../../../rules/derivation'
 import { initiativeActionPoints, nimbleAttributeValue, nimbleInitiative } from '../../../rules/endeavour'
 import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { movementHint } from '../../../components/vitalsDisplay'
+import { Rune } from '../../../onboarding/Rune'
 
 /**
  * What the armor class means under the character's rules, and the one extra number pinned to the
@@ -77,7 +79,10 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
           </span>
         )}
       </div>
-      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.armorClass')}</span>
+      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
+        {t('stats.armorClass')}
+        <Rune term="armorClass" character={character} />
+      </span>
     </div>
   )
 }
@@ -122,7 +127,10 @@ export function Evasion({ value, character }: { value: number; character: Charac
         </svg>
         <span className="absolute inset-0 grid place-items-center font-num text-xl text-fg">{value}</span>
       </div>
-      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.evasion')}</span>
+      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
+        {t('stats.evasion')}
+        <Rune term="evasion" character={character} />
+      </span>
     </div>
   )
 }
@@ -131,19 +139,23 @@ export function Evasion({ value, character }: { value: number; character: Charac
 function InitiativePlate({
   label,
   modifier,
+  derivation,
   note,
   effect,
   initiative = 'order',
+  rune,
 }: {
   label: string
   modifier: number
+  derivation: DerivationTerm[]
   note?: string
   effect?: (result: D20RollResult) => string
   initiative?: 'order' | 'actions'
+  rune?: ReactNode
 }) {
   return (
-    <StatPlate label={label}>
-      <D20RollButton label={label} modifier={modifier} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
+    <StatPlate label={label} rune={rune}>
+      <D20RollButton label={label} modifier={modifier} derivation={derivation} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
         <D20Modifier value={modifier} hint={false} className="is-loud" />
       </D20RollButton>
     </StatPlate>
@@ -160,17 +172,29 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
       {nimble ? (
         // Rule `Initiative`: two rolls — Instinkt for the turn order, Beweglichkeit for the first round's AP.
         <>
-          <InitiativePlate label={t('stats.initiativeOrder')} modifier={nimble.order} note={t('stats.initiativeOrderNote')} />
+          <InitiativePlate
+            label={t('stats.initiativeOrder')}
+            modifier={nimble.order}
+            derivation={[nimbleAttributeTerm(character, 'in')]}
+            rune={<Rune term="initiative" character={character} />}
+            note={t('stats.initiativeOrderNote')}
+          />
           <InitiativePlate
             label={t('stats.initiativeActions')}
             modifier={nimble.actions}
+            derivation={[nimbleAttributeTerm(character, 'bw')]}
             note={t('stats.initiativeActionsNote')}
             initiative="actions"
             effect={(result) => t('stats.initiativeActionsResult', { count: initiativeActionPoints(result.total, result.kept) })}
           />
         </>
       ) : (
-        <InitiativePlate label={t('stats.initiative')} modifier={initiativeBonus(character)} />
+        <InitiativePlate
+          label={t('stats.initiative')}
+          modifier={initiativeBonus(character)}
+          derivation={initiativeDerivation(character)}
+          rune={<Rune term="initiative" character={character} />}
+        />
       )}
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />

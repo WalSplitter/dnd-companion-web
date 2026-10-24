@@ -15,6 +15,16 @@ describe('d20RollHint', () => {
     )
   })
 
+  it('spells out the derivation, exhaustion included, instead of the base value', () => {
+    const derivation = [
+      { kind: 'attribute', abbr: 'ST', value: 2 },
+      { kind: 'proficiency', value: 3 },
+    ] as const
+    expect(d20RollHint(t, 'Athletik', 5, 4, undefined, [...derivation])).toBe(
+      'Athletik: W20 +1. ST +2 + Übung +3 − Erschöpfung 4 = +1. Klicken zum Würfeln · Shift = Vorteil · Alt = Nachteil',
+    )
+  })
+
   it('puts a note on what the roll is for before the keys', () => {
     expect(d20RollHint(t, 'Kurzschwert Angriff', 2, 2, 'Trifft bei Ergebnis ≥ Ausweichwert des Ziels')).toBe(
       'Kurzschwert Angriff: W20 +0. Grundwert +2, Erschöpfung −2. Trifft bei Ergebnis ≥ Ausweichwert des Ziels. Klicken zum Würfeln · Shift = Vorteil · Alt = Nachteil',

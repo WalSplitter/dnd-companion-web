@@ -9,7 +9,7 @@ import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
-import { useVaultStore } from '../store/vaultStore'
+import { useHasChronicle, useVaultStore } from '../store/vaultStore'
 import type { JournalEntry } from '../vault/types'
 import { characterRoute } from './paths'
 
@@ -23,8 +23,7 @@ const NO_ENTRIES: JournalEntry[] = []
 export function CharacterListPage() {
   const t = useT()
   const characters = useVaultStore((s) => s.vault.characters)
-  // The chronicle reads the repository's commit history, so it only exists for a GitHub vault.
-  const hasHistory = useVaultStore((s) => s.github !== null)
+  const hasHistory = useHasChronicle()
   const [mode, setMode] = useCharacterViewMode()
   const layout = resolveLayout(mode, characters.length)
   // The tab lives in the URL so "back" from a sheet returns to the comparison.
@@ -56,7 +55,11 @@ export function CharacterListPage() {
         <h1 className="text-2xl font-semibold text-fg">
           {t('characterList.title')} <span className="ml-1 text-sm font-normal text-fg-muted">{characters.length}</span>
         </h1>
-        {tab === 'party' && <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />}
+        {tab === 'party' && (
+          <div data-tour="party.view">
+            <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />
+          </div>
+        )}
       </div>
 
       <div role="tablist" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
@@ -65,6 +68,7 @@ export function CharacterListPage() {
             key={key}
             type="button"
             role="tab"
+            data-tour={`party.tab.${key}`}
             aria-selected={tab === key}
             onClick={() => setSearchParams(key === 'party' ? {} : { tab: key }, { replace: true })}
             className="rpg-tab cursor-pointer"
@@ -79,28 +83,32 @@ export function CharacterListPage() {
         ))}
       </div>
 
-      {tab === 'compare' ? (
-        <PartyRadar characters={characters} />
-      ) : tab === 'campaign' ? (
-        <CampaignPanel />
-      ) : tab === 'chronicle' ? (
-        <ChroniclePanel />
-      ) : layout === 'lineup' ? (
-        <PartyFormation characters={characters} />
-      ) : (
-        <div className={CONTAINER[layout]}>
-          {characters.map((c, i) => (
-            <Link
-              key={c.path}
-              to={characterRoute(c.frontmatter.name)}
-              className="rise-in block"
-              style={{ '--i': i } as CSSProperties}
-            >
-              {layout === 'list' ? <CharacterRow character={c.frontmatter} /> : <CharacterCard character={c.frontmatter} />}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div data-tour="party.content">
+        {tab === 'compare' ? (
+          <PartyRadar characters={characters} />
+        ) : tab === 'campaign' ? (
+          <CampaignPanel />
+        ) : tab === 'chronicle' ? (
+          <ChroniclePanel />
+        ) : layout === 'lineup' ? (
+          <div data-tour="party.list">
+            <PartyFormation characters={characters} />
+          </div>
+        ) : (
+          <div data-tour="party.list" className={CONTAINER[layout]}>
+            {characters.map((c, i) => (
+              <Link
+                key={c.path}
+                to={characterRoute(c.frontmatter.name)}
+                className="rise-in block"
+                style={{ '--i': i } as CSSProperties}
+              >
+                {layout === 'list' ? <CharacterRow character={c.frontmatter} /> : <CharacterCard character={c.frontmatter} />}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

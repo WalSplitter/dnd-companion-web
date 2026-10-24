@@ -65,3 +65,21 @@ export function evasionValue(character: CharacterFrontmatter): number | undefine
   const bw = nimbleAttributeValue(character, 'bw')
   return EVASION_BASE + (character.bw_cap === undefined ? bw : Math.min(bw, character.bw_cap))
 }
+
+/**
+ * Rule `Einen Charakter erstellen#5. Sprachen`: every hero speaks the Gemeinsprache, and each point of
+ * VS grants one more language. Undefined for D&D characters.
+ */
+export function languageAllowance(character: CharacterFrontmatter): number | undefined {
+  if (!isEndeavour(character)) return undefined
+  return 1 + Math.max(0, nimbleAttributeValue(character, 'vs'))
+}
+
+/**
+ * Rule `Gepäck#Maximale Gepäckgröße`: carrying more than 15 + ST × 2 slots in the pack makes a
+ * character `Belastet`, whatever pack they wear. Undefined for D&D characters.
+ */
+export function encumbranceLimit(character: CharacterFrontmatter): number | undefined {
+  if (!isEndeavour(character)) return undefined
+  return 15 + 2 * nimbleAttributeValue(character, 'st')
+}

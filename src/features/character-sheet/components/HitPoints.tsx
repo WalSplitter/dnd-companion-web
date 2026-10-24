@@ -1,4 +1,5 @@
 import { useContext, useState, type ReactNode } from 'react'
+import { levelPoolText } from '../../../components/derivationText'
 import { EditableNumber } from '../../../components/EditableNumber'
 import { SectionTitle } from '../../../components/SectionTitle'
 import { DamageRollButton } from '../../../dice/RollButton'
@@ -10,7 +11,11 @@ import { abilityModifier } from '../../../rules/dnd5e'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { maxExhaustion, percentOf, resiliencePool, stepWithin } from '../../../rules/vitals'
 import { hpFillClass } from '../../../components/vitalsDisplay'
+import { KiIcon } from '../../../components/KiIcon'
 import { ManaIcon } from '../../../components/ManaIcon'
+import { reportQuestAction } from '../../../onboarding/questEvents'
+import { Rune } from '../../../onboarding/Rune'
+import { withResource } from '../rest'
 import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
 
@@ -182,12 +187,18 @@ function PoolRow({
   ticks,
   warded,
   hitKey,
+  maxHint,
+  rune,
 }: {
   icon: ReactNode
   label: string
   ariaLabel: string
   current: number
   max: number
+  /** Tooltip on the maximum, e.g. how the class notes add up to it (`levelPoolText`). */
+  maxHint?: string
+  /** A learn-mode rune explaining the pool, beside its caption. */
+  rune?: ReactNode
   onSet?: (next: number) => void
   numberClass: string
   heightClass: string
@@ -201,7 +212,10 @@ function PoolRow({
 
   return (
     <>
-      <RowCaption icon={icon}>{label}</RowCaption>
+      <RowCaption icon={icon}>
+        {label}
+        {rune}
+      </RowCaption>
       {onSet ? (
         <BarSlider key={current} current={current} max={max} onCommit={onSet} ariaLabel={ariaLabel} heightClass={heightClass}>
           {track}
@@ -213,7 +227,9 @@ function PoolRow({
         {onSet && <StepButton direction={-1} label={label} disabled={current <= 0} onStep={(d) => onSet(stepWithin(current, d, 0, max))} />}
         <span className={`flex min-w-11 items-baseline justify-center font-num leading-none text-fg ${numberClass}`}>
           {onSet ? <EditableNumber key={current} value={current} max={max} onCommit={onSet} className={`w-[1.9em] ${quietInput}`} /> : current}
-          <span className="text-[0.7em] font-medium text-fg-muted">/{max}</span>
+          <span className={`text-[0.7em] font-medium text-fg-muted ${maxHint ? 'cursor-help' : ''}`} title={maxHint}>
+            /{max}
+          </span>
         </span>
         {onSet && <StepButton direction={1} label={label} disabled={current >= max} onStep={(d) => onSet(stepWithin(current, d, 0, max))} />}
       </div>
@@ -292,7 +308,19 @@ export function HitPoints({
     ((next: number) =>
       void updateCharacterField(characterPath, exhaustionTarget, next, (c) => ({ ...c, conditions: { ...c.conditions, exhaustion: next } })))
 
+  // Lowering a pool by hand is taking a hit — the goal of the quest "Ein Treffer!".
+  const hurting = (set: ((next: number) => void) | undefined, now: number) =>
+    set &&
+    ((next: number) => {
+      if (next < now) reportQuestAction('damage')
+      set(next)
+    })
+
   const resilience = resiliencePool(character)
+  const poolParts = character.level_pool_derivation
+  const hpMaxHint = poolParts?.hp ? levelPoolText(t, t('cards.hitPoints'), max, poolParts.hp, 'KO') : undefined
+  const resilienceMaxHint =
+    poolParts?.resilience && resilience ? levelPoolText(t, t('stats.resilience'), resilience.max, poolParts.resilience, 'EN/2') : undefined
   const mana = character.spellcasting?.mana
   const exhaustion = character.conditions?.exhaustion ?? 0
   const exhaustionMax = maxExhaustion(character)
@@ -324,6 +352,7 @@ export function HitPoints({
       <div className="min-w-0 grow-[2] basis-[26rem]">
         <div className="mb-2 flex min-h-7 items-center justify-between gap-3">
           <SectionTitle className="min-w-0 flex-1">{t('cards.vitals')}</SectionTitle>
+          <Rune term="rest" character={character} />
           <RestMenu character={character} characterPath={characterPath} />
           {tempControl}
         </div>
@@ -335,13 +364,15 @@ export function HitPoints({
               ariaLabel={t('a11y.currentResilience')}
               current={resilience.current}
               max={resilience.max}
-              onSet={setResilience}
+              onSet={hurting(setResilience, resilience.current)}
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'rp-fill'}
               ticks={resilience.max > 0 && resilience.max <= 30 ? resilience.max : 10}
               warded={warded}
               hitKey={wardHitKey}
+              maxHint={resilienceMaxHint}
+              rune={<Rune term="resilience" character={character} />}
             />
           )}
           <PoolRow
@@ -350,13 +381,15 @@ export function HitPoints({
             ariaLabel={t('a11y.currentHp')}
             current={current}
             max={max}
-            onSet={setHp}
+            onSet={hurting(setHp, current)}
             numberClass="text-xl"
             heightClass="h-3.5"
             fillClass={(p) => `bg-linear-to-r ${hpFillClass(p)}`}
             ticks={10}
             warded={warded}
             hitKey={wardHitKey}
+            maxHint={hpMaxHint}
+            rune={<Rune term="hitPoints" character={character} />}
           />
           {/* Mana is spent in play like the two pools above, so it shares the HUD; damage never
               reaches it, so it stays outside the ward. */}
@@ -368,12 +401,37 @@ export function HitPoints({
               current={mana.current}
               max={mana.max}
               onSet={setMana}
+              rune={
+                // Each rune only shows under rules that have its term.
+                <>
+                  <Rune term="mana" character={character} />
+                  <Rune term="spellSlots" character={character} />
+                </>
+              }
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'mana-fill'}
               ticks={mana.max > 0 && mana.max <= 30 ? mana.max : 10}
             />
           )}
+          {(character.class_resources ?? []).map((resource) => {
+            const target = editable(writeTargets?.class_resources?.[resource.key])
+            return (
+              <PoolRow
+                key={resource.key}
+                icon={<KiIcon />}
+                label={resource.name}
+                ariaLabel={t('a11y.currentResource', { name: resource.name })}
+                current={resource.current}
+                max={resource.max}
+                onSet={target && ((next: number) => void updateCharacterField(characterPath, target, next, (c) => withResource(c, resource.key, next)))}
+                numberClass="text-lg"
+                heightClass="h-2.5"
+                fillClass={() => 'ki-fill'}
+                ticks={resource.max > 0 && resource.max <= 30 ? resource.max : 10}
+              />
+            )
+          })}
         </div>
       </div>
 
@@ -413,7 +471,12 @@ export function HitPoints({
                 level={exhaustion}
                 max={exhaustionMax}
                 onChange={setExhaustion}
-                caption={<RowCaption>{t('stats.exhaustion')}</RowCaption>}
+                caption={
+                  <RowCaption>
+                    {t('stats.exhaustion')}
+                    <Rune term="exhaustion" character={character} />
+                  </RowCaption>
+                }
               />
             )}
 

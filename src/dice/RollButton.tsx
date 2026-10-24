@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
+import { reportQuestAction } from '../onboarding/questEvents'
 import { useShareRoll } from '../owlbear/rolls'
 import { formatModifier } from '../rules/deriveStats'
+import type { DerivationTerm } from '../rules/derivation'
 import { initiativeActionPoints } from '../rules/endeavour'
 import { D20Icon } from './D20Icon'
 import { useD20Penalty } from './d20Penalty'
@@ -26,6 +28,7 @@ export function D20RollButton({
   className,
   title,
   note,
+  derivation,
   mode: defaultMode = 'normal',
   effect,
   attack = false,
@@ -46,7 +49,9 @@ export function D20RollButton({
   mode?: RollMode
   /** One sentence for the default tooltip on what the roll decides, e.g. what it has to beat. */
   note?: string
-  /** Tooltip; defaults to `d20RollHint` (what is rolled, the exhaustion breakdown, the Shift/Alt
+  /** Where `modifier` comes from (see `rules/derivation.ts`), spelled out in the default tooltip. */
+  derivation?: DerivationTerm[]
+  /** Tooltip; defaults to `d20RollHint` (what is rolled, its derivation and exhaustion, the Shift/Alt
    * keys). `false` renders none, for a button whose container already explains the roll. */
   title?: string | false
   /** Button content — defaults to a d20 (`D20Icon`, tumbling on each roll; then
@@ -85,6 +90,8 @@ export function D20RollButton({
       fumble: result.isCriticalMiss,
       effect: effectText,
     })
+    reportQuestAction('roll')
+    if (result.mode !== 'normal') reportQuestAction('roll-mode')
     share?.({
       kind: attack ? 'attack' : 'd20',
       label,
@@ -102,7 +109,7 @@ export function D20RollButton({
     })
   }
 
-  const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note))
+  const fullTitle = title === false ? undefined : (title ?? d20RollHint(t, label, modifier, penalty, note, derivation))
 
   return (
     <RollButtonShell
@@ -158,6 +165,7 @@ export function DamageRollButton({
       modifier: result.modifier,
       critical,
     })
+    reportQuestAction('roll')
     share?.({ kind: 'damage', label, total: result.total, rolls: result.rolls, modifier: result.modifier, critical, damageType })
   }
 

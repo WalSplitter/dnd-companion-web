@@ -10,10 +10,12 @@ import { useT } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
 import { formatModifier } from '../../../rules/deriveStats'
+import { dndSaveDerivation, nimbleAttributeTerm, type DerivationTerm } from '../../../rules/derivation'
 import { abilityModifier, isSavingThrowProficient, savingThrowBonus } from '../../../rules/dnd5e'
 import { nimbleAttributeValue } from '../../../rules/endeavour'
 import { ABILITIES, NIMBLE_ATTRIBUTES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+import { Rune } from '../../../onboarding/Rune'
 import { isEndeavour } from '../../../rules/ruleset'
 
 /** A medallion + caption plate, shared by the D&D-shaped `abilities` and Nimble `nimble_attributes`
@@ -105,12 +107,14 @@ function AbilityMedallion({
 function SaveChip({
   label,
   bonus,
+  derivation,
   mode,
   proficient,
   onToggle,
 }: {
   label: string
   bonus: number
+  derivation: DerivationTerm[]
   mode?: RollMode
   proficient?: boolean
   onToggle?: () => void
@@ -130,6 +134,7 @@ function SaveChip({
       <D20RollButton
         label={t('roll.saveSuffix', { label })}
         modifier={bonus}
+        derivation={derivation}
         mode={mode}
         note={modeLabel ? t('roll.classMode', { mode: modeLabel }) : undefined}
         className="flex cursor-pointer items-center gap-1 hover:text-trim"
@@ -155,7 +160,15 @@ export function AbilityScores({ character, characterPath }: { character: Charact
   const primary = character.nimble_primary_attributes
 
   return (
-    <Card title={t('cards.abilitiesAndSaves')}>
+    <Card
+      title={t('cards.abilitiesAndSaves')}
+      titleExtra={
+        <>
+          <Rune term="attribute" character={character} />
+          <Rune term="savingThrow" character={character} />
+        </>
+      }
+    >
       {/* 8 Nimble attributes lay out cleanly as 2 rows of 4; the 6 D&D abilities as 2 rows of 3. */}
       <div className={`grid gap-x-2 gap-y-5 pb-1 pt-1 ${nimble ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {nimble
@@ -172,7 +185,12 @@ export function AbilityScores({ character, characterPath }: { character: Charact
                   // Only six of the eight attributes back a save (`NIMBLE_SAVE_ATTRIBUTES`).
                   save={
                     NIMBLE_SAVE_ATTRIBUTES.includes(key) ? (
-                      <SaveChip label={t(`nimbleAttribute.${key}`)} bonus={nimbleAttributeValue(character, key)} mode={character.nimble_save_modes?.[key]} />
+                      <SaveChip
+                        label={t(`nimbleAttribute.${key}`)}
+                        bonus={nimbleAttributeValue(character, key)}
+                        derivation={[nimbleAttributeTerm(character, key)]}
+                        mode={character.nimble_save_modes?.[key]}
+                      />
                     ) : null
                   }
                 />
@@ -202,7 +220,15 @@ export function AbilityScores({ character, characterPath }: { character: Charact
                   abbr={label.slice(0, 3)}
                   modifier={abilityModifier(score)}
                   caption={String(score)}
-                  save={<SaveChip label={label} bonus={savingThrowBonus(character, key)} proficient={proficient} onToggle={toggle} />}
+                  save={
+                    <SaveChip
+                      label={label}
+                      bonus={savingThrowBonus(character, key)}
+                      derivation={dndSaveDerivation(character, key)}
+                      proficient={proficient}
+                      onToggle={toggle}
+                    />
+                  }
                 />
               )
             })}
