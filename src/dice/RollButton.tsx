@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/useI18n'
+import { reportQuestAction } from '../onboarding/questEvents'
 import { useShareRoll } from '../owlbear/rolls'
 import { formatModifier } from '../rules/deriveStats'
 import type { DerivationTerm } from '../rules/derivation'
@@ -89,6 +90,8 @@ export function D20RollButton({
       fumble: result.isCriticalMiss,
       effect: effectText,
     })
+    reportQuestAction('roll')
+    if (result.mode !== 'normal') reportQuestAction('roll-mode')
     share?.({
       kind: attack ? 'attack' : 'd20',
       label,
@@ -162,6 +165,7 @@ export function DamageRollButton({
       modifier: result.modifier,
       critical,
     })
+    reportQuestAction('roll')
     share?.({ kind: 'damage', label, total: result.total, rolls: result.rolls, modifier: result.modifier, critical, damageType })
   }
 

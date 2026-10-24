@@ -7,9 +7,12 @@ export function StatPlate({
   value,
   children,
   title,
+  rune,
   className = '',
 }: {
   label: string
+  /** A learn-mode rune beside the caption. */
+  rune?: ReactNode
   value?: string
   children?: ReactNode
   title?: string
@@ -18,7 +21,10 @@ export function StatPlate({
   return (
     <div title={title} className={`rpg-plate flex min-w-[4.5rem] flex-col items-center justify-center px-3 py-2 text-center ${className}`}>
       <span className="font-num text-xl leading-tight text-fg">{children ?? value}</span>
-      <span className="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{label}</span>
+      <span className="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
+        {label}
+        {rune}
+      </span>
     </div>
   )
 }

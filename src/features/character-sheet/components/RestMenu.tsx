@@ -3,6 +3,7 @@ import { useDismiss } from '../../../components/useDismiss'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
+import { reportQuestAction } from '../../../onboarding/questEvents'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { applyRestChange, planRest, restChangeWrite, restKinds, type RestChange, type RestKind } from '../rest'
 
@@ -78,6 +79,7 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
       const write = restChangeWrite(change, character._write)
       if (write) await updateCharacterField(characterPath, write.target, write.value, (c) => applyRestChange(c, change))
     }
+    reportQuestAction('rest')
   }
 
   const changeLabel = (change: RestChange): string => {
@@ -102,7 +104,7 @@ export function RestMenu({ character, characterPath }: { character: CharacterFro
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} data-tour="sheet.rest" className="relative">
       <button
         type="button"
         className="rest-trigger"

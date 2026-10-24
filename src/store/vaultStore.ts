@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { reportError } from './errorLogStore'
 import { detectRuleset, type RulesetDetectionResult, type RulesetId } from '../vault/detectRuleset'
 import { campaignFromFile, isDm } from '../vault/adapters/campaignJournal'
+import { reportQuestAction } from '../onboarding/questEvents'
 import { serializeJournal } from '../vault/adapters/journal'
 import { deriveEquipment, equipmentChangeFields } from '../vault/adapters/nativeCharacter'
 import { buildVaultFromRawFiles, parseVaultFiles } from '../vault/parseFrontmatter'
@@ -754,6 +755,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const { vault, writer, editPermission } = get()
       const target = findCharacter(vault, characterPath)?._write?.inventory
       if (editPermission !== 'granted' || !target || !writer?.canWrite(target.path)) return
+      reportQuestAction('equip')
 
       await editCharacter(
         characterPath,
@@ -818,6 +820,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const equipmentTarget = targets?.equipment
       const inventoryTarget = change.containers ? targets?.endeavour_inventory : undefined
       if (editPermission !== 'granted' || !equipmentTarget || (change.containers && !inventoryTarget)) return
+      reportQuestAction('equip')
       const canWrite = writer?.canWrite(equipmentTarget.path) && (!inventoryTarget || writer.canWrite(inventoryTarget.path))
       const context = characterContext(vault, characterPath)
       const { first, containers, ...fields } = change
@@ -859,6 +862,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const { vault, writer, editPermission } = get()
       const target = findCharacter(vault, characterPath)?._write?.journal
       if (editPermission !== 'granted' || !target || !writer || (!target.create && !writer.canWrite(target.path))) return
+      if (journal.length > (findCharacter(vault, characterPath)?.journal?.length ?? 0)) reportQuestAction('journal')
       const context = characterContext(vault, characterPath)
 
       await editCharacter(

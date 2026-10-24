@@ -26,6 +26,8 @@ import { RollerContext } from '../../dice/rollLogStore'
 import { hasBiography } from '../../vault/adapters/biography'
 import { exhaustionD20Penalty } from '../../rules/deriveStats'
 import { evasionValue } from '../../rules/endeavour'
+import { lexiconRuleset } from '../../onboarding/lexicon'
+import { Rune } from '../../onboarding/Rune'
 
 type Tab = 'sheet' | 'inventory' | 'spells' | 'skills' | 'journal' | 'biography'
 
@@ -64,8 +66,8 @@ export function CharacterSheet({
             <Header character={character} characterPath={characterPath} />
 
             {/* Vitals stay visible on every tab, like a game HUD. */}
-            <section className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-3">
-              <div className="flex shrink-0 items-end gap-2">
+            <section data-tour="sheet.vitals" className="rpg-panel flex flex-wrap items-center gap-x-6 gap-y-4 px-4 py-3">
+              <div data-tour="sheet.defense" className="flex shrink-0 items-end gap-2">
                 <ArmorClass character={character} />
                 {evasion !== undefined && <Evasion value={evasion} character={character} />}
               </div>
@@ -82,6 +84,7 @@ export function CharacterSheet({
                     key={entry.key}
                     type="button"
                     role="tab"
+                    data-tour={`sheet.tab.${entry.key}`}
                     aria-selected={tab === entry.key}
                     aria-label={entry.shortLabel ? entry.label : undefined}
                     onClick={() => setTab(entry.key)}
@@ -98,35 +101,45 @@ export function CharacterSheet({
                   </button>
                 ))}
               </div>
+              <span className="mb-2 shrink-0">
+                <Rune term="advantage" ruleset={lexiconRuleset(character)} />
+              </span>
               <RollLog />
             </div>
 
-            {tab === 'sheet' && (
-              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-                {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
-                    the attribute medallions, so the three columns come out about equally long; the
-                    backstory has its own Biography tab. Spellcasting sits under the attributes it is
-                    derived from: in the right column, under attacks and above the features, it made
-                    a caster's right column far longer than the other two. */}
-                <div className="space-y-4">
-                  <AbilityScores character={character} characterPath={characterPath} />
-                  {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
-                  <SensesLanguages character={character} />
+            {/* One anchor for whichever tab is open, for the tour's steps about it. */}
+            <div data-tour="sheet.panel">
+              {tab === 'sheet' && (
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+                  {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
+                      the attribute medallions, so the three columns come out about equally long; the
+                      backstory has its own Biography tab. Spellcasting sits under the attributes it is
+                      derived from: in the right column, under attacks and above the features, it made
+                      a caster's right column far longer than the other two. */}
+                  <div className="space-y-4">
+                    <div data-tour="sheet.attributes">
+                      <AbilityScores character={character} characterPath={characterPath} />
+                    </div>
+                    {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
+                    <SensesLanguages character={character} />
+                  </div>
+                  <div data-tour="sheet.skills">
+                    <Skills character={character} />
+                  </div>
+                  <div className="space-y-4">
+                    <Attacks character={character} />
+                    <Conditions character={character} characterPath={characterPath} />
+                    <FeaturesTraits character={character} characterPath={characterPath} />
+                  </div>
                 </div>
-                <Skills character={character} />
-                <div className="space-y-4">
-                  <Attacks character={character} />
-                  <Conditions character={character} characterPath={characterPath} />
-                  <FeaturesTraits character={character} characterPath={characterPath} />
-                </div>
-              </div>
-            )}
+              )}
 
-            {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
-            {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
-            {tab === 'skills' && <SkillTreePanel character={character} />}
-            {tab === 'journal' && <JournalPanel character={character} characterPath={characterPath} />}
-            {tab === 'biography' && <BiographyPanel character={character} story={body} />}
+              {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
+              {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
+              {tab === 'skills' && <SkillTreePanel character={character} />}
+              {tab === 'journal' && <JournalPanel character={character} characterPath={characterPath} />}
+              {tab === 'biography' && <BiographyPanel character={character} story={body} />}
+            </div>
           </div>
         </RollerContext>
       </D20PenaltyContext>

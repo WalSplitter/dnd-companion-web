@@ -8,6 +8,8 @@ import { skillBonus, skillProficiencyLevel } from '../../../rules/dnd5e'
 import { nimbleSkillBonus, nimbleSkillValue } from '../../../rules/endeavour'
 import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+import { lexiconRuleset } from '../../../onboarding/lexicon'
+import { Rune } from '../../../onboarding/Rune'
 import { isEndeavour } from '../../../rules/ruleset'
 
 /** Nimble skills have no proficiency levels — just an independently-trained flat bonus (0 to
@@ -47,7 +49,15 @@ export function Skills({ character }: { character: CharacterFrontmatter }) {
   const nimble = isEndeavour(character)
 
   return (
-    <Card title={t('cards.skills')}>
+    <Card
+      title={t('cards.skills')}
+      titleExtra={
+        <>
+          <Rune term="skill" ruleset={lexiconRuleset(character)} />
+          <Rune term="proficiency" ruleset={lexiconRuleset(character)} />
+        </>
+      }
+    >
       <ul className="space-y-0.5">
         {nimble
           ? SKILLS.map(({ key }) => <NimbleSkillRow key={key} character={character} skill={key} />)

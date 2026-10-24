@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../../components/ExhaustedValue'
 import { StatPlate } from '../../../components/StatPlate'
 import type { D20RollResult } from '../../../dice/notation'
@@ -12,6 +12,8 @@ import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
 import { movementHint } from '../../../components/vitalsDisplay'
+import { lexiconRuleset } from '../../../onboarding/lexicon'
+import { Rune } from '../../../onboarding/Rune'
 
 /**
  * What the armor class means under the character's rules, and the one extra number pinned to the
@@ -78,7 +80,10 @@ export function ArmorClass({ character }: { character: CharacterFrontmatter }) {
           </span>
         )}
       </div>
-      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.armorClass')}</span>
+      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
+        {t('stats.armorClass')}
+        <Rune term="armorClass" ruleset={lexiconRuleset(character)} />
+      </span>
     </div>
   )
 }
@@ -123,7 +128,10 @@ export function Evasion({ value, character }: { value: number; character: Charac
         </svg>
         <span className="absolute inset-0 grid place-items-center font-num text-xl text-fg">{value}</span>
       </div>
-      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">{t('stats.evasion')}</span>
+      <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wider text-fg-muted">
+        {t('stats.evasion')}
+        <Rune term="evasion" ruleset={lexiconRuleset(character)} />
+      </span>
     </div>
   )
 }
@@ -136,6 +144,7 @@ function InitiativePlate({
   note,
   effect,
   initiative = 'order',
+  rune,
 }: {
   label: string
   modifier: number
@@ -143,9 +152,10 @@ function InitiativePlate({
   note?: string
   effect?: (result: D20RollResult) => string
   initiative?: 'order' | 'actions'
+  rune?: ReactNode
 }) {
   return (
-    <StatPlate label={label}>
+    <StatPlate label={label} rune={rune}>
       <D20RollButton label={label} modifier={modifier} derivation={derivation} note={note} effect={effect} initiative={initiative} className="cursor-pointer transition hover:text-trim">
         <D20Modifier value={modifier} hint={false} className="is-loud" />
       </D20RollButton>
@@ -167,6 +177,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
             label={t('stats.initiativeOrder')}
             modifier={nimble.order}
             derivation={[nimbleAttributeTerm(character, 'in')]}
+            rune={<Rune term="initiative" ruleset={lexiconRuleset(character)} />}
             note={t('stats.initiativeOrderNote')}
           />
           <InitiativePlate
@@ -179,7 +190,12 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
           />
         </>
       ) : (
-        <InitiativePlate label={t('stats.initiative')} modifier={initiativeBonus(character)} derivation={initiativeDerivation(character)} />
+        <InitiativePlate
+          label={t('stats.initiative')}
+          modifier={initiativeBonus(character)}
+          derivation={initiativeDerivation(character)}
+          rune={<Rune term="initiative" ruleset={lexiconRuleset(character)} />}
+        />
       )}
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />

@@ -314,6 +314,7 @@ export function ThemeSwitcher() {
       <button
         ref={triggerRef}
         type="button"
+        data-tour="header.theme"
         onClick={() => setOpen((v) => !v)}
         title={`${translate('theme.choose')}: ${labelOf(active.key)}`}
         aria-label={translate('theme.choose')}

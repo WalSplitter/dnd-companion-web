@@ -36,7 +36,7 @@ export function RollLog() {
   const armed = armedMode !== 'normal'
 
   return (
-    <div ref={rootRef} className="relative mb-1 shrink-0">
+    <div ref={rootRef} data-tour="sheet.rollLog" className="relative mb-1 shrink-0">
       {open && (
         <section
           role="dialog"

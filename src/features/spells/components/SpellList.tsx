@@ -12,6 +12,7 @@ import { AreaIcon, AutoHitIcon, CaptionedRoll, DieIcon, DmIcon, HitIcon, ROLL_BU
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
+import { reportQuestAction } from '../../../onboarding/questEvents'
 import { highestTier, isAreaSpell, isUtilitySpell, spellCost, spellDamage, spellRollFlow, type SpellCost } from '../spellRolls'
 
 /** Group key for the utility spells, listed after every tier. */
@@ -110,6 +111,7 @@ function useCastSpell(character: CharacterFrontmatter, characterPath: string | u
   return (cost: SpellCost) => {
     const spellcasting = character.spellcasting
     if (!cost.affordable || !spellcasting) return
+    reportQuestAction('cast')
     if (cost.kind === 'mana') {
       const target = character._write?.mana_current
       const mana = spellcasting.mana

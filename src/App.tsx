@@ -11,6 +11,8 @@ import { inOwlbear } from './owlbear/host'
 import { OwlbearBadge } from './owlbear/OwlbearBadge'
 import { OwlbearNavigator } from './owlbear/OwlbearNavigator'
 import { OwlbearWindowControls } from './owlbear/OwlbearWindowControls'
+import { Onboarding } from './onboarding/Onboarding'
+import { QuestMenu } from './onboarding/QuestMenu'
 import { AmbientLayer } from './theme/AmbientLayer'
 import { ThemeEffect, ThemeSwitcher } from './theme/ThemeSwitcher'
 import { VaultLoaderControls } from './features/vault-access/VaultLoaderControls'
@@ -60,6 +62,7 @@ function App() {
       <ErrorToaster />
       {!inOwlbear && <UpdateToast />}
       <TooltipLayer />
+      {!inOwlbear && <Onboarding />}
       {inOwlbear && <OwlbearNavigator />}
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
       <header ref={headerRef} className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
@@ -84,6 +87,7 @@ function App() {
             )}
             {inOwlbear && <OwlbearBadge />}
             <LanguageSwitcher collapsible={inOwlbear} />
+            {!inOwlbear && <QuestMenu />}
             <ThemeSwitcher />
           </div>
           {inOwlbear && <OwlbearWindowControls />}

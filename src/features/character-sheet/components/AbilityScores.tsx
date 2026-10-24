@@ -15,6 +15,8 @@ import { abilityModifier, isSavingThrowProficient, savingThrowBonus } from '../.
 import { nimbleAttributeValue } from '../../../rules/endeavour'
 import { ABILITIES, NIMBLE_ATTRIBUTES, NIMBLE_SAVE_ATTRIBUTES, type CharacterFrontmatter } from '../../../vault/types'
 import { ProficiencyDot } from './ProficiencyDot'
+import { lexiconRuleset } from '../../../onboarding/lexicon'
+import { Rune } from '../../../onboarding/Rune'
 import { isEndeavour } from '../../../rules/ruleset'
 
 /** A medallion + caption plate, shared by the D&D-shaped `abilities` and Nimble `nimble_attributes`
@@ -159,7 +161,15 @@ export function AbilityScores({ character, characterPath }: { character: Charact
   const primary = character.nimble_primary_attributes
 
   return (
-    <Card title={t('cards.abilitiesAndSaves')}>
+    <Card
+      title={t('cards.abilitiesAndSaves')}
+      titleExtra={
+        <>
+          <Rune term="attribute" ruleset={lexiconRuleset(character)} />
+          <Rune term="savingThrow" ruleset={lexiconRuleset(character)} />
+        </>
+      }
+    >
       {/* 8 Nimble attributes lay out cleanly as 2 rows of 4; the 6 D&D abilities as 2 rows of 3. */}
       <div className={`grid gap-x-2 gap-y-5 pb-1 pt-1 ${nimble ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {nimble

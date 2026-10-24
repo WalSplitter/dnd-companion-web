@@ -13,6 +13,9 @@ import { maxExhaustion, percentOf, resiliencePool, stepWithin } from '../../../r
 import { hpFillClass } from '../../../components/vitalsDisplay'
 import { KiIcon } from '../../../components/KiIcon'
 import { ManaIcon } from '../../../components/ManaIcon'
+import { reportQuestAction } from '../../../onboarding/questEvents'
+import { lexiconRuleset } from '../../../onboarding/lexicon'
+import { Rune } from '../../../onboarding/Rune'
 import { withResource } from '../rest'
 import { RestMenu } from './RestMenu'
 import { ExhaustionTrack, StepButton } from './VitalPools'
@@ -186,6 +189,7 @@ function PoolRow({
   warded,
   hitKey,
   maxHint,
+  rune,
 }: {
   icon: ReactNode
   label: string
@@ -194,6 +198,8 @@ function PoolRow({
   max: number
   /** Tooltip on the maximum, e.g. how the class notes add up to it (`levelPoolText`). */
   maxHint?: string
+  /** A learn-mode rune explaining the pool, beside its caption. */
+  rune?: ReactNode
   onSet?: (next: number) => void
   numberClass: string
   heightClass: string
@@ -207,7 +213,10 @@ function PoolRow({
 
   return (
     <>
-      <RowCaption icon={icon}>{label}</RowCaption>
+      <RowCaption icon={icon}>
+        {label}
+        {rune}
+      </RowCaption>
       {onSet ? (
         <BarSlider key={current} current={current} max={max} onCommit={onSet} ariaLabel={ariaLabel} heightClass={heightClass}>
           {track}
@@ -300,6 +309,15 @@ export function HitPoints({
     ((next: number) =>
       void updateCharacterField(characterPath, exhaustionTarget, next, (c) => ({ ...c, conditions: { ...c.conditions, exhaustion: next } })))
 
+  // Lowering a pool by hand is taking a hit — the goal of the quest "Ein Treffer!".
+  const hurting = (set: ((next: number) => void) | undefined, now: number) =>
+    set &&
+    ((next: number) => {
+      if (next < now) reportQuestAction('damage')
+      set(next)
+    })
+  const ruleset = lexiconRuleset(character)
+
   const resilience = resiliencePool(character)
   const poolParts = character.level_pool_derivation
   const hpMaxHint = poolParts?.hp ? levelPoolText(t, t('cards.hitPoints'), max, poolParts.hp, 'KO') : undefined
@@ -336,6 +354,7 @@ export function HitPoints({
       <div className="min-w-0 grow-[2] basis-[26rem]">
         <div className="mb-2 flex min-h-7 items-center justify-between gap-3">
           <SectionTitle className="min-w-0 flex-1">{t('cards.vitals')}</SectionTitle>
+          <Rune term="rest" ruleset={ruleset} />
           <RestMenu character={character} characterPath={characterPath} />
           {tempControl}
         </div>
@@ -347,7 +366,7 @@ export function HitPoints({
               ariaLabel={t('a11y.currentResilience')}
               current={resilience.current}
               max={resilience.max}
-              onSet={setResilience}
+              onSet={hurting(setResilience, resilience.current)}
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'rp-fill'}
@@ -355,6 +374,7 @@ export function HitPoints({
               warded={warded}
               hitKey={wardHitKey}
               maxHint={resilienceMaxHint}
+              rune={<Rune term="resilience" ruleset={ruleset} />}
             />
           )}
           <PoolRow
@@ -363,7 +383,7 @@ export function HitPoints({
             ariaLabel={t('a11y.currentHp')}
             current={current}
             max={max}
-            onSet={setHp}
+            onSet={hurting(setHp, current)}
             numberClass="text-xl"
             heightClass="h-3.5"
             fillClass={(p) => `bg-linear-to-r ${hpFillClass(p)}`}
@@ -371,6 +391,7 @@ export function HitPoints({
             warded={warded}
             hitKey={wardHitKey}
             maxHint={hpMaxHint}
+            rune={<Rune term="hitPoints" ruleset={ruleset} />}
           />
           {/* Mana is spent in play like the two pools above, so it shares the HUD; damage never
               reaches it, so it stays outside the ward. */}
@@ -382,6 +403,7 @@ export function HitPoints({
               current={mana.current}
               max={mana.max}
               onSet={setMana}
+              rune={<Rune term={ruleset === 'endeavour' ? 'mana' : 'spellSlots'} ruleset={ruleset} />}
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'mana-fill'}
@@ -445,7 +467,12 @@ export function HitPoints({
                 level={exhaustion}
                 max={exhaustionMax}
                 onChange={setExhaustion}
-                caption={<RowCaption>{t('stats.exhaustion')}</RowCaption>}
+                caption={
+                  <RowCaption>
+                    {t('stats.exhaustion')}
+                    <Rune term="exhaustion" ruleset={ruleset} />
+                  </RowCaption>
+                }
               />
             )}
 

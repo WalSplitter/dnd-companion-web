@@ -56,15 +56,20 @@ export function CharacterListPage() {
         <h1 className="text-2xl font-semibold text-fg">
           {t('characterList.title')} <span className="ml-1 text-sm font-normal text-fg-muted">{characters.length}</span>
         </h1>
-        {tab === 'party' && <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />}
+        {tab === 'party' && (
+          <div data-tour="party.view">
+            <ViewModeToggle mode={mode} layout={layout} onChange={setMode} />
+          </div>
+        )}
       </div>
 
-      <div role="tablist" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
+      <div role="tablist" data-tour="party.tabs" className="mb-4 flex flex-wrap gap-1 whitespace-nowrap border-b border-trim/25">
         {tabs.map(({ key, label, badge }) => (
           <button
             key={key}
             type="button"
             role="tab"
+            data-tour={`party.tab.${key}`}
             aria-selected={tab === key}
             onClick={() => setSearchParams(key === 'party' ? {} : { tab: key }, { replace: true })}
             className="rpg-tab cursor-pointer"
@@ -79,28 +84,32 @@ export function CharacterListPage() {
         ))}
       </div>
 
-      {tab === 'compare' ? (
-        <PartyRadar characters={characters} />
-      ) : tab === 'campaign' ? (
-        <CampaignPanel />
-      ) : tab === 'chronicle' ? (
-        <ChroniclePanel />
-      ) : layout === 'lineup' ? (
-        <PartyFormation characters={characters} />
-      ) : (
-        <div className={CONTAINER[layout]}>
-          {characters.map((c, i) => (
-            <Link
-              key={c.path}
-              to={characterRoute(c.frontmatter.name)}
-              className="rise-in block"
-              style={{ '--i': i } as CSSProperties}
-            >
-              {layout === 'list' ? <CharacterRow character={c.frontmatter} /> : <CharacterCard character={c.frontmatter} />}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div data-tour="party.content">
+        {tab === 'compare' ? (
+          <PartyRadar characters={characters} />
+        ) : tab === 'campaign' ? (
+          <CampaignPanel />
+        ) : tab === 'chronicle' ? (
+          <ChroniclePanel />
+        ) : layout === 'lineup' ? (
+          <div data-tour="party.list">
+            <PartyFormation characters={characters} />
+          </div>
+        ) : (
+          <div data-tour="party.list" className={CONTAINER[layout]}>
+            {characters.map((c, i) => (
+              <Link
+                key={c.path}
+                to={characterRoute(c.frontmatter.name)}
+                className="rise-in block"
+                style={{ '--i': i } as CSSProperties}
+              >
+                {layout === 'list' ? <CharacterRow character={c.frontmatter} /> : <CharacterCard character={c.frontmatter} />}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
