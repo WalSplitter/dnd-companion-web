@@ -12,7 +12,8 @@ import { usePageQuest, useStartQuest } from './useStartQuest'
 /** A rolled-up scroll, the quest log's emblem. */
 function ScrollIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+    // The viewBox is nudged so the scroll's own shape, not its 24×24 box, sits in the middle.
+    <svg viewBox="-0.5 0.5 24 24" className="size-4" aria-hidden>
       <path
         d="M7 4h10a2.5 2.5 0 0 1 0 5h-1v9.5A2.5 2.5 0 0 1 13.5 21H6a2.5 2.5 0 0 1-2.5-2.5V18H13v.5a1 1 0 0 0 2 0V6.5A2.5 2.5 0 0 0 12.5 4"
         fill="none"
@@ -89,7 +90,7 @@ export function QuestMenu() {
         title={t('quest.menuLabel')}
         className={`quest-menu-trigger ${enabled && pageQuest ? 'has-quest' : ''}`}
       >
-        <ProgressRing value={enabled ? progress : 0} size={32}>
+        <ProgressRing value={enabled ? progress : 0} size={30}>
           <ScrollIcon />
         </ProgressRing>
       </button>
