@@ -59,7 +59,7 @@ function useResizeTick(ref: RefObject<HTMLElement | null>) {
 /**
  * Splitter's speech bubble, an RPG dialogue box: its `portrait` on the left, the text on the right. It
  * sits beside the lit element (below it when there's room, else above), centred when the step has no
- * target, in the bottom-right `corner` for notices nobody asked for, and docked to the bottom on phones.
+ * target, beside a target too tall for either, in the bottom-right `corner` for notices nobody asked for, and docked to the bottom on phones.
  * Its text types itself out (a click shows it whole).
  */
 export function QuestBubble({
@@ -117,8 +117,15 @@ export function QuestBubble({
     } else if (box) {
       const below = box.top + box.height + GAP
       const above = box.top - GAP - height
-      const top = below + height <= vh - MARGIN ? below : above >= minTop ? above : vh - height - MARGIN
-      next = { top, left: clamp(box.left, MARGIN, vw - width - MARGIN), sheet: false }
+      const right = box.left + box.width + GAP
+      const left = box.left - GAP - width
+      const sideTop = clamp(box.top, minTop, vh - height - MARGIN)
+      if (below + height <= vh - MARGIN) next = { top: below, left: clamp(box.left, MARGIN, vw - width - MARGIN), sheet: false }
+      else if (above >= minTop) next = { top: above, left: clamp(box.left, MARGIN, vw - width - MARGIN), sheet: false }
+      // A tall target (an open menu): beside it, where there's room, rather than over it.
+      else if (left >= MARGIN) next = { top: sideTop, left, sheet: false }
+      else if (right + width <= vw - MARGIN) next = { top: sideTop, left: right, sheet: false }
+      else next = { top: vh - height - MARGIN, left: clamp(box.left, MARGIN, vw - width - MARGIN), sheet: false }
     } else {
       next = { top: Math.max(minTop + 40, (vh - height) / 2), left: (vw - width) / 2, sheet: false }
     }

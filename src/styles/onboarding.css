@@ -1068,23 +1068,12 @@ html.quest-touring .page-enter {
   animation: splitter-pulse 1.8s ease-in-out infinite;
 }
 .quest-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.5rem);
+  /* `top`/`right` come from the trigger (`QuestMenu`). */
+  position: fixed;
   z-index: 50;
   width: min(18rem, calc(100vw - 2rem));
   padding: 0.35rem;
   background: var(--color-surface);
-}
-@media (max-width: 639px) {
-  /* The trigger isn't at the screen's edge, so a menu hanging off it could leave the screen. */
-  .quest-menu {
-    position: fixed;
-    left: 16px;
-    right: 16px;
-    top: calc(var(--app-header-h, 3.5rem) + 8px);
-    width: auto;
-  }
 }
 .quest-menu-item {
   display: flex;

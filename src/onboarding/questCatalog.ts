@@ -27,7 +27,7 @@ export interface QuestStep {
   sampleNote?: TranslationKey
   /** How the step ends: the Next button (default), a click on the target, or something the player does. */
   until?: 'click' | QuestAction
-  /** A tab (`data-tour` anchor of its button) to open first, unless it's already selected. */
+  /** A tab or menu (`data-tour` anchor of its button) to open first, unless it's already open. */
   tab?: string
 }
 
@@ -275,7 +275,7 @@ export const QUESTS: readonly Quest[] = [
     icon: '🔮',
     title: 'quest.sideRunes.title',
     page: 'any',
-    steps: [{ target: 'header.quests', text: 'quest.sideRunes.s1' }],
+    steps: [{ target: 'header.questMenu', tab: 'header.quests', text: 'quest.sideRunes.s1' }],
   },
   {
     id: 'side-offline',

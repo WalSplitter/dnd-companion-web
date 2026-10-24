@@ -147,7 +147,7 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
     return () => document.documentElement.classList.remove('quest-touring')
   }, [])
 
-  // Opens the tab the step lives on (once the page shows it), unless it's open already.
+  // Opens the tab or menu the step lives on (once the page shows it), unless it's open already.
   useEffect(() => {
     if (!step.tab) return
     const anchor = step.tab
@@ -155,7 +155,7 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
     const timer = window.setInterval(() => {
       const tab = findTourTarget(anchor)
       if (tab || ++tries > 40) window.clearInterval(timer)
-      if (tab && tab.getAttribute('aria-selected') !== 'true') tab.click()
+      if (tab && tab.getAttribute('aria-selected') !== 'true' && tab.getAttribute('aria-expanded') !== 'true') tab.click()
     }, 50)
     return () => window.clearInterval(timer)
   }, [step])

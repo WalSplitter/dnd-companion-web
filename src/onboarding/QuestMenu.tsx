@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Toggle } from '../components/Toggle'
 import { useDismiss } from '../components/useDismiss'
 import { useT } from '../i18n/useI18n'
+import { PHONE_MAX_WIDTH } from '../utils/viewport'
 import { ProgressRing } from './QuestLog'
 import { isJourneyDone, journeyProgress } from './questProgress'
 import { useQuestStore } from './questStore'
@@ -32,8 +34,26 @@ export function QuestMenu() {
   const t = useT()
   const startQuest = useStartQuest()
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  useDismiss(open, () => setOpen(false), [rootRef])
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [anchor, setAnchor] = useState<{ top: number; right: number; left?: number; width?: string } | null>(null)
+  useDismiss(open, () => setOpen(false), [triggerRef, menuRef])
+
+  // In a portal under the trigger, like the theme menu: inside the header it would share the header's
+  // layer, and a tour's fog (which lies over the header) would cover it.
+  useLayoutEffect(() => {
+    if (!open) return
+    const place = () => {
+      const r = triggerRef.current?.getBoundingClientRect()
+      if (!r) return
+      // On a phone the trigger isn't at the screen's edge: the menu spans the width instead.
+      if (window.innerWidth < PHONE_MAX_WIDTH) setAnchor({ top: r.bottom + 8, left: 16, right: 16, width: 'auto' })
+      else setAnchor({ top: r.bottom + 8, right: window.innerWidth - r.right })
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [open])
 
   const enabled = useQuestStore((s) => s.enabled)
   const learnMode = useQuestStore((s) => s.learnMode)
@@ -57,8 +77,9 @@ export function QuestMenu() {
   )
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div className="relative shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         data-tour="header.quests"
         onClick={() => setOpen((o) => !o)}
@@ -72,64 +93,73 @@ export function QuestMenu() {
           <ScrollIcon />
         </ProgressRing>
       </button>
-      {open && (
-        <div role="menu" aria-label={t('quest.menuLabel')} className="quest-menu rpg-panel">
-          {enabled ? (
-            <>
-              <button type="button" role="menuitem" className={item} onClick={run(() => store().openLog('quests'))}>
-                <span aria-hidden>📜</span>
-                <span className="flex-1">{t('quest.openLog')}</span>
-                <span className="font-num text-xs text-fg-muted">{Math.round(progress * 100)}%</span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className={item}
-                disabled={!pageQuest}
-                onClick={run(() => pageQuest && void startQuest(pageQuest.id))}
-              >
-                <span aria-hidden>✨</span>
-                <span className="flex-1">{pageQuest ? t('quest.pageTour', { title: t(pageQuest.title) }) : t('quest.pageTourNone')}</span>
-              </button>
-              <button type="button" role="menuitem" className={item} onClick={run(() => store().openLog('compendium'))}>
-                <span aria-hidden>📚</span>
-                <span className="flex-1">{t('quest.tabCompendium')}</span>
-              </button>
-              <div className="quest-menu-sep" />
-              <button type="button" role="menuitemcheckbox" aria-checked={learnMode} className={item} onClick={() => store().setLearnMode(!learnMode)}>
-                <span aria-hidden>🔮</span>
-                <span className="flex-1">{t('quest.learnMode')}</span>
-                <Toggle on={learnMode} />
-              </button>
-              {isJourneyDone(completed) && (
-                <button type="button" role="menuitemcheckbox" aria-checked={companion} className={item} onClick={() => store().setCompanion(!companion)}>
-                  <span aria-hidden>🕯️</span>
-                  <span className="flex-1">{t('quest.companion')}</span>
-                  <Toggle on={companion} />
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            data-tour="header.questMenu"
+            aria-label={t('quest.menuLabel')}
+            className="quest-menu rpg-panel"
+            style={anchor ?? { visibility: 'hidden' }}
+          >
+            {enabled ? (
+              <>
+                <button type="button" role="menuitem" className={item} onClick={run(() => store().openLog('quests'))}>
+                  <span aria-hidden>📜</span>
+                  <span className="flex-1">{t('quest.openLog')}</span>
+                  <span className="font-num text-xs text-fg-muted">{Math.round(progress * 100)}%</span>
                 </button>
-              )}
-              {mentorSwitch}
-              <div className="quest-menu-sep" />
-              <button
-                type="button"
-                role="menuitem"
-                className={`${item} text-fg-muted`}
-                onClick={run(() => {
-                  if (window.confirm(t('quest.resetConfirm'))) store().reset()
-                })}
-              >
-                <span aria-hidden>↺</span>
-                <span className="flex-1">{t('quest.reset')}</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="px-3 pt-2 pb-1 text-xs leading-relaxed text-fg-muted">{t('quest.mentorOffHint')}</p>
-              {mentorSwitch}
-            </>
-          )}
-        </div>
-      )}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={item}
+                  disabled={!pageQuest}
+                  onClick={run(() => pageQuest && void startQuest(pageQuest.id))}
+                >
+                  <span aria-hidden>✨</span>
+                  <span className="flex-1">{pageQuest ? t('quest.pageTour', { title: t(pageQuest.title) }) : t('quest.pageTourNone')}</span>
+                </button>
+                <button type="button" role="menuitem" className={item} onClick={run(() => store().openLog('compendium'))}>
+                  <span aria-hidden>📚</span>
+                  <span className="flex-1">{t('quest.tabCompendium')}</span>
+                </button>
+                <div className="quest-menu-sep" />
+                <button type="button" role="menuitemcheckbox" aria-checked={learnMode} className={item} onClick={() => store().setLearnMode(!learnMode)}>
+                  <span aria-hidden>🔮</span>
+                  <span className="flex-1">{t('quest.learnMode')}</span>
+                  <Toggle on={learnMode} />
+                </button>
+                {isJourneyDone(completed) && (
+                  <button type="button" role="menuitemcheckbox" aria-checked={companion} className={item} onClick={() => store().setCompanion(!companion)}>
+                    <span aria-hidden>🕯️</span>
+                    <span className="flex-1">{t('quest.companion')}</span>
+                    <Toggle on={companion} />
+                  </button>
+                )}
+                {mentorSwitch}
+                <div className="quest-menu-sep" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${item} text-fg-muted`}
+                  onClick={run(() => {
+                    if (window.confirm(t('quest.resetConfirm'))) store().reset()
+                  })}
+                >
+                  <span aria-hidden>↺</span>
+                  <span className="flex-1">{t('quest.reset')}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="px-3 pt-2 pb-1 text-xs leading-relaxed text-fg-muted">{t('quest.mentorOffHint')}</p>
+                {mentorSwitch}
+              </>
+            )}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
