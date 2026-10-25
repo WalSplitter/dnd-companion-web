@@ -227,17 +227,22 @@ function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['clas
   return weapons.length > 0 || armor.length > 0 ? { weapons, armor } : undefined
 }
 
+/** The value of the first of `keys` that is set at all (an English key or its German names). */
+function firstSet(data: Record<string, unknown>, keys: string[]): unknown {
+  return keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+}
+
 /** The first of `keys` holding a non-empty wikilink: the worn armor is `armor:` or `Rüstung:` (as on
  * the old sheet's `Verteidigung.Rüstung`), the shield `shield:` or `Schild:`. */
 function linkField(data: Record<string, unknown>, ...keys: string[]): string | undefined {
-  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const raw = firstSet(data, keys)
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
 /** The first of `keys` holding a list: its non-empty wikilinks (a single wikilink counts as a list
  * of one). `undefined` when there are none. */
 function linkList(data: Record<string, unknown>, ...keys: string[]): string[] | undefined {
-  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const raw = firstSet(data, keys)
   const list = (Array.isArray(raw) ? raw : [raw]).filter((v): v is string => typeof v === 'string' && v.trim() !== '')
   return list.length > 0 ? list : undefined
 }
@@ -400,6 +405,8 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
   return typeof value === 'number' ? value : undefined
 }
 
+type LevelPool = { max: number; parts: LevelPoolPart[] }
+
 /**
  * Nimble has no hit dice. Per the class notes (`embed Klasse`): at level 1 a class grants
  * `(BasisTP + KO) × 2` TP and every level up `BasisTP + KO`, i.e. `(level + 1) × (BasisTP + KO)` in
@@ -416,8 +423,6 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * (3) multiclassing follows D&D 5e 2024 and Nimble: only the starting class grants the doubled
  * level 1, a class taken later counts like a level up.
  */
-type LevelPool = { max: number; parts: LevelPoolPart[] }
-
 function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: LevelPool; resilience?: LevelPool } {
   if (!isEndeavour(character) || !Array.isArray(character.class) || character.class.length === 0) return {}
   const perLevelBonus = { hp: nimbleAttributeValue(character, 'ko'), resilience: Math.floor(nimbleAttributeValue(character, 'en') / 2) }

@@ -111,12 +111,12 @@ function useCastSpell(character: CharacterFrontmatter, characterPath: string | u
   return (cost: SpellCost) => {
     const spellcasting = character.spellcasting
     if (!cost.affordable || !spellcasting) return
-    reportQuestAction('cast')
     if (cost.kind === 'mana') {
       const target = character._write?.mana_current
       const mana = spellcasting.mana
       if (!target || !mana) return
       const next = mana.current - cost.cost
+      reportQuestAction('cast')
       void updateCharacterField(characterPath!, target, next, (c) =>
         c.spellcasting?.mana ? { ...c, spellcasting: { ...c.spellcasting, mana: { ...c.spellcasting.mana, current: next } } } : c,
       )
@@ -125,9 +125,11 @@ function useCastSpell(character: CharacterFrontmatter, characterPath: string | u
       const slot = spellcasting.slots?.[cost.grade]
       if (!target || !slot) return
       const used = slot.used + 1
-      void updateCharacterField(characterPath!, target, used, (c) =>
-        c.spellcasting?.slots?.[cost.grade] ? { ...c, spellcasting: { ...c.spellcasting, slots: { ...c.spellcasting.slots, [cost.grade]: { ...slot, used } } } } : c,
-      )
+      reportQuestAction('cast')
+      void updateCharacterField(characterPath!, target, used, (c) => {
+        const current = c.spellcasting?.slots?.[cost.grade]
+        return current ? { ...c, spellcasting: { ...c.spellcasting!, slots: { ...c.spellcasting!.slots, [cost.grade]: { ...current, used } } } } : c
+      })
     }
   }
 }
