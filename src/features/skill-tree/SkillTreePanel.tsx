@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { clamp, headerHeight } from '../../utils/viewport'
+import { clamp, headerHeight, PHONE_MAX_WIDTH } from '../../utils/viewport'
 import { createPortal } from 'react-dom'
 import { Card } from '../../components/Card'
 import { useDismiss } from '../../components/useDismiss'
@@ -575,8 +575,10 @@ export function SkillTreePanel({ character }: { character: CharacterFrontmatter 
   const [classIndex, setClassIndex] = useState(0)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'tree' | 'list'>(() => (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 40rem)').matches ? 'list' : 'tree'))
-  const progression = progressions[Math.min(classIndex, progressions.length - 1)]
+  const [view, setView] = useState<'tree' | 'list'>(() => (typeof window !== 'undefined' && window.innerWidth < PHONE_MAX_WIDTH ? 'list' : 'tree'))
+  // A class removed from the character meanwhile: the last one stays picked.
+  const activeIndex = Math.min(classIndex, progressions.length - 1)
+  const progression = progressions[activeIndex]
   const board = useMemo(() => (progression ? layoutBoard(progression) : null), [progression])
   const matches = useMemo(() => (progression ? searchNodes(progression.nodes, query) : null), [progression, query])
   const selected = progression?.nodes.find((n) => n.id === selectedId)
@@ -595,12 +597,12 @@ export function SkillTreePanel({ character }: { character: CharacterFrontmatter 
                   key={p.className}
                   type="button"
                   role="tab"
-                  aria-selected={i === classIndex}
+                  aria-selected={i === activeIndex}
                   onClick={() => {
                     setClassIndex(i)
                     setSelectedId(null)
                   }}
-                  className={`rpg-chip ${i === classIndex ? 'rpg-chip-on' : ''}`}
+                  className={`rpg-chip ${i === activeIndex ? 'rpg-chip-on' : ''}`}
                 >
                   {p.className} {p.level}
                 </button>
