@@ -3,6 +3,7 @@ import { Card } from '../../components/Card'
 import { useT } from '../../i18n/useI18n'
 import { useVaultStore } from '../../store/vaultStore'
 import { useCanEdit } from '../../store/canEdit'
+import { reportQuestAction } from '../../onboarding/questEvents'
 import type { CharacterFrontmatter, InventoryEntry } from '../../vault/types'
 import { wikilinkTarget } from '../../vault/wikilinkSyntax'
 import { resolveItemLink, type VaultIndex } from '../../vault/wikilinks'
@@ -52,6 +53,7 @@ export function InventoryPanel({
     if (!next) return
     setWarning(null)
     void setInventory(characterPath, next)
+    reportQuestAction('equip')
   }
 
   function add(section: InventorySection, link: string) {

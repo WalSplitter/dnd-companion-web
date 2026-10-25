@@ -95,37 +95,63 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
   return source && mana && typeof mana.max === 'number' ? { path: source.path, keyPath: ['spellcasting', 'mana', 'current'], createIfMissing: true } : undefined
 }
 
-/** One `items:` entry as the grid understands it — a wikilink, a `{ link, charges }` stack or a
- * `{ name, plaetze }` temporary item — `undefined` for anything else (an empty `-` line, a number). */
-function parseInventoryEntry(raw: unknown): EndeavourInventoryEntry | undefined {
-  if (typeof raw === 'string') return raw.trim() ? raw : undefined
-  if (!isRecord(raw)) return undefined
-  if (typeof raw.link === 'string' && typeof raw.charges === 'number') return { ...raw, link: raw.link, charges: raw.charges }
-  if (typeof raw.name === 'string') return { ...raw, name: raw.name, plaetze: typeof raw.plaetze === 'number' ? raw.plaetze : 1 }
-  return undefined
+/** A count as written by hand: a number, or digits typed as text (`"3"`). */
+function countOf(raw: unknown): number | undefined {
+  const n = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : raw
+  return typeof n === 'number' && Number.isFinite(n) ? n : undefined
 }
 
+/** A list entry nothing can be made of: a blank `-` line, a number, `true`. */
+const isJunk = (raw: unknown) => (typeof raw === 'string' ? raw.trim() === '' : !isRecord(raw))
+
 /**
- * `endeavour_inventory` in the shape the grid relies on, since the note may have been edited by hand:
- * entries it can't read are left out. A container whose link is missing is kept (with none), so its
- * items still show — as overflow — and survive the next save instead of vanishing with it.
+ * One `items:` entry in a shape the grid can show — a wikilink, a `{ link, charges }` stack or a
+ * `{ name, plaetze }` temporary item. The grid writes the whole list back, so a hand-written entry
+ * is repaired rather than dropped, its other keys kept: a stack without a readable `charges` holds
+ * one, an object that is neither becomes a temporary item called "?" for the player to fix.
+ */
+function parseInventoryEntry(raw: Record<string, unknown> | string): EndeavourInventoryEntry {
+  if (typeof raw === 'string') return raw
+  if (typeof raw.link === 'string') return { ...raw, link: raw.link, charges: countOf(raw.charges) ?? 1 }
+  return { ...raw, name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : String(raw.name ?? '?'), plaetze: countOf(raw.plaetze) ?? 1 }
+}
+
+/** `raw` as a list: a single entry written without `-` counts as a list of one. */
+const asList = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw])
+
+/**
+ * `endeavour_inventory` in the shape the grid relies on, since the note may have been edited by hand
+ * (see `parseInventoryEntry`). Only entries nothing can be made of are left out. A container keeps
+ * its other keys, and one whose link is missing is kept with none, so its items still show — as
+ * overflow — and survive the next save.
  */
 export function parseEndeavourInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['endeavour_inventory'] {
   if (!record) return undefined
-  const containers = Array.isArray(record.containers) ? record.containers.filter(isRecord) : []
   return {
-    containers: containers.map((c) => ({
-      container: typeof c.container === 'string' ? c.container : '',
-      items: Array.isArray(c.items) ? c.items.flatMap((raw) => parseInventoryEntry(raw) ?? []) : [],
-    })),
+    ...record,
+    containers: asList(record.containers)
+      .filter(isRecord)
+      .map((c) => ({
+        ...c,
+        container: typeof c.container === 'string' ? c.container : '',
+        items: asList(c.items).flatMap((raw) => (isJunk(raw) ? [] : [parseInventoryEntry(raw as Record<string, unknown> | string)])),
+      })),
   }
 }
 
-/** The list inventory's `equipped`/`carried`, each kept to the wikilinks and `{ name, … }` items in it. */
+/** The list inventory's `equipped`/`carried` as lists of wikilinks and `{ name, … }` items, repaired
+ * like the grid's entries (an item without a name is called "?"); the block's other keys are kept. */
 export function parseListInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['inventory'] {
   if (!record) return undefined
-  const section = (raw: unknown): InventoryEntry[] | undefined =>
-    Array.isArray(raw) ? raw.filter((e): e is InventoryEntry => (typeof e === 'string' && e.trim() !== '') || (isRecord(e) && typeof e.name === 'string')) : undefined
+  const section = (raw: unknown): InventoryEntry[] | undefined => {
+    if (raw === undefined) return undefined
+    return asList(raw).flatMap((e): InventoryEntry[] => {
+      if (isJunk(e)) return []
+      if (typeof e === 'string') return [e]
+      const item = e as Record<string, unknown>
+      return [{ ...item, name: typeof item.name === 'string' && item.name.trim() ? item.name : String(item.name ?? '?') }]
+    })
+  }
   return { ...record, equipped: section(record.equipped), carried: section(record.carried) }
 }
 

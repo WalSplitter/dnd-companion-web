@@ -63,7 +63,8 @@ export function rollDamage(raw: string, { critical = false }: { critical?: boole
   // A flat amount (an unarmed strike's `1+2`) is a valid damage roll too, just without dice.
   if (!parsed) return undefined
   const rolls = parsed.dice.flatMap(({ count, sides }) => Array.from({ length: critical ? count * 2 : count }, () => rollOne(sides)))
-  return { notation: raw, rolls, modifier: parsed.modifier, total: rolls.reduce((sum, r) => sum + r, 0) + parsed.modifier }
+  // Vault rule `Schadensmodifikatoren`: damage that would sink below 0 is 0 (an unarmed strike with ST −2).
+  return { notation: raw, rolls, modifier: parsed.modifier, total: Math.max(0, rolls.reduce((sum, r) => sum + r, 0) + parsed.modifier) }
 }
 
 export type RollMode = 'normal' | 'advantage' | 'disadvantage'

@@ -66,7 +66,7 @@ function App() {
       {!inOwlbear && <Onboarding />}
       {inOwlbear && <OwlbearNavigator />}
       {/* Frosted only from `sm` up: blurring the content scrolling beneath costs every frame on phones. */}
-      <header ref={headerRef} className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
+      <header ref={headerRef} data-app-header className="sticky top-0 z-10 border-b border-trim/20 bg-surface/95 shadow-[0_1px_0_color-mix(in_srgb,var(--color-trim)_18%,transparent)] sm:bg-surface/90 sm:backdrop-blur">
         {/* In Owlbear the panel can be narrow, and the header stays one row there: as the panel narrows,
             the role becomes an icon, the language switcher one button, and finally the brand goes. */}
         <div

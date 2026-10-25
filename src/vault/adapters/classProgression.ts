@@ -121,10 +121,15 @@ function levelsOf(value: unknown): number[] {
   return (Array.isArray(value) ? value : [value]).filter((v): v is number => typeof v === 'number' && Number.isInteger(v))
 }
 
-/** Whether a feature note's `Klasse` (one entry or a list) is `Alle` or links to the class. */
-function belongsToClass(value: unknown, className: string): boolean {
+/** Whether a feature note's `Klasse` (one entry or a list) links to the class itself. */
+function namesClass(value: unknown, className: string): boolean {
   const target = className.toLowerCase()
-  return (Array.isArray(value) ? value : [value]).some((v) => typeof v === 'string' && (v.trim() === 'Alle' || basename(linkFile(v)).toLowerCase() === target))
+  return (Array.isArray(value) ? value : [value]).some((v) => typeof v === 'string' && basename(linkFile(v)).toLowerCase() === target)
+}
+
+/** Whether a feature note's `Klasse` is `Alle` (every class gets it) or links to the class. */
+function belongsToClass(value: unknown, className: string): boolean {
+  return (Array.isArray(value) ? value : [value]).some((v) => typeof v === 'string' && v.trim() === 'Alle') || namesClass(value, className)
 }
 
 /** The class note's level-keyed maps (`Mönchswürfel: {1: 1W6, 6: 1W8}`) as a value per level, each
@@ -149,13 +154,14 @@ function levelMaps(data: Record<string, unknown>, maxLevel: number): Map<number,
  * features (no `Subklasse`; the ones for `Alle` first, then by name) and, at level 3 and wherever a
  * subclass feature sits, a link to the `Subklassen <Klasse>` note (the first one is choosing it).
  * A feature with `Ersetzt: "[[Schlaghagel]]"` ranks up the one it replaces. `undefined` when no
- * feature note names the class.
+ * feature note names the class itself — the `Alle` ones alone (attribute increases) are no table, and
+ * the character's own features are the better guess then.
  */
 function featureNoteTable(classNote: RawFile, files: RawFile[]): { rows: TableRow[]; subclassList?: string; families: Map<string, string> } | undefined {
   const className = classNote.name
   const features = files.filter((f) => hasTag(tagList(f.data), CLASS_FEATURE_TAG) && levelsOf(f.data.Stufe).length > 0 && belongsToClass(f.data.Klasse, className))
   const own = features.filter((f) => !f.data.Subklasse)
-  if (own.length === 0) return undefined
+  if (!own.some((f) => namesClass(f.data.Klasse, className))) return undefined
 
   // `Verbesserter Schlaghagel` → `Schlaghagel` (followed back to the first of a chain).
   const families = new Map<string, string>()
@@ -324,8 +330,9 @@ function featureNodes(className: string, features: CharacterFeature[]): Omit<Pro
 function classProgression(entry: CharacterFrontmatter['class'][number], character: ProgressionSource, files: RawFile[]): ClassProgression {
   const ownFeatures = character.features ?? []
   const classNote = findRawFileByName(files, entry.name)
-  const notesTable = classNote && !levelTable(classNote.body) ? featureNoteTable(classNote, files) : undefined
-  const table = notesTable?.rows ?? (classNote ? levelTable(classNote.body) : undefined)
+  const bodyTable = classNote ? levelTable(classNote.body) : undefined
+  const notesTable = classNote && !bodyTable ? featureNoteTable(classNote, files) : undefined
+  const table = notesTable?.rows ?? bodyTable
   const subclassList = (notesTable?.subclassList ?? (classNote ? linkFile(classNote.data.Name_Subklassen) : '')).toLowerCase()
   const subclassLabel = classNote ? linkDisplay(classNote.data.Name_Subklassen) || undefined : undefined
   const subclassNote = entry.subclass ? findRawFileByName(files, entry.subclass) : undefined

@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useDismiss } from '../components/useDismiss'
 import { useI18n, useT } from '../i18n/useI18n'
 import { useVaultStore } from '../store/vaultStore'
 import { LEXICON, type LexiconEntry, type LexiconRuleset, type LexiconTerm } from './lexicon'
@@ -159,15 +160,12 @@ export function QuestLog() {
 
   useEffect(() => {
     panelRef.current?.focus({ preventScroll: true })
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') useQuestStore.getState().closeLog()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
   }, [])
+  // Escape, or a press on the backdrop around the panel.
+  useDismiss(true, close, [panelRef])
 
   return createPortal(
-    <div className="quest-log-backdrop" onPointerDown={(e) => e.target === e.currentTarget && close()}>
+    <div className="quest-log-backdrop">
       <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t('quest.logTitle')} className="quest-log rpg-panel">
         <header className="quest-log-head">
           <ProgressRing value={progress} size={52}>

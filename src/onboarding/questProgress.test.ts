@@ -94,3 +94,12 @@ describe('quest store', () => {
     expect(useQuestStore.getState()).toMatchObject({ experience: 'player', completed: [], readTerms: [], enabled: true })
   })
 })
+
+describe('questStore.reset', () => {
+  it("keeps the welcome answer, and with it a newcomer's runes", () => {
+    useQuestStore.getState().setExperience('new')
+    useQuestStore.getState().complete('welcome')
+    useQuestStore.getState().reset()
+    expect(useQuestStore.getState()).toMatchObject({ experience: 'new', learnMode: true, completed: [] })
+  })
+})

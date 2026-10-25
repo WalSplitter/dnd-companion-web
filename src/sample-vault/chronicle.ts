@@ -35,7 +35,7 @@ const SESSIONS: { daysAgo: number; edits: Edit[] }[] = [
     daysAgo: 2,
     edits: [
       ['Fenn Flinkfinger', [set('hp.current', 12, 7)]],
-      ['Ren Aschenlied', [set('resources.ki', 4, 2)]],
+      ['Ren Aschenlied', [set('resources.ki', 3, 2)]],
       ['Aldric von Hohenwacht', [set('resilience.current', 15, 9), set('hp.current', 30, 26)]],
       ['Borin Eisenfaust', [set('resilience.current', 10, 5), set('conditions.exhaustion', 0, 1), set('hp.current', 30, 21)]],
       ['Elandra Windrider', [set('resilience.current', 4, 3), set('hp.current', 12, 9)]],

@@ -121,15 +121,21 @@ export function speedInSquares(speed: string): number | undefined {
 const ENCUMBERED_SQUARES = 2
 
 /**
- * Movement in grid squares after exhaustion (rule `Erschöpfung#Verringerte Bewegungsrate`: −1.5 m
- * per level, and one square is 1.5 m / 5 ft, so −1 square per level) and the `Belastet` condition
- * (−3 m), never below 0.
+ * What slows the character down, in squares: exhaustion (rule `Erschöpfung#Verringerte Bewegungsrate`:
+ * −1.5 m per level, and one square is 1.5 m / 5 ft, so −1 square per level) and the `Belastet`
+ * condition (−3 m).
  */
+export function movementMaluses(character: CharacterFrontmatter): { exhaustion: number; encumbered: number } {
+  const encumbered = activeConditions(character).some((c) => c.toLowerCase() === 'belastet') ? ENCUMBERED_SQUARES : 0
+  return { exhaustion: exhaustionLevel(character), encumbered }
+}
+
+/** Movement in grid squares after `movementMaluses`, never below 0. */
 export function movementSquares(character: CharacterFrontmatter): number | undefined {
   const squares = speedInSquares(character.speed)
   if (squares === undefined) return undefined
-  const encumbered = activeConditions(character).some((c) => c.toLowerCase() === 'belastet') ? ENCUMBERED_SQUARES : 0
-  return Math.max(0, squares - exhaustionLevel(character) - encumbered)
+  const { exhaustion, encumbered } = movementMaluses(character)
+  return Math.max(0, squares - exhaustion - encumbered)
 }
 
 export function totalCharacterLevel(character: CharacterFrontmatter): number {

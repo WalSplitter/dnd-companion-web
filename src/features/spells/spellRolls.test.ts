@@ -63,6 +63,10 @@ describe('dice expressions', () => {
     expect(result.rolls).toHaveLength(3)
     expect(result.modifier).toBe(3)
   })
+
+  it('never deals less than 0 damage', () => {
+    expect(rollDamage('1-2')!.total).toBe(0)
+  })
 })
 
 describe('spell formulas', () => {

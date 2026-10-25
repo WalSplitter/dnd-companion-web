@@ -135,6 +135,14 @@ describe('resolveClassProgressions', () => {
       expect(byName('Kampfkunst')).toMatchObject({ usage: 'passive', description: 'Du kämpfst waffenlos.' })
     })
 
+    it("builds no table from the features for every class alone — the character's own features are used", () => {
+      const berserker = raw('Klassen/Berserker/Berserker.md', '---\nBasisTP: 6\n---\n## Klassentabelle\n')
+      const withOwn = { ...character([{ name: 'Berserker', level: 4 }]), features: [{ name: 'Kampfrausch', source: 'Berserker 1' }] } as CharacterFrontmatter
+      const [p] = resolveClassProgressions(withOwn, [berserker, ...notes.filter((n) => n.name !== 'Kampfrausch')])
+      expect(p.fromTable).toBe(false)
+      expect(p.nodes.map((n) => `${n.level} ${n.name}`)).toEqual(['1 Kampfrausch'])
+    })
+
     it('carries the level-keyed die as a value per level', () => {
       const [p] = resolveClassProgressions(character([{ name: 'Mönch', level: 5 }]), notes)
       expect(p.values.get(1)).toEqual([{ label: 'Mönchswürfel', value: '1W6' }])

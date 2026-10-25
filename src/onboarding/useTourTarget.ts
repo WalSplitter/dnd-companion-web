@@ -22,6 +22,8 @@ const same = (a: TargetBox | null, b: TargetBox | null) =>
 
 /** Brings a target that just appeared into view, unless it already is. */
 function revealTarget(el: HTMLElement) {
+  // The sticky header (theme switcher, quest log) is always on screen; scrolling wouldn't move it.
+  if (el.closest('[data-app-header]')) return
   const r = el.getBoundingClientRect()
   // On a phone the bubble docks to the bottom, so the target belongs in the top part of the screen.
   const phone = window.innerWidth < PHONE_MAX_WIDTH
