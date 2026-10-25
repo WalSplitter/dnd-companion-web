@@ -3,6 +3,7 @@ import { SectionTitle } from '../../../components/SectionTitle'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
+import { reportQuestAction } from '../../../onboarding/questEvents'
 import { resolveItemSize, resolveSlotCost, type EndeavourItemSize } from '../../../vault/adapters/endeavourItem'
 import { deriveEquipment, equipmentChangeFields } from '../../../vault/adapters/nativeCharacter'
 import { formatModifier } from '../../../rules/deriveStats'
@@ -143,6 +144,7 @@ export function EndeavourInventoryGrid({
       return
     }
     void setEquipment(characterPath, result.change)
+    reportQuestAction('equip')
     setWarning(null)
     const link = select ? equippedLink({ ...character, ...equipmentChangeFields(result.change) }, select) : undefined
     setSelected(select && link ? { key: equippedKey(select), item: resolveEndeavourItemLink(index, link), equipped: select } : null)

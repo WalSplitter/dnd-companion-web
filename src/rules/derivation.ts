@@ -1,4 +1,4 @@
-import { ABILITY_TO_NIMBLE_ATTRIBUTE, NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from '../vault/types'
+import { NIMBLE_SKILL_ATTRIBUTES, SKILLS, type AbilityKey, type CharacterFrontmatter, type NimbleAttributeKey, type SkillKey } from '../vault/types'
 import { abilityModifier, dndProficiencyBonus, isSavingThrowProficient, skillProficiencyLevel } from './dnd5e'
 import { nimbleAttributeValue, nimbleSkillValue } from './endeavour'
 import { abilityAbbreviation, exhaustionStaticPenalty, proficiencyBonus, spellcastingValue } from './deriveStats'
@@ -73,11 +73,7 @@ function spellcastingTerms(character: CharacterFrontmatter): DerivationTerm[] {
   const ability = character.spellcasting?.ability
   const value = spellcastingValue(character)
   if (!ability || value === undefined) return []
-  const attribute: DerivationTerm = {
-    kind: 'attribute',
-    abbr: isEndeavour(character) ? ABILITY_TO_NIMBLE_ATTRIBUTE[ability].toUpperCase() : abilityAbbreviation(character, ability),
-    value,
-  }
+  const attribute: DerivationTerm = { kind: 'attribute', abbr: abilityAbbreviation(character, ability), value }
   const bonus = proficiencyBonus(character)
   return bonus ? [attribute, { kind: 'proficiency', value: bonus }] : [attribute]
 }

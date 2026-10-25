@@ -54,6 +54,8 @@ export function CharacterSheet({
     ...(character.class.length > 0 ? ([{ key: 'skills', label: t('tabs.skills') }] as const) : []),
     ...(hasBiography(character, body) ? ([{ key: 'biography', label: t('tabs.biography') }] as const) : []),
   ]
+  // Switching characters keeps the open tab — unless the next one doesn't have it (no spells, say).
+  const shownTab: Tab = tabs.some((entry) => entry.key === tab) ? tab : 'sheet'
 
   return (
     <VaultIndexProvider index={index}>
@@ -84,7 +86,7 @@ export function CharacterSheet({
                     type="button"
                     role="tab"
                     data-tour={`sheet.tab.${entry.key}`}
-                    aria-selected={tab === entry.key}
+                    aria-selected={shownTab === entry.key}
                     aria-label={entry.shortLabel ? entry.label : undefined}
                     onClick={() => setTab(entry.key)}
                     className="rpg-tab cursor-pointer"
@@ -108,7 +110,7 @@ export function CharacterSheet({
 
             {/* One anchor for whichever tab is open, for the tour's steps about it. */}
             <div data-tour="sheet.panel">
-              {tab === 'sheet' && (
+              {shownTab === 'sheet' && (
                 <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                   {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
                       the attribute medallions, so the three columns come out about equally long; the
@@ -133,11 +135,12 @@ export function CharacterSheet({
                 </div>
               )}
 
-              {tab === 'inventory' && <InventoryPanel character={character} characterPath={characterPath} index={index} />}
-              {tab === 'spells' && hasSpells && <SpellsPanel character={character} characterPath={characterPath} index={index} />}
-              {tab === 'skills' && <SkillTreePanel character={character} />}
-              {tab === 'journal' && <JournalPanel character={character} characterPath={characterPath} />}
-              {tab === 'biography' && <BiographyPanel character={character} story={body} />}
+              {/* Keyed by character: a draft, search or selection belongs to the character it was made on. */}
+              {shownTab === 'inventory' && <InventoryPanel key={characterPath} character={character} characterPath={characterPath} index={index} />}
+              {shownTab === 'spells' && <SpellsPanel key={characterPath} character={character} characterPath={characterPath} index={index} />}
+              {shownTab === 'skills' && <SkillTreePanel key={characterPath} character={character} />}
+              {shownTab === 'journal' && <JournalPanel key={characterPath} character={character} characterPath={characterPath} />}
+              {shownTab === 'biography' && <BiographyPanel key={characterPath} character={character} story={body} />}
             </div>
           </div>
         </RollerContext>

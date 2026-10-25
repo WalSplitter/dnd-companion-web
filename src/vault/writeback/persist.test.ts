@@ -1,6 +1,6 @@
 import { load } from 'js-yaml'
 import { describe, expect, it } from 'vitest'
-import { encodeFieldValue, inventoryPatch, rewriteFile, writeEndeavourInventory, writeFieldValue } from './persist'
+import { encodeFieldValue, endeavourInventoryPatch, fieldPatch, inventoryPatch, rewriteFile } from './persist'
 import type { FieldWriteTarget } from '../types'
 
 const fixture = `---
@@ -12,7 +12,7 @@ InputData:
 Body.
 `
 
-/** Minimal fake of the File System Access handle surface `writeFieldValue` uses, so the full
+/** Minimal fake of the File System Access handle surface `rewriteFile` uses, so the full
  * read -> patch -> write pipeline can be exercised without a real browser. */
 function fakeFileHandle(initialContent: string) {
   let content = initialContent
@@ -45,23 +45,23 @@ describe('encodeFieldValue', () => {
   })
 })
 
-describe('writeFieldValue', () => {
+describe('rewriteFile + fieldPatch', () => {
   it('reads, patches, and writes back through the file handle', async () => {
     const { handle, getContent } = fakeFileHandle(fixture)
-    await writeFieldValue(handle, { path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 4)
+    await rewriteFile(handle, fieldPatch({ path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 4))
     expect(getContent()).toContain('  ErschöpfungsPunkte: 4')
     expect(getContent()).toContain('Body.') // rest of the file untouched
   })
 
   it('applies invert-from-max encoding before patching', async () => {
     const { handle, getContent } = fakeFileHandle(fixture)
-    await writeFieldValue(handle, { path: 'x', keyPath: ['InputData', 'Zauberplätze', 'Grad_1'], encode: 'invert-from-max', max: 4 }, 3)
+    await rewriteFile(handle, fieldPatch({ path: 'x', keyPath: ['InputData', 'Zauberplätze', 'Grad_1'], encode: 'invert-from-max', max: 4 }, 3))
     expect(getContent()).toContain('    Grad_1: 1') // 3 used of 4 -> 1 remaining
   })
 
   it('rejects (throws) rather than writing anything when the key path is unrecognized', async () => {
     const { handle, getContent } = fakeFileHandle(fixture)
-    await expect(writeFieldValue(handle, { path: 'x', keyPath: ['DoesNotExist'] }, 1)).rejects.toThrow()
+    await expect(rewriteFile(handle, fieldPatch({ path: 'x', keyPath: ['DoesNotExist'] }, 1))).rejects.toThrow()
     expect(getContent()).toBe(fixture)
   })
 })
@@ -77,12 +77,12 @@ endeavour_inventory:
 Inventar zu [[Dummy]].
 `
 
-describe('writeEndeavourInventory', () => {
+describe('rewriteFile + endeavourInventoryPatch', () => {
   it('reads, patches, and writes back the whole containers array through the file handle', async () => {
     const { handle, getContent } = fakeFileHandle(inventoryFixture)
     const containers = [{ container: '[[Rucksack (Groß)]]', items: [{ link: '[[Fackel]]', charges: 3 }] }]
 
-    await writeEndeavourInventory(handle, containers)
+    await rewriteFile(handle, endeavourInventoryPatch(containers))
 
     const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(getContent())
     const parsed = load(match![1]) as Record<string, unknown>
@@ -122,12 +122,12 @@ describe('inventoryPatch (list inventory)', () => {
   })
 })
 
-describe('writeFieldValue: writes to one file run in order', () => {
+describe('rewriteFile: writes to one file run in order', () => {
   it('keeps both of two concurrent edits to different keys in the same file', async () => {
     const file = fakeFileHandle(fixture)
     await Promise.all([
-      writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 4),
-      writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'Zauberplätze', 'Grad_1'] }, 0),
+      rewriteFile(file.handle, fieldPatch({ path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 4)),
+      rewriteFile(file.handle, fieldPatch({ path: 'x', keyPath: ['InputData', 'Zauberplätze', 'Grad_1'] }, 0)),
     ])
     const data = load(file.getContent().split('---')[1]) as { InputData: { ErschöpfungsPunkte: number; Zauberplätze: { Grad_1: number } } }
     expect(data.InputData.ErschöpfungsPunkte).toBe(4)
@@ -136,8 +136,8 @@ describe('writeFieldValue: writes to one file run in order', () => {
 
   it('still runs later writes after an earlier one fails', async () => {
     const file = fakeFileHandle(fixture)
-    const failed = writeFieldValue(file.handle, { path: 'x', keyPath: ['Missing'] }, 1)
-    const ok = writeFieldValue(file.handle, { path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 5)
+    const failed = rewriteFile(file.handle, fieldPatch({ path: 'x', keyPath: ['Missing'] }, 1))
+    const ok = rewriteFile(file.handle, fieldPatch({ path: 'x', keyPath: ['InputData', 'ErschöpfungsPunkte'] }, 5))
     await expect(failed).rejects.toThrow()
     await ok
     expect(file.getContent()).toContain('ErschöpfungsPunkte: 5')

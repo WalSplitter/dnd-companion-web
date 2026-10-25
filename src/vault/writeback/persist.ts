@@ -144,18 +144,6 @@ export function rewriteFile(fileHandle: FileSystemFileHandle, patch: Frontmatter
   return next
 }
 
-export function writeFieldValue(fileHandle: FileSystemFileHandle, target: FieldWriteTarget, logicalValue: number | boolean): Promise<void> {
-  return rewriteFile(fileHandle, fieldPatch(target, logicalValue))
-}
-
-export function writeEndeavourInventory(fileHandle: FileSystemFileHandle, containers: EndeavourContainerSlotAssignment[]): Promise<void> {
-  return rewriteFile(fileHandle, endeavourInventoryPatch(containers))
-}
-
-export function writeCurrencyBlock(fileHandle: FileSystemFileHandle, currency: Currency): Promise<void> {
-  return rewriteFile(fileHandle, currencyBlockPatch(currency))
-}
-
 /**
  * Where a vault's edits go: straight into a local folder's files, or queued as commits to a GitHub
  * repository. The store talks only to this, so its optimistic-edit/rollback logic is the same for both.

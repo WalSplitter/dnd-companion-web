@@ -159,11 +159,6 @@ function findSpellSource(characterFileName: string, files: RawFile[]): RawFile |
   return backlinksTo(files, characterFileName).find((f) => Array.isArray(f.data.Zauber) || isRecord(f.data.Zauberplätze))
 }
 
-function firstRecord(...candidates: unknown[]): Record<string, unknown> {
-  for (const candidate of candidates) if (isRecord(candidate)) return candidate
-  return {}
-}
-
 /**
  * Known spells: `Zauber` holds the freely-known spell list, `Pakt_des_Buches` is a warlock-specific
  * always-prepared list also worth surfacing. Both may live on the character file itself or on a
@@ -194,34 +189,45 @@ function resolveSpellsKnown(characterData: Record<string, unknown>, spellSheet: 
   return known.length > 0 ? known : undefined
 }
 
+/** Where a character's remaining spell slots are kept: the record, its file and its key path. */
+interface SpellSlotSource {
+  record: Record<string, unknown>
+  path: string
+  prefix: string[]
+}
+
+/**
+ * The *current remaining* spell slots per grade (an Obsidian INPUT bound to a manual counter, not
+ * `used`) have moved around over the vault's history — as `Zauberplätze.Grad_{n}` directly,
+ * sometimes nested under `InputData`, and on either the character file itself or a linked spell
+ * sheet — so the first of these locations that holds a record wins. Reading the slots and writing
+ * them back both go by it, so an edit lands where the value came from.
+ */
+function spellSlotSource(characterPath: string, characterData: Record<string, unknown>, spellSheet: RawFile | undefined): SpellSlotSource | undefined {
+  const characterInputData = isRecord(characterData.InputData) ? characterData.InputData : undefined
+  const spellSheetInputData = isRecord(spellSheet?.data.InputData) ? spellSheet.data.InputData : undefined
+  const candidates: { record: unknown; path: string; prefix: string[] }[] = [
+    { record: characterInputData?.Zauberplätze, path: characterPath, prefix: ['InputData', 'Zauberplätze'] },
+    { record: characterData.Zauberplätze, path: characterPath, prefix: ['Zauberplätze'] },
+    { record: spellSheet?.data.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['Zauberplätze'] },
+    { record: spellSheetInputData?.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['InputData', 'Zauberplätze'] },
+  ]
+  for (const { record, path, prefix } of candidates) if (isRecord(record)) return { record, path, prefix }
+  return undefined
+}
+
 /**
  * Spell slots aren't stored on the character: the class file's `Zauberplätze.Stufe{level}` table
- * holds the max per grade for that level. The *current remaining* count per grade (an Obsidian
- * INPUT bound to a manual counter, not `used`) has moved around over the vault's history — as
- * `Zauberplätze.Grad_{n}` directly, sometimes nested under `InputData`, and on either the character
- * file itself or a linked spell sheet — so every location is checked, in that order.
+ * holds the max per grade for that level; how many are left comes from `spellSlotSource`.
  */
-function resolveSpellcasting(
-  className: string,
-  level: number,
-  characterData: Record<string, unknown>,
-  spellSheet: RawFile | undefined,
-  files: RawFile[],
-): SpellcastingInfo | undefined {
+function resolveSpellcasting(className: string, level: number, source: SpellSlotSource | undefined, files: RawFile[]): SpellcastingInfo | undefined {
   const classFile = findRawFileByName(files, className)
   const ability = ABILITY_MAP[linkFile(classFile?.data.Zauberattribut)]
   if (!ability) return undefined
 
   const classSlots = isRecord(classFile?.data.Zauberplätze) ? classFile.data.Zauberplätze[`Stufe${level}`] : undefined
 
-  const characterInputData = isRecord(characterData.InputData) ? characterData.InputData : undefined
-  const spellSheetInputData = isRecord(spellSheet?.data.InputData) ? spellSheet.data.InputData : undefined
-  const current = firstRecord(
-    characterInputData?.Zauberplätze,
-    characterData.Zauberplätze,
-    spellSheet?.data.Zauberplätze,
-    spellSheetInputData?.Zauberplätze,
-  )
+  const current = source?.record ?? {}
 
   const slots: Record<string, SpellSlotInfo> = {}
   if (isRecord(classSlots)) {
@@ -237,35 +243,17 @@ function resolveSpellcasting(
   return { ability, slots: Object.keys(slots).length > 0 ? slots : undefined }
 }
 
-/**
- * Mirrors `resolveSpellcasting`'s exact same candidate lookup order, but instead of the *value* it
- * records exactly which file + key path that value actually came from, so an edit in the app writes
- * back to the same place it was read from rather than guessing. Returns `undefined` for a grade
- * whose remaining-count field doesn't exist on disk at all (nothing to write back to yet).
- */
+/** Write targets of the spell slots, where `spellSlotSource` read them from — none while no such
+ * location exists on disk yet (nothing to write back to). */
 function resolveSpellSlotWriteTargets(
-  characterPath: string,
-  characterData: Record<string, unknown>,
-  spellSheet: RawFile | undefined,
+  source: SpellSlotSource | undefined,
   slots: Record<string, SpellSlotInfo> | undefined,
 ): Record<string, FieldWriteTarget> | undefined {
-  if (!slots || Object.keys(slots).length === 0) return undefined
-
-  const characterInputData = isRecord(characterData.InputData) ? characterData.InputData : undefined
-  const spellSheetInputData = isRecord(spellSheet?.data.InputData) ? spellSheet.data.InputData : undefined
-
-  const candidates: { record: unknown; path: string; prefix: string[] }[] = [
-    { record: characterInputData?.Zauberplätze, path: characterPath, prefix: ['InputData', 'Zauberplätze'] },
-    { record: characterData.Zauberplätze, path: characterPath, prefix: ['Zauberplätze'] },
-    { record: spellSheet?.data.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['Zauberplätze'] },
-    { record: spellSheetInputData?.Zauberplätze, path: spellSheet?.path ?? '', prefix: ['InputData', 'Zauberplätze'] },
-  ]
-  const chosen = candidates.find((c) => isRecord(c.record))
-  if (!chosen) return undefined
+  if (!source || !slots || Object.keys(slots).length === 0) return undefined
 
   const targets: Record<string, FieldWriteTarget> = {}
   for (const [grade, info] of Object.entries(slots)) {
-    targets[grade] = { path: chosen.path, keyPath: [...chosen.prefix, `Grad_${grade}`], encode: 'invert-from-max', max: info.max }
+    targets[grade] = { path: source.path, keyPath: [...source.prefix, `Grad_${grade}`], encode: 'invert-from-max', max: info.max }
   }
   return targets
 }
@@ -376,16 +364,18 @@ function hasWeaponTag(tags: unknown, needle: string): boolean {
 }
 
 /** `Eigenschaften`/`EigenschaftenFern` entries are wikilinks, sometimes with trailing notes, e.g.
- * `"[[Vielseitig]] (\`dice: 1d10|none|noform\`)"` — only the link target is checked here. */
+ * `"[[Vielseitig]] (\`dice: 1d10|none|noform\`)"` — only the link itself counts. */
+const propertyLink = (property: string) => property.match(/\[\[[^\]]+\]\]/)?.[0] ?? property
+
 function hasWeaponProperty(properties: unknown, name: string): boolean {
   if (!Array.isArray(properties)) return false
   const target = name.toLowerCase()
-  return properties.some((p) => typeof p === 'string' && linkFile(p.match(/\[\[[^\]]+\]\]/)?.[0] ?? p).toLowerCase() === target)
+  return properties.some((p) => typeof p === 'string' && linkFile(propertyLink(p)).toLowerCase() === target)
 }
 
 function weaponPropertyLabels(properties: unknown): string[] | undefined {
   if (!Array.isArray(properties)) return undefined
-  const labels = properties.filter((p): p is string => typeof p === 'string').map((p) => linkDisplay(p.match(/\[\[[^\]]+\]\]/)?.[0] ?? p))
+  const labels = properties.filter((p): p is string => typeof p === 'string').map((p) => linkDisplay(propertyLink(p)))
   return labels.length > 0 ? labels : undefined
 }
 
@@ -498,33 +488,26 @@ export function normalizeLegacyCharacter(
 
   const inventoryFile = findLinkedSheet(file.name, allFiles, 'inventar')
   const inventarSections = isRecord(inventoryFile?.data.Inventar) ? inventoryFile.data.Inventar : undefined
-  const equipped = inventoryFile
-    ? extractItemTable(
-        inventoryFile.body,
-        'Am Körper',
-        isRecord(inventarSections?.Körper) ? inventarSections.Körper : undefined,
-        { path: inventoryFile.path, keyPath: ['Inventar', 'Körper'] },
-      )
-    : undefined
-  const carried = inventoryFile
-    ? extractItemTable(
-        inventoryFile.body,
-        'Rucksack',
-        isRecord(inventarSections?.Rucksack) ? inventarSections.Rucksack : undefined,
-        { path: inventoryFile.path, keyPath: ['Inventar', 'Rucksack'] },
-      )
-    : undefined
+  // The sheet's "Am Körper"/"Rucksack" tables, quantities kept under `Inventar.Körper`/`.Rucksack`.
+  const itemTable = (heading: string, key: string) => {
+    if (!inventoryFile) return undefined
+    const section = inventarSections?.[key]
+    return extractItemTable(inventoryFile.body, heading, isRecord(section) ? section : undefined, { path: inventoryFile.path, keyPath: ['Inventar', key] })
+  }
+  const equipped = itemTable('Am Körper', 'Körper')
+  const carried = itemTable('Rucksack', 'Rucksack')
   const currency = inventoryFile ? resolveCurrency(inventoryFile.data.Geld) : undefined
 
   const spellSheetFile = findSpellSource(file.name, allFiles)
-  const spellcasting = resolveSpellcasting(className, level, data, spellSheetFile, allFiles)
+  const slotSource = spellSlotSource(file.path, data, spellSheetFile)
+  const spellcasting = resolveSpellcasting(className, level, slotSource, allFiles)
   const spellsKnown = resolveSpellsKnown(data, spellSheetFile)
   const conditions = resolveConditions(data)
   const resourcePools = resolveResourcePools(className, level, data, allFiles)
   const attacks = resolveWeaponAttacks(data.Waffen, allFiles, abilities, proficiencyBonus)
 
   const conditionTargets = resolveConditionWriteTargets(file.path, conditions)
-  const spellSlotTargets = resolveSpellSlotWriteTargets(file.path, data, spellSheetFile, spellcasting?.slots)
+  const spellSlotTargets = resolveSpellSlotWriteTargets(slotSource, spellcasting?.slots)
   const journal = resolveJournal(file, allFiles)
   const writeTargets: CharacterWriteTargets = {
     journal: journal.target,

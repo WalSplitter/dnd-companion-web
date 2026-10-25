@@ -112,7 +112,8 @@ export const useQuestStore = create<QuestState>()(
       noteCharacter: (name) => set({ lastCharacter: name }),
       openLog: (section = 'quests') => set({ log: section }),
       closeLog: () => set({ log: null }),
-      reset: () => set({ ...INITIAL, experience: get().experience, active: null, notice: null }),
+      // The welcome answer stays, and with it the runes a newcomer gets (see `setExperience`).
+      reset: () => set({ ...INITIAL, experience: get().experience, learnMode: get().experience === 'new', active: null, notice: null }),
     }),
     {
       name: 'dnd-companion-quests',

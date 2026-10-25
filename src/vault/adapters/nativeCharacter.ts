@@ -10,10 +10,12 @@ import type {
   CharacterRuleset,
   CharacterWriteTargets,
   ClassResource,
+  EndeavourInventoryEntry,
   EquipmentChange,
   FeatureCost,
   FeatureUsage,
   FieldWriteTarget,
+  InventoryEntry,
   LevelPoolPart,
   NimbleAttributeKey,
 } from '../types'
@@ -93,6 +95,66 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
   return source && mana && typeof mana.max === 'number' ? { path: source.path, keyPath: ['spellcasting', 'mana', 'current'], createIfMissing: true } : undefined
 }
 
+/** A count as written by hand: a number, or digits typed as text (`"3"`). */
+function countOf(raw: unknown): number | undefined {
+  const n = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : raw
+  return typeof n === 'number' && Number.isFinite(n) ? n : undefined
+}
+
+/** A list entry nothing can be made of: a blank `-` line, a number, `true`. */
+const isJunk = (raw: unknown) => (typeof raw === 'string' ? raw.trim() === '' : !isRecord(raw))
+
+/**
+ * One `items:` entry in a shape the grid can show — a wikilink, a `{ link, charges }` stack or a
+ * `{ name, plaetze }` temporary item. The grid writes the whole list back, so a hand-written entry
+ * is repaired rather than dropped, its other keys kept: a stack without a readable `charges` holds
+ * one, an object that is neither becomes a temporary item called "?" for the player to fix.
+ */
+function parseInventoryEntry(raw: Record<string, unknown> | string): EndeavourInventoryEntry {
+  if (typeof raw === 'string') return raw
+  if (typeof raw.link === 'string') return { ...raw, link: raw.link, charges: countOf(raw.charges) ?? 1 }
+  return { ...raw, name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : String(raw.name ?? '?'), plaetze: countOf(raw.plaetze) ?? 1 }
+}
+
+/** `raw` as a list: a single entry written without `-` counts as a list of one. */
+const asList = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw])
+
+/**
+ * `endeavour_inventory` in the shape the grid relies on, since the note may have been edited by hand
+ * (see `parseInventoryEntry`). Only entries nothing can be made of are left out. A container keeps
+ * its other keys, and one whose link is missing is kept with none, so its items still show — as
+ * overflow — and survive the next save.
+ */
+export function parseEndeavourInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['endeavour_inventory'] {
+  if (!record) return undefined
+  return {
+    ...record,
+    containers: asList(record.containers)
+      .filter(isRecord)
+      .map((c) => ({
+        ...c,
+        container: typeof c.container === 'string' ? c.container : '',
+        items: asList(c.items).flatMap((raw) => (isJunk(raw) ? [] : [parseInventoryEntry(raw as Record<string, unknown> | string)])),
+      })),
+  }
+}
+
+/** The list inventory's `equipped`/`carried` as lists of wikilinks and `{ name, … }` items, repaired
+ * like the grid's entries (an item without a name is called "?"); the block's other keys are kept. */
+export function parseListInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['inventory'] {
+  if (!record) return undefined
+  const section = (raw: unknown): InventoryEntry[] | undefined => {
+    if (raw === undefined) return undefined
+    return asList(raw).flatMap((e): InventoryEntry[] => {
+      if (isJunk(e)) return []
+      if (typeof e === 'string') return [e]
+      const item = e as Record<string, unknown>
+      return [{ ...item, name: typeof item.name === 'string' && item.name.trim() ? item.name : String(item.name ?? '?') }]
+    })
+  }
+  return { ...record, equipped: section(record.equipped), carried: section(record.carried) }
+}
+
 /**
  * Like the legacy vault's `Inventar <Name>.md` convention, a character's `endeavour_inventory`,
  * `inventory`, `currency`, `spellcasting` and `spells_known` may live on separate notes that link back via
@@ -119,11 +181,12 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
 
   return {
     values: {
-      endeavour_inventory: inventory?.record as CharacterFrontmatter['endeavour_inventory'],
-      inventory: listInventory?.record as CharacterFrontmatter['inventory'],
+      endeavour_inventory: parseEndeavourInventory(inventory?.record),
+      inventory: parseListInventory(listInventory?.record),
       currency: currency?.record as CharacterFrontmatter['currency'],
       spellcasting: spellcasting?.record as unknown as CharacterFrontmatter['spellcasting'],
-      spells_known: spellsKnown as CharacterFrontmatter['spells_known'],
+      // An empty `-` line in the list is no spell.
+      spells_known: Array.isArray(spellsKnown) ? spellsKnown.filter((s): s is string => typeof s === 'string' && s.trim() !== '') : undefined,
     },
     writeTargets: {
       ...(inventory ? { endeavour_inventory: { path: inventory.path } } : {}),
@@ -227,17 +290,22 @@ function resolveClassProficiencies(notes: RawFile[]): CharacterFrontmatter['clas
   return weapons.length > 0 || armor.length > 0 ? { weapons, armor } : undefined
 }
 
+/** The value of the first of `keys` that is set at all (an English key or its German names). */
+function firstSet(data: Record<string, unknown>, keys: string[]): unknown {
+  return keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+}
+
 /** The first of `keys` holding a non-empty wikilink: the worn armor is `armor:` or `Rüstung:` (as on
  * the old sheet's `Verteidigung.Rüstung`), the shield `shield:` or `Schild:`. */
 function linkField(data: Record<string, unknown>, ...keys: string[]): string | undefined {
-  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const raw = firstSet(data, keys)
   return typeof raw === 'string' && raw.trim() ? raw : undefined
 }
 
 /** The first of `keys` holding a list: its non-empty wikilinks (a single wikilink counts as a list
  * of one). `undefined` when there are none. */
 function linkList(data: Record<string, unknown>, ...keys: string[]): string[] | undefined {
-  const raw = keys.map((key) => data[key]).find((value) => value !== undefined && value !== null)
+  const raw = firstSet(data, keys)
   const list = (Array.isArray(raw) ? raw : [raw]).filter((v): v is string => typeof v === 'string' && v.trim() !== '')
   return list.length > 0 ? list : undefined
 }
@@ -400,6 +468,8 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
   return typeof value === 'number' ? value : undefined
 }
 
+type LevelPool = { max: number; parts: LevelPoolPart[] }
+
 /**
  * Nimble has no hit dice. Per the class notes (`embed Klasse`): at level 1 a class grants
  * `(BasisTP + KO) × 2` TP and every level up `BasisTP + KO`, i.e. `(level + 1) × (BasisTP + KO)` in
@@ -416,8 +486,6 @@ function numberFrom(files: RawFile[], noteName: string, field: string): number |
  * (3) multiclassing follows D&D 5e 2024 and Nimble: only the starting class grants the doubled
  * level 1, a class taken later counts like a level up.
  */
-type LevelPool = { max: number; parts: LevelPoolPart[] }
-
 function resolveLevelPools(character: CharacterFrontmatter, files: RawFile[]): { hp?: LevelPool; resilience?: LevelPool } {
   if (!isEndeavour(character) || !Array.isArray(character.class) || character.class.length === 0) return {}
   const perLevelBonus = { hp: nimbleAttributeValue(character, 'ko'), resilience: Math.floor(nimbleAttributeValue(character, 'en') / 2) }

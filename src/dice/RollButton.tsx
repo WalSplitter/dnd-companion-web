@@ -71,6 +71,8 @@ export function D20RollButton({
     e.stopPropagation()
     const log = useRollLogStore.getState()
     const forced = e.shiftKey || e.altKey
+    // The player chose the mode (Shift/Alt, or armed in the roll log) — not just the class's own save mode.
+    const chosen = forced || log.armedMode !== 'normal'
     const mode = resolveRollMode({ shift: e.shiftKey, alt: e.altKey, armed: log.armedMode, base: defaultMode })
     // An armed mode is for one roll; Shift/Alt override it without using it up.
     if (!forced && log.armedMode !== 'normal') log.setArmedMode('normal')
@@ -91,7 +93,7 @@ export function D20RollButton({
       effect: effectText,
     })
     reportQuestAction('roll')
-    if (result.mode !== 'normal') reportQuestAction('roll-mode')
+    if (chosen && result.mode !== 'normal') reportQuestAction('roll-mode')
     share?.({
       kind: attack ? 'attack' : 'd20',
       label,

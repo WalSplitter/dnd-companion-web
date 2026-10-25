@@ -82,11 +82,10 @@ function useQuestReporting() {
       }),
     [],
   )
-  // Gear and journal changes, by the store writer that made them.
+  // A new journal entry, by the store writer that made it (gear is reported where it's equipped).
   useEffect(
     () =>
       onCharacterEdit((_path, character, edit) => {
-        if (edit?.source === 'vault.setEquipment' || edit?.source === 'vault.setInventory') reportQuestAction('equip')
         if (edit?.source === 'vault.setJournal' && (character.journal?.length ?? 0) > (edit.previous?.journal?.length ?? 0)) reportQuestAction('journal')
       }),
     [],
@@ -121,8 +120,12 @@ function useQuestReporting() {
   )
 }
 
-/** What a chronicle quest says instead of its tour in a vault without a history. */
-const NO_HISTORY_STEP: QuestStep = { text: 'quest.storiesChronicle.noHistory' }
+/** What a quest says instead of its tour when what it `needs` isn't there: no chronicle in the vault,
+ * no spellcaster on the sheet. */
+const UNMET_STEP: Record<NonNullable<Quest['needs']>, QuestStep> = {
+  history: { text: 'quest.storiesChronicle.noHistory' },
+  spells: { text: 'quest.gearCast.noCaster' },
+}
 
 /** The running tour step: fog, Splitter's shard at the target, the dialogue with its portrait. */
 function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
@@ -130,15 +133,18 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
   const startQuest = useStartQuest()
   const inSample = useVaultStore((s) => s.source === 'sample')
   const hasChronicle = useHasChronicle()
-  // Without a chronicle to show, its quest shrinks to one step that explains it and offers the arena.
-  const noHistory = quest.needs === 'history' && !hasChronicle
-  const step = noHistory ? NO_HISTORY_STEP : quest.steps[stepIndex]
-  const total = noHistory ? 1 : quest.steps.length
+  const sheetName = characterNameFromPath(useLocation().pathname)
+  const casts = useVaultStore((s) => Boolean(s.vault.characters.find((c) => c.frontmatter.name === sheetName)?.frontmatter.spellcasting))
+  // Without what it needs (`useStartQuest` found no sheet that fits), the quest shrinks to one step
+  // that explains it and offers the arena.
+  const unmet = (quest.needs === 'history' && !hasChronicle) || (quest.needs === 'spells' && !casts)
+  const step = unmet && quest.needs ? UNMET_STEP[quest.needs] : quest.steps[stepIndex]
+  const total = unmet ? 1 : quest.steps.length
   const box = useTourTarget(step.target)
   const blocked = practiceBlocked(quest) && step.until !== undefined && step.until !== 'click'
   const until = blocked ? undefined : step.until
-  const last = noHistory || stepIndex === total - 1
-  const advance = noHistory ? finishActiveQuest : advanceTour
+  const last = unmet || stepIndex === total - 1
+  const advance = unmet ? finishActiveQuest : advanceTour
 
   // While a tour runs, the page's popovers (roll log, rest menu, tooltips) stay above the fog (see
   // `html.quest-touring` in onboarding.css).
@@ -172,8 +178,8 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
   }, [until, step.target])
 
   const actions: BubbleAction[] = []
-  if (stepIndex > 0 && !noHistory) actions.push({ label: t('quest.back'), onClick: () => useQuestStore.getState().goToStep(stepIndex - 1) })
-  if (blocked || noHistory) {
+  if (stepIndex > 0 && !unmet) actions.push({ label: t('quest.back'), onClick: () => useQuestStore.getState().goToStep(stepIndex - 1) })
+  if (blocked || unmet) {
     actions.push({
       label: t('quest.toArena'),
       onClick: () =>
@@ -199,7 +205,7 @@ function TourStep({ quest, stepIndex }: { quest: Quest; stepIndex: number }) {
         box={box}
         heading={`${quest.icon} ${t(quest.title)}`}
         text={t(step.touchText && cannotHover() ? step.touchText : step.text)}
-        step={{ index: noHistory ? 0 : stepIndex, total }}
+        step={{ index: unmet ? 0 : stepIndex, total }}
         waiting={until === 'click' ? t('quest.clickTarget') : until ? t('quest.yourTurn') : undefined}
         footnote={blocked ? t('quest.practiceHint') : step.sampleNote && inSample ? t(step.sampleNote) : undefined}
         actions={actions}

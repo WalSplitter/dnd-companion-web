@@ -13,8 +13,6 @@ export type InventorySection = 'equipped' | 'carried'
 
 export type ListInventory = NonNullable<CharacterFrontmatter['inventory']>
 
-export const INVENTORY_SECTIONS: readonly InventorySection[] = ['equipped', 'carried']
-
 export function otherSection(section: InventorySection): InventorySection {
   return section === 'equipped' ? 'carried' : 'equipped'
 }

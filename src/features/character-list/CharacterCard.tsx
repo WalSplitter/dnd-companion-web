@@ -2,13 +2,13 @@ import { useId, type ReactNode } from 'react'
 import { D20Modifier, ExhaustedValue } from '../../components/ExhaustedValue'
 import { D20PenaltyContext } from '../../dice/d20Penalty'
 import { useT } from '../../i18n/useI18n'
-import { characterSkillBonus, classSummary, exhaustionD20Penalty, exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../rules/deriveStats'
+import { characterSkillBonus, classSummary, exhaustionD20Penalty, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../rules/deriveStats'
 import { abilityModifier, skillProficiencyLevel } from '../../rules/dnd5e'
 import { evasionValue, nimbleAttributeValue, nimbleSkillValue } from '../../rules/endeavour'
 import { isEndeavour } from '../../rules/ruleset'
 import { ABILITIES, NIMBLE_ATTRIBUTES, SKILLS, type CharacterFrontmatter, type SkillKey } from '../../vault/types'
 import { characterFate } from '../../rules/vitals'
-import { movementHint } from '../../components/vitalsDisplay'
+import { movementHint, movementReduced } from '../../components/vitalsDisplay'
 import { CrystalGradient, SlotCrystal } from '../../components/SlotCrystal'
 import { FallenSeal, LifeForce, Portrait, VitalStatus } from './CharacterParts'
 
@@ -66,7 +66,7 @@ function HeadlineStats({ character: c, className = '' }: { character: CharacterF
       </StatTile>
       {squares !== undefined ? (
         <StatTile label={t('short.movement')} title={movementHint(t, c, squares)}>
-          {exhaustionLevel(c) > 0 ? <ExhaustedValue>{squares}</ExhaustedValue> : squares}
+          {movementReduced(c) ? <ExhaustedValue>{squares}</ExhaustedValue> : squares}
         </StatTile>
       ) : (
         <StatTile label={t('short.speed')} title={t('stats.speed')}>

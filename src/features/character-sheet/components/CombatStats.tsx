@@ -5,13 +5,13 @@ import type { D20RollResult } from '../../../dice/notation'
 import { D20RollButton } from '../../../dice/RollButton'
 import { ShieldIcon } from '../../inventory/components/equipmentIcons'
 import { useT, type TranslateFn } from '../../../i18n/useI18n'
-import { exhaustionLevel, formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../../rules/deriveStats'
+import { formatModifier, initiativeBonus, movementSquares, proficiencyBonus } from '../../../rules/deriveStats'
 import { initiativeDerivation, nimbleAttributeTerm, type DerivationTerm } from '../../../rules/derivation'
 import { initiativeActionPoints, nimbleAttributeValue, nimbleInitiative } from '../../../rules/endeavour'
 import { isEndeavour } from '../../../rules/ruleset'
 import type { CharacterFrontmatter } from '../../../vault/types'
 import { wikilinkTarget } from '../../../vault/wikilinkSyntax'
-import { movementHint } from '../../../components/vitalsDisplay'
+import { movementHint, movementReduced } from '../../../components/vitalsDisplay'
 import { Rune } from '../../../onboarding/Rune'
 
 /**
@@ -166,7 +166,7 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
   const t = useT()
   const nimble = nimbleInitiative(character)
   const squares = movementSquares(character)
-  const exhaustion = exhaustionLevel(character)
+  const slowed = movementReduced(character)
   return (
     <div className="flex gap-2 *:flex-1">
       {nimble ? (
@@ -199,8 +199,8 @@ export function CombatStats({ character }: { character: CharacterFrontmatter }) 
       {squares === undefined ? (
         <StatPlate label={t('stats.speed')} value={character.speed} />
       ) : (
-        <StatPlate label={t('stats.movement')} value={exhaustion > 0 ? undefined : String(squares)} title={movementHint(t, character, squares)}>
-          {exhaustion > 0 ? <ExhaustedValue className="is-loud">{squares}</ExhaustedValue> : undefined}
+        <StatPlate label={t('stats.movement')} value={slowed ? undefined : String(squares)} title={movementHint(t, character, squares)}>
+          {slowed ? <ExhaustedValue className="is-loud">{squares}</ExhaustedValue> : undefined}
         </StatPlate>
       )}
       {/* Endeavour has no proficiency bonus at all (#9); its evasion value sits by the armor class instead. */}
