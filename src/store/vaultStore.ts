@@ -30,7 +30,7 @@ import {
   showVaultDirectoryPicker,
 } from '../vault/vaultLoader'
 import { buildVaultIndex, type VaultIndex } from '../vault/wikilinks'
-import { campaignDmPatch, conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type VaultWriter } from '../vault/writeback/persist'
+import { campaignDmPatch, conditionsPatch, currencyBlockPatch, endeavourInventoryPatch, equipmentPatches, fieldPatch, folderWriter, inventoryPatch, journalPatch, sandboxWriter, type FrontmatterPatch, type VaultWriter, type WriteContext } from '../vault/writeback/persist'
 import { readStored, writeStored } from '../utils/storage'
 import type { TranslationKey } from '../i18n/useI18n'
 import type { CampaignJournal, CharacterFrontmatter, Currency, EndeavourContainerSlotAssignment, EquipmentChange, FieldWriteTarget, ImageAssets, JournalEntry, Vault, VaultSourceFile } from '../vault/types'
@@ -255,6 +255,16 @@ function characterContext(vault: Vault, characterPath: string) {
 /** Returns `vault` with `mutate` applied to one character's frontmatter. */
 function mapCharacter(vault: Vault, characterPath: string, mutate: (character: CharacterFrontmatter) => CharacterFrontmatter): Vault {
   return { ...vault, characters: vault.characters.map((c) => (c.path === characterPath ? { ...c, frontmatter: mutate(c.frontmatter) } : c)) }
+}
+
+/**
+ * Writes `patch` to the note at `target.path`, first creating it when `target.create` says it doesn't
+ * exist yet. `create` stays on the target: every writer keeps a note that already exists, so asking
+ * again is free — and a failed first save can't lose the instruction to create it.
+ */
+async function createAndWrite(writer: VaultWriter, target: { path: string; create?: string }, patch: FrontmatterPatch, context: WriteContext) {
+  if (target.create) await writer.create(target.path, target.create, context)
+  await writer.write(target.path, patch, context)
 }
 
 /** The GitHub vault's reader, write-back queue and blob cache — only downloaded once a repository is opened. */
@@ -688,15 +698,17 @@ export const useVaultStore = create<VaultState>((set, get) => {
       const sync = activeSync
       if (sync && get().writer === sync) {
         const { ref } = sync.source
+        // The answer belongs to this repository: another vault opened meanwhile keeps its own permission.
         try {
           const canPush = await sync.canPush()
-          set({ editPermission: canPush ? 'granted' : 'denied' })
           void saveCanPush(ref, canPush).catch(() => {})
+          if (activeSync === sync) set({ editPermission: canPush ? 'granted' : 'denied' })
         } catch (err) {
           // Offline, the last answer stands: edits queue up and are committed once GitHub is back.
           const known = err instanceof GitHubError && err.kind === 'network' ? await loadCanPush(ref) : undefined
+          if (activeSync !== sync) return
           if (known !== undefined) {
-            if (activeSync === sync) set({ editPermission: known ? 'granted' : 'denied' })
+            set({ editPermission: known ? 'granted' : 'denied' })
             return
           }
           console.error('[vault] checking push access failed:', err)
@@ -709,10 +721,10 @@ export const useVaultStore = create<VaultState>((set, get) => {
       if (!rootHandle) return
       try {
         const result = await rootHandle.requestPermission({ mode: 'readwrite' })
-        set({ editPermission: result === 'granted' ? 'granted' : 'denied' })
+        if (get().rootHandle === rootHandle) set({ editPermission: result === 'granted' ? 'granted' : 'denied' })
       } catch (err) {
         console.error('[vault] requestEditPermission failed:', err)
-        set({ editPermission: 'denied' })
+        if (get().rootHandle === rootHandle) set({ editPermission: 'denied' })
       }
     },
 
@@ -872,12 +884,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
       await editCharacter(
         characterPath,
         (c) => ({ ...c, journal }),
-        async () => {
-          // `create` stays on the write target: every writer keeps a note that already exists, so
-          // asking again is free — and a failed first save can't lose the instruction to create it.
-          if (target.create) await writer.create(target.path, target.create, context)
-          await writer.write(target.path, journalPatch(journal), context)
-        },
+        () => createAndWrite(writer, target, journalPatch(journal), context),
         {
           source: 'vault.setJournal',
           context: { characterPath, writePath: target.path, entries: journal.length },
@@ -893,11 +900,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
       await editCampaign(
         (c) => ({ ...c, entries }),
-        async () => {
-          // `create` stays on the campaign, as on a character's journal target: asking again is free.
-          if (campaign.create) await writer.create(campaign.path, campaign.create, CAMPAIGN_CONTEXT)
-          await writer.write(campaign.path, journalPatch(entries), CAMPAIGN_CONTEXT)
-        },
+        () => createAndWrite(writer, campaign, journalPatch(entries), CAMPAIGN_CONTEXT),
         {
           source: 'vault.setCampaignJournal',
           context: { writePath: campaign.path, entries: entries.length },
@@ -914,10 +917,7 @@ export const useVaultStore = create<VaultState>((set, get) => {
 
       await editCampaign(
         (c) => ({ ...c, dms }),
-        async () => {
-          if (campaign.create) await writer.create(campaign.path, campaign.create, CAMPAIGN_CONTEXT)
-          await writer.write(campaign.path, campaignDmPatch(dms), CAMPAIGN_CONTEXT)
-        },
+        () => createAndWrite(writer, campaign, campaignDmPatch(dms), CAMPAIGN_CONTEXT),
         { source: 'vault.claimCampaign', context: { writePath: campaign.path, login: githubLogin }, retry: () => void get().claimCampaign() },
       )
     },

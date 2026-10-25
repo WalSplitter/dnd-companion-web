@@ -25,6 +25,9 @@ function tickBackground(count: number): string {
   return `repeating-linear-gradient(90deg, transparent 0, transparent calc(${step} - 1px), rgb(0 0 0 / 0.32) calc(${step} - 1px), rgb(0 0 0 / 0.32) ${step})`
 }
 
+/** Tick count for a pool bar: one per point up to 30, every 10 % beyond. */
+const poolTicks = (max: number) => (max > 0 && max <= 30 ? max : 10)
+
 /**
  * The bar itself is the slider, not a separate control underneath it. A fully transparent native
  * `<input type="range">`, sized for a comfortable drag/touch target, sits on top of the visual bar
@@ -56,6 +59,12 @@ function BarSlider({
     if (value !== current) onCommit(value)
   }
 
+  // The browser took the touch over (a swipe that became a scroll): not a deliberate change.
+  function cancelDrag() {
+    setDragging(false)
+    setValue(current)
+  }
+
   return (
     <div className={`relative ${heightClass}`}>
       {children(pct)}
@@ -75,9 +84,10 @@ function BarSlider({
         onChange={(e) => setValue(Number(e.target.value))}
         onPointerDown={() => setDragging(true)}
         onPointerUp={endDrag}
+        onPointerCancel={cancelDrag}
         onKeyDown={() => setDragging(true)}
         onKeyUp={endDrag}
-        onBlur={() => setDragging(false)}
+        onBlur={() => dragging && endDrag()}
         className="absolute inset-x-0 -top-1 h-[calc(100%+0.5rem)] w-full cursor-pointer opacity-0"
         aria-label={ariaLabel}
       />
@@ -368,7 +378,7 @@ export function HitPoints({
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'rp-fill'}
-              ticks={resilience.max > 0 && resilience.max <= 30 ? resilience.max : 10}
+              ticks={poolTicks(resilience.max)}
               warded={warded}
               hitKey={wardHitKey}
               maxHint={resilienceMaxHint}
@@ -411,7 +421,7 @@ export function HitPoints({
               numberClass="text-lg"
               heightClass="h-2.5"
               fillClass={() => 'mana-fill'}
-              ticks={mana.max > 0 && mana.max <= 30 ? mana.max : 10}
+              ticks={poolTicks(mana.max)}
             />
           )}
           {(character.class_resources ?? []).map((resource) => {
@@ -428,7 +438,7 @@ export function HitPoints({
                 numberClass="text-lg"
                 heightClass="h-2.5"
                 fillClass={() => 'ki-fill'}
-                ticks={resource.max > 0 && resource.max <= 30 ? resource.max : 10}
+                ticks={poolTicks(resource.max)}
               />
             )
           })}
@@ -479,7 +489,6 @@ export function HitPoints({
                 }
               />
             )}
-
           </div>
         )}
       </div>

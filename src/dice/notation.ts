@@ -1,24 +1,3 @@
-export interface DiceNotation {
-  count: number
-  sides: number
-  modifier: number
-}
-
-// Accepts the vault's own two dice-notation conventions: English "1d8"/"2d6+3" (used in
-// weapon/spell damage fields) and German "1W6" (used for hit dice), count optional (defaults to 1).
-const DICE_RE = /^(\d*)[dw](\d+)\s*([+-]\s*\d+)?$/i
-
-export function parseDiceNotation(raw: string): DiceNotation | undefined {
-  const match = DICE_RE.exec(raw.trim())
-  if (!match) return undefined
-  const [, countRaw, sidesRaw, modifierRaw] = match
-  return {
-    count: countRaw ? Number(countRaw) : 1,
-    sides: Number(sidesRaw),
-    modifier: modifierRaw ? Number(modifierRaw.replace(/\s+/g, '')) : 0,
-  }
-}
-
 function rollOne(sides: number): number {
   return 1 + Math.floor(Math.random() * sides)
 }
@@ -28,13 +7,6 @@ export interface DiceRollResult {
   rolls: number[]
   modifier: number
   total: number
-}
-
-export function rollDice(raw: string): DiceRollResult | undefined {
-  const parsed = parseDiceNotation(raw)
-  if (!parsed) return undefined
-  const rolls = Array.from({ length: parsed.count }, () => rollOne(parsed.sides))
-  return { notation: raw, rolls, modifier: parsed.modifier, total: rolls.reduce((sum, r) => sum + r, 0) + parsed.modifier }
 }
 
 /** A sum of dice groups and flat numbers, e.g. `4d12+1d12+10` or `2d20-1`. */
@@ -47,14 +19,16 @@ const TERM_RE = /^([+-])(?:(\d*)[dw](\d+)|(\d+))$/i
 
 /**
  * Parses a formula with any number of `+`/`−` separated terms (Nimble spells stack dice: a tier 4
- * spell upcast twice is `5d12+1d12+1d12`). Same dice conventions as `parseDiceNotation`. A
- * subtracted dice group isn't supported (no spell does that) and fails the parse.
+ * spell upcast twice is `5d12+1d12+1d12`). Accepts the vault's two dice conventions: English `1d8`
+ * (weapon/spell damage) and German `1W6` (hit dice), the count optional. A subtracted dice group
+ * isn't supported (no spell does that) and fails the parse.
  */
 export function parseDiceExpression(raw: string): DiceExpression | undefined {
   const compact = raw.replace(/\s+/g, '').replace(/−/g, '-')
   if (!compact) return undefined
-  const terms = (/^[+-]/.test(compact) ? compact : `+${compact}`).match(/[+-][^+-]+/g)
-  if (!terms || terms.join('') !== (/^[+-]/.test(compact) ? compact : `+${compact}`)) return undefined
+  const signed = /^[+-]/.test(compact) ? compact : `+${compact}`
+  const terms = signed.match(/[+-][^+-]+/g)
+  if (!terms || terms.join('') !== signed) return undefined
 
   const expression: DiceExpression = { dice: [], modifier: 0 }
   for (const term of terms) {
