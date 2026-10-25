@@ -10,10 +10,12 @@ import type {
   CharacterRuleset,
   CharacterWriteTargets,
   ClassResource,
+  EndeavourInventoryEntry,
   EquipmentChange,
   FeatureCost,
   FeatureUsage,
   FieldWriteTarget,
+  InventoryEntry,
   LevelPoolPart,
   NimbleAttributeKey,
 } from '../types'
@@ -93,6 +95,40 @@ function manaWriteTarget(source: Sourced | undefined): FieldWriteTarget | undefi
   return source && mana && typeof mana.max === 'number' ? { path: source.path, keyPath: ['spellcasting', 'mana', 'current'], createIfMissing: true } : undefined
 }
 
+/** One `items:` entry as the grid understands it — a wikilink, a `{ link, charges }` stack or a
+ * `{ name, plaetze }` temporary item — `undefined` for anything else (an empty `-` line, a number). */
+function parseInventoryEntry(raw: unknown): EndeavourInventoryEntry | undefined {
+  if (typeof raw === 'string') return raw.trim() ? raw : undefined
+  if (!isRecord(raw)) return undefined
+  if (typeof raw.link === 'string' && typeof raw.charges === 'number') return { ...raw, link: raw.link, charges: raw.charges }
+  if (typeof raw.name === 'string') return { ...raw, name: raw.name, plaetze: typeof raw.plaetze === 'number' ? raw.plaetze : 1 }
+  return undefined
+}
+
+/**
+ * `endeavour_inventory` in the shape the grid relies on, since the note may have been edited by hand:
+ * entries it can't read are left out. A container whose link is missing is kept (with none), so its
+ * items still show — as overflow — and survive the next save instead of vanishing with it.
+ */
+export function parseEndeavourInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['endeavour_inventory'] {
+  if (!record) return undefined
+  const containers = Array.isArray(record.containers) ? record.containers.filter(isRecord) : []
+  return {
+    containers: containers.map((c) => ({
+      container: typeof c.container === 'string' ? c.container : '',
+      items: Array.isArray(c.items) ? c.items.flatMap((raw) => parseInventoryEntry(raw) ?? []) : [],
+    })),
+  }
+}
+
+/** The list inventory's `equipped`/`carried`, each kept to the wikilinks and `{ name, … }` items in it. */
+export function parseListInventory(record: Record<string, unknown> | undefined): CharacterFrontmatter['inventory'] {
+  if (!record) return undefined
+  const section = (raw: unknown): InventoryEntry[] | undefined =>
+    Array.isArray(raw) ? raw.filter((e): e is InventoryEntry => (typeof e === 'string' && e.trim() !== '') || (isRecord(e) && typeof e.name === 'string')) : undefined
+  return { ...record, equipped: section(record.equipped), carried: section(record.carried) }
+}
+
 /**
  * Like the legacy vault's `Inventar <Name>.md` convention, a character's `endeavour_inventory`,
  * `inventory`, `currency`, `spellcasting` and `spells_known` may live on separate notes that link back via
@@ -119,11 +155,12 @@ function resolveLinkedFields(own: RawFile, files: RawFile[]) {
 
   return {
     values: {
-      endeavour_inventory: inventory?.record as CharacterFrontmatter['endeavour_inventory'],
-      inventory: listInventory?.record as CharacterFrontmatter['inventory'],
+      endeavour_inventory: parseEndeavourInventory(inventory?.record),
+      inventory: parseListInventory(listInventory?.record),
       currency: currency?.record as CharacterFrontmatter['currency'],
       spellcasting: spellcasting?.record as unknown as CharacterFrontmatter['spellcasting'],
-      spells_known: spellsKnown as CharacterFrontmatter['spells_known'],
+      // An empty `-` line in the list is no spell.
+      spells_known: Array.isArray(spellsKnown) ? spellsKnown.filter((s): s is string => typeof s === 'string' && s.trim() !== '') : undefined,
     },
     writeTargets: {
       ...(inventory ? { endeavour_inventory: { path: inventory.path } } : {}),
