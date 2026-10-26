@@ -468,6 +468,36 @@ export interface CharacterBiography {
   appearance?: { key: string; value: string }[]
   /** …or as one free text, for a simplified sheet. */
   appearance_text?: string
+  /** Story hooks handed to the DM ("Knife Theory", see `resolveKnives`), in the note's order. */
+  knives?: Knife[]
+}
+
+/** The kinds of knife from the Knife Theory write-up — what a hook is about. */
+export type KnifeKind =
+  | 'person'
+  | 'trauma'
+  | 'mystery'
+  | 'enemy'
+  | 'obligation'
+  | 'failure'
+  | 'crime'
+  | 'accused'
+  | 'prejudice'
+  | 'heirloom'
+  | 'secret'
+
+/** Where a knife stands in the campaign: still waiting, in play right now, or resolved. */
+export type KnifeState = 'sheathed' | 'drawn' | 'healed'
+
+/** One knife: a short backstory hook the DM may turn against the character. */
+export interface Knife {
+  /** Absent for a plain-text knife or an unknown `kind:`. */
+  kind?: KnifeKind
+  title?: string
+  text: string
+  /** The player's own note on playing it in character (else the panel offers the kind's tip). */
+  play?: string
+  state: KnifeState
 }
 
 export type FeatureUsage = 'action' | 'reaction' | 'passive'

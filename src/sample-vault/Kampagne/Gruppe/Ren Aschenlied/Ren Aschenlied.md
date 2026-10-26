@@ -26,6 +26,57 @@ class:
   - name: Mönch
     level: 5
     subclass: Pfad des Trunkenen Meisters
+knives:
+  - kind: enemy
+    title: "Die Krähe"
+    text: >-
+      Wer das Kloster am Aschenhang anzündete, trug ein Brandzeichen in Form einer Krähe. Varis
+      Krähenfeld hat gelächelt, als Ren den Namen des Klosters aussprach.
+    play: >-
+      Ren wird ganz ruhig, wenn der Name Varis fällt – kein Lachen, kein Balancieren. Spiel diese
+      Stille: Die Gruppe kennt Ren laut, und leise ist viel beunruhigender.
+    state: drawn
+  - kind: person
+    title: "Meister Oda"
+    text: >-
+      Rens Lehrmeister galt als tot, doch in der Asche wurde nie eine Leiche gefunden. Ein
+      Wanderprediger will einen einarmigen Mönch im Moor gesehen haben.
+    play: >-
+      Zitier Meister Oda bei jeder Gelegenheit, am liebsten unpassend. Wenn die Spielleitung den
+      einarmigen Mönch auftauchen lässt, hör damit auf – mitten im Satz.
+  - kind: failure
+    title: "Der Weinkeller"
+    text: >-
+      In der Nacht des Feuers lag Ren betrunken im Weinkeller statt beim Abendgebet. Wer weiß, was
+      eine nüchterne Wache am Tor geändert hätte.
+    play: >-
+      Beim Wetttrinken gewinnt Ren immer. Lass Ren aber einmal – vielleicht in der Nacht vor dem
+      Neumond – den Becher stehen lassen, ohne zu erklären, warum.
+  - kind: obligation
+    title: "Der Schwur vom Aschenhang"
+    text: >-
+      Ren hat geschworen, die Bande zu finden – nicht, sie zu töten. Was danach kommt, hat Meister
+      Oda nie gelehrt.
+  - kind: secret
+    title: "Das Fass"
+    text: >-
+      In dem Fass, das Ren aus dem Feuer rollte, war kein Wein. Was darin war, liegt vergraben unter
+      einer Birke am Aschenhang.
+  - kind: accused
+    title: "Der Brand im Kloster"
+    text: >-
+      Im Tal erzählt man sich, ein betrunkener Novize habe das Feuer selbst gelegt. Und es kam nur
+      ein Mensch lebend heraus.
+  - kind: heirloom
+    title: "Der Glockenklöppel"
+    text: >-
+      Am Gürtel trägt Ren den Klöppel der verkohlten Klosterglocke. Die Glocke selbst wurde in den
+      Trümmern nie gefunden.
+  - kind: trauma
+    title: "Brennendes Pech"
+    text: >-
+      Lagerfeuer stören Ren nicht, brennendes Pech schon. Dann zählt Ren leise die Glockenschläge
+      eines Morgens, der nie mehr kam.
 species: Mensch
 background: Einsiedler
 alignment: Chaotisch Gut

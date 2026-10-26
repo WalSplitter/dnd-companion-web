@@ -26,6 +26,61 @@ class:
   - name: Paladin
     level: 4
     subclass: Eid der Zuflucht
+knives:
+  - kind: obligation
+    title: "Hadwigs Wort"
+    text: >-
+      Er hat Schulzin Hadwig versprochen, dass kein Kind mehr nachts allein zum Brunnen gehen muss.
+      Solange Varis Krähenfeld frei ist, ist dieses Wort nicht eingelöst.
+    play: >-
+      Wenn die Gruppe zögert, zum Steinkreis aufzubrechen, ist Aldric längst gesattelt. Lass ihn
+      sein Versprechen laut wiederholen – nicht für die anderen, sondern für sich selbst.
+    state: drawn
+  - kind: mystery
+    title: "Der Turm seines Namens"
+    text: >-
+      Sein Großvater diente an der Grenzwarte am Dornpass, von der die Familie ihren Namen hat.
+      Warum haben die Kultisten ausgerechnet diesen Turm gewählt?
+    play: >-
+      Lass Aldric im Keller die Hand auf die Steine legen und vom Großvater erzählen, den er kaum
+      kannte. Frag die Spielleitung, ob ihm irgendein Detail vertraut vorkommt.
+    state: drawn
+  - kind: enemy
+    title: "Ordensmeister Gerwin Falkenstein"
+    text: >-
+      Der Mann, der Grauweiden den Plünderern überließ, sitzt heute im Hohen Rat der Morgenwacht. Er
+      hat Aldric nie verziehen, dass es einen Zeugen gab.
+    play: >-
+      Bleib bei einer Begegnung höflich – eisig höflich. Aldric hebt nie als Erster die Stimme; tut
+      er es doch, weiß der ganze Tisch, dass gerade etwas zerbricht.
+  - kind: accused
+    title: "Eidbrecher"
+    text: >-
+      Offiziell wurde Aldric wegen Feigheit vor dem Feind verstoßen. In jeder Komturei des Ordens
+      steht sein Name auf der Schandtafel.
+  - kind: person
+    title: "Lioba"
+    text: >-
+      Seine ältere Schwester hält den verarmten Familiensitz zusammen und schreibt ihm Briefe, die
+      er nie beantwortet. Im letzten stand nur: „Komm heim, bevor Vater stirbt.“
+  - kind: trauma
+    title: "Die Nacht von Grauweiden"
+    text: >-
+      Seit jener Nacht kann er kein brennendes Strohdach sehen, ohne dass seine Hände zittern. Er
+      betet bei Sonnenaufgang, weil er damals nicht wusste, ob er ihn noch erlebt.
+    play: >-
+      Mach das Morgengebet nach einer harten Nacht zur kleinen Szene. Und wenn ein Dach brennt:
+      Aldric rennt trotzdem hinein – nur eben mit zitternden Händen.
+  - kind: failure
+    title: "Jost"
+    text: >-
+      Den Müllerknecht von Dornfurt konnte er nicht retten. Seitdem nennt Aldric seinen Namen in
+      jedem Morgengebet.
+  - kind: heirloom
+    title: "Der übermalte Schild"
+    text: >-
+      Sein Wappen hat er übermalt, als man ihn verstieß; darunter schimmert noch der Turm der
+      Hohenwachts. Wer den Lack abkratzt, erkennt, wessen Sohn er ist.
 species: Mensch
 background: Adeliger
 alignment: Rechtschaffen Gut

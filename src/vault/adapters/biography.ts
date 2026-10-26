@@ -1,5 +1,5 @@
 import { isRecord } from '../frontmatterFields'
-import type { AppearanceKey, CharacterBiography, CharacterFrontmatter } from '../types'
+import type { AppearanceKey, CharacterBiography, CharacterFrontmatter, Knife, KnifeKind, KnifeState } from '../types'
 
 /** Whether the character has anything for the Biography tab (a story in the note body or roleplay
  * details) — the tab only appears then. */
@@ -17,7 +17,8 @@ export function hasBiography(character: CharacterFrontmatter, story: string | un
  *   list, `Ideale`, `Bindungen`, `Makel`) and `Aussehen` (`Geschlecht`, `Alter`, `Größe`, …) — what
  *   the vault's `embed Character Sheet Background` renders.
  *
- * A simplified sheet can just write `Persönlichkeit:` or `Aussehen:` as a plain text.
+ * A simplified sheet can just write `Persönlichkeit:` or `Aussehen:` as a plain text. The knives
+ * (`knives:` / `Messer:`) are read by `resolveKnives`.
  */
 export function resolveBiography(data: Record<string, unknown>): CharacterBiography | undefined {
   const persona = isRecord(data.Persönlichkeit) ? data.Persönlichkeit : undefined
@@ -27,6 +28,7 @@ export function resolveBiography(data: Record<string, unknown>): CharacterBiogra
     bonds: text(data.bonds ?? persona?.Bindungen),
     flaws: text(data.flaws ?? persona?.Makel),
     ...appearance(data.appearance ?? data.Aussehen),
+    knives: resolveKnives(data.knives ?? data.Messer),
   }
   const present = Object.values(biography).some((v) => v !== undefined)
   return present ? biography : undefined
@@ -63,6 +65,81 @@ function appearance(value: unknown): Pick<CharacterBiography, 'appearance' | 'ap
   // Known fields in a fixed order, then anything else in the note's own order.
   entries.sort((a, b) => rank(order, a.key) - rank(order, b.key))
   return entries.length > 0 ? { appearance: entries } : {}
+}
+
+/** Knife kinds in both spellings (lower-cased), the German ones as the Knife Theory categories read. */
+const KNIFE_KINDS: Record<string, KnifeKind> = {
+  person: 'person',
+  trauma: 'trauma',
+  phobie: 'trauma',
+  phobia: 'trauma',
+  mystery: 'mystery',
+  rätsel: 'mystery',
+  mysterium: 'mystery',
+  enemy: 'enemy',
+  feind: 'enemy',
+  obligation: 'obligation',
+  pflicht: 'obligation',
+  loyalität: 'obligation',
+  failure: 'failure',
+  versagen: 'failure',
+  crime: 'crime',
+  verbrechen: 'crime',
+  accused: 'accused',
+  'falsche anklage': 'accused',
+  prejudice: 'prejudice',
+  vorurteil: 'prejudice',
+  diskriminierung: 'prejudice',
+  heirloom: 'heirloom',
+  erbstück: 'heirloom',
+  secret: 'secret',
+  geheimnis: 'secret',
+}
+
+const KNIFE_STATES: Record<string, KnifeState> = {
+  sheathed: 'sheathed',
+  'in der scheide': 'sheathed',
+  drawn: 'drawn',
+  gezogen: 'drawn',
+  gezückt: 'drawn',
+  healed: 'healed',
+  verheilt: 'healed',
+}
+
+/**
+ * Reads the character's knives (`knives:` or `Messer:`) — the "Knife Theory" hooks a player hands
+ * the DM. Each entry is a plain text or a map: `kind`/`Art`, `title`/`Titel`, `text`/`Text`,
+ * `play`/`Spieltipp` and `state`/`Status` (sheathed by default). An entry without a text or title
+ * (an unfilled template row) is dropped.
+ */
+export function resolveKnives(value: unknown): Knife[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const knives = value.map(knife).filter((k): k is Knife => k !== undefined)
+  return knives.length > 0 ? knives : undefined
+}
+
+function knife(entry: unknown): Knife | undefined {
+  const plain = text(entry)
+  if (plain) return { text: plain, state: 'sheathed' }
+  if (!isRecord(entry)) return undefined
+  const title = text(entry.title ?? entry.Titel)
+  const body = text(entry.text ?? entry.Text) ?? title
+  if (!body) return undefined
+  const kind = lookup(KNIFE_KINDS, entry.kind ?? entry.Art)
+  const play = text(entry.play ?? entry.Spieltipp)
+  return {
+    ...(kind && { kind }),
+    ...(title && body !== title && { title }),
+    text: body,
+    ...(play && { play }),
+    state: lookup(KNIFE_STATES, entry.state ?? entry.Status) ?? 'sheathed',
+  }
+}
+
+/** A table entry for a text, ignoring case — own keys only, so `constructor` finds nothing. */
+function lookup<T>(table: Record<string, T>, value: unknown): T | undefined {
+  const key = text(value)?.toLowerCase()
+  return key !== undefined && Object.hasOwn(table, key) ? table[key] : undefined
 }
 
 function rank(order: string[], key: string): number {

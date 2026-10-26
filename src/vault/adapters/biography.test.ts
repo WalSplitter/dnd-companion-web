@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveBiography } from './biography'
+import { resolveBiography, resolveKnives } from './biography'
 
 describe('resolveBiography', () => {
   it('reads the own schema', () => {
@@ -51,5 +51,32 @@ describe('resolveBiography', () => {
 
   it('is undefined when nothing is filled in', () => {
     expect(resolveBiography({ backstory: 'only a story', Aussehen: { Alter: '' } })).toBeUndefined()
+  })
+})
+
+describe('resolveKnives', () => {
+  it('reads maps in both spellings, plain texts and the states', () => {
+    expect(
+      resolveKnives([
+        { kind: 'enemy', title: 'Der Graue Abt', text: 'Will ihn tot sehen.', play: 'Wird blass.', state: 'drawn' },
+        { Art: 'Erbstück', Titel: 'Der Klöppel', Text: 'Hängt am Gürtel.', Status: 'Verheilt' },
+        'Schuldet einem Zwerg zehn Gold.',
+      ]),
+    ).toEqual([
+      { kind: 'enemy', title: 'Der Graue Abt', text: 'Will ihn tot sehen.', play: 'Wird blass.', state: 'drawn' },
+      { kind: 'heirloom', title: 'Der Klöppel', text: 'Hängt am Gürtel.', state: 'healed' },
+      { text: 'Schuldet einem Zwerg zehn Gold.', state: 'sheathed' },
+    ])
+  })
+
+  it('keeps a title-only knife as its text and ignores unknown kinds, states and empty rows', () => {
+    expect(resolveKnives([{ title: 'Pip', kind: 'constructor', state: 'irgendwie' }, { Titel: '', Text: '' }, null])).toEqual([
+      { text: 'Pip', state: 'sheathed' },
+    ])
+    expect(resolveKnives('kein Messer')).toBeUndefined()
+  })
+
+  it('reaches the biography', () => {
+    expect(resolveBiography({ Messer: ['Ein Geheimnis'] })).toEqual({ knives: [{ text: 'Ein Geheimnis', state: 'sheathed' }] })
   })
 })

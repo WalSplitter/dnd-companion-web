@@ -26,6 +26,64 @@ class:
   - name: Gauner
     level: 3
     subclass: Werkzeuge des Schurken
+knives:
+  - kind: crime
+    title: "Die andere Hälfte"
+    text: >-
+      Er hat Varis Krähenfeld in Salzmarsch die andere Hälfte des Rabenamuletts gestohlen. Varis hat
+      ihn in Dornfurt erkannt – und gelächelt.
+    play: >-
+      Je ernster es um Varis wird, desto mehr Witze reißt Fenn. Bis zu dem Moment, in dem er keinen
+      mehr reißt – heb dir diesen Moment gut auf.
+    state: drawn
+  - kind: enemy
+    title: "Mutter Krähe"
+    text: >-
+      Die Gildenchefin von Salzmarsch will 120 Goldmünzen bis Wintereinbruch. Danach will sie etwas
+      anderes, und das ist schlimmer.
+    state: drawn
+  - kind: person
+    title: "Pip"
+    text: >-
+      Seine kleine Schwester lebt noch in Salzmarsch, mitten im Viertel der Gilde. Jede Münze, die
+      er ihr schickt, geht durch Hände, denen er nicht traut.
+    play: >-
+      Fenn erwähnt Pip nie direkt – aber in jeder Stadt kauft er ein kleines Geschenk und versteckt
+      es ganz unten im Rucksack. Lass die Gruppe das irgendwann finden.
+  - kind: accused
+    title: "Der Tote am Silberkai"
+    text: >-
+      Die Stadtwache sucht ihn wegen eines ermordeten Kaufmanns. Fenn war dort und hat das Amulett
+      genommen – aber der Dolch steckte schon.
+  - kind: trauma
+    title: "Der Käfig"
+    text: >-
+      Mit neun saß er zur Strafe drei Tage in einem Vogelkäfig im Gildenkeller. Seitdem zählt er in
+      jedem Raum zuerst die Ausgänge.
+    play: >-
+      Wird die Gruppe eingesperrt oder ist ein Raum ohne zweiten Ausgang, redet Fenn schneller und
+      schneller. Beschreib, wie er unbewusst an den Gitterstäben rüttelt.
+  - kind: secret
+    title: "Broms Gold"
+    text: >-
+      Die 34 Goldmünzen aus Broms Kassette hat er noch; die Gruppe weiß nur von der Liste. Brom ist
+      hoch verschuldet, und Fenn weiß genau, wie sich das anfühlt.
+  - kind: prejudice
+    title: "Übersehen oder getreten"
+    text: >-
+      In Salzmarsch wird man als Halbling entweder übersehen oder getreten. Das Übersehen hat er zum
+      Handwerk gemacht, das Treten hat er nicht vergessen.
+  - kind: heirloom
+    title: "Die durchbohrte Münze"
+    text: >-
+      Eine Kupfermünze mit Loch, die er nie ausgibt, obwohl er sonst alles ausgibt. Sie ist das
+      Einzige, was er von seiner Mutter hat.
+  - kind: secret
+    title: "Woher er das Amulett kannte"
+    text: >-
+      Lange hat er der Gruppe verschwiegen, warum ihm das Rabenamulett bekannt vorkam. Dann hat er
+      es erzählt – Borin hat gelacht, Aldric nicht.
+    state: healed
 species: Halbling
 background: Krimineller
 alignment: Chaotisch Neutral

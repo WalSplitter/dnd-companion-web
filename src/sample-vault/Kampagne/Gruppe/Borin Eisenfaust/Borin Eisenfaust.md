@@ -25,6 +25,62 @@ class:
   - name: Krieger
     level: 4
     subclass: Pfad des Bergherzens
+knives:
+  - kind: mystery
+    title: "Zwergenhand am Dornpass"
+    text: >-
+      Die Grenzwarte wurde von Zwergen gemauert, und im Keller fand Borin ein Steinmetzzeichen aus
+      Hammerfels. Es ist das Zeichen der Sippe seines Hauptmanns.
+    play: >-
+      Borin redet wenig – also lass ihn das Zeichen abpausen und den Zettel stumm Elandra hinlegen.
+      Mehr muss er nicht sagen.
+    state: drawn
+  - kind: person
+    title: "Hilde Graubart"
+    text: >-
+      Die Witwe seines Hauptmanns wartet in Hammerfels noch immer auf eine Erklärung, warum Borin
+      den Panzer ihres Mannes trägt. Er hat sich nie getraut, sie zu besuchen.
+    play: >-
+      Wenn jemand nach dem Schuppenpanzer fragt, poliert Borin ihn – und wechselt das Thema. Erst
+      wenn der Name Hilde fällt, hört er auf zu polieren.
+  - kind: failure
+    title: "Elf Namen"
+    text: >-
+      Elf Namen sind in seinen Schild geritzt. Er hat gegraben, bis die Finger bluteten, aber nur
+      sich selbst herausbekommen.
+    play: >-
+      Ist jemand aus der Gruppe in Gefahr, macht Borin keine Taktik mehr, sondern Wege frei. Lass
+      ihn dafür auch einmal einen echten Fehler machen.
+  - kind: trauma
+    title: "Enge"
+    text: >-
+      Seit dem Einsturz schläft er nur bei Kerzenlicht und hört jedes Knacken im Gebälk. Unter der
+      Erde zählt er leise die Namen seines Trupps.
+  - kind: enemy
+    title: "Die Grubenschrecken"
+    text: >-
+      Die Wesen, die den Tiefen Stollen untergruben, sind nie verschwunden. Seine Narbe an der
+      Schulter juckt, wenn sie nah sind.
+  - kind: accused
+    title: "Fahnenflüchtig"
+    text: >-
+      In Hammerfels gilt er als Deserteur, weil er nach dem Einsturz nie zum Rapport erschien.
+      Darauf stehen zehn Jahre Steinbruch.
+  - kind: prejudice
+    title: "Der, der zurückkam"
+    text: >-
+      Menschen halten ihn für einen Bergarbeiter, der sich verlaufen hat. Unter Zwergen ist er der
+      Einzige, der zurückkam – und das ist schlimmer.
+  - kind: secret
+    title: "Das Klopfen"
+    text: >-
+      Als er sich nach oben grub, hat ihm jemand von der anderen Seite den Weg geklopft. Er erzählt
+      es niemandem, denn Zwerge glauben nicht an Geister.
+  - kind: obligation
+    title: "Ilsas Verband"
+    text: >-
+      Er hat Ilsa versprochen, seine Schulter zu schonen. Er hat es tatsächlich getan – fast.
+    state: healed
 species: Bergzwerg
 background: Soldat
 alignment: Rechtschaffen Gut
