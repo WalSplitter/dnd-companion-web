@@ -45,6 +45,16 @@ describe('sample vault', () => {
     }
   })
 
+  it('gives every character 7–12 typed knives, some drawn into the current story', () => {
+    for (const c of vault.characters) {
+      const knives = c.frontmatter.biography?.knives ?? []
+      expect(knives.length, c.frontmatter.name).toBeGreaterThanOrEqual(7)
+      expect(knives.length, c.frontmatter.name).toBeLessThanOrEqual(12)
+      expect(knives.every((k) => k.kind && k.title), c.frontmatter.name).toBe(true)
+      expect(knives.some((k) => k.state === 'drawn'), c.frontmatter.name).toBe(true)
+    }
+  })
+
   it('has a campaign journal on the campaign level, with entries for single characters too', () => {
     const campaign = vault.campaign!
     expect(campaign.path).toBe('Kampagne/Kampagnenbuch.md')

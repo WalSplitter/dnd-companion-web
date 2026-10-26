@@ -4,6 +4,7 @@ import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { classSummary, totalCharacterLevel } from '../../../rules/deriveStats'
 import type { AppearanceKey, CharacterFrontmatter } from '../../../vault/types'
 import { renderObsidianBody } from '../../../components/obsidian/renderObsidian'
+import { KnivesCard } from './KnivesCard'
 
 const APPEARANCE_LABEL: Record<AppearanceKey, TranslationKey> = {
   gender: 'bio.appearance.gender',
@@ -46,7 +47,7 @@ function Prompt({ title, children }: { title: string; children: ReactNode }) {
  * The Biography tab: who the character is beyond the numbers — read between sessions or in a
  * roleplay moment, not mid-combat, so it gets its own tab instead of a card on the sheet. A large
  * portrait with the key facts and the appearance on the left; the full backstory (no "show more")
- * and the personality prompts on the right. Every part is optional (see `resolveBiography`).
+ * the personality prompts and the knives on the right. Every part is optional (see `resolveBiography`).
  */
 export function BiographyPanel({ character: c, story }: { character: CharacterFrontmatter; story: string | undefined }) {
   const t = useT()
@@ -131,6 +132,7 @@ export function BiographyPanel({ character: c, story }: { character: CharacterFr
             </div>
           </Card>
         )}
+        {bio?.knives && <KnivesCard knives={bio.knives} />}
       </div>
     </div>
   )

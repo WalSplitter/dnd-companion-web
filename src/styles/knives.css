@@ -1,0 +1,31 @@
+/* Knives on the Biography tab (KnivesCard): a drawn blade glints now and then, a sheathed one
+ * peeks out of its sheath when its card is hovered. */
+@media (prefers-reduced-motion: no-preference) {
+  .knife-blade .knife-glint {
+    animation: knife-glint 3.6s ease-in-out infinite;
+  }
+  .knife-blade .knife-sheath {
+    transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1);
+  }
+  .knife:hover .knife-blade .knife-sheath {
+    transform: translateX(5px);
+  }
+}
+@keyframes knife-glint {
+  0%,
+  60% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  65% {
+    opacity: 0.7;
+  }
+  85% {
+    translate: 52px 0;
+    opacity: 0;
+  }
+  100% {
+    translate: 52px 0;
+    opacity: 0;
+  }
+}

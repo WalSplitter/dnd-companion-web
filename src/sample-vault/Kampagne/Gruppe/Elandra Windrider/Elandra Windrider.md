@@ -20,6 +20,55 @@ class:
   - name: Arkanist
     level: 3
     subclass: Beschwörer der Kontrolle
+knives:
+  - kind: mystery
+    title: "Schlüssel, nicht Anker"
+    text: >-
+      Seit das [[Amulett der Tiefe]] in ihrem Rucksack liegt, findet sie morgens Randnotizen in
+      ihrem Zauberbuch, die sie nicht geschrieben hat. Die Handschrift ist alt und sehr ordentlich.
+    play: >-
+      Lies den anderen eine der fremden Randnotizen vor, als wäre es eine spannende Fußnote – und
+      erst danach fällt ihr auf, dass es nicht ihre eigene ist.
+    state: drawn
+  - kind: enemy
+    title: "Wer Altes Sylvanisch spricht"
+    text: >-
+      Varis Krähenfeld spricht die Sprache ihrer Enklave fließend. In Silberwald lehren sie nur drei
+      Archivare – und einer davon ist ihr Onkel.
+    state: drawn
+  - kind: person
+    title: "Meisterin Ithriel"
+    text: >-
+      Ihre Lehrerin im Scriptorium Arcanum verschwand vor sechs Jahren auf einer Exkursion zum
+      Steinkreis über dem Moor. Elandra hat nie aufgehört, nach ihr zu fragen.
+    play: >-
+      Wenn der Steinkreis zur Sprache kommt, wird Elandra ungewohnt still und notiert nichts. Das
+      allein sollte der Gruppe auffallen.
+  - kind: crime
+    title: "Das versiegelte Grimoire"
+    text: >-
+      Sie hat aus der verbotenen Abteilung des Scriptoriums ein Grimoire entwendet und eine
+      Fälschung zurückgestellt. Fälschungen halten nicht ewig.
+  - kind: secret
+    title: "Der verfrühte Flammenpfeil"
+    text: >-
+      Die Brandspuren an ihrem Kampfstab stammen von einem Zauber, der zu früh zündete. Was sie
+      verschweigt: Es stand jemand im Weg.
+  - kind: prejudice
+    title: "Die Bücherelfe"
+    text: >-
+      In der Enklave gilt, wer Bücher den Riten vorzieht, als halbe Menschenfreundin. Ihr Vater
+      spricht ihren Namen nicht mehr aus.
+  - kind: obligation
+    title: "Die Rückkehrklausel"
+    text: >-
+      Ihr Stipendium verpflichtet sie, alle Forschungsergebnisse im Frühjahr beim Scriptorium
+      abzuliefern. Dazu gehört streng genommen auch ein gewisses Amulett.
+  - kind: heirloom
+    title: "Großmutters Federkiel"
+    text: >-
+      Den Federkiel, mit dem sie ihr Haar hochsteckt, hat sie von ihrer Großmutter – er braucht
+      angeblich nie Tinte. Sie hat Angst herauszufinden, warum.
 species: Hochelfe
 background: Gelehrte
 alignment: Neutral Gut

@@ -26,6 +26,59 @@ class:
   - name: Kleriker
     level: 3
     subclass: Lichtträger der Gnade
+knives:
+  - kind: obligation
+    title: "Hadwigs Gebet"
+    text: >-
+      Sie hat der Schulzin ein Gebet für deren toten Mann versprochen und es noch immer nicht
+      gesprochen. Vor dem Neumond, am Brunnen, bei Sonnenaufgang.
+    play: >-
+      Lass Ilsa die Gruppe vor dem Aufbruch zum Steinkreis um eine Stunde bitten – und alle zum
+      Brunnen mitnehmen, ob sie wollen oder nicht.
+    state: drawn
+  - kind: mystery
+    title: "Der weiße Hirsch"
+    text: >-
+      Ihr Lichtgeist weigerte sich, den Keller der Grenzwarte zu betreten. Zum ersten Mal spürte
+      sie, dass er Angst hatte – oder etwas wiedererkannte.
+    play: >-
+      Sprich mit dem Hirsch, als wäre er beleidigt. Frag ihn am Lagerfeuer laut, was er gesehen hat
+      – und lass die Spielleitung entscheiden, ob er antwortet.
+    state: drawn
+  - kind: secret
+    title: "Das Findelkind"
+    text: >-
+      In die Decke, in der man sie vor dem Hospiz fand, war ein Rabenkopf gestickt. Sie hat die
+      Decke verbrannt und nie jemandem davon erzählt.
+    play: >-
+      Jedes Mal, wenn jemand das Rabenzeichen erwähnt, greift Ilsa nach ihrem Schleier. Nur eine
+      Geste – die Spielleitung sieht sie, die anderen vielleicht irgendwann auch.
+  - kind: person
+    title: "Schwester Agathe"
+    text: >-
+      Die Oberin des Hospizes zog sie auf und ist seit der Lawine gelähmt. Ilsa schickt jede
+      entbehrliche Münze an den Rabenpass.
+  - kind: trauma
+    title: "Die Stille nach der Lawine"
+    text: >-
+      In jener Nacht hörte sie die Schwestern unter dem Schnee rufen, bis es still wurde. Nach einem
+      Kampf erträgt sie keine Stille und beginnt zu summen.
+  - kind: failure
+    title: "Der erfrorene Junge"
+    text: >-
+      Ihr erster eigener Patient starb, weil sie zu lange zögerte. Seitdem zögert sie nie – auch
+      dann nicht, wenn sie sollte.
+  - kind: enemy
+    title: "Bruder Malachai"
+    text: >-
+      Ein Totenpriester, der am Rabenpass Leichen kaufte, bis die Schwestern ihn vertrieben. Er
+      schwor wiederzukommen, wenn das Hospiz schwach ist – und jetzt wird es neu aufgebaut.
+  - kind: obligation
+    title: "Borins Schulter"
+    text: >-
+      Sie hatte sich geschworen, Borins Schulter zu heilen, bevor der sture Zwerg sich daran
+      verblutet. Die Wunde hat sich geschlossen.
+    state: healed
 species: Mensch
 background: Akolythin
 alignment: Neutral Gut

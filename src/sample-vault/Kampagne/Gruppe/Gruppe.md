@@ -16,6 +16,13 @@
 | [[Fenn Flinkfinger]] | [[Gauner]] 3 | Halbling | Heimlichkeit / Schaden |
 | [[Ren Aschenlied]] | [[Mönch]] 5 | Mensch | Nahkampf / Beweglichkeit |
 
+> [!tip] Messer (Knife Theory)
+> Jeder Charakter trägt unter `knives:` sieben bis neun *Messer*: kurze Aufhänger aus der
+> Vorgeschichte, die die Spielleitung gegen ihn wenden darf. Jedes Messer hat eine Art (`kind`),
+> einen Titel, einen Text, optional einen Spieltipp (`play`) und einen Zustand (`state`: `sheathed`,
+> `drawn` oder `healed`). Viele Messer greifen ineinander – Varis Krähenfeld und das Rabenzeichen
+> tauchen bei fast allen auf. Die App zeigt sie im Biografie-Tab samt Anleitung zum Ausspielen.
+
 Die Regeln unter `Regeln/` und die Gegenstände unter `Gegenstände/` folgen demselben Schema wie im
 Spielervault (Tags `Regeln/Endeavour` bzw. `Gegenstand/...`), sind aber auf das beschränkt, was die
 sieben Beispielcharaktere verlinken. Der [[Mönch]] zeigt das neuere Klassenformat: Seine Klassentabelle
