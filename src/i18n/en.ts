@@ -14,6 +14,7 @@ export const en = {
   'app.sourceCode': 'Source on GitHub',
   'app.sponsor': 'Sponsor me',
   'app.sponsorHint': 'Support WalSplitter via GitHub Sponsors',
+  'app.licenses': 'Licenses',
   // Owlbear Rodeo extension
   'owlbear.badgeTooltip': 'Connected to Owlbear Rodeo as {{name}}',
   'owlbear.roleGM': 'GM',

@@ -91,6 +91,70 @@ function owlbearRings(): Plugin {
   }
 }
 
+const LICENSES_JSON = '.vite/licenses.json'
+const LICENSES = 'third-party-licenses.txt'
+
+interface LicenseEntry {
+  name: string
+  version: string
+  identifier?: string
+  text?: string
+}
+
+/** A package's license as Vite's `build.license` records it: SPDX id and the text of its LICENSE file. */
+function packageLicense(name: string): LicenseEntry {
+  const dir = join('node_modules', name)
+  const { version, license } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+  const file = readdirSync(dir).find((f) => /^(licen[cs]e|copying)/i.test(f))
+  return { name, version, identifier: license, text: file ? readFileSync(join(dir, file), 'utf8').trim() : undefined }
+}
+
+/** Packages that stylesheets under `src/` pull in with `@import` (Tailwind, the fonts) — Vite only follows JS imports when it collects licenses. */
+function cssImportedPackages(): string[] {
+  const names = readdirSync('src', { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('.css'))
+    .flatMap((file) => [...readFileSync(join('src', file), 'utf8').matchAll(/@import\s+['"]((?:@[^/'"]+\/)?[^./'"][^/'"]*)/g)].map((m) => m[1]))
+  return [...new Set(names)]
+}
+
+/**
+ * `<base>third-party-licenses.txt`: the copyright notices and licenses of every package the build
+ * ships, which their licenses (MIT, BSD, OFL) ask to go along with every copy — the minified bundle
+ * keeps none of them. Vite collects the JS side (`build.license`); the packages only stylesheets
+ * import are added here.
+ */
+function thirdPartyLicenses(): Plugin {
+  return {
+    name: 'third-party-licenses',
+    apply: 'build',
+    generateBundle: {
+      // After Vite's license plugin wrote its JSON, before the service worker lists the files
+      order: 'post',
+      handler(_options, bundle) {
+        const asset = bundle[LICENSES_JSON]
+        if (asset?.type !== 'asset') this.error(`${LICENSES_JSON} is missing — is build.license set?`)
+        delete bundle[LICENSES_JSON]
+        const entries: LicenseEntry[] = JSON.parse(typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source))
+        for (const name of cssImportedPackages()) if (!entries.some((entry) => entry.name === name)) entries.push(packageLicense(name))
+        entries.sort((a, b) => a.name.localeCompare(b.name))
+        const rule = '-'.repeat(72)
+        const sections = entries.map(
+          ({ name, version, identifier, text }) => `${rule}\n${name} ${version}${identifier ? ` (${identifier})` : ''}\n${rule}\n\n${text ?? 'No license file.'}\n`,
+        )
+        this.emitFile({
+          type: 'asset',
+          fileName: LICENSES,
+          source: `Third-party software in ${pkg.name} ${pkg.version}
+
+The app bundles the following packages. Their copyright notices and licenses:
+
+${sections.join('\n')}`,
+        })
+      },
+    },
+  }
+}
+
 /**
  * The app's service worker (`src/pwa/sw.js`), emitted as `<base>sw.js` with the list of files to
  * cache for offline use: everything the build produced plus `public/` — minus what only Owlbear
@@ -135,7 +199,7 @@ ${source}`,
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), serviceWorker()],
+  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), thirdPartyLicenses(), serviceWorker()],
   // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
   base: process.env.BASE_PATH ?? '/',
   server: {
@@ -144,6 +208,8 @@ export default defineConfig({
     cors: { origin: [/^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/, 'https://www.owlbear.rodeo'] },
   },
   build: {
+    // Raw data for `third-party-licenses.txt` (see thirdPartyLicenses above)
+    license: { fileName: LICENSES_JSON },
     rollupOptions: {
       // The app, and Owlbear Rodeo's pages: the toolbar button's popover, the minimized companion's
       // button and the background page

@@ -3,6 +3,8 @@ import { useT } from '../i18n/useI18n'
 const AUTHOR_URL = 'https://github.com/WalSplitter'
 const REPO_URL = 'https://github.com/WalSplitter/dnd-companion-web'
 const SPONSOR_URL = 'https://github.com/sponsors/WalSplitter'
+// Written by the build (see `thirdPartyLicenses` in vite.config.ts), so only there in a built app
+const LICENSES_URL = `${import.meta.env.BASE_URL}third-party-licenses.txt`
 
 const PILL = 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 transition-colors'
 
@@ -54,6 +56,17 @@ export function AppFooter() {
             className="font-semibold text-trim/80 underline-offset-4 transition-colors hover:text-trim hover:underline"
           >
             WalSplitter
+          </a>
+          <span className="mx-2 text-trim/40" aria-hidden>
+            ·
+          </span>
+          <a
+            href={LICENSES_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="underline-offset-4 transition-colors hover:text-fg hover:underline"
+          >
+            {t('app.licenses')}
           </a>
         </p>
         <div className="flex items-center gap-2">

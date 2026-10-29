@@ -11,6 +11,7 @@ export const de = {
   'app.sourceCode': 'Quellcode auf GitHub',
   'app.sponsor': 'Unterstütze mich',
   'app.sponsorHint': 'WalSplitter über GitHub Sponsors unterstützen',
+  'app.licenses': 'Lizenzen',
   'owlbear.badgeTooltip': 'Mit Owlbear Rodeo verbunden als {{name}}',
   'owlbear.roleGM': 'Spielleitung',
   'owlbear.rolePlayer': 'Spieler',
