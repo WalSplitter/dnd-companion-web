@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -92,7 +92,7 @@ function owlbearRings(): Plugin {
 }
 
 const LICENSES_JSON = '.vite/licenses.json'
-const LICENSES = 'third-party-licenses.txt'
+const LICENSES = 'third-party-licenses'
 
 interface LicenseEntry {
   name: string
@@ -117,16 +117,59 @@ function cssImportedPackages(): string[] {
   return [...new Set(names)]
 }
 
+/** For the dev server, which bundles nothing: every runtime dependency, direct or not, minus type packages. */
+function runtimePackages(): string[] {
+  const seen = new Set<string>()
+  const visit = (name: string) => {
+    if (seen.has(name) || name.startsWith('@types/') || !existsSync(join('node_modules', name, 'package.json'))) return
+    seen.add(name)
+    const { dependencies = {} } = JSON.parse(readFileSync(join('node_modules', name, 'package.json'), 'utf8'))
+    for (const dep of Object.keys(dependencies)) visit(dep)
+  }
+  for (const name of Object.keys(pkg.dependencies)) visit(name)
+  return [...seen]
+}
+
+/** Adds what stylesheets import and sorts by name. */
+function completeLicenses(entries: LicenseEntry[]): LicenseEntry[] {
+  for (const name of cssImportedPackages()) if (!entries.some((entry) => entry.name === name)) entries.push(packageLicense(name))
+  return entries.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function licensesText(entries: LicenseEntry[]): string {
+  const rule = '-'.repeat(72)
+  const sections = entries.map(({ name, version, identifier, text }) => `${rule}\n${name} ${version}${identifier ? ` (${identifier})` : ''}\n${rule}\n\n${text ?? 'No license file.'}\n`)
+  return `Third-party software in ${pkg.name} ${pkg.version}
+
+The app bundles the following packages. Their copyright notices and licenses:
+
+${sections.join('\n')}`
+}
+
 /**
- * `<base>third-party-licenses.txt`: the copyright notices and licenses of every package the build
- * ships, which their licenses (MIT, BSD, OFL) ask to go along with every copy — the minified bundle
- * keeps none of them. Vite collects the JS side (`build.license`); the packages only stylesheets
- * import are added here.
+ * `<base>third-party-licenses.json` (for the app's licenses dialog) and `.txt`: the copyright notices
+ * and licenses of every package the build ships, which their licenses (MIT, BSD, OFL) ask to go
+ * along with every copy — the minified bundle keeps none of them. Vite collects the JS side
+ * (`build.license`); the packages only stylesheets import are added here. The dev server serves
+ * every runtime dependency instead, so the dialog works there too.
  */
 function thirdPartyLicenses(): Plugin {
+  let base = '/'
   return {
     name: 'third-party-licenses',
-    apply: 'build',
+    configResolved(config) {
+      base = config.base
+    },
+    configureServer(server) {
+      // Ahead of the SPA fallback, which would answer with index.html
+      server.middlewares.use((req, res, next) => {
+        const ext = (req.url ?? '').split('?')[0].match(new RegExp(`^${base}${LICENSES}\\.(json|txt)$`))?.[1]
+        if (!ext) return next()
+        const entries = completeLicenses(runtimePackages().map(packageLicense))
+        res.setHeader('Content-Type', ext === 'json' ? 'application/json' : 'text/plain; charset=utf-8')
+        res.end(ext === 'json' ? JSON.stringify(entries) : licensesText(entries))
+      })
+    },
     generateBundle: {
       // After Vite's license plugin wrote its JSON, before the service worker lists the files
       order: 'post',
@@ -134,22 +177,9 @@ function thirdPartyLicenses(): Plugin {
         const asset = bundle[LICENSES_JSON]
         if (asset?.type !== 'asset') this.error(`${LICENSES_JSON} is missing — is build.license set?`)
         delete bundle[LICENSES_JSON]
-        const entries: LicenseEntry[] = JSON.parse(typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source))
-        for (const name of cssImportedPackages()) if (!entries.some((entry) => entry.name === name)) entries.push(packageLicense(name))
-        entries.sort((a, b) => a.name.localeCompare(b.name))
-        const rule = '-'.repeat(72)
-        const sections = entries.map(
-          ({ name, version, identifier, text }) => `${rule}\n${name} ${version}${identifier ? ` (${identifier})` : ''}\n${rule}\n\n${text ?? 'No license file.'}\n`,
-        )
-        this.emitFile({
-          type: 'asset',
-          fileName: LICENSES,
-          source: `Third-party software in ${pkg.name} ${pkg.version}
-
-The app bundles the following packages. Their copyright notices and licenses:
-
-${sections.join('\n')}`,
-        })
+        const entries = completeLicenses(JSON.parse(typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source)))
+        this.emitFile({ type: 'asset', fileName: `${LICENSES}.json`, source: JSON.stringify(entries) })
+        this.emitFile({ type: 'asset', fileName: `${LICENSES}.txt`, source: licensesText(entries) })
       },
     },
   }
@@ -208,7 +238,7 @@ export default defineConfig({
     cors: { origin: [/^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/, 'https://www.owlbear.rodeo'] },
   },
   build: {
-    // Raw data for `third-party-licenses.txt` (see thirdPartyLicenses above)
+    // Raw data for `third-party-licenses.json`/`.txt` (see thirdPartyLicenses above)
     license: { fileName: LICENSES_JSON },
     rollupOptions: {
       // The app, and Owlbear Rodeo's pages: the toolbar button's popover, the minimized companion's

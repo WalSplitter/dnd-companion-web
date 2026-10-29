@@ -1,0 +1,265 @@
+/* Licenses dialog (LicensesDialog): a gilded scroll of the open-source packages the app ships, each
+ * with a wax-seal chip for its license that unfolds to the full text. Fonts get a seal of the accent
+ * colour, the permissive code licenses the trim's gold, anything else the warning colour. */
+
+/* `.rpg-panel` makes it `position: relative`, which would undo the top-layer centering of a modal
+   <dialog>; the content scrolls, not the dialog, so the corner brackets don't cause scrollbars. */
+.licenses-dialog {
+  position: fixed;
+  max-height: calc(100dvh - 1.5rem);
+  overflow: visible;
+}
+.licenses-dialog::backdrop {
+  background: radial-gradient(circle at 50% 40%, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0.75));
+  backdrop-filter: blur(3px);
+}
+.licenses-scroll {
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  /* Rounding in the viewport-wide dialog leaves a pixel to swipe sideways on phones */
+  overflow-x: clip;
+  overscroll-behavior: contain;
+  padding: 1.25rem;
+}
+@media (min-width: 640px) {
+  .licenses-scroll {
+    padding: 1.5rem;
+  }
+}
+
+.licenses-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+.licenses-sigil {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  margin-top: -0.25rem;
+}
+@media (max-width: 419px) {
+  .licenses-sigil {
+    display: none;
+  }
+}
+.licenses-kicker {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-trim) 85%, var(--color-fg));
+}
+.licenses-close {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--color-trim) 25%, transparent);
+  color: var(--color-fg-muted);
+  transition:
+    color 150ms,
+    border-color 150ms,
+    background-color 150ms,
+    rotate 200ms;
+}
+.licenses-close:hover {
+  color: var(--color-fg);
+  border-color: color-mix(in srgb, var(--color-trim) 60%, transparent);
+  background: color-mix(in srgb, var(--color-trim) 10%, transparent);
+  rotate: 90deg;
+}
+
+/* Wax seals: the license id, with an optional count. */
+.license-seal {
+  --seal: var(--color-trim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--seal) 45%, transparent);
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--seal) 22%, transparent), color-mix(in srgb, var(--seal) 8%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--seal) 25%, transparent);
+  padding: 0.1rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--seal) 75%, var(--color-fg));
+}
+.license-seal[data-family='font'] {
+  --seal: var(--color-accent);
+}
+.license-seal[data-family='other'] {
+  --seal: var(--color-warning);
+}
+.license-seal b {
+  display: grid;
+  place-items: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  margin-right: -0.35rem;
+  border-radius: 9999px;
+  background: var(--seal);
+  color: var(--color-surface);
+  font-size: 0.62rem;
+}
+.licenses-seals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
+}
+
+.licenses-note {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-fg-muted);
+}
+
+.licenses-list {
+  margin-top: 0.75rem;
+  display: grid;
+  /* Not wider than the dialog: long names truncate instead */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.25rem;
+}
+.license-entry {
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+.license-entry:hover,
+.license-entry[open] {
+  background: color-mix(in srgb, var(--color-trim) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-trim) 18%, transparent);
+}
+.license-entry summary {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}
+.license-entry summary::-webkit-details-marker {
+  display: none;
+}
+.license-entry summary:focus-visible {
+  outline: 2px solid var(--color-trim);
+  outline-offset: 1px;
+}
+/* A small cut gem, lit while the entry is open. */
+.license-gem {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  rotate: 45deg;
+  border: 1px solid color-mix(in srgb, var(--color-trim) 60%, transparent);
+  background: color-mix(in srgb, var(--color-trim) 15%, transparent);
+  transition:
+    background-color 200ms,
+    box-shadow 200ms;
+}
+.license-entry[open] .license-gem {
+  background: var(--color-trim);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-trim) 70%, transparent);
+}
+.license-chevron {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  color: var(--color-fg-muted);
+  transition: rotate 200ms;
+}
+.license-entry[open] .license-chevron {
+  rotate: 90deg;
+  color: var(--color-trim);
+}
+.license-body {
+  padding: 0 0.6rem 0.7rem 1.7rem;
+}
+.license-npm {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--color-trim) 80%, var(--color-fg));
+  text-underline-offset: 2px;
+}
+.license-npm:hover {
+  text-decoration: underline;
+}
+.license-body pre {
+  max-height: 16rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-left: 2px solid color-mix(in srgb, var(--color-trim) 45%, transparent);
+  border-radius: 0 0.375rem 0.375rem 0;
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+  padding: 0.65rem 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--color-fg-muted);
+}
+
+.licenses-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-trim) 18%, transparent);
+  font-size: 0.75rem;
+  color: var(--color-fg-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .licenses-dialog[open] {
+    animation: licenses-unroll 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  .licenses-dialog[open]::backdrop {
+    animation: licenses-fade 250ms ease-out both;
+  }
+  /* The packages appear one after another, like a list being read out. */
+  .licenses-list > li {
+    animation: licenses-rise 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    animation-delay: calc(min(var(--i, 0), 16) * 28ms);
+  }
+  .license-entry[open] .license-body {
+    animation: licenses-rise 220ms ease-out both;
+  }
+}
+@keyframes licenses-unroll {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+@keyframes licenses-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes licenses-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
