@@ -101,7 +101,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-`npm run build` type-checks and builds, `npm run test` runs Vitest, `npm run lint` runs oxlint. CI runs all three on every push to `develop` and every pull request; every push to `main` redeploys GitHub Pages, and Dependabot proposes dependency updates weekly. Architecture, local Owlbear testing and self-hosting are covered in [Development](https://github.com/WalSplitter/dnd-companion-web/wiki/Development).
+`npm run build` type-checks and builds, `npm run test` runs Vitest, `npm run lint` runs oxlint. CI runs all three on every push to `develop` and every pull request, and every push to `main` redeploys GitHub Pages. Architecture, local Owlbear testing and self-hosting are covered in [Development](https://github.com/WalSplitter/dnd-companion-web/wiki/Development).
 
 ## Roadmap
 
