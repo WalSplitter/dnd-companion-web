@@ -57,9 +57,10 @@ function FeatureCostChips({ feature, character, characterPath }: { feature: Char
 
 function FeatureList({ features, character, characterPath }: { features: CharacterFeature[]; character: CharacterFrontmatter; characterPath: string }) {
   return (
-    <ul className="space-y-3">
+    // In a wide card (the sheet on a very wide screen gives it its own `@container`) the list runs in two columns
+    <ul className="space-y-3 @3xl:columns-2 @3xl:gap-x-6">
       {features.map((f) => (
-        <li key={f.name} className="border-l-2 border-trim/40 pl-3">
+        <li key={f.name} className="break-inside-avoid border-l-2 border-trim/40 pl-3">
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-display text-sm font-bold tracking-wide text-fg">{f.name}</span>
             <span className="flex items-center gap-2">

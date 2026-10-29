@@ -9,13 +9,17 @@ import { PartyFormation } from '../features/character-list/CharacterLineup'
 import { resolveLayout, useCharacterViewMode, type CharacterLayout } from '../features/character-list/viewMode'
 import { ViewModeToggle } from '../features/character-list/ViewModeToggle'
 import { useT } from '../i18n/useI18n'
+import { useShellWidth, WIDE_QUERY } from '../layout/shell'
+import { useMediaQuery } from '../utils/viewport'
 import { useHasChronicle, useVaultStore } from '../store/vaultStore'
 import type { JournalEntry } from '../vault/types'
 import { characterRoute } from './paths'
 
+// Very wide screens: as many card columns as fit (the whole party in one row on an ultra-wide), and
+// the list in two or three columns instead of rows stretched across the screen.
 const CONTAINER: Record<Exclude<CharacterLayout, 'lineup'>, string> = {
-  cards: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3',
-  list: 'flex flex-col gap-2',
+  cards: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 wide:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]',
+  list: 'flex flex-col gap-2 wide:grid wide:grid-cols-2 wide:gap-x-4 ultra:grid-cols-3',
 }
 
 const NO_ENTRIES: JournalEntry[] = []
@@ -25,13 +29,16 @@ export function CharacterListPage() {
   const characters = useVaultStore((s) => s.vault.characters)
   const hasHistory = useHasChronicle()
   const [mode, setMode] = useCharacterViewMode()
-  const layout = resolveLayout(mode, characters.length)
+  const layout = resolveLayout(mode, characters.length, useMediaQuery(WIDE_QUERY))
   // The tab lives in the URL so "back" from a sheet returns to the comparison.
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('tab')
   const tab = requested === 'compare' || requested === 'campaign' ? requested : requested === 'chronicle' && hasHistory ? 'chronicle' : 'party'
   const campaignEntries = useVaultStore((s) => s.vault.campaign?.entries)
   const unseen = useUnseenCount(campaignEntries ?? NO_ENTRIES)
+  // The party and the comparison spread out on a wide screen; the lineup is one composed scene, and
+  // the campaign and chronicle are reading, which wants a readable line length.
+  useShellWidth(tab === 'compare' || (tab === 'party' && layout !== 'lineup') ? 'party' : null)
 
   if (characters.length === 0) {
     return (

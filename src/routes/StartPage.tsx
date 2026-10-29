@@ -13,7 +13,8 @@ import { inOwlbear } from '../owlbear/host'
 import { ContinueCard } from './start/ContinueCard'
 import { CurrentVaultBar } from './start/CurrentVaultBar'
 import { Embers } from './start/Embers'
-import { FeatureStrip } from './start/FeatureStrip'
+import { FeatureStrip, FeatureWing } from './start/FeatureStrip'
+import { useShellWidth } from '../layout/shell'
 import { ChestIcon, DropIcon, PartyIcon, RepoIcon } from './start/portalIcons'
 import { CardHead, Emblem, PortalCard } from './start/PortalCard'
 import { StartHero } from './start/StartHero'
@@ -101,6 +102,7 @@ export function StartPage() {
     [loadFromDirectoryHandle, navigate, t],
   )
   const dragging = useFolderDrop(onFolderDrop)
+  useShellWidth('start')
 
   const loading = status === 'loading'
   // With the "currently open" bar showing, the hero shrinks so the page still fits without scrolling.
@@ -141,7 +143,11 @@ export function StartPage() {
     <div className="relative flex flex-1 flex-col">
       <Embers />
 
-      <div className="relative z-[1] flex flex-1 flex-col">
+      {/* Very wide screens: a triptych, the portals in the middle and the features as banners on
+          either side, so they no longer take height away from the portals. */}
+      <div className="relative z-[1] flex flex-1 flex-col wide:grid wide:grid-cols-[minmax(0,1fr)_minmax(0,72rem)_minmax(0,1fr)] wide:gap-x-10">
+        <FeatureWing side="left" />
+        <div className="flex flex-1 flex-col">
         <div className="my-auto">
           <StartHero vaultOpen={vaultOpen} />
 
@@ -264,6 +270,8 @@ export function StartPage() {
         </div>
 
         <FeatureStrip />
+        </div>
+        <FeatureWing side="right" />
       </div>
 
       {dragging && (

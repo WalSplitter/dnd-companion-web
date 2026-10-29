@@ -82,9 +82,10 @@ export function InventoryPanel({
       : undefined
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    // Very wide screens: the four cards in one row under the search
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 wide:grid-cols-4">
       {editable && (
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2 md:col-span-2 wide:col-span-4">
           <ItemSearchCard onAdd={add} />
           {warning && <div role="alert" className="rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
         </div>
@@ -95,7 +96,7 @@ export function InventoryPanel({
       <DropCard title={t('cards.carried')} enabled={editable} onDrop={(raw) => handleDrop('carried', raw)}>
         <ItemList entries={carried} index={index} emptyLabel={t('inventory.backpackEmpty')} characterPath={characterPath} section="carried" actions={actionsFor('carried')} />
       </DropCard>
-      {editable && <p className="-mt-2 text-xs text-fg-muted md:col-span-2">{t('inventory.dragHint')}</p>}
+      {editable && <p className="-mt-2 text-xs text-fg-muted md:col-span-2 wide:order-last wide:col-span-4 wide:mt-0">{t('inventory.dragHint')}</p>}
       <Card title={t('cards.currency')}>
         <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
       </Card>

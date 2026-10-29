@@ -59,12 +59,13 @@ export function SpellList({
   const saveLabel = (ability: SpellFrontmatter['save_ability']) => (ability ? abilityAbbreviation(character, ability) : '')
 
   return (
-    <div className="space-y-4">
+    // Very wide screens: the tiers run in columns, each tier kept whole
+    <div className="space-y-4 wide:block wide:columns-[26rem] wide:gap-x-8">
       {keys.map((key) => {
         const slot = key !== UTILITY ? character.spellcasting?.slots?.[String(key)] : undefined
         const locked = hasMana && key !== UTILITY && key > maxTier
         return (
-          <div key={key} className={locked ? 'opacity-60' : undefined}>
+          <div key={key} className={`break-inside-avoid ${locked ? 'opacity-60' : ''}`}>
             <h3 className="mb-1.5 flex items-baseline gap-2 text-sm font-semibold uppercase tracking-wide text-fg-muted">
               {key === UTILITY ? t('spells.utility') : key === 0 ? t('spells.cantrips') : t('spells.level', { level: key })}
               {key !== UTILITY && key > 0 && hasMana && !locked && (

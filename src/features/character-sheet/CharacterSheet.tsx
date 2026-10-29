@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../../i18n/useI18n'
+import { useShellWidth, WIDE_QUERY } from '../../layout/shell'
+import { useMediaQuery } from '../../utils/viewport'
 import { VaultIndexProvider } from '../../components/obsidian/VaultIndexContext'
 import type { CharacterFrontmatter } from '../../vault/types'
 import type { VaultIndex } from '../../vault/wikilinks'
@@ -56,6 +58,9 @@ export function CharacterSheet({
   ]
   // Switching characters keeps the open tab — unless the next one doesn't have it (no spells, say).
   const shownTab: Tab = tabs.some((entry) => entry.key === tab) ? tab : 'sheet'
+  // Very wide screens: the page grows, and each tab lays its cards out across the room
+  const wide = useMediaQuery(WIDE_QUERY)
+  useShellWidth('sheet')
 
   return (
     <VaultIndexProvider index={index}>
@@ -110,7 +115,31 @@ export function CharacterSheet({
 
             {/* One anchor for whichever tab is open, for the tour's steps about it. */}
             <div data-tour="sheet.panel">
-              {shownTab === 'sheet' && (
+              {shownTab === 'sheet' && wide && (
+                // Very wide screens: the cards side by side instead of stacked, so the tab fits the
+                // screen's height — the features get a column of their own (two on an ultra-wide,
+                // where their groups and lines spread out), spellcasting moves under the attacks.
+                <div className="grid grid-cols-4 items-start gap-4 ultra:grid-cols-5">
+                  <div className="space-y-4">
+                    <div data-tour="sheet.attributes">
+                      <AbilityScores character={character} characterPath={characterPath} />
+                    </div>
+                    <SensesLanguages character={character} />
+                  </div>
+                  <div data-tour="sheet.skills">
+                    <Skills character={character} />
+                  </div>
+                  <div className="space-y-4">
+                    <Attacks character={character} />
+                    {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
+                    <Conditions character={character} characterPath={characterPath} />
+                  </div>
+                  <div className="@container ultra:col-span-2">
+                    <FeaturesTraits character={character} characterPath={characterPath} />
+                  </div>
+                </div>
+              )}
+              {shownTab === 'sheet' && !wide && (
                 <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
                   {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
                       the attribute medallions, so the three columns come out about equally long; the

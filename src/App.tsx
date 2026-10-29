@@ -70,7 +70,7 @@ function App() {
         {/* In Owlbear the panel can be narrow, and the header stays one row there: as the panel narrows,
             the role becomes an icon, the language switcher one button, and finally the brand goes. */}
         <div
-          className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 ${inOwlbear ? '@container gap-x-2' : 'flex-wrap gap-x-3 gap-y-2'}`}
+          className={`mx-auto flex max-w-(--shell-max) items-center justify-between px-4 py-3 ${inOwlbear ? '@container gap-x-2' : 'flex-wrap gap-x-3 gap-y-2'}`}
         >
           <Link
             to="/"
@@ -104,7 +104,7 @@ function App() {
       </header>
 
       <div data-start-scroll={onStartPage || undefined} className={onStartPage ? 'no-scrollbar start-scroll flex min-h-0 flex-1 flex-col overflow-y-auto' : 'flex flex-1 flex-col'}>
-        <main className={`mx-auto w-full max-w-6xl flex-1 px-4 pb-4 ${onStartPage ? 'flex flex-col pt-6 short:pt-3' : 'pt-6'}`}>
+        <main className={`mx-auto w-full max-w-(--shell-max) flex-1 px-4 pb-4 ${onStartPage ? 'flex flex-col pt-6 short:pt-3' : 'pt-6'}`}>
           {/* Keyed by route: a page that failed to render gets a fresh try once you navigate away. */}
           <PageErrorBoundary key={pathname}>
             <Routes>

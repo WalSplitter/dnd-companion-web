@@ -102,7 +102,7 @@ export function JournalPanel({ character, characterPath }: { character: Characte
   const file = character._write?.journal?.path.split('/').pop()
 
   return (
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] wide:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-4">
         {canEdit ? (
           <Card title={t('journal.new')}>
@@ -142,7 +142,11 @@ export function JournalPanel({ character, characterPath }: { character: Characte
         ) : shown.length === 0 ? (
           <p className="py-8 text-center text-sm text-fg-muted">{t('journal.emptyFiltered')}</p>
         ) : (
-          <JournalTimeline entries={shown} h={handlers} />
+          // Very wide screens: the sessions run in columns, newest first, each kept whole with its heading
+          <div className="space-y-4 wide:block wide:columns-[28rem] wide:gap-x-8 [&>section]:break-inside-avoid">
+
+            <JournalTimeline entries={shown} h={handlers} />
+          </div>
         )}
         {file && own.length > 0 && <p className="text-right text-[0.7rem] text-fg-muted/80">{t('journal.savedTo', { file })}</p>}
       </div>

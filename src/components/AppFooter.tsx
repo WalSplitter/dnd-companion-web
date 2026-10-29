@@ -44,7 +44,7 @@ export function AppFooter() {
   const t = useT()
   const [licensesOpen, setLicensesOpen] = useState(false)
   return (
-    <footer className="relative mx-auto w-full max-w-6xl px-4 py-2.5">
+    <footer className="relative mx-auto w-full max-w-(--shell-max) px-4 py-2.5">
       <div className="absolute inset-x-4 top-0 flex -translate-y-1/2 items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/30" />
         <span className="size-1.5 rotate-45 border border-trim/50 bg-trim/15" />

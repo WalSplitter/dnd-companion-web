@@ -29,6 +29,7 @@
 @import './styles/skill-tree.css';
 @import './styles/onboarding.css';
 @import './styles/licenses.css';
+@import './styles/panorama.css';
 
 /* Viewport-height variants, for pages that should fit one screen (the start page): `short` for
  * laptop-height windows, `tight` for small ones (1366×768 / 1280×720 with browser chrome). */
@@ -36,6 +37,9 @@
 @custom-variant tight (@media (max-height: 700px));
 /* Tall windows (1080p and up without much browser chrome): a roomier start page. */
 @custom-variant tall (@media (min-height: 1000px));
+/* Very wide screens, where some pages use the extra room (see `layout/shell.ts`). */
+@custom-variant wide (@media (min-width: 1900px));
+@custom-variant ultra (@media (min-width: 3360px));
 
 @theme inline {
   --color-bg: var(--color-bg);
