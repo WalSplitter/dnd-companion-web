@@ -1,5 +1,21 @@
 /** Helpers for placing things in viewport pixels: floating panels, tours, popovers. */
 
+import { useEffect, useState } from 'react'
+
+/** Whether a media query matches, kept up to date as the window resizes. */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(query).matches)
+  useEffect(() => {
+    const mql = window.matchMedia?.(query)
+    if (!mql) return
+    const onChange = () => setMatches(mql.matches)
+    onChange()
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [query])
+  return matches
+}
+
 /** Below this width the app treats the screen as a phone: panels dock to the bottom as sheets. */
 export const PHONE_MAX_WIDTH = 640
 

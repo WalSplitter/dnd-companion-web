@@ -11,9 +11,11 @@ export const AUTO_LIST_FROM = 5
 const STORAGE_KEY = 'dnd-companion-character-view'
 const MODES: CharacterViewMode[] = ['auto', 'cards', 'list', 'lineup']
 
-export function resolveLayout(mode: CharacterViewMode, count: number): CharacterLayout {
+/** `wide`: a very wide screen, where the cards spread over enough columns that even a large party
+ * fits in a row or two — no reason to fall back to the list there. */
+export function resolveLayout(mode: CharacterViewMode, count: number, wide = false): CharacterLayout {
   if (mode !== 'auto') return mode
-  return count >= AUTO_LIST_FROM ? 'list' : 'cards'
+  return count >= AUTO_LIST_FROM && !wide ? 'list' : 'cards'
 }
 
 function readStoredMode(): CharacterViewMode {

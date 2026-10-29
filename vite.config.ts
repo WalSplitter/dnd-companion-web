@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -91,6 +91,136 @@ function owlbearRings(): Plugin {
   }
 }
 
+const LICENSES_JSON = '.vite/licenses.json'
+const LICENSES = 'third-party-licenses'
+
+interface LicenseEntry {
+  name: string
+  version: string
+  identifier?: string
+  text?: string
+}
+
+/** A package's license as Vite's `build.license` records it: SPDX id and the text of its LICENSE file. */
+function packageLicense(name: string): LicenseEntry {
+  const dir = join('node_modules', name)
+  const { version, license } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+  const file = readdirSync(dir).find((f) => /^(licen[cs]e|copying)/i.test(f))
+  return { name, version, identifier: license, text: file ? readFileSync(join(dir, file), 'utf8').trim() : undefined }
+}
+
+/** Packages that stylesheets under `src/` pull in with `@import` (Tailwind, the fonts) — Vite only follows JS imports when it collects licenses. */
+function cssImportedPackages(): string[] {
+  const names = readdirSync('src', { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('.css'))
+    .flatMap((file) => [...readFileSync(join('src', file), 'utf8').matchAll(/@import\s+['"]((?:@[^/'"]+\/)?[^./'"][^/'"]*)/g)].map((m) => m[1]))
+  return [...new Set(names)]
+}
+
+/** For the dev server, which bundles nothing: every runtime dependency, direct or not, minus type packages. */
+function runtimePackages(): string[] {
+  const seen = new Set<string>()
+  const visit = (name: string) => {
+    if (seen.has(name) || name.startsWith('@types/') || !existsSync(join('node_modules', name, 'package.json'))) return
+    seen.add(name)
+    const { dependencies = {} } = JSON.parse(readFileSync(join('node_modules', name, 'package.json'), 'utf8'))
+    for (const dep of Object.keys(dependencies)) visit(dep)
+  }
+  for (const name of Object.keys(pkg.dependencies)) visit(name)
+  return [...seen]
+}
+
+/** Adds what stylesheets import and sorts by name. */
+function completeLicenses(entries: LicenseEntry[]): LicenseEntry[] {
+  for (const name of cssImportedPackages()) if (!entries.some((entry) => entry.name === name)) entries.push(packageLicense(name))
+  return entries.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function licensesText(entries: LicenseEntry[]): string {
+  const rule = '-'.repeat(72)
+  const sections = entries.map(({ name, version, identifier, text }) => `${rule}\n${name} ${version}${identifier ? ` (${identifier})` : ''}\n${rule}\n\n${text ?? 'No license file.'}\n`)
+  return `Third-party software in ${pkg.name} ${pkg.version}
+
+The app bundles the following packages. Their copyright notices and licenses:
+
+${sections.join('\n')}`
+}
+
+/**
+ * `<base>third-party-licenses.json` (for the app's licenses dialog) and `.txt`: the copyright notices
+ * and licenses of every package the build ships, which their licenses (MIT, BSD, OFL) ask to go
+ * along with every copy — the minified bundle keeps none of them. Vite collects the JS side
+ * (`build.license`); the packages only stylesheets import are added here. The dev server serves
+ * every runtime dependency instead, so the dialog works there too.
+ */
+function thirdPartyLicenses(): Plugin {
+  let base = '/'
+  return {
+    name: 'third-party-licenses',
+    configResolved(config) {
+      base = config.base
+    },
+    configureServer(server) {
+      // Ahead of the SPA fallback, which would answer with index.html
+      server.middlewares.use((req, res, next) => {
+        const ext = (req.url ?? '').split('?')[0].match(new RegExp(`^${base}${LICENSES}\\.(json|txt)$`))?.[1]
+        if (!ext) return next()
+        const entries = completeLicenses(runtimePackages().map(packageLicense))
+        res.setHeader('Content-Type', ext === 'json' ? 'application/json' : 'text/plain; charset=utf-8')
+        res.end(ext === 'json' ? JSON.stringify(entries) : licensesText(entries))
+      })
+    },
+    generateBundle: {
+      // After Vite's license plugin wrote its JSON, before the service worker lists the files
+      order: 'post',
+      handler(_options, bundle) {
+        const asset = bundle[LICENSES_JSON]
+        if (asset?.type !== 'asset') this.error(`${LICENSES_JSON} is missing — is build.license set?`)
+        delete bundle[LICENSES_JSON]
+        const entries = completeLicenses(JSON.parse(typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source)))
+        this.emitFile({ type: 'asset', fileName: `${LICENSES}.json`, source: JSON.stringify(entries) })
+        this.emitFile({ type: 'asset', fileName: `${LICENSES}.txt`, source: licensesText(entries) })
+      },
+    },
+  }
+}
+
+/**
+ * A Content-Security-Policy for the app page, as a `<meta>` (GitHub Pages can't send headers). It
+ * keeps scripts to the app's own files — if some vault content ever slipped past the renderer as
+ * markup, it couldn't run code or send the GitHub token anywhere but GitHub. Build only: the dev
+ * server injects inline scripts (React Refresh). Styles allow inline `style` attributes, which React
+ * sets; images may come from anywhere, since portraits are often external URLs.
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://api.github.com https://*.githubusercontent.com",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
+
+function contentSecurityPolicy(): Plugin {
+  return {
+    name: 'content-security-policy',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, { filename }) {
+        // Owlbear Rodeo's small pages carry inline scripts and only run inside Owlbear
+        if (!filename.endsWith('index.html')) return html
+        return html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}" />`)
+      },
+    },
+  }
+}
+
 /**
  * The app's service worker (`src/pwa/sw.js`), emitted as `<base>sw.js` with the list of files to
  * cache for offline use: everything the build produced plus `public/` — minus what only Owlbear
@@ -135,7 +265,7 @@ ${source}`,
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), serviceWorker()],
+  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), thirdPartyLicenses(), contentSecurityPolicy(), serviceWorker()],
   // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
   base: process.env.BASE_PATH ?? '/',
   server: {
@@ -144,6 +274,8 @@ export default defineConfig({
     cors: { origin: [/^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/, 'https://www.owlbear.rodeo'] },
   },
   build: {
+    // Raw data for `third-party-licenses.json`/`.txt` (see thirdPartyLicenses above)
+    license: { fileName: LICENSES_JSON },
     rollupOptions: {
       // The app, and Owlbear Rodeo's pages: the toolbar button's popover, the minimized companion's
       // button and the background page

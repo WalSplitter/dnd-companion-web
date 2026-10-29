@@ -1,0 +1,136 @@
+/* Very wide screens (see `layout/shell.ts`): pages that can use the room widen the app's frame and
+ * lay their cards out side by side; the start page hangs its features as banners beside the portals.
+ * Below these widths nothing here applies. */
+
+/* How wide header, page and footer may grow; a page picks a width with `useShellWidth`. The
+ * breakpoints are the `wide` and `ultra` variants from `index.css`. */
+:root {
+  --shell-max: 72rem;
+}
+:root[data-shell='start'] {
+  @variant wide {
+    --shell-max: 118rem;
+  }
+}
+:root[data-shell='party'] {
+  @variant wide {
+    --shell-max: 116rem;
+  }
+  @variant ultra {
+    --shell-max: 200rem;
+  }
+}
+:root[data-shell='sheet'] {
+  @variant wide {
+    --shell-max: 150rem;
+  }
+  @variant ultra {
+    --shell-max: 210rem;
+  }
+}
+
+/* ── The start page's banners ─────────────────────────────────────────────────────────────────── */
+
+/* Hung from a gilded rod beside the portals, two features each, swaying a little as in a draught. */
+.feature-wing {
+  align-self: center;
+  justify-self: center;
+  /* Room for the rod's overhang and finials, also in the narrow side columns at 1900–2100px */
+  width: min(calc(100% - 2.5rem), 19rem);
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 50% 0;
+}
+.feature-wing-rod {
+  position: relative;
+  z-index: 1;
+  width: calc(100% + 1.5rem);
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-trim) 85%, white), var(--color-trim) 45%, color-mix(in srgb, var(--color-trim) 55%, black));
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+}
+.feature-wing-rod::before,
+.feature-wing-rod::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  translate: 0 -50%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--color-trim) 70%, white), var(--color-trim) 55%, color-mix(in srgb, var(--color-trim) 50%, black));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-trim) 50%, transparent);
+}
+.feature-wing-rod::before {
+  left: -0.45rem;
+}
+.feature-wing-rod::after {
+  right: -0.45rem;
+}
+.feature-wing-cloth {
+  --tail: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: 100%;
+  margin-top: -0.2rem;
+  padding: 2rem 1.5rem calc(var(--tail) + 1.5rem);
+  text-align: center;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-trim) 40%, transparent) 1px, transparent 1px calc(100% - 1px), color-mix(in srgb, var(--color-trim) 40%, transparent) calc(100% - 1px)),
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-trim) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--color-surface-2), var(--color-surface));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--tail)), 0 100%);
+  filter: drop-shadow(0 12px 18px rgb(0 0 0 / 0.35));
+}
+/* A thin gilded stitch along the tail. */
+.feature-wing-cloth::after {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 auto;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-trim) 55%, transparent), transparent);
+}
+.feature-wing-cloth .feature-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  transition:
+    box-shadow 200ms,
+    transform 200ms;
+}
+.feature-wing-cloth > div:hover .feature-icon {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-trim) 55%, transparent);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .feature-wing {
+    animation:
+      wing-drop 700ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both,
+      wing-sway 9s ease-in-out 700ms infinite;
+  }
+  .feature-wing[data-side='right'] {
+    animation-delay: 120ms, 2.5s;
+  }
+}
+@keyframes wing-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) rotate(-2deg);
+  }
+}
+@keyframes wing-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(0.7deg);
+  }
+  70% {
+    transform: rotate(-0.6deg);
+  }
+}

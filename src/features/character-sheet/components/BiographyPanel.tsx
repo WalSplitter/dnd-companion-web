@@ -87,7 +87,8 @@ export function BiographyPanel({ character: c, story }: { character: CharacterFr
   ].filter((row) => row.value !== '' && row.value !== 'Unknown')
 
   return (
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+    // Very wide screens: the story, personality and knives each get a column of their own beside the profile
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] wide:grid-cols-[repeat(auto-fit,minmax(24rem,1fr))]">
       <div className="space-y-4">
         <Card title={t('bio.profile')}>
           {c.portrait_url && (
@@ -115,7 +116,7 @@ export function BiographyPanel({ character: c, story }: { character: CharacterFr
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 wide:contents">
         {rendered && (
           <Card title={t('bio.story')}>
             <div className="max-w-prose text-[0.95rem] leading-relaxed text-fg/90 [overflow-wrap:anywhere]">{rendered}</div>

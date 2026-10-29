@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { clamp, headerHeight, PHONE_MAX_WIDTH } from '../../utils/viewport'
+import { clamp, headerHeight, PHONE_MAX_WIDTH, useMediaQuery } from '../../utils/viewport'
 import { createPortal } from 'react-dom'
 import { Card } from '../../components/Card'
 import { useDismiss } from '../../components/useDismiss'
@@ -356,19 +356,6 @@ function placeSheet(tile: DOMRect, sheet: { width: number; height: number }): Sh
   }
   const left = clamp(tile.left + tile.width / 2 - sheet.width / 2, DOCK_MARGIN, vw - DOCK_MARGIN - sheet.width)
   return { side, left, top: side === 'below' ? tile.bottom + DOCK_GAP : Math.max(minTop, tile.top - DOCK_GAP - sheet.height) }
-}
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(query).matches)
-  useEffect(() => {
-    const mql = window.matchMedia?.(query)
-    if (!mql) return
-    const onChange = () => setMatches(mql.matches)
-    onChange()
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
-  }, [query])
-  return matches
 }
 
 /**

@@ -9,6 +9,10 @@ describe('resolveLayout', () => {
     expect(resolveLayout('auto', 8)).toBe('list')
   })
 
+  it('auto keeps the cards for a large party on a very wide screen', () => {
+    expect(resolveLayout('auto', 8, true)).toBe('cards')
+  })
+
   it('an explicit choice wins over the party size', () => {
     expect(resolveLayout('cards', 8)).toBe('cards')
     expect(resolveLayout('list', 2)).toBe('list')

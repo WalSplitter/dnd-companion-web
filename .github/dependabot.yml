@@ -1,0 +1,22 @@
+# Weekly update pull requests against develop. Minor and patch updates come grouped in one PR;
+# major updates get a PR each, since they are the ones that may need code changes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

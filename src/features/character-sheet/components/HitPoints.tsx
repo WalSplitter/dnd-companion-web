@@ -236,7 +236,7 @@ function PoolRow({
       <div className="flex items-center justify-end gap-0.5">
         {onSet && <StepButton direction={-1} label={label} disabled={current <= 0} onStep={(d) => onSet(stepWithin(current, d, 0, max))} />}
         <span className={`flex min-w-11 items-baseline justify-center font-num leading-none text-fg ${numberClass}`}>
-          {onSet ? <EditableNumber key={current} value={current} max={max} onCommit={onSet} className={`w-[1.9em] ${quietInput}`} /> : current}
+          {onSet ? <EditableNumber key={current} value={current} max={max} onCommit={onSet} label={label} className={`w-[1.9em] ${quietInput}`} /> : current}
           <span className={`text-[0.7em] font-medium text-fg-muted ${maxHint ? 'cursor-help' : ''}`} title={maxHint}>
             /{max}
           </span>
@@ -349,7 +349,7 @@ export function HitPoints({
       <WardIcon />
       {setTemp && <StepButton direction={-1} label={tempLabel} tone="accent" disabled={temp <= 0} onStep={(d) => setTemp(stepWithin(temp, d, 0))} />}
       {setTemp ? (
-        <EditableNumber key={temp} value={temp} onCommit={setTemp} className={`w-8 text-base leading-tight ${quietInput}`} />
+        <EditableNumber key={temp} value={temp} onCommit={setTemp} label={tempLabel} className={`w-8 text-base leading-tight ${quietInput}`} />
       ) : (
         <span className="font-num text-base leading-tight">{temp}</span>
       )}
@@ -458,6 +458,7 @@ export function HitPoints({
                       key={hitDiceRemaining}
                       value={hitDiceRemaining}
                       max={hitDice.total}
+                      label={t('stats.hitDice')}
                       onCommit={(next) =>
                         void updateCharacterField(characterPath, writeTargets.hit_dice_remaining, next, (c) =>
                           c.hit_dice ? { ...c, hit_dice: { ...c.hit_dice, used: c.hit_dice.total - next } } : c,

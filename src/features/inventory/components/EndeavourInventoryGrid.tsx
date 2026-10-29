@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { SectionTitle } from '../../../components/SectionTitle'
+import { WIDE_QUERY } from '../../../layout/shell'
+import { useMediaQuery } from '../../../utils/viewport'
 import { useT, type TranslationKey } from '../../../i18n/useI18n'
 import { useVaultStore } from '../../../store/vaultStore'
 import { useCanEdit } from '../../../store/canEdit'
@@ -48,6 +50,7 @@ export function EndeavourInventoryGrid({
   const rawFiles = useVaultStore((s) => s.rawFiles)
   const vaultEndeavourItems = useVaultStore((s) => s.vault.endeavourItems)
   const canEdit = useCanEdit()
+  const wide = useMediaQuery(WIDE_QUERY)
   const containers = useMemo(() => character.endeavour_inventory?.containers ?? [], [character.endeavour_inventory])
 
   const [selected, setSelected] = useState<SelectedGridItem | null>(null)
@@ -389,77 +392,102 @@ export function EndeavourInventoryGrid({
     }
   }
 
+  const loadout = canEquip && (
+    <div className="max-lg:order-1">
+      <EquipmentLoadout
+        character={character}
+        index={index}
+        canEdit={canEdit}
+        selectedKey={selected?.key}
+        onSelect={(ref, item) => setSelected({ key: equippedKey(ref), item, equipped: ref })}
+        onUnequip={(ref) => unequipRef(ref)}
+        onDropPayload={handleLoadoutDrop}
+      />
+    </div>
+  )
+
+  const containerCards = (
+    <>
+      {resolved.length === 0 && <p className="text-sm text-fg-muted max-lg:order-3">{t('endeavourInventory.noContainers')}</p>}
+
+      {mainContainers.map((r) => (
+        <div key={r.containerIndex} className="max-lg:order-3">
+          <ContainerGrid label={r.name || t('endeavourInventory.backpack')} {...containerGridProps(r)} />
+        </div>
+      ))}
+
+      <div className="flex flex-wrap items-stretch gap-3 max-lg:order-4">
+        <div className="flex min-w-64 flex-1">
+          <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
+        </div>
+        {mainCapacity && (
+          <div className="w-40">
+            <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} limit={encumbranceLimit(character)} />
+          </div>
+        )}
+      </div>
+    </>
+  )
+
+  const sidebar = (
+    <>
+      {quickContainers.length > 0 && (
+        <div className="max-lg:order-2">
+          <SectionTitle className="mb-2">{t('endeavourInventory.quickSlots')}</SectionTitle>
+          <div className="flex flex-wrap gap-3">
+            {quickContainers.map((r) => (
+              <div key={r.containerIndex} className="w-32">
+                <ContainerGrid label={r.name} columns={1} compact {...containerGridProps(r)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!canEdit && <div className="max-lg:order-5 rounded-md border border-l-4 border-trim/50 bg-trim/10 px-3 py-2 text-sm text-fg-muted">{t('endeavourInventory.editLocked')}</div>}
+      <div className="max-lg:order-5">
+        <ItemSearchPanel
+          items={searchableItems}
+          containerOptions={containerOptions}
+          onAdd={addEntries}
+          onAddCustom={handleAddCustom}
+          onSelect={setSelected}
+          selectedKey={selected?.key}
+          canEdit={canEdit}
+        />
+      </div>
+      {warning && <div role="alert" className="max-lg:order-6 rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
+      <div className="max-lg:order-7">
+        <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} equipAction={equipAction} />
+      </div>
+    </>
+  )
+
+  // Two columns from `lg`: the loadout and the containers on the left; quick access, search and item
+  // details on the right, where the left column's height leaves room. On phones the column wrappers
+  // dissolve (`contents`) so `order` can keep quick access right under the loadout. Very wide screens
+  // give the loadout and the containers a column each, so the whole inventory fits the screen's
+  // height; without a loadout (no equipment to write to) its column goes rather than staying empty.
+  // One tree for every width: crossing the breakpoint moves the loadout and the containers between
+  // keyed columns, while the sidebar keeps its place — and what was typed into its search.
+  const columns = wide
+    ? [...(loadout ? [{ key: 'loadout', content: loadout }] : []), { key: 'containers', content: containerCards }]
+    : [{ key: 'main', content: [loadout, containerCards] }]
+  const grid = !wide
+    ? 'grid-cols-1 lg:grid-cols-[3fr_2fr]'
+    : loadout
+      ? 'grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]'
+      : 'grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'
+  const column = wide ? 'space-y-4' : 'max-lg:contents lg:space-y-4'
+
   return (
-    // Two columns from `lg`: the loadout and the containers on the left; quick access, search and
-    // item details on the right, where the left column's height leaves room. On phones the column
-    // wrappers dissolve (`contents`) so `order` can keep quick access right under the loadout.
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
-      <div className="max-lg:contents lg:space-y-4">
-        {canEquip && (
-          <div className="max-lg:order-1">
-            <EquipmentLoadout
-              character={character}
-              index={index}
-              canEdit={canEdit}
-              selectedKey={selected?.key}
-              onSelect={(ref, item) => setSelected({ key: equippedKey(ref), item, equipped: ref })}
-              onUnequip={(ref) => unequipRef(ref)}
-              onDropPayload={handleLoadoutDrop}
-            />
-          </div>
-        )}
-
-        {resolved.length === 0 && <p className="text-sm text-fg-muted max-lg:order-3">{t('endeavourInventory.noContainers')}</p>}
-
-        {mainContainers.map((r) => (
-          <div key={r.containerIndex} className="max-lg:order-3">
-            <ContainerGrid label={r.name || t('endeavourInventory.backpack')} {...containerGridProps(r)} />
-          </div>
-        ))}
-
-        <div className="flex flex-wrap items-stretch gap-3 max-lg:order-4">
-          <div className="flex min-w-64 flex-1">
-            <CurrencyDisplay currency={character.currency} characterPath={characterPath} writeTargets={character._write} />
-          </div>
-          {mainCapacity && (
-            <div className="w-40">
-              <CapacityBar used={mainCapacity.layout.used} capacity={mainCapacity.capacity} limit={encumbranceLimit(character)} />
-            </div>
-          )}
+    <div className={`grid items-start gap-4 ${grid}`}>
+      {columns.map(({ key, content }) => (
+        <div key={key} className={column}>
+          {content}
         </div>
-      </div>
-
-      <div className="max-lg:contents lg:space-y-4">
-        {quickContainers.length > 0 && (
-          <div className="max-lg:order-2">
-            <SectionTitle className="mb-2">{t('endeavourInventory.quickSlots')}</SectionTitle>
-            <div className="flex flex-wrap gap-3">
-              {quickContainers.map((r) => (
-                <div key={r.containerIndex} className="w-32">
-                  <ContainerGrid label={r.name} columns={1} compact {...containerGridProps(r)} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!canEdit && <div className="max-lg:order-5 rounded-md border border-l-4 border-trim/50 bg-trim/10 px-3 py-2 text-sm text-fg-muted">{t('endeavourInventory.editLocked')}</div>}
-        <div className="max-lg:order-5">
-          <ItemSearchPanel
-            items={searchableItems}
-            containerOptions={containerOptions}
-            onAdd={addEntries}
-            onAddCustom={handleAddCustom}
-            onSelect={setSelected}
-            selectedKey={selected?.key}
-            canEdit={canEdit}
-          />
-        </div>
-        {warning && <div role="alert" className="max-lg:order-6 rounded-md border border-l-4 border-danger/60 bg-danger/10 px-3 py-2 text-sm text-danger">{warning}</div>}
-        <div className="max-lg:order-7">
-          <ItemDetailPanel selected={selected} charges={selectedCharges} onChangeCharges={onChangeSelectedCharges} equipAction={equipAction} />
-        </div>
-      </div>
+      ))}
+      <div className={column}>{sidebar}</div>
     </div>
   )
 }

@@ -120,6 +120,7 @@ export function CurrencyDisplay({
             key={value}
             value={value}
             onCommit={(next) => setCoin(coin, next)}
+            label={label(coin)}
             className="rpg-plate font-num w-24 px-1 py-1 text-center text-3xl text-fg"
           />
           <button type="button" className={roundButton} onClick={() => setCoin(coin, value + 1)} aria-label="+1">

@@ -149,11 +149,15 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code: personal settings stay local, project instructions (.claude/CLAUDE.md) are shared
+.claude/settings.local.json
 
 # Grapify
 graphify-out/

@@ -62,9 +62,12 @@ export function SpellsPanel({
     </div>
   )
 
+  const hasCasting = Boolean(character.spellcasting.slots || pools.length > 0)
+
   return (
-    <div className="space-y-4">
-      {(character.spellcasting.slots || pools.length > 0) && (
+    // Very wide screens: slots and pools beside the spell list, whose tiers run in columns
+    <div className={`space-y-4 ${hasCasting ? 'wide:grid wide:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] wide:items-start wide:gap-4 wide:space-y-0' : ''}`}>
+      {hasCasting && (
         <Card title={t('cards.spellcasting')}>
           {character.spellcasting.slots && (
             <SpellSlotTracker spellcasting={character.spellcasting} characterPath={characterPath} writeTargets={character._write?.spell_slots} />

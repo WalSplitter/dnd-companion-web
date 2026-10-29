@@ -18,8 +18,8 @@ No server · no database · no account.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)
 
 <img src="docs/media/theme-dark.webp" width="540" alt="The D&D Companion start page: continue with the last vault, open a vault folder, or explore the sample vault" />
 
@@ -40,6 +40,7 @@ No server · no database · no account.
 - 🏰 **In Owlbear Rodeo.** HP, temp HP, resilience and AC of linked tokens are live for the whole group, in sync with the Clash! tracker; rolls show up on the token.
 - 👥 **The whole party.** Cards, a compact list or a front/middle/back lineup, plus a side-by-side comparison.
 - 🎨 **Yours to style.** Colour palettes, class and animated topic themes; English and German.
+- 🖥️ **From phone to ultra-wide.** On very wide monitors the sheet's tabs lay their cards side by side, so most of them fit one screen, and the whole party fits a row.
 
 ## Quick start
 
@@ -52,6 +53,16 @@ Open **<https://walsplitter.github.io/dnd-companion-web/>**. There is nothing to
 | ☁️ | **Open from a repository** | a GitHub repository | as commits, in any browser |
 
 Your vault is read in the browser and not uploaded anywhere. Saving to a folder needs the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), so Firefox and Safari open folders read-only; GitHub vaults work everywhere.
+
+**Browser support:** current Chrome, Edge, Firefox and Safari: Chrome/Edge 111+, Firefox 128+ and Safari 16.4+ (iOS too). Older browsers are missing CSS features the app is built on.
+
+## Privacy
+
+- The app runs entirely in your browser. Your vault, characters and settings stay on your device; there is no server of our own, no account, no tracking and no analytics.
+- Settings (theme, language) and your recent vaults are kept in your browser's storage. A GitHub token you enter is stored with its vault, so you don't have to paste it every time; it is sent only to `api.github.com`. Removing the vault from the recent list forgets the token, and so does clearing the site data.
+- A GitHub vault is read and written through GitHub's API, directly from your browser, with your token. GitHub's [privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) applies to those requests.
+- The app is hosted on GitHub Pages. Like any web host, GitHub receives your IP address when you load it; see the same privacy statement.
+- Portraits that a vault links by web address are loaded from wherever they point.
 
 ## Documentation
 
@@ -81,7 +92,7 @@ and turn it on for your room. A **d20** in the toolbar opens the companion next 
 
 ## Development
 
-Requires [Node.js](https://nodejs.org) 20+.
+Requires [Node.js](https://nodejs.org) 22.12+.
 
 ```bash
 git clone https://github.com/WalSplitter/dnd-companion-web.git
@@ -90,7 +101,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-`npm run build` type-checks and builds, `npm run test` runs Vitest, `npm run lint` runs oxlint. Every push to `main` redeploys GitHub Pages. Architecture, local Owlbear testing and self-hosting are covered in [Development](https://github.com/WalSplitter/dnd-companion-web/wiki/Development).
+`npm run build` type-checks and builds, `npm run test` runs Vitest, `npm run lint` runs oxlint. CI runs all three on every push to `develop` and every pull request; every push to `main` redeploys GitHub Pages, and Dependabot proposes dependency updates weekly. Architecture, local Owlbear testing and self-hosting are covered in [Development](https://github.com/WalSplitter/dnd-companion-web/wiki/Development).
 
 ## Roadmap
 
@@ -98,4 +109,4 @@ Planned work is tracked in [GitHub issues](https://github.com/WalSplitter/dnd-co
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The app bundles open-source packages under their own licenses (MIT, BSD, SIL Open Font License); the build lists them with their license texts in `third-party-licenses.txt`, and **Licenses** in the app's footer shows them.

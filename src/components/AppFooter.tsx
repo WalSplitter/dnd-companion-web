@@ -1,10 +1,31 @@
+import { lazy, Suspense, useState } from 'react'
 import { useT } from '../i18n/useI18n'
+
+// Only downloaded when someone opens it
+const LicensesDialog = lazy(() => import('./LicensesDialog').then((m) => ({ default: m.LicensesDialog })))
 
 const AUTHOR_URL = 'https://github.com/WalSplitter'
 const REPO_URL = 'https://github.com/WalSplitter/dnd-companion-web'
-const SPONSOR_URL = 'https://github.com/sponsors/WalSplitter'
 
-const PILL = 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 transition-colors'
+// A little taller on touch screens, where they are tapped rather than clicked — also a phone held sideways
+const PILL = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 transition-colors pointer-coarse:py-1.5'
+
+/** A sealed scroll, for the licenses. */
+function ScrollMark() {
+  return (
+    <svg viewBox="0 0 16 16" className="size-3.5 text-trim/80 transition-transform group-hover:-rotate-6 group-hover:text-trim" aria-hidden>
+      <path
+        d="M4 2.5h7.5a1.5 1.5 0 0 1 1.5 1.5v7.5M4 2.5A1.5 1.5 0 0 0 2.5 4v.5H4M4 2.5A1.5 1.5 0 0 1 5.5 4v8a1.5 1.5 0 0 0 1.5 1.5h5.5M13 11.5v.5a1.5 1.5 0 0 1-1.5 1.5H7M7.5 6h3.5M7.5 8.5h2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12.4" r="1.9" fill="currentColor" />
+    </svg>
+  )
+}
 
 /** GitHub's mark, drawn in the current text colour. */
 function GitHubMark() {
@@ -18,30 +39,19 @@ function GitHubMark() {
   )
 }
 
-/** GitHub Sponsors' heart; pink like on GitHub. */
-function HeartMark() {
-  return (
-    <svg viewBox="0 0 16 16" className="size-3.5 text-[#db61a2] transition-transform group-hover:scale-110" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M7.655 14.916v-.001h-.002l-.006-.003-.018-.01a22.066 22.066 0 0 1-3.744-2.584C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.066 22.066 0 0 1-3.744 2.584l-.018.01-.006.003h-.002ZM8 13.28a20.5 20.5 0 0 0 3.14-2.162C12.855 9.635 14.5 7.608 14.5 5.5c0-1.863-1.43-3-2.75-3-1.378 0-2.585.883-3.057 2.18a.75.75 0 0 1-1.386 0C6.835 3.383 5.628 2.5 4.25 2.5c-1.32 0-2.75 1.137-2.75 3 0 2.108 1.645 4.135 3.36 5.618A20.5 20.5 0 0 0 8 13.28Z"
-      />
-    </svg>
-  )
-}
-
-/** Quiet credit line under every page: a trim rule with a centre gem, the author, the source and a sponsor link. */
+/** Quiet credit line under every page: a trim rule with a centre gem, the author, and the licenses and source links. */
 export function AppFooter() {
   const t = useT()
+  const [licensesOpen, setLicensesOpen] = useState(false)
   return (
-    <footer className="relative mx-auto w-full max-w-6xl px-4 py-2.5">
+    <footer className="relative mx-auto w-full max-w-(--shell-max) px-4 py-2.5">
       <div className="absolute inset-x-4 top-0 flex -translate-y-1/2 items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-linear-to-r from-transparent to-trim/30" />
         <span className="size-1.5 rotate-45 border border-trim/50 bg-trim/15" />
         <span className="h-px flex-1 bg-linear-to-l from-transparent to-trim/30" />
       </div>
       <div className="flex flex-col items-center justify-between gap-2 text-xs text-fg-muted sm:flex-row">
-        <p>
+        <p className="text-center">
           <span className="font-display font-semibold tracking-wide text-fg/80">{t('app.brand')}</span>
           <span className="mx-2 text-trim/40" aria-hidden>
             ·
@@ -51,28 +61,32 @@ export function AppFooter() {
             href={AUTHOR_URL}
             target="_blank"
             rel="noreferrer"
-            className="font-semibold text-trim/80 underline-offset-4 transition-colors hover:text-trim hover:underline"
+            className="font-semibold text-trim underline-offset-4 hover:underline"
           >
             WalSplitter
           </a>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLicensesOpen(true)}
+            title={t('app.licensesHint')}
+            className={`group ${PILL} border-trim/20 hover:border-trim/50 hover:bg-trim/10 hover:text-fg`}
+          >
+            <ScrollMark />
+            {t('app.licenses')}
+          </button>
           <a href={REPO_URL} target="_blank" rel="noreferrer" className={`${PILL} border-trim/20 hover:border-trim/50 hover:text-fg`}>
             <GitHubMark />
             {t('app.sourceCode')}
           </a>
-          <a
-            href={SPONSOR_URL}
-            title={t('app.sponsorHint')}
-            target="_blank"
-            rel="noreferrer"
-            className={`group ${PILL} border-[#db61a2]/30 hover:border-[#db61a2]/70 hover:bg-[#db61a2]/10 hover:text-fg`}
-          >
-            <HeartMark />
-            {t('app.sponsor')}
-          </a>
         </div>
       </div>
+      {licensesOpen && (
+        <Suspense fallback={null}>
+          <LicensesDialog onClose={() => setLicensesOpen(false)} />
+        </Suspense>
+      )}
     </footer>
   )
 }

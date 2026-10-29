@@ -210,7 +210,7 @@
 .exh-token .exh-shine {
   opacity: 0;
 }
-button.exh-token:hover {
+.exh-hit:hover > .exh-token {
   transform: scale(1.15);
   color: color-mix(in srgb, var(--color-danger) 55%, transparent);
 }

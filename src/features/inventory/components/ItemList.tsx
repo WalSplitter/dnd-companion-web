@@ -140,6 +140,7 @@ function InlineItemRow({
             key={quantity}
             value={quantity}
             min={1}
+            label={t('inventory.quantityOf', { name })}
             onCommit={(next) => void updateCharacterField(characterPath, item._write!.quantity, next, mutateItem({ quantity: next }))}
             className="ml-1 w-10 rounded-md border border-border bg-surface-2 px-1 text-center text-xs text-fg-muted"
           />
@@ -153,6 +154,7 @@ function InlineItemRow({
             <EditableNumber
               key={weight_lb}
               value={weight_lb}
+              label={t('inventory.weightOf', { name })}
               onCommit={(next) => void updateCharacterField(characterPath, item._write!.weight_lb, next, mutateItem({ weight_lb: next }))}
               className="w-12 rounded-md border border-border bg-surface-2 px-1 text-center text-xs text-fg-muted"
             />
