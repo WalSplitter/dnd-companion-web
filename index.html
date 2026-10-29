@@ -1,18 +1,39 @@
 <!doctype html>
+<!-- `lang` is the fallback for the first paint and for crawlers; the app sets the reader's language on start. -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D&amp;D Companion</title>
+    <meta name="description" content="Character sheets, inventory and spells from your Obsidian vault — in the browser, with live HP, conditions and dice, and nothing uploaded." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#0f1115" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="apple-mobile-web-app-title" content="D&amp;D Companion" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>D&amp;D Companion</title>
+    <!-- Link previews (Discord, Messenger, social media). Absolute URLs, so they point at the published app. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="D&amp;D Companion" />
+    <meta property="og:title" content="D&amp;D Companion" />
+    <meta property="og:description" content="Character sheets, inventory and spells from your Obsidian vault — right in the browser." />
+    <meta property="og:url" content="https://walsplitter.github.io/dnd-companion-web/" />
+    <meta property="og:image" content="https://walsplitter.github.io/dnd-companion-web/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="D&amp;D Companion logo" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="de_DE" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="font: 16px/1.5 system-ui, sans-serif; padding: 2rem; text-align: center">
+        D&amp;D Companion needs JavaScript. · Der D&amp;D Companion braucht JavaScript.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

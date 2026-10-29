@@ -53,6 +53,16 @@ Open **<https://walsplitter.github.io/dnd-companion-web/>**. There is nothing to
 
 Your vault is read in the browser and not uploaded anywhere. Saving to a folder needs the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), so Firefox and Safari open folders read-only; GitHub vaults work everywhere.
 
+**Browser support:** current Chrome, Edge, Firefox and Safari: Chrome/Edge 111+, Firefox 128+ and Safari 16.4+ (iOS too). Older browsers are missing CSS features the app is built on.
+
+## Privacy
+
+- The app runs entirely in your browser. Your vault, characters and settings stay on your device; there is no server of our own, no account, no tracking and no analytics.
+- Settings (theme, language) and your recent vaults are kept in your browser's storage. A GitHub token you enter is stored with its vault, so you don't have to paste it every time; it is sent only to `api.github.com`. Removing the vault from the recent list forgets the token, and so does clearing the site data.
+- A GitHub vault is read and written through GitHub's API, directly from your browser, with your token. GitHub's [privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) applies to those requests.
+- The app is hosted on GitHub Pages. Like any web host, GitHub receives your IP address when you load it; see the same privacy statement.
+- Portraits that a vault links by web address are loaded from wherever they point.
+
 ## Documentation
 
 The [wiki](https://github.com/WalSplitter/dnd-companion-web/wiki) has step-by-step guides for players and DMs:

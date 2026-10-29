@@ -12,8 +12,6 @@ export const en = {
   'app.updateReload': 'Reload',
   'app.createdBy': 'Crafted by',
   'app.sourceCode': 'Source on GitHub',
-  'app.sponsor': 'Sponsor me',
-  'app.sponsorHint': 'Support WalSplitter via GitHub Sponsors',
   'app.licenses': 'Licenses',
   'app.licensesHint': 'The open-source projects this app is built on',
   // Licenses dialog
@@ -709,6 +707,8 @@ export const en = {
   'inventory.unresolvedReference': 'Unresolved reference: {{name}}',
   'inventory.weightValue': '{{value}} lb',
   'inventory.weightUnit': 'lb',
+  'inventory.quantityOf': 'Quantity of {{name}}',
+  'inventory.weightOf': 'Weight of {{name}} in lb',
   'inventory.searchLabel': 'Add item',
   'inventory.searchPlaceholder': 'Search the vault for items…',
   'inventory.searchNoResults': 'No matches.',

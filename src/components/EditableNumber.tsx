@@ -7,12 +7,15 @@ export function EditableNumber({
   value,
   onCommit,
   className,
+  label,
   min = 0,
   max,
 }: {
   value: number
   onCommit: (next: number) => void
   className: string
+  /** What the number is — the field has no visible label of its own, so screen readers announce this. */
+  label: string
   min?: number
   max?: number
 }) {
@@ -29,6 +32,7 @@ export function EditableNumber({
     <input
       type="number"
       inputMode="numeric"
+      aria-label={label}
       value={text}
       onChange={(e) => setText(e.target.value)}
       onBlur={commit}

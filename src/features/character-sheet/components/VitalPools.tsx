@@ -72,13 +72,14 @@ export function ExhaustionTrack({
           </span>
         )}
       </div>
-      <div data-tour="sheet.exhaustion" className="flex items-center justify-end gap-px sm:gap-0.5" title={`${label}: ${level}/${max}`}>
+      <div data-tour="sheet.exhaustion" className={`flex items-center justify-end ${onChange ? '' : 'gap-px sm:gap-0.5'}`} title={`${label}: ${level}/${max}`}>
         {onChange && <StepButton direction={-1} label={label} disabled={level <= 0} onStep={(d) => onChange(stepWithin(level, d, 0, max))} />}
         {Array.from({ length: max }, (_, i) => {
           const filled = i < level
           const className = `exh-token size-5 ${filled ? 'is-filled' : ''} ${i === max - 1 ? 'is-skull' : ''}`
           const glyph = <ExhaustionGlyph skull={i === max - 1} />
           if (!onChange) return <span key={i} className={className}>{glyph}</span>
+          // A 24px button around the 20px token: big enough to hit on a phone (WCAG 2.5.8)
           return (
             <button
               key={i}
@@ -86,9 +87,9 @@ export function ExhaustionTrack({
               aria-label={t('a11y.exhaustionLevel', { n: i + 1 })}
               aria-pressed={filled}
               onClick={() => onChange(level === i + 1 ? i : i + 1)}
-              className={`${className} cursor-pointer`}
+              className="exh-hit grid size-6 cursor-pointer place-items-center"
             >
-              {glyph}
+              <span className={className}>{glyph}</span>
             </button>
           )
         })}

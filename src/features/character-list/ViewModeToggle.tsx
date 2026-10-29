@@ -66,7 +66,8 @@ export function ViewModeToggle({
           type="button"
           onClick={() => onChange(o.key)}
           aria-pressed={mode === o.key}
-          aria-label={o.title}
+          // Icon-only options are named by their title; "Auto" has visible text, which must stay its name
+          aria-label={o.key === 'auto' ? undefined : o.title}
           title={o.title}
           className={`flex h-7 min-w-7 cursor-pointer items-center justify-center gap-1 rounded-full px-2 text-xs font-semibold transition ${
             mode === o.key ? 'bg-trim/15 text-trim' : 'text-fg-muted hover:bg-surface-2 hover:text-fg'

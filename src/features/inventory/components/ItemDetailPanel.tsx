@@ -173,6 +173,7 @@ function ChargesRow({ label, charges, max, onChange }: { label: string; charges:
           min={0}
           max={max}
           onCommit={onChange}
+          label={label}
           className="rpg-plate w-9 px-1 py-0.5 text-center font-medium text-fg"
         />
         <span className="text-fg-muted">/ {max}</span>

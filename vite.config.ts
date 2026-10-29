@@ -186,6 +186,42 @@ function thirdPartyLicenses(): Plugin {
 }
 
 /**
+ * A Content-Security-Policy for the app page, as a `<meta>` (GitHub Pages can't send headers). It
+ * keeps scripts to the app's own files — if some vault content ever slipped past the renderer as
+ * markup, it couldn't run code or send the GitHub token anywhere but GitHub. Build only: the dev
+ * server injects inline scripts (React Refresh). Styles allow inline `style` attributes, which React
+ * sets; images may come from anywhere, since portraits are often external URLs.
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://api.github.com https://*.githubusercontent.com",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
+
+function contentSecurityPolicy(): Plugin {
+  return {
+    name: 'content-security-policy',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, { filename }) {
+        // Owlbear Rodeo's small pages carry inline scripts and only run inside Owlbear
+        if (!filename.endsWith('index.html')) return html
+        return html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}" />`)
+      },
+    },
+  }
+}
+
+/**
  * The app's service worker (`src/pwa/sw.js`), emitted as `<base>sw.js` with the list of files to
  * cache for offline use: everything the build produced plus `public/` — minus what only Owlbear
  * Rodeo loads (it needs a connection anyway) — and a version hash over their contents, so every
@@ -229,7 +265,7 @@ ${source}`,
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), thirdPartyLicenses(), serviceWorker()],
+  plugins: [react(), tailwindcss(), owlbearManifest(), owlbearRings(), thirdPartyLicenses(), contentSecurityPolicy(), serviceWorker()],
   // GitHub Pages serves the app under /<repo>/; the deploy workflow sets BASE_PATH, local builds stay at /
   base: process.env.BASE_PATH ?? '/',
   server: {

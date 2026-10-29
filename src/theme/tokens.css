@@ -13,7 +13,7 @@
   --color-accent: #0d9488;
   --color-danger: #dc2626;
   --color-success: #16a34a;
-  --color-trim: #a8741a;
+  --color-trim: #7c5613;
   --color-warning: #b45309;
 }
 
@@ -45,8 +45,8 @@
   --color-accent: #245d6b;
   --color-danger: #a61b1b;
   --color-success: #3f6d21;
-  --color-trim: #8a6224;
-  --color-warning: #9a5b0b;
+  --color-trim: #6c4c1c;
+  --color-warning: #774608;
 }
 
 /* Parchment: paper grain, a few old stains and edges darkened as if singed by candlelight. */
@@ -71,8 +71,8 @@
   --color-accent: #1a8fd6;
   --color-danger: #d13438;
   --color-success: #107c10;
-  --color-trim: #2f7fc1;
-  --color-warning: #d97706;
+  --color-trim: #1f547f;
+  --color-warning: #774103;
 }
 
 [data-theme='purple'] {
