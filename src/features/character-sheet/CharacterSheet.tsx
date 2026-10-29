@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { useT } from '../../i18n/useI18n'
 import { useShellWidth, WIDE_QUERY } from '../../layout/shell'
 import { useMediaQuery } from '../../utils/viewport'
@@ -31,6 +31,66 @@ import { evasionValue } from '../../rules/endeavour'
 import { Rune } from '../../onboarding/Rune'
 
 type Tab = 'sheet' | 'inventory' | 'spells' | 'skills' | 'journal' | 'biography'
+
+type SheetCard = 'attributes' | 'spellcasting' | 'senses' | 'skills' | 'attacks' | 'conditions' | 'features'
+
+interface SheetColumn {
+  cards: SheetCard[]
+  className?: string
+}
+
+/**
+ * The sheet tab's columns, top to bottom. Left: who the character is; middle: skills; right: what
+ * they do in play. Saves live on the attribute medallions, so the three columns come out about
+ * equally long; the backstory has its own Biography tab. Spellcasting sits under the attributes it is
+ * derived from: in the right column, under attacks and above the features, it made a caster's right
+ * column far longer than the other two.
+ */
+const SHEET_COLUMNS: SheetColumn[] = [{ cards: ['attributes', 'spellcasting', 'senses'] }, { cards: ['skills'] }, { cards: ['attacks', 'conditions', 'features'] }]
+
+/**
+ * Very wide screens: the cards side by side instead of stacked, so the tab fits the screen's height.
+ * The features get a column of their own (two on an ultra-wide, where their groups and lines spread
+ * out — the column is their `@container`), spellcasting moves under the attacks.
+ */
+const WIDE_SHEET_COLUMNS: SheetColumn[] = [
+  { cards: ['attributes', 'senses'] },
+  { cards: ['skills'] },
+  { cards: ['attacks', 'spellcasting', 'conditions'] },
+  { cards: ['features'], className: '@container ultra:col-span-2' },
+]
+
+/** The sheet tab. Columns and cards are keyed, so crossing the wide breakpoint only rebuilds the cards that change columns. */
+function SheetTab({ character, characterPath, wide }: { character: CharacterFrontmatter; characterPath: string; wide: boolean }) {
+  const cards: Record<SheetCard, ReactNode> = {
+    attributes: (
+      <div data-tour="sheet.attributes">
+        <AbilityScores character={character} characterPath={characterPath} />
+      </div>
+    ),
+    spellcasting: character.spellcasting && <AttacksSpellcasting character={character} characterPath={characterPath} />,
+    senses: <SensesLanguages character={character} />,
+    skills: (
+      <div data-tour="sheet.skills">
+        <Skills character={character} />
+      </div>
+    ),
+    attacks: <Attacks character={character} />,
+    conditions: <Conditions character={character} characterPath={characterPath} />,
+    features: <FeaturesTraits character={character} characterPath={characterPath} />,
+  }
+  return (
+    <div className={`grid items-start gap-4 ${wide ? 'grid-cols-4 ultra:grid-cols-5' : 'grid-cols-1 lg:grid-cols-3'}`}>
+      {(wide ? WIDE_SHEET_COLUMNS : SHEET_COLUMNS).map((column) => (
+        <div key={column.cards[0]} className={column.className ?? 'space-y-4'}>
+          {column.cards.map((card) => (
+            <Fragment key={card}>{cards[card]}</Fragment>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export function CharacterSheet({
   character,
@@ -115,54 +175,7 @@ export function CharacterSheet({
 
             {/* One anchor for whichever tab is open, for the tour's steps about it. */}
             <div data-tour="sheet.panel">
-              {shownTab === 'sheet' && wide && (
-                // Very wide screens: the cards side by side instead of stacked, so the tab fits the
-                // screen's height — the features get a column of their own (two on an ultra-wide,
-                // where their groups and lines spread out), spellcasting moves under the attacks.
-                <div className="grid grid-cols-4 items-start gap-4 ultra:grid-cols-5">
-                  <div className="space-y-4">
-                    <div data-tour="sheet.attributes">
-                      <AbilityScores character={character} characterPath={characterPath} />
-                    </div>
-                    <SensesLanguages character={character} />
-                  </div>
-                  <div data-tour="sheet.skills">
-                    <Skills character={character} />
-                  </div>
-                  <div className="space-y-4">
-                    <Attacks character={character} />
-                    {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
-                    <Conditions character={character} characterPath={characterPath} />
-                  </div>
-                  <div className="@container ultra:col-span-2">
-                    <FeaturesTraits character={character} characterPath={characterPath} />
-                  </div>
-                </div>
-              )}
-              {shownTab === 'sheet' && !wide && (
-                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-                  {/* Left: who the character is; middle: skills; right: what they do in play. Saves live on
-                      the attribute medallions, so the three columns come out about equally long; the
-                      backstory has its own Biography tab. Spellcasting sits under the attributes it is
-                      derived from: in the right column, under attacks and above the features, it made
-                      a caster's right column far longer than the other two. */}
-                  <div className="space-y-4">
-                    <div data-tour="sheet.attributes">
-                      <AbilityScores character={character} characterPath={characterPath} />
-                    </div>
-                    {hasSpells && <AttacksSpellcasting character={character} characterPath={characterPath} />}
-                    <SensesLanguages character={character} />
-                  </div>
-                  <div data-tour="sheet.skills">
-                    <Skills character={character} />
-                  </div>
-                  <div className="space-y-4">
-                    <Attacks character={character} />
-                    <Conditions character={character} characterPath={characterPath} />
-                    <FeaturesTraits character={character} characterPath={characterPath} />
-                  </div>
-                </div>
-              )}
+              {shownTab === 'sheet' && <SheetTab character={character} characterPath={characterPath} wide={wide} />}
 
               {/* Keyed by character: a draft, search or selection belongs to the character it was made on. */}
               {shownTab === 'inventory' && <InventoryPanel key={characterPath} character={character} characterPath={characterPath} index={index} />}

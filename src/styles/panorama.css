@@ -2,26 +2,29 @@
  * lay their cards out side by side; the start page hangs its features as banners beside the portals.
  * Below these widths nothing here applies. */
 
-/* How wide header, page and footer may grow; a page picks a width with `useShellWidth`. */
+/* How wide header, page and footer may grow; a page picks a width with `useShellWidth`. The
+ * breakpoints are the `wide` and `ultra` variants from `index.css`. */
 :root {
   --shell-max: 72rem;
 }
-@media (min-width: 1900px) {
-  :root[data-shell='start'] {
+:root[data-shell='start'] {
+  @variant wide {
     --shell-max: 118rem;
   }
-  :root[data-shell='party'] {
+}
+:root[data-shell='party'] {
+  @variant wide {
     --shell-max: 116rem;
   }
-  :root[data-shell='sheet'] {
-    --shell-max: 150rem;
-  }
-}
-@media (min-width: 3360px) {
-  :root[data-shell='party'] {
+  @variant ultra {
     --shell-max: 200rem;
   }
-  :root[data-shell='sheet'] {
+}
+:root[data-shell='sheet'] {
+  @variant wide {
+    --shell-max: 150rem;
+  }
+  @variant ultra {
     --shell-max: 210rem;
   }
 }

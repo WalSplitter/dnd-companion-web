@@ -179,7 +179,7 @@ export const de = {
   'characterList.topSkills': 'Stärkste Fertigkeiten',
   'characterList.viewAriaLabel': 'Charakteransicht',
   'characterList.viewAuto': 'Auto',
-  'characterList.viewAutoHint': 'Automatisch: Karten bei kleinen Gruppen, ab {{count}} Charakteren eine kompakte Liste',
+  'characterList.viewAutoHint': 'Automatisch: Karten bei kleinen Gruppen, ab {{count}} Charakteren eine kompakte Liste (sehr breite Bildschirme behalten die Karten)',
   'characterList.viewCards': 'Karten',
   'characterList.viewList': 'Kompakte Liste',
   'characterList.viewLineup': 'Gruppenaufstellung',

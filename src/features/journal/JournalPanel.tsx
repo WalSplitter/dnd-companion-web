@@ -143,8 +143,7 @@ export function JournalPanel({ character, characterPath }: { character: Characte
           <p className="py-8 text-center text-sm text-fg-muted">{t('journal.emptyFiltered')}</p>
         ) : (
           // Very wide screens: the sessions run in columns, newest first, each kept whole with its heading
-          <div className="space-y-4 wide:block wide:columns-[28rem] wide:gap-x-8 [&>section]:break-inside-avoid">
-
+          <div className="space-y-4 wide:columns-[28rem] wide:gap-x-8 [&>section]:break-inside-avoid">
             <JournalTimeline entries={shown} h={handlers} />
           </div>
         )}

@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 
 /*
  * Very wide screens (ultra-wide monitors, 4K at 100%): below these widths the app looks exactly as
- * on a laptop; above them pages use the room. Keep the numbers in step with the `wide` and `ultra`
- * variants in `index.css` and the `[data-shell]` widths in `styles/panorama.css`.
+ * on a laptop; above them pages use the room. Keep the number in step with the `wide` variant in
+ * `index.css` — the CSS (Tailwind classes and `styles/panorama.css`) takes its breakpoints from there.
  */
 
 /** Pages widen and lay their cards out side by side: the sheet's tabs, the party, the start page's banners. */
@@ -18,7 +18,8 @@ export type ShellWidth = 'start' | 'party' | 'sheet'
  * CSS ignores it, so pages can ask unconditionally.
  */
 export function useShellWidth(width: ShellWidth | null): void {
-  useEffect(() => {
+  // Before paint, so a wide page never shows a frame at the usual width first
+  useLayoutEffect(() => {
     if (!width) return
     const root = document.documentElement
     root.dataset.shell = width

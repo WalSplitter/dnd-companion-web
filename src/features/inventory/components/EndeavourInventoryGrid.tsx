@@ -463,29 +463,31 @@ export function EndeavourInventoryGrid({
     </>
   )
 
-  // Very wide screens: three columns, so the whole inventory fits the screen's height — the loadout,
-  // the containers, and quick access with search and item details.
-  if (wide) {
-    return (
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] items-start gap-4">
-        <div>{loadout}</div>
-        <div className="space-y-4">{containerCards}</div>
-        <div className="space-y-4">{sidebar}</div>
-      </div>
-    )
-  }
+  // Two columns from `lg`: the loadout and the containers on the left; quick access, search and item
+  // details on the right, where the left column's height leaves room. On phones the column wrappers
+  // dissolve (`contents`) so `order` can keep quick access right under the loadout. Very wide screens
+  // give the loadout and the containers a column each, so the whole inventory fits the screen's
+  // height; without a loadout (no equipment to write to) its column goes rather than staying empty.
+  // One tree for every width: crossing the breakpoint moves the loadout and the containers between
+  // keyed columns, while the sidebar keeps its place — and what was typed into its search.
+  const columns = wide
+    ? [...(loadout ? [{ key: 'loadout', content: loadout }] : []), { key: 'containers', content: containerCards }]
+    : [{ key: 'main', content: [loadout, containerCards] }]
+  const grid = !wide
+    ? 'grid-cols-1 lg:grid-cols-[3fr_2fr]'
+    : loadout
+      ? 'grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)]'
+      : 'grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'
+  const column = wide ? 'space-y-4' : 'max-lg:contents lg:space-y-4'
 
   return (
-    // Two columns from `lg`: the loadout and the containers on the left; quick access, search and
-    // item details on the right, where the left column's height leaves room. On phones the column
-    // wrappers dissolve (`contents`) so `order` can keep quick access right under the loadout.
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
-      <div className="max-lg:contents lg:space-y-4">
-        {loadout}
-        {containerCards}
-      </div>
-
-      <div className="max-lg:contents lg:space-y-4">{sidebar}</div>
+    <div className={`grid items-start gap-4 ${grid}`}>
+      {columns.map(({ key, content }) => (
+        <div key={key} className={column}>
+          {content}
+        </div>
+      ))}
+      <div className={column}>{sidebar}</div>
     </div>
   )
 }

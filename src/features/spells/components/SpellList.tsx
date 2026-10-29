@@ -60,7 +60,7 @@ export function SpellList({
 
   return (
     // Very wide screens: the tiers run in columns, each tier kept whole
-    <div className="space-y-4 wide:block wide:columns-[26rem] wide:gap-x-8">
+    <div className="space-y-4 wide:columns-[26rem] wide:gap-x-8">
       {keys.map((key) => {
         const slot = key !== UTILITY ? character.spellcasting?.slots?.[String(key)] : undefined
         const locked = hasMana && key !== UTILITY && key > maxTier

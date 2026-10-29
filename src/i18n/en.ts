@@ -188,7 +188,7 @@ export const en = {
   'characterList.topSkills': 'Best skills',
   'characterList.viewAriaLabel': 'Character view',
   'characterList.viewAuto': 'Auto',
-  'characterList.viewAutoHint': 'Automatic: cards for small parties, a compact list from {{count}} characters',
+  'characterList.viewAutoHint': 'Automatic: cards for small parties, a compact list from {{count}} characters (very wide screens keep the cards)',
   'characterList.viewCards': 'Cards',
   'characterList.viewList': 'Compact list',
   'characterList.viewLineup': 'Party lineup',
